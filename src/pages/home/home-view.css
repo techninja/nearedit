@@ -1,0 +1,97 @@
+.home-view {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+}
+
+.home-header {
+  margin-bottom: var(--space-xl);
+}
+
+.home-header h1 {
+  font-size: var(--text-xl);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.home-subtitle {
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
+.home-projects-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.home-projects-header h2 {
+  font-size: var(--text-lg);
+}
+
+.create-form {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.create-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.project-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.project-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s;
+}
+
+.project-card:hover {
+  border-color: var(--color-primary);
+}
+
+.project-card a {
+  display: block;
+  padding: var(--space-md);
+  color: inherit;
+  text-decoration: none;
+}
+
+.project-card strong {
+  font-size: var(--text-base);
+}
+
+.project-card p {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
+.project-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+  display: block;
+}
+
+.home-empty {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--color-text-muted);
+}

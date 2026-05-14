@@ -1,0 +1,19 @@
+.transport-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.transport-controls .btn {
+  padding: var(--space-xs);
+  min-width: 28px;
+  justify-content: center;
+}
+
+.transport-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  min-width: 12ch;
+  padding: 0 var(--space-sm);
+}
