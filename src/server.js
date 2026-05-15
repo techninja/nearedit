@@ -12,6 +12,7 @@ import { previewsRouter } from './api/previews.js';
 import { projectsRouter } from './api/projects.js';
 import { pickerRouter } from './api/picker.js';
 import { indexerRouter } from './api/indexer.js';
+import { intelligenceRouter } from './api/intelligence.js';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api', eventsRouter);
 app.use('/api', projectsRouter);
 app.use('/api', pickerRouter);
 app.use('/api', indexerRouter);
+app.use('/api', intelligenceRouter);
 app.use('/api', renderRouter);
 app.use('/api', mediaRouter);
 app.use('/api', previewsRouter);
