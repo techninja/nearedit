@@ -1,30 +1,25 @@
 /**
  * Global UI state — singleton, persisted to localStorage.
- * Theme, sidebar, active filters. No API calls.
+ * Theme (with system preference detection), panel sizes.
  * @module store/AppState
  */
 
 import { store } from 'hybrids';
 
-/**
- * @typedef {Object} AppState
- * @property {string} theme - 'light' or 'dark'
- * @property {boolean} sidebarOpen - Sidebar visibility
- * @property {string} activeFilter - Current task filter value
- */
-
-/** @type {import('hybrids').Model<AppState>} */
+/** @type {import('hybrids').Model<object>} */
 const AppState = {
-  theme: 'light',
-  sidebarOpen: true,
-  activeFilter: 'all',
+  theme: 'dark',
+  panelHeight: 0, // 0 = auto (50/50 split), >0 = px height of top panels
   [store.connect]: {
     get: () => {
-      const raw = localStorage.getItem('appState');
-      return raw ? JSON.parse(raw) : {};
+      const raw = localStorage.getItem('nearedit_appState');
+      if (raw) return JSON.parse(raw);
+      // Detect system preference
+      const prefersDark = globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches;
+      return { theme: prefersDark ? 'dark' : 'light' };
     },
     set: (id, values) => {
-      localStorage.setItem('appState', JSON.stringify(values));
+      localStorage.setItem('nearedit_appState', JSON.stringify(values));
       return values;
     },
   },

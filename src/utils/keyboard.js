@@ -9,6 +9,7 @@ import { store } from 'hybrids';
 import TimelineState from '#store/TimelineState.js';
 import { pushState, undo, redo } from '#utils/undoHistory.js';
 import { totalDuration } from '#utils/timelineMath.js';
+import { startAudioPlayback, stopAudioPlayback, getAudioTime, tickAudio } from '#utils/audioEngine.js';
 
 /** @type {number} */
 let rafId = 0;
@@ -55,24 +56,40 @@ function startPlayback() {
   const dur = totalDuration(state.tracks || []);
   lastTime = performance.now();
   let lastStoreUpdate = 0;
+  let currentPos = state.playheadPosition;
+
+  // Start audio — it becomes the clock source
+  startAudioPlayback(state.tracks || [], state.playheadPosition);
 
   const tick = (now) => {
     const s = store.get(TimelineState);
-    if (!s || !s.playing) return;
-    const dt = (now - lastTime) / 1000;
-    lastTime = now;
-    const pos = s.playheadPosition + dt;
+    if (!s || !s.playing) { stopAudioPlayback(); return; }
 
-    if (pos >= dur) {
+    // Use audio clock if available, otherwise advance with dt
+    const audioTime = getAudioTime();
+    if (audioTime !== null) {
+      currentPos = audioTime;
+    } else {
+      const dt = (now - lastTime) / 1000;
+      currentPos += dt;
+    }
+    lastTime = now;
+
+    // Handle clip transitions — start/stop audio as playhead crosses clip boundaries
+    tickAudio(s.tracks || [], currentPos);
+
+    if (currentPos >= dur) {
+      stopAudioPlayback();
       store.set(TimelineState, { ...s, playing: false, playheadPosition: dur });
       return;
     }
 
-    // Throttle store updates to ~20fps for timeline UI — compositor runs independently
+    // Throttle store updates to ~20fps for timeline UI + compositor
     if (now - lastStoreUpdate > 50) {
-      store.set(TimelineState, { ...s, playheadPosition: pos });
+      store.set(TimelineState, { ...s, playheadPosition: currentPos });
       lastStoreUpdate = now;
     }
+
     rafId = requestAnimationFrame(tick);
   };
   rafId = requestAnimationFrame(tick);
@@ -81,6 +98,7 @@ function startPlayback() {
 function stopPlayback() {
   cancelAnimationFrame(rafId);
   rafId = 0;
+  stopAudioPlayback();
 }
 
 /** Action handlers */

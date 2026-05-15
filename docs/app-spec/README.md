@@ -150,6 +150,31 @@ Placeholder fields:
 Once fulfilled, `sourceFile` is set and `placeholder` becomes false.
 The clip retains its label/prompt as metadata.
 
+### Ken Burns (Image Animation)
+
+Still images on the timeline can have animated pan/zoom via the
+`transform.kenBurns` object. Values interpolate linearly from start to
+end over the clip's duration:
+
+```json
+"transform": {
+  "scaleX": 1, "scaleY": 1,
+  "kenBurns": {
+    "startScale": 1.0,
+    "endScale": 1.3,
+    "startX": 0,
+    "endX": -50,
+    "startY": 0,
+    "endY": 0
+  }
+}
+```
+
+The AI director uses ken burns automatically for images:
+- Landscape image in 16:9 → slow zoom toward subject
+- Landscape image in 9:16 → crop to subject, pan across
+- Portrait image in 16:9 → zoom out to reveal, or pan vertically
+
 ```json
 {
   "fps": 30,

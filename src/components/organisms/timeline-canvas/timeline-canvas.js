@@ -171,11 +171,15 @@ function draw(ctx, state, w, h, redraw) {
         const peaks = waveformCache.get(clip.sourceFile);
         if (peaks?.length) {
           const mid = cy + ch / 2;
+          // Normalize: find max peak and scale to fill height
+          let maxPeak = 0;
+          for (let i = 0; i < peaks.length; i++) { if (peaks[i] > maxPeak) maxPeak = peaks[i]; }
+          const scale = maxPeak > 0 ? 1 / maxPeak : 1;
           ctx.fillStyle = '#ffffff55';
           for (let i = 0; i < peaks.length; i++) {
             const bx = cx + (i / peaks.length) * cw;
             const bw = Math.max(1, cw / peaks.length);
-            const bh = peaks[i] * (ch / 2 - 2);
+            const bh = (peaks[i] * scale) * (ch / 2 - 2);
             ctx.fillRect(bx, mid - bh, bw - 0.5, bh * 2);
           }
         } else { loadWaveform(clip.sourceFile, redraw); }
@@ -193,10 +197,11 @@ function draw(ctx, state, w, h, redraw) {
         } else { loadThumb(clip.sourceFile, redraw); }
       }
 
-      // Label
+      // Label — use clip label, or extract filename from path
       ctx.fillStyle = '#fff';
       ctx.font = '10px system-ui';
-      ctx.fillText(clip.sourceFile.replace(/\.[^.]+$/, '').slice(0, 18), cx + 4, cy + 12, cw - 8);
+      const clipLabel = clip.label || clip.sourceFile.split('/').pop().replace(/\.[^.]+$/, '').slice(0, 22);
+      ctx.fillText(clipLabel, cx + 4, cy + 12, cw - 8);
 
       // Fades
       if (clip.fadeIn > 0) {

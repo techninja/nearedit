@@ -1,6 +1,6 @@
 .editor-view {
-  display: grid;
-  grid-template-rows: auto 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
@@ -19,6 +19,37 @@
   white-space: nowrap;
 }
 
+.editor-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.editor-project-name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.editor-project-name:hover {
+  color: var(--color-primary);
+}
+
+.editor-adaptation-name {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
 .editor-actions {
   display: flex;
   gap: var(--space-xs);
@@ -29,7 +60,8 @@
 .editor-panels {
   display: flex;
   overflow: hidden;
-  border-bottom: 1px solid var(--color-border);
+  flex: 1;
+  min-height: 150px;
 }
 
 .editor-sidebar {
@@ -44,18 +76,66 @@
   flex: 1;
   padding: var(--space-sm);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #0a0a0a;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: #808080;
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* Timeline fills bottom */
 .editor-timeline {
+  flex: 1;
+  min-height: 120px;
   overflow: hidden;
+}
+
+.editor-resize-handle {
+  height: 6px;
+  background: var(--color-border);
+  cursor: ns-resize;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.editor-resize-handle:hover,
+.editor-resize-handle:active {
+  background: var(--color-primary);
+}
+
+.editor-resize-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 2px;
+  background: var(--color-text-muted);
+  border-radius: 1px;
 }
 
 .editor-timeline .timeline-canvas-wrap {
   height: 100%;
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .editor-header {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme='dark'] .editor-sidebar {
+  border-color: #1e293b;
+}
+
+[data-theme='dark'] .editor-resize-handle {
+  background: #1e293b;
+}
+
+[data-theme='dark'] .editor-resize-handle:hover,
+[data-theme='dark'] .editor-resize-handle:active {
+  background: var(--color-primary);
 }
 
 /* Mobile: stack vertically, preview on top */
