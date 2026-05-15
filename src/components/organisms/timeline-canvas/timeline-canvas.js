@@ -14,6 +14,15 @@ const TRACK_GAP = 2;
 const HEADER_HEIGHT = 24;
 const TRACK_LABEL_W = 100;
 const CLIP_COLORS = { video: '#3b82f6', audio: '#22c55e', image: '#f59e0b' };
+const INTENT_COLORS = {
+  narration: '#8b5cf6',
+  broll: '#06b6d4',
+  sfx: '#f97316',
+  music: '#ec4899',
+  title: '#eab308',
+  transition: '#6b7280',
+  '': '#64748b',
+};
 
 /** @type {Map<string, number[]>} */
 const waveformCache = new Map();
@@ -106,13 +115,52 @@ function draw(ctx, state, w, h, redraw) {
     ctx.fillRect(TRACK_LABEL_W, y, w - TRACK_LABEL_W, TRACK_HEIGHT);
 
     for (const clip of track.clips) {
-      if (!clip.sourceFile) continue;
+      const isPlaceholder = clip.placeholder || !clip.sourceFile;
+      if (!isPlaceholder && !clip.sourceFile) continue;
       const cx = TRACK_LABEL_W + timeToPx(clip.timelineStart, zoom) - scrollX;
       const cw = timeToPx(clip.timelineEnd - clip.timelineStart, zoom);
       const cy = y + 2;
       const ch = TRACK_HEIGHT - 4;
 
-      // Clip bg
+      if (isPlaceholder) {
+        // Placeholder clip — hatched background with intent color
+        const color = clip.color || INTENT_COLORS[clip.intent] || INTENT_COLORS[''];
+        ctx.fillStyle = color;
+        ctx.globalAlpha = alpha * 0.4;
+        ctx.fillRect(cx, cy, cw, ch);
+        // Diagonal hatch pattern
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        for (let hx = cx - ch; hx < cx + cw; hx += 8) {
+          ctx.beginPath();
+          ctx.moveTo(hx, cy + ch);
+          ctx.lineTo(hx + ch, cy);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = alpha;
+        // Border
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(cx, cy, cw, ch);
+        ctx.setLineDash([]);
+        ctx.lineWidth = 1;
+        // Label
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px system-ui';
+        const label = clip.label || clip.intent || 'placeholder';
+        ctx.fillText(label, cx + 4, cy + 13, cw - 8);
+        // Prompt preview (smaller, below label)
+        if (clip.prompt) {
+          ctx.font = '9px system-ui';
+          ctx.fillStyle = '#ffffffaa';
+          ctx.fillText(clip.prompt.slice(0, 30) + (clip.prompt.length > 30 ? '...' : ''), cx + 4, cy + 25, cw - 8);
+        }
+        continue;
+      }
+
+      // Real clip — existing rendering
       ctx.fillStyle = CLIP_COLORS[track.type] || CLIP_COLORS.video;
       ctx.globalAlpha = alpha * 0.8;
       ctx.fillRect(cx, cy, cw, ch);

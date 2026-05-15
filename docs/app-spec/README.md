@@ -123,6 +123,33 @@ The repo's `media/` directory is a dev fallback — when a project has no
 Each adaptation's timeline is stored as a JSON EDL in the browser
 (localStorage during dev, synced to server on save).
 
+### Clip Types
+
+Clips on the timeline can be either **fulfilled** (has a source file) or
+**placeholder** (an intention without media yet).
+
+Placeholders allow the AI director or user to plan an edit structurally
+before all media exists:
+
+- Narration segments that need TTS generation
+- B-roll slots described by mood/content ("calm nature shot, 5s")
+- SFX/music cues to be found or generated
+- Title cards to be designed
+- Transitions to be decided
+
+Placeholder fields:
+
+| Field       | Type    | Purpose                                      |
+| ----------- | ------- | -------------------------------------------- |
+| placeholder | boolean | true = no media attached yet                 |
+| label       | string  | Human-readable name shown on timeline        |
+| prompt      | string  | Generation prompt, search query, or notes    |
+| intent      | string  | narration, broll, sfx, music, title, transition |
+| color       | string  | Override timeline color (hex)                |
+
+Once fulfilled, `sourceFile` is set and `placeholder` becomes false.
+The clip retains its label/prompt as metadata.
+
 ```json
 {
   "fps": 30,

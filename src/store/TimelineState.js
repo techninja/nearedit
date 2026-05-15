@@ -22,7 +22,7 @@ const TimelineState = {
     solo: false,
     clips: [{
       clipId: '',
-      sourceFile: '',
+      sourceFile: '',       // empty = placeholder/unfulfilled
       sourceIn: 0,
       sourceOut: 0,
       timelineStart: 0,
@@ -30,6 +30,12 @@ const TimelineState = {
       fadeIn: 0,
       fadeOut: 0,
       linkedClipId: '',
+      // Placeholder/intent fields
+      placeholder: false,   // true = no media yet, just an idea
+      label: '',            // user-facing name/description
+      prompt: '',           // generation prompt or search query
+      intent: '',           // narration, broll, sfx, music, title, transition
+      color: '',            // visual color on timeline when placeholder
       transform: {
         x: 0,
         y: 0,
