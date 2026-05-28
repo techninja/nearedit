@@ -5,6 +5,27 @@
  */
 
 export const DIRECTIVE_SCHEMAS = {
+  generate_script: {
+    title: 'Generate Script',
+    description: 'AI writes 3 edit plan options you can review before executing',
+    fields: {
+      style: { type: 'select', label: 'Style', options: ['thoughtful introspective voiceover', 'energetic highlight reel', 'comedy podcast', 'trailer for campy horror', 'tech demo with highlights', 'calm nature documentary', 'custom'], default: 'thoughtful introspective voiceover' },
+      mood: { type: 'select', label: 'Mood', options: ['contemplative', 'upbeat', 'dramatic', 'playful', 'serene', 'intense', 'nostalgic'], default: 'contemplative' },
+      duration: { type: 'range', label: 'Target Duration', min: 10, max: 600, step: 5, default: 60, format: (v) => v >= 60 ? `${(v / 60).toFixed(1)}m` : `${v}s` },
+      promptSource: { type: 'prompt-source', label: 'Direction', placeholder: 'Describe what you want, or select a script file...', default: '' },
+      narrationSource: { type: 'select', label: 'Narration Source', options: ['auto (from transcript)', 'none', 'generate TTS'], default: 'auto (from transcript)' },
+      pacing: { type: 'select', label: 'Pacing', options: ['slow', 'medium', 'fast', 'match narration'], default: 'match narration' },
+      variants: { type: 'range', label: 'Options to generate', min: 1, max: 5, step: 1, default: 3, format: (v) => `${v}` },
+    },
+  },
+  execute_script: {
+    title: 'Execute Script',
+    description: 'Build timeline from an approved edit script',
+    fields: {
+      promptSource: { type: 'prompt-source', label: 'Script', placeholder: 'Load the edit script to execute...', default: '' },
+      replaceTimeline: { type: 'toggle', label: 'Replace existing timeline', default: false },
+    },
+  },
   generate_edit: {
     title: 'Generate Edit',
     description: 'AI assembles a rough cut from available media',

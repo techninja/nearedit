@@ -76,14 +76,33 @@ export default define({
         .then((r) => r.ok ? r.json() : null)
         .then((proj) => {
           _projectCache = proj;
-          // Load EDL with adaptation's resolution/fps enforced
           const adaptation = proj?.adaptations?.find((a) => a.id === host.adaptationId);
           fetch(`/api/projects/${host.projectId}/edl/${host.adaptationId}`)
             .then((r) => r.ok ? r.json() : null)
             .then((edl) => {
               if (edl) {
+                // Ensure minimum track structure
+                const tracks = edl.tracks || [];
+                if (!tracks.find((t) => t.type === 'video')) {
+                  tracks.unshift({ trackId: 'v1', type: 'video', name: 'Video 1', muted: false, solo: false, clips: [] });
+                }
+                if (!tracks.find((t) => t.type === 'audio')) {
+                  tracks.push({ trackId: 'a1', type: 'audio', name: 'Audio 1', muted: false, solo: false, clips: [] });
+                }
+                // Sanitize clips with invalid paths
+                for (const track of tracks) {
+                  if (!track.clips) continue;
+                  track.clips = track.clips.filter((clip) => {
+                    if (!clip.sourceFile) return !!clip.placeholder;
+                    if (clip.sourceFile.includes('/undefined')) return false;
+                    // Valid absolute paths have at least 2 path segments
+                    if (clip.sourceFile.split('/').filter(Boolean).length < 2) return false;
+                    return true;
+                  });
+                }
                 store.set(TimelineState, {
                   ...edl,
+                  tracks,
                   resolution: adaptation?.resolution || edl.resolution || '1920x1080',
                   fps: adaptation?.fps || edl.fps || 30,
                   playing: false,

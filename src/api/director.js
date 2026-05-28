@@ -227,6 +227,161 @@ function resolvePaths(result, media) {
 }
 
 /**
+ * Build prompt for script generation (markdown output, not JSON).
+ */
+function buildScriptPrompt(media, directive, adaptation) {
+  const { params, context } = directive;
+  const mediaSummary = media.map((m) => {
+    const parts = [`- ${m.filePath.split('/').pop()} (${m.type}, ${m.duration ? m.duration.toFixed(1) + 's' : '?'})`];
+    if (m.tags?.length) parts.push(`  tags: ${m.tags.slice(0, 10).join(', ')}`);
+    if (m.segments?.length) {
+      const total = m.segments.length;
+      const step = Math.max(1, Math.floor(total / 30));
+      const sampled = [];
+      for (let i = 0; i < total; i += step) sampled.push(m.segments[i]);
+      parts.push(`  transcript (${total} segments, ${(m.duration / 60).toFixed(0)} min):`);
+      parts.push(sampled.map((s) => `    [${s.start.toFixed(1)}s] "${s.text}"`).join('\n'));
+    }
+    return parts.join('\n');
+  }).join('\n');
+
+  const adaptCtx = adaptation ? `Format: ${adaptation.name} (${adaptation.aspectRatio}, ${adaptation.resolution})` : '';
+
+  const systemPrompt = `You are an AI video editor writing an edit script. Output ONLY markdown.
+
+Available media:\n${mediaSummary}\n\n${adaptCtx}
+
+Write a structured edit script in this format:
+
+# Edit Script: [Title]
+
+## Overview
+- Style: ...
+- Duration: ~Xs
+- Mood: ...
+
+## Sequence
+
+### 1. [Section Name] (Xs-Xs)
+**Narration:** "[exact words from transcript]" (source: filename, ${"start"}s-${"end"}s)
+**Visual:** [description of what should be on screen]
+**Notes:** [pacing, emphasis, transition notes]
+
+### 2. [Next Section]...
+
+Rules:
+- Use EXACT quotes from the transcript with precise timestamps
+- Choose segments that flow naturally together
+- Skip the first 30s (audience noise)
+- Note where dramatic pauses should be preserved
+- Describe b-roll by matching available video tags
+- Target duration: ${params.duration || 60}s total`;
+
+  const userPrompt = `Style: ${params.style || 'contemplative'}\nMood: ${params.mood || 'contemplative'}\nDirection: ${(params.prompt || '').slice(0, 300)}\n\nWrite the edit script.`;
+  return { systemPrompt, userPrompt };
+}
+
+/**
+ * Call LLM and return raw text (not parsed as JSON).
+ */
+async function callLLMRaw(systemPrompt, userPrompt, onProgress) {
+  const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: OLLAMA_MODEL,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      stream: true,
+      options: { temperature: 0.4, num_predict: 4096, num_ctx: 16384 },
+    }),
+  });
+  let content = '';
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let tokenCount = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    for (const line of decoder.decode(value, { stream: true }).split('\n').filter(Boolean)) {
+      try {
+        const msg = JSON.parse(line);
+        if (msg.message?.content) { content += msg.message.content; tokenCount++; if (tokenCount % 20 === 0) onProgress(tokenCount); }
+      } catch {}
+    }
+  }
+  return content;
+}
+
+/**
+ * POST /api/director/script
+ * Generates a markdown edit script (not EDL). Saves to project folder.
+ */
+directorRouter.post('/director/script', (req, res) => {
+  const { directive, projectId } = req.body;
+  if (!directive) return res.status(422).json({ error: 'directive required' });
+
+  const media = gatherMediaContext(projectId);
+  if (!media.length) return res.status(422).json({ error: 'No indexed media found.' });
+
+  const variants = directive.params.variants || 3;
+  const job = createJob('script', { directive, projectId, variants });
+  res.status(202).json({ jobId: job.id });
+
+  (async () => {
+    try {
+      updateJob(job.id, { status: 'running', log: ['Building script prompt...'], progress: 5 });
+
+      let adaptation = null;
+      const regPath = resolve(process.cwd(), 'data/registry.json');
+      if (existsSync(regPath)) {
+        const reg = JSON.parse(readFileSync(regPath, 'utf-8'));
+        const entry = reg[projectId];
+        if (entry?.path) {
+          const projFile = resolve(entry.path, '.nearedit', 'project.json');
+          if (existsSync(projFile)) {
+            const proj = JSON.parse(readFileSync(projFile, 'utf-8'));
+            adaptation = proj.adaptations?.[0];
+          }
+        }
+      }
+
+      const { systemPrompt, userPrompt } = buildScriptPrompt(media, directive, adaptation);
+      const scripts = [];
+      const reg = JSON.parse(readFileSync(regPath, 'utf-8'));
+      const projectDir = reg[projectId]?.path;
+      const adaptName = (adaptation?.name || 'main').replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
+      const scriptsDir = resolve(projectDir, 'scripts', adaptName);
+      const { mkdirSync } = await import('node:fs');
+      mkdirSync(scriptsDir, { recursive: true });
+
+      for (let i = 0; i < variants; i++) {
+        updateJob(job.id, { log: [`Generating option ${i + 1}/${variants}...`], progress: 10 + Math.floor((i / variants) * 80) });
+        const variantAngles = [
+          'Focus on the most poetic and philosophical moments. Choose segments that build a single coherent argument.',
+          'Focus on surprising or provocative statements. Choose segments that challenge conventional thinking.',
+          'Focus on nature imagery and sensory language. Choose segments that evoke the natural world.',
+          'Focus on the most accessible, quotable moments. Choose segments a general audience would connect with.',
+          'Focus on the emotional arc. Choose segments that build from question to insight to resolution.',
+        ];
+        const variantPrompt = userPrompt + `\n\nVariant angle: ${variantAngles[i % variantAngles.length]}\n\nIMPORTANT: After the sequence, add a "## Full Narration (as spoken)" section that concatenates ALL the narration quotes in order as one continuous paragraph, so the editor can verify it reads coherently as a single piece.`;
+        const script = await callLLMRaw(systemPrompt, variantPrompt, (tokens) => {
+          updateJob(job.id, { log: [`Option ${i + 1}: ${tokens} tokens...`], progress: 10 + Math.floor(((i + tokens / 2000) / variants) * 80) });
+        });
+        const filename = `script-${i + 1}.md`;
+        const scriptPath = resolve(scriptsDir, filename);
+        const { writeFileSync: wf } = await import('node:fs');
+        wf(scriptPath, script);
+        scripts.push({ script, filePath: scriptPath, filename, variant: i + 1 });
+      }
+
+      updateJob(job.id, { status: 'complete', result: { scripts, count: variants }, progress: 100, log: [`${variants} scripts saved`] });
+    } catch (err) {
+      updateJob(job.id, { status: 'error', error: err.message });
+    }
+  })();
+});
+
+/**
  * POST /api/director
  * Creates a background job, returns jobId immediately.
  * Body: { directive, projectId }

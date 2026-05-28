@@ -70,7 +70,10 @@ export async function executeSilenceRemoval(timeline, params, onStatus) {
  * @param {(err: string) => void} onError
  */
 export async function submitDirectorJob(directive, projectId, timeline, replace, onStatus, onComplete, onError) {
-  const submitRes = await fetch('/api/director', {
+  // For generate_script, use a different endpoint that returns markdown
+  const endpoint = directive.action === 'generate_script' ? '/api/director/script' : '/api/director';
+
+  const submitRes = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ directive, projectId }),
@@ -110,9 +113,25 @@ export async function submitDirectorJob(directive, projectId, timeline, replace,
     } else if (job.status === 'complete') {
       unsub();
       const resultRes = await fetch(`/api/jobs/${jobId}/result`);
-      const edl = await resultRes.json();
-      applyEdl(timeline, edl, replace);
-      onComplete();
+      const result = await resultRes.json();
+      // Script jobs return { scripts: [...] } — show selection UI
+      if (result.scripts) {
+        onStatus(`${result.count} scripts ready — load one via "Execute Script"`);
+        // Refresh text files list so new scripts appear in dropdown
+        const panel = document.querySelector('director-panel');
+        if (panel) {
+          const editor = document.querySelector('editor-view');
+          const pid = editor?.projectId || '';
+          fetch(`/api/media?projectId=${pid}`).then((r) => r.json()).then((d) => { panel.textFiles = (d.data || []).filter((f) => f.type === 'text'); });
+          // Switch to Execute Script action so user sees the dropdown
+          panel.action = 'execute_script';
+          panel.collapsed = false;
+        }
+        onComplete();
+      } else {
+        applyEdl(timeline, result, replace);
+        onComplete();
+      }
     } else if (job.status === 'error') {
       unsub();
       onError(job.error);
