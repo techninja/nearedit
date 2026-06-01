@@ -67,6 +67,17 @@ export const DIRECTIVE_SCHEMAS = {
       scope: { type: 'select', label: 'Scope', options: ['entire timeline', 'selected clips', 'audio tracks only'], default: 'entire timeline' },
     },
   },
+  auto_assemble: {
+    title: 'Auto Assemble',
+    description: 'Deterministic word-aligned edit — no AI, picks best segments',
+    fields: {
+      duration: { type: 'range', label: 'Target Duration', min: 10, max: 300, step: 5, default: 60, format: (v) => v >= 60 ? `${(v / 60).toFixed(1)}m` : `${v}s` },
+      padding: { type: 'range', label: 'Word Padding', min: 0, max: 0.2, step: 0.01, default: 0.02, format: (v) => `${(v * 1000).toFixed(0)}ms` },
+      gapBetween: { type: 'range', label: 'Gap Between Segments', min: 0, max: 0.5, step: 0.05, default: 0, format: (v) => v === 0 ? 'none' : `${(v * 1000).toFixed(0)}ms` },
+      startAfter: { type: 'range', label: 'Skip Intro', min: 0, max: 120, step: 5, default: 30, format: (v) => `${v}s` },
+      replaceTimeline: { type: 'toggle', label: 'Replace existing timeline', default: true },
+    },
+  },
   add_placeholder: {
     title: 'Add Placeholder',
     description: 'Mark a slot for future content',

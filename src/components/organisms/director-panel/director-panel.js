@@ -98,6 +98,86 @@ export default define({
                   if (action === 'remove_silence') {
                     const ok = await executeSilenceRemoval(timeline, params, (msg) => { host.statusMsg = msg; });
                     if (ok) host.collapsed = true;
+                  } else if (action === 'execute_script') {
+                    host.statusMsg = 'Parsing script...';
+                    const scriptText = params.prompt || '';
+                    // Extract timestamps from script (format: source: filename, Xs-Ys)
+                    const timeRanges = [];
+                    const matches = scriptText.matchAll(/(\d+\.?\d*)s[\s\-–]+(\d+\.?\d*)s/g);
+                    for (const m of matches) {
+                      timeRanges.push({ start: parseFloat(m[1]), end: parseFloat(m[2]) });
+                    }
+                    if (!timeRanges.length) {
+                      // No parseable timestamps — fall through to LLM
+                      host.statusMsg = 'No timestamps found in script, using AI...';
+                    } else {
+                      // Find the audio file
+                      const mediaRes = await fetch(`/api/media?projectId=${projectId}`);
+                      const mediaData = await mediaRes.json();
+                      const audio = (mediaData.data || []).find((f) => f.type === 'audio' && f.duration > 60);
+                      if (!audio) { host.statusMsg = 'No narration audio found'; host.submitting = false; return; }
+                      // Load sidecar to find segment indices matching the time ranges
+                      const sidecarRes = await fetch(`/api/sidecar?path=${encodeURIComponent(audio.filePath)}`);
+                      const sidecar = await sidecarRes.json();
+                      const segs = sidecar.segments || [];
+                      const indices = [];
+                      for (const range of timeRanges) {
+                        const idx = segs.findIndex((s) => Math.abs(s.start - range.start) < 2);
+                        if (idx !== -1) indices.push(idx);
+                      }
+                      if (!indices.length) { host.statusMsg = 'Could not match script to segments'; host.submitting = false; return; }
+                      const asmRes = await fetch('/api/assemble', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ projectId, audioFile: audio.filePath, segmentIndices: indices }),
+                      });
+                      const result = await asmRes.json();
+                      if (result.error) { host.statusMsg = `Error: ${result.error}`; host.submitting = false; return; }
+                      host.statusMsg = `${result.segmentCount} segments, ${result.duration.toFixed(1)}s`;
+                      const replace = params.replaceTimeline ?? false;
+                      if (replace) { store.set(TimelineState, { ...timeline, ...result.edl }); }
+                      else {
+                        const end = timeline.tracks.reduce((m, t) => Math.max(m, t.clips.reduce((m2, c) => Math.max(m2, c.timelineEnd), 0)), 0);
+                        const merged = result.edl.tracks.map((nt) => { const ex = timeline.tracks.find((t) => t.type === nt.type); if (!ex) return nt; return { ...ex, clips: [...ex.clips, ...nt.clips.map((c) => ({ ...c, timelineStart: c.timelineStart + end, timelineEnd: c.timelineEnd + end }))] }; });
+                        store.set(TimelineState, { ...timeline, tracks: merged });
+                      }
+                      host.collapsed = true;
+                      host.submitting = false;
+                      return;
+                    }
+                  } else if (action === 'auto_assemble') {
+                    host.statusMsg = 'Assembling...';
+                    let assembleFile = '';
+                    const audioTrack = timeline.tracks.find((t) => t.type === 'audio');
+                    if (audioTrack?.clips?.[0]?.sourceFile) {
+                      assembleFile = audioTrack.clips[0].sourceFile;
+                    } else {
+                      const mediaRes = await fetch(`/api/media?projectId=${projectId}`);
+                      const mediaData = await mediaRes.json();
+                      const audio = (mediaData.data || []).find((f) => f.type === 'audio' && f.duration > 60);
+                      if (!audio) { host.statusMsg = 'No narration audio found'; host.submitting = false; return; }
+                      assembleFile = audio.filePath;
+                    }
+                    const asmRes = await fetch('/api/assemble', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ projectId, audioFile: assembleFile, targetDuration: params.duration, padding: params.padding, gapBetween: params.gapBetween, startAfter: params.startAfter }),
+                    });
+                    const result = await asmRes.json();
+                    if (result.error) { host.statusMsg = `Error: ${result.error}`; host.submitting = false; return; }
+                    host.statusMsg = `${result.segmentCount} segments, ${result.duration.toFixed(1)}s`;
+                    if (params.replaceTimeline) {
+                      store.set(TimelineState, { ...timeline, ...result.edl });
+                    } else {
+                      const end = timeline.tracks.reduce((m, t) => Math.max(m, t.clips.reduce((m2, c) => Math.max(m2, c.timelineEnd), 0)), 0);
+                      const merged = result.edl.tracks.map((nt) => {
+                        const ex = timeline.tracks.find((t) => t.type === nt.type);
+                        if (!ex) return nt;
+                        return { ...ex, clips: [...ex.clips, ...nt.clips.map((c) => ({ ...c, timelineStart: c.timelineStart + end, timelineEnd: c.timelineEnd + end }))] };
+                      });
+                      store.set(TimelineState, { ...timeline, tracks: merged });
+                    }
+                    host.collapsed = true;
                   } else {
                     const directive = { action, params, context: { playheadPosition: timeline.playheadPosition, totalTracks: timeline.tracks.length, fps: timeline.fps, resolution: timeline.resolution } };
                     await submitDirectorJob(directive, projectId, timeline, params.replaceTimeline ?? false,

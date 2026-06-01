@@ -10,6 +10,7 @@ import TimelineState from '#store/TimelineState.js';
 import { pushState, undo, redo } from '#utils/undoHistory.js';
 import { totalDuration } from '#utils/timelineMath.js';
 import { startAudioPlayback, stopAudioPlayback, getAudioTime, tickAudio } from '#utils/audioEngine.js';
+import { splitAtPlayhead, deleteSelected } from '#utils/clipInteractions.js';
 
 /** @type {number} */
 let rafId = 0;
@@ -26,6 +27,9 @@ const DEFAULT_KEYMAP = {
   End: 'goEnd',
   ArrowLeft: 'framePrev',
   ArrowRight: 'frameNext',
+  s: 'split',
+  Delete: 'delete',
+  Backspace: 'delete',
   'ctrl+z': 'undo',
   'ctrl+shift+z': 'redo',
   'meta+z': 'undo',
@@ -188,6 +192,20 @@ const actions = {
     if (!s) return;
     const next = redo(s);
     if (next) store.set(TimelineState, next);
+  },
+
+  split() {
+    const s = store.get(TimelineState);
+    if (!s) return;
+    pushState(s);
+    store.set(TimelineState, splitAtPlayhead(s));
+  },
+
+  delete() {
+    const s = store.get(TimelineState);
+    if (!s) return;
+    pushState(s);
+    store.set(TimelineState, deleteSelected(s));
   },
 };
 

@@ -109,10 +109,12 @@ function sanitizeJob(job) {
     status: job.status,
     progress: job.progress,
     error: job.error,
-    log: job.log.slice(-5), // last 5 messages
+    log: job.log.slice(-5),
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
     hasResult: !!job.result,
+    // Include lightweight result metadata for matching (not full data)
+    result: job.result ? { key: job.result.key, path: job.result.path } : null,
   };
 }
 

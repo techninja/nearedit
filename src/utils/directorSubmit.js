@@ -114,6 +114,7 @@ export async function submitDirectorJob(directive, projectId, timeline, replace,
       unsub();
       const resultRes = await fetch(`/api/jobs/${jobId}/result`);
       const result = await resultRes.json();
+      console.log('[Director] Job result:', result.tracks?.length, 'tracks', result.scripts ? 'scripts' : 'edl');
       // Script jobs return { scripts: [...] } — show selection UI
       if (result.scripts) {
         onStatus(`${result.count} scripts ready — load one via "Execute Script"`);

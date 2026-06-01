@@ -132,7 +132,8 @@ Rules:
 - Generate unique clipId values (use format: clip_001, clip_002, etc.)
 - Always include at least one video track and one audio track`;
 
-  const userPrompt = `Action: ${action}\nParameters: ${JSON.stringify({ ...params, prompt: params.prompt?.slice(0, 500) || '' })}\n\nGenerate the EDL tracks array.`;
+  const promptLimit = action === 'execute_script' ? 3000 : 500;
+  const userPrompt = `Action: ${action}\nParameters: ${JSON.stringify({ ...params, prompt: params.prompt?.slice(0, promptLimit) || '' })}\n\nGenerate the EDL tracks array.`;
   return { systemPrompt, userPrompt };
 }
 
@@ -230,18 +231,30 @@ function resolvePaths(result, media) {
  * Build prompt for script generation (markdown output, not JSON).
  */
 function buildScriptPrompt(media, directive, adaptation) {
-  const { params, context } = directive;
+  const { params } = directive;
   const mediaSummary = media.map((m) => {
     const parts = [`- ${m.filePath.split('/').pop()} (${m.type}, ${m.duration ? m.duration.toFixed(1) + 's' : '?'})`];
     if (m.tags?.length) parts.push(`  tags: ${m.tags.slice(0, 10).join(', ')}`);
     if (m.segments?.length) {
-      const total = m.segments.length;
-      const step = Math.max(1, Math.floor(total / 30));
-      const sampled = [];
-      for (let i = 0; i < total; i += step) sampled.push(m.segments[i]);
-      parts.push(`  transcript (${total} segments, ${(m.duration / 60).toFixed(0)} min):`);
-      parts.push(sampled.map((s) => `    [${s.start.toFixed(1)}s] "${s.text}"`).join('\n'));
+      const validSegs = m.segments.filter((s) => s.start >= 30);
+      const targetDur = (params.duration || 60) * 1.5;
+      const numBlocks = 5;
+      const blockStep = Math.max(1, Math.floor(validSegs.length / numBlocks));
+      const blocks = [];
+      for (let b = 0; b < numBlocks; b++) {
+        const startIdx = b * blockStep;
+        let endIdx = startIdx;
+        while (endIdx < validSegs.length && validSegs[endIdx].end - validSegs[startIdx].start < targetDur) endIdx++;
+        const slice = validSegs.slice(startIdx, endIdx);
+        if (!slice.length) continue;
+        const text = slice.map((s) => s.text).join(' ');
+        blocks.push(`  --- BLOCK ${b + 1} [${slice[0].start.toFixed(0)}s - ${slice[slice.length - 1].end.toFixed(0)}s] ---\n  ${text}`);
+      }
+      parts.push(`  transcript (${m.segments.length} segments, ${(m.duration / 60).toFixed(0)} min):`);
+      parts.push(`  Below are ${numBlocks} CANDIDATE BLOCKS. Pick ONE and use it IN ORDER (start to end).`);
+      parts.push(blocks.join('\n'));
     }
+    if (m.content) parts.push(`  content: ${m.content.slice(0, 500)}`);
     return parts.join('\n');
   }).join('\n');
 
@@ -249,37 +262,41 @@ function buildScriptPrompt(media, directive, adaptation) {
 
   const systemPrompt = `You are an AI video editor writing an edit script. Output ONLY markdown.
 
-Available media:\n${mediaSummary}\n\n${adaptCtx}
+Available media:
+${mediaSummary}
 
-Write a structured edit script in this format:
+${adaptCtx}
+
+CRITICAL RULES:
+1. Pick ONE block from the candidate blocks above. Stay within that block only — do NOT combine from multiple blocks.
+2. Keep chronological order. You may SKIP tangential anecdotes or illustrative asides that don't advance the core argument, but never rearrange.
+3. NEVER cut mid-sentence. Every included passage must start and end on a sentence boundary.
+4. It is BETTER to go over the time target than to cut off mid-thought. Target is ${params.duration || 60}s but anywhere from ${Math.round((params.duration || 60) * 0.7)}s to ${Math.round((params.duration || 60) * 2.0)}s is acceptable.
+5. The LAST sentence must be a conclusion, insight, or punchline — NEVER a setup for one. If you feel the urge to write "and so..." or "the remarkable thing is..." you MUST include what follows.
+6. Cut the fat: rambling examples, repeated points, and tangents that a listener can follow without. Keep the thesis and its strongest supporting statements.
+
+Format:
 
 # Edit Script: [Title]
 
 ## Overview
 - Style: ...
-- Duration: ~Xs
+- Duration: ${Math.round((params.duration || 60) * 0.7)}s - ${Math.round((params.duration || 60) * 1.5)}s (finish the thought)
 - Mood: ...
 
 ## Sequence
 
 ### 1. [Section Name] (Xs-Xs)
-**Narration:** "[exact words from transcript]" (source: filename, ${"start"}s-${"end"}s)
-**Visual:** [description of what should be on screen]
-**Notes:** [pacing, emphasis, transition notes]
+**Narration:** "[COMPLETE sentences]" (source: filename, STARTs-ENDs)
+**Visual:** [match available video/image tags]
 
-### 2. [Next Section]...
+## Full Narration (as spoken)
+[All quotes as one coherent paragraph]`;
 
-Rules:
-- Use EXACT quotes from the transcript with precise timestamps
-- Choose segments that flow naturally together
-- Skip the first 30s (audience noise)
-- Note where dramatic pauses should be preserved
-- Describe b-roll by matching available video tags
-- Target duration: ${params.duration || 60}s total`;
-
-  const userPrompt = `Style: ${params.style || 'contemplative'}\nMood: ${params.mood || 'contemplative'}\nDirection: ${(params.prompt || '').slice(0, 300)}\n\nWrite the edit script.`;
+  const userPrompt = `Style: ${params.style || 'contemplative'}\nMood: ${params.mood || 'contemplative'}\nTarget: ${params.duration || 60}s (but finish the thought even if it goes over)\nDirection: ${(params.prompt || '').slice(0, 300)}\n\nWrite the edit script. COMPLETE THOUGHTS ONLY.`;
   return { systemPrompt, userPrompt };
 }
+
 
 /**
  * Call LLM and return raw text (not parsed as JSON).
