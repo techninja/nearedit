@@ -41,6 +41,9 @@ function handleTab(_host, event) {
   setAppState({ dockTab: event.detail.id });
 }
 
+/** "Open transcript" in the media bin: bring the transcript tab forward. */
+const handleTranscript = () => setAppState({ dockTab: 'transcript', sheetOpen: true });
+
 /** Narrow layout: the bottom bar opens and closes the sheet. @param {EditorViewHost} host @param {CustomEvent} event */
 function handleBarTab(host, event) {
   setAppState(sheetAfterTap(host.layout, event.detail.id));
@@ -71,7 +74,11 @@ function layoutTemplate({ layout, page }) {
       onsplitreset="${handleSplit}"
     >
       <app-editor-bar class="editor-view-bar"></app-editor-bar>
-      <section class="editor-view-dock panel" aria-label="Panels">
+      <section
+        class="editor-view-dock panel"
+        aria-label="Panels"
+        onmedia-transcript="${handleTranscript}"
+      >
         <app-splitter class="editor-view-grip" data-pane="sheet" label="Resize the panel">
         </app-splitter>
         <app-tabs

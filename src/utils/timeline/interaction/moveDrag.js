@@ -22,11 +22,12 @@ export const moveDrag = {
   edits: true,
   autoScroll: true,
   down: pressClip,
-  begin(_stage, press) {
+  begin(stage, press) {
     const { ripple, autoCrossfade } = getView();
     press.data.modes = { ripple, autoCrossfade };
     const moving = movingClips(press.base, press.data.clipIds, ripple);
-    press.data.candidates = dragCandidates(press.base, { exclude: moving });
+    const { pps } = stage.geometry().vp;
+    press.data.candidates = dragCandidates(press.base, { exclude: moving, pps });
   },
   drag(stage, press) {
     const { vp, lanes } = stage.geometry();

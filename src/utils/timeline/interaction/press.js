@@ -6,6 +6,7 @@
  */
 
 import { snapCandidates, snapTime } from '#utils/edl/index.js';
+import { beatSnapTimes } from '#utils/timeline/beats.js';
 import { getDoc } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
 import { getPosition } from '#utils/playback/transport.js';
@@ -51,14 +52,18 @@ export const SNAP_PX = 8;
  */
 
 /**
- * Snap candidates for a drag, built once when it starts.
+ * Snap candidates for a drag, built once when it starts: clip edges,
+ * markers, the playhead, and the beats of music on the timeline.
  * @param {any} doc - Document the drag starts from
- * @param {{ exclude?: Iterable<string>, markers?: boolean, playhead?: boolean }} [opts]
+ * @param {{ exclude?: Iterable<string>, markers?: boolean, playhead?: boolean, pps?: number }} [opts] -
+ *   `pps`: pixels per second now; beats are offered when it is given
  * @returns {import('#utils/edl/snap.js').SnapTarget[]}
  */
 export function dragCandidates(doc, opts = {}) {
   const playhead = opts.playhead === false ? undefined : getPosition();
-  return snapCandidates(doc, { exclude: opts.exclude, markers: opts.markers, playhead });
+  const exclude = [...(opts.exclude || [])];
+  const extra = opts.pps ? beatSnapTimes(doc, opts.pps, { exclude }) : [];
+  return snapCandidates(doc, { exclude, markers: opts.markers, playhead, extra });
 }
 
 /**
@@ -74,8 +79,8 @@ export function snapContext(press, pps) {
 }
 
 /**
- * Snap a pointed-at time (a click, a scrub, a drop) to clip edges and
- * markers when snapping is on.
+ * Snap a pointed-at time (a click, a scrub, a drop) to clip edges,
+ * markers and beats when snapping is on.
  * @param {number} time
  * @param {number} pps
  * @param {boolean} [bypass] - Shift is held
@@ -83,6 +88,7 @@ export function snapContext(press, pps) {
  */
 export function snapPoint(time, pps, bypass = false) {
   if (!getView().snapping || bypass) return { time, guide: null };
-  const hit = snapTime(getDoc(), time, { threshold: SNAP_PX / pps });
+  const extra = beatSnapTimes(getDoc(), pps);
+  const hit = snapTime(getDoc(), time, { threshold: SNAP_PX / pps, extra });
   return { time: hit.time, guide: hit.snapped ? hit.time : null };
 }

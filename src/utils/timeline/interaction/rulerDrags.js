@@ -55,10 +55,11 @@ export const loopDrag = {
 export const markerDrag = {
   edits: true,
   autoScroll: true,
-  begin(_stage, press) {
+  begin(stage, press) {
     const marker = press.base.markers.find((m) => m.markerId === press.hit.markerId);
     press.data.from = marker ? marker.time : press.hit.time;
-    press.data.candidates = dragCandidates(press.base, { markers: false });
+    const { pps } = stage.geometry().vp;
+    press.data.candidates = dragCandidates(press.base, { markers: false, pps });
   },
   drag(stage, press) {
     const { vp } = stage.geometry();

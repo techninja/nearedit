@@ -37,13 +37,14 @@ function trimGesture(edge) {
     edits: true,
     autoScroll: true,
     down: pressClip,
-    begin(_stage, press) {
+    begin(stage, press) {
       const { clip } = findClip(press.base, press.hit.clipId);
       const { ripple, autoCrossfade } = getView();
       press.data.modes = { ripple, autoCrossfade };
       press.data.from = edge === 'start' ? clip.timelineStart : clip.timelineEnd;
       const trimmed = expandSelection(press.base, [clip.clipId], { grouped: false });
-      press.data.candidates = dragCandidates(press.base, { exclude: trimmed });
+      const { pps } = stage.geometry().vp;
+      press.data.candidates = dragCandidates(press.base, { exclude: trimmed, pps });
     },
     drag(stage, press) {
       const snap = snapContext(press, stage.geometry().vp.pps);
@@ -65,7 +66,7 @@ function fadeGesture(edge) {
   return {
     edits: true,
     down: pressClip,
-    begin(_stage, press) {
+    begin(stage, press) {
       const { clip } = findClip(press.base, press.hit.clipId);
       const inward =
         edge === 'in' ? clip.timelineStart + clip.fadeIn : clip.timelineEnd - clip.fadeOut;

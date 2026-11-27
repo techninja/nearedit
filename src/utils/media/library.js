@@ -8,7 +8,7 @@
 
 import { api, query } from '#utils/api/http.js';
 
-/** @typedef {{ filename: string, filePath: string, relativePath: string, type: 'video'|'audio'|'image'|'text', global: boolean, size: number, duration: number|null, width: number|null, height: number|null, fps: number|null, hasAudio: boolean, indexed: boolean, tags: string[], analysis: Record<string, boolean> }} MediaItem */
+/** @typedef {{ filename: string, filePath: string, relativePath: string, type: 'video'|'audio'|'image'|'text', global: boolean, size: number, mtime: number, rotation: number, duration: number|null, width: number|null, height: number|null, fps: number|null, hasAudio: boolean, indexed: boolean, tags: string[], analysis: Record<string, boolean> }} MediaItem */
 
 /** @type {MediaItem[]} */
 let items = [];
