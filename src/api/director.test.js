@@ -2,14 +2,12 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import express from 'express';
-import { assembleRouter } from './assemble.js';
 import { directorRouter } from './director.js';
 import { startFakeLlm } from './director/testing/fakeLlm.js';
 import { checkResult } from './director/testing/invariants.js';
 import { createParkProject } from './director/testing/park.js';
 import { doc, pair } from './director/testing/timeline.js';
 import { cancelJob, getJob, subscribe, summarize } from './lib/jobs.js';
-import { silenceRouter } from './silence.js';
 
 let park;
 let fake;
@@ -21,7 +19,7 @@ before(async () => {
   fake = await startFakeLlm();
   const app = express();
   app.use(express.json({ limit: '10mb' }));
-  app.use('/api', directorRouter, assembleRouter, silenceRouter);
+  app.use('/api', directorRouter);
   await new Promise((resolve) => (server = app.listen(0, '127.0.0.1', resolve)));
   base = `http://127.0.0.1:${server.address().port}/api`;
   subscribe((message) => updates.push(JSON.parse(message).job));
@@ -273,9 +271,7 @@ test('cancelling a job aborts the LLM request', async () => {
   assert.deepEqual([getJob(body.jobId).status, getJob(body.jobId).result], ['cancelled', null]);
 });
 
-test('the retired legacy routers are mounted but empty', async () => {
+test('the retired legacy routes are gone', async () => {
   for (const path of ['/assemble', '/silence/remove', '/silence/analyze'])
     assert.equal((await fetch(`${base}${path}`, { method: 'POST' })).status, 404);
-  assert.equal(typeof assembleRouter, 'function');
-  assert.equal(typeof silenceRouter, 'function');
 });
