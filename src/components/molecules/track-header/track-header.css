@@ -13,6 +13,7 @@ track-header {
     border-bottom: 1px solid var(--color-timeline-grid);
     border-left: 2px solid transparent;
     background: var(--color-surface);
+    overflow: hidden;
 
     &.audio {
       background: var(--color-surface-2);
@@ -74,7 +75,8 @@ track-header {
 }
 
 /* Phones: a narrow column — solo and lock move into the options menu and
-   the volume slider gets a row of its own. */
+   the volume slider shares the button row, so a header never grows taller
+   than its lane. */
 @media (width <= 600px) {
   track-header {
     & .track-header {
@@ -87,8 +89,6 @@ track-header {
     }
 
     & .track-header-buttons {
-      grid-column: 1 / -1;
-
       & .icon-btn {
         min-width: 1.75rem;
         height: 1.75rem;
@@ -100,8 +100,5 @@ track-header {
       }
     }
 
-    & track-volume {
-      grid-column: 1 / -1;
-    }
   }
 }
