@@ -53,10 +53,13 @@ export function typeCounts(items) {
   return counts;
 }
 
+/** @type {(item: any) => number} When the file was last changed (API field `mtime`) */
+const modified = (item) => item.mtime || 0;
+
 /** @type {Record<string, (a: MediaItem, b: MediaItem) => number>} */
 const COMPARE = {
   name: () => 0,
-  date: (a, b) => (b.mtime || 0) - (a.mtime || 0),
+  date: (a, b) => modified(b) - modified(a),
   duration: (a, b) => (b.duration || 0) - (a.duration || 0),
   size: (a, b) => (b.size || 0) - (a.size || 0),
   type: (a, b) => MEDIA_TYPES.indexOf(a.type) - MEDIA_TYPES.indexOf(b.type),

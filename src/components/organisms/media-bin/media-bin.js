@@ -1,213 +1,98 @@
 /**
- * Media bin — compact file browser with type filtering and tags.
- * Fills available sidebar space. Adding clips creates linked pairs.
+ * Media bin — the project's media, fast to scan and act on: search,
+ * filter and sort; analysis badges with one-click analysis; add to the
+ * timeline by drag, double-click, Enter or the add button; and a quick
+ * look with in/out marks (under the list in a tall bin, in its place — on
+ * request — in a short one). The list renders only the rows in view.
  * @module components/organisms/media-bin
  */
 
-import { html, define, store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
-import { pushState } from '#utils/undoHistory.js';
-import '#atoms/app-icon/index.js';
+import { define, html } from 'hybrids';
+import * as on from '#utils/media/binEvents.js';
+import { emptyMessage, handleListKeydown, handlePick, listedItems } from '#utils/media/binList.js';
+import { typeCounts } from '#utils/media/filter.js';
+import { lookIsOpen, lookPane, rows } from '#utils/media/binParts.js';
+import { getLibrary, libraryStatus } from '#utils/media/library.js';
+import '#molecules/media-details/media-details.js';
+import '#molecules/media-footer/media-footer.js';
+import '#molecules/media-quicklook/media-quicklook.js';
+import '#molecules/media-row/media-row.js';
+import '#molecules/media-status/media-status.js';
+import '#molecules/media-toolbar/media-toolbar.js';
 
-/** Add a clip to the timeline */
-function addToTimeline(timeline, item) {
-  pushState(timeline);
-  const duration = item.duration || 5;
-  const ts = Date.now().toString(36);
-  const file = item.filePath;
-  const xform = {
-    x: 0,
-    y: 0,
-    scaleX: 1,
-    scaleY: 1,
-    rotation: 0,
-    opacity: 1,
-    cropTop: 0,
-    cropBottom: 0,
-    cropLeft: 0,
-    cropRight: 0,
-    anchorX: 0.5,
-    anchorY: 0.5,
-  };
-  const tracks = (timeline.tracks || []).map((t) => {
-    if (item.type === 'video' || item.type === 'image') {
-      if (t.type === 'video') {
-        const end = t.clips.reduce((m, c) => Math.max(m, c.timelineEnd), 0);
-        return {
-          ...t,
-          clips: [
-            ...t.clips,
-            {
-              clipId: `vclip_${ts}`,
-              sourceFile: file,
-              sourceIn: 0,
-              sourceOut: duration,
-              timelineStart: end,
-              timelineEnd: end + duration,
-              fadeIn: 0,
-              fadeOut: 0,
-              linkedClipId: `aclip_${ts}`,
-              placeholder: false,
-              label: '',
-              prompt: '',
-              intent: '',
-              color: '',
-              transform: xform,
-            },
-          ],
-        };
-      }
-      if (t.type === 'audio') {
-        const end = t.clips.reduce((m, c) => Math.max(m, c.timelineEnd), 0);
-        return {
-          ...t,
-          clips: [
-            ...t.clips,
-            {
-              clipId: `aclip_${ts}`,
-              sourceFile: file,
-              sourceIn: 0,
-              sourceOut: duration,
-              timelineStart: end,
-              timelineEnd: end + duration,
-              fadeIn: 0,
-              fadeOut: 0,
-              linkedClipId: `vclip_${ts}`,
-              placeholder: false,
-              label: '',
-              prompt: '',
-              intent: '',
-              color: '',
-              transform: xform,
-            },
-          ],
-        };
-      }
-    } else if (item.type === 'audio' && t.type === 'audio') {
-      const end = t.clips.reduce((m, c) => Math.max(m, c.timelineEnd), 0);
-      return {
-        ...t,
-        clips: [
-          ...t.clips,
-          {
-            clipId: `clip_${ts}`,
-            sourceFile: file,
-            sourceIn: 0,
-            sourceOut: duration,
-            timelineStart: end,
-            timelineEnd: end + duration,
-            fadeIn: 0,
-            fadeOut: 0,
-            linkedClipId: '',
-            placeholder: false,
-            label: '',
-            prompt: '',
-            intent: '',
-            color: '',
-            transform: xform,
-          },
-        ],
-      };
-    }
-    return t;
-  });
-  store.set(TimelineState, { ...timeline, tracks });
-}
+/** @typedef {import('#utils/media/binEvents.js').MediaBinHost} MediaBinHost */
 
+/** @type {import('hybrids').Component<MediaBinHost>} */
 export default define({
   tag: 'media-bin',
-  timeline: store(TimelineState),
-  filter: 'all',
-  items: {
-    value: [],
-    connect(host) {
-      const editor = document.querySelector('editor-view');
-      const pid = editor?.projectId || '';
-      fetch(`/api/media?projectId=${pid}`)
-        .then((r) => r.json())
-        .then((d) => {
-          host.items = d.data || [];
-        });
-    },
-  },
+  // `revision` changes whenever the library (or a file's marks) did.
+  library: ({ revision }) => (revision >= 0 ? getLibrary() : []),
+  revision: { value: 0, connect: on.connectBin },
+  query: '',
+  type: 'all',
+  sort: 'name',
+  selected: { value: [] },
+  anchor: '',
+  listTop: 0,
+  viewHeight: 0,
+  job: { value: {} },
+  notice: { value: {} },
+  status: { value: {} },
+  look: 'auto',
+  compact: false,
   render: {
-    value: ({ items, timeline, filter }) => {
-      const filtered = filter === 'all' ? items : items.filter((i) => i.type === filter);
-      const counts = {
-        all: items.length,
-        video: items.filter((i) => i.type === 'video').length,
-        audio: items.filter((i) => i.type === 'audio').length,
-        image: items.filter((i) => i.type === 'image').length,
-        text: items.filter((i) => i.type === 'text').length,
-      };
-
+    value: (host) => {
+      const { library, selected, job, notice } = host;
+      const items = listedItems(host);
+      const open = lookIsOpen(host);
       return html`
-        <div class="media-bin">
-          <div class="media-bin-header">
-            <h3>Media</h3>
-            <span class="media-bin-dur">${counts.all} files</span>
+        <div
+          class="${{ 'media-bin': true, panel: true, 'media-bin-compact': host.compact && open }}"
+          onmedia-filter="${on.handleFilter}"
+          onmedia-refresh="${on.handleRefresh}"
+          onmedia-pick="${handlePick}"
+          onmedia-add="${on.handleAdd}"
+          onmedia-analyze="${on.handleAnalyze}"
+          onmedia-cancel="${on.handleCancel}"
+          onmedia-dismiss="${on.handleDismiss}"
+          onmedia-marks="${on.handleMarks}"
+          onmedia-transcript="${on.handleTranscript}"
+          onmedia-add-selected="${on.handleAddSelected}"
+          onmedia-toggle-look="${on.handleToggleLook}"
+        >
+          <media-toolbar
+            query="${host.query}"
+            type="${host.type}"
+            sort="${host.sort}"
+            counts="${typeCounts(library)}"
+            loading="${libraryStatus().loading}"
+          ></media-toolbar>
+          <div
+            class="media-bin-list"
+            role="listbox"
+            tabindex="0"
+            aria-label="Media files"
+            aria-multiselectable="true"
+            onscroll="${on.handleScroll}"
+            onkeydown="${handleListKeydown}"
+          >
+            ${items.length
+              ? rows(host, items)
+              : html`<div class="empty-state">${emptyMessage(host)}</div>`}
           </div>
-          <div class="media-bin-filter">
-            ${['all', 'video', 'audio', 'image', 'text'].map(
-              (t) => html`
-                <button
-                  class="btn btn-ghost ${filter === t ? 'active' : ''}"
-                  onclick="${(host) => {
-                    host.filter = t;
-                  }}"
-                >
-                  ${t} ${counts[t] ? `(${counts[t]})` : ''}
-                </button>
-              `,
-            )}
-          </div>
-          <ul class="media-bin-list">
-            ${filtered.map(
-              (item) => html`
-                <li class="media-bin-item">
-                  ${item.type === 'video' || item.type === 'image'
-                    ? html`<img
-                        class="media-bin-thumb"
-                        src="/api/previews/thumbnail?path=${encodeURIComponent(
-                          item.filePath,
-                        )}&cols=1&height=24"
-                        alt=""
-                      />`
-                    : html`<span class="media-bin-icon"
-                        ><app-icon
-                          name="${item.type === 'audio' ? 'music' : 'file-video'}"
-                          size="sm"
-                        ></app-icon
-                      ></span>`}
-                  <div class="media-bin-info">
-                    <span class="media-bin-name">${item.filename}</span>
-                    <div class="media-bin-meta">
-                      <span class="media-bin-dur"
-                        >${item.duration
-                          ? item.duration >= 60
-                            ? `${(item.duration / 60).toFixed(1)}m`
-                            : `${item.duration.toFixed(1)}s`
-                          : ''}</span
-                      >
-                      ${item.tags?.length
-                        ? html`<span class="media-bin-tags"
-                            >${item.tags.slice(0, 4).join(', ')}</span
-                          >`
-                        : html``}
-                    </div>
-                  </div>
-                  ${item.type !== 'text'
-                    ? html`<button
-                        class="btn btn-ghost media-bin-add"
-                        onclick="${() => addToTimeline(timeline, item)}"
-                      >
-                        +
-                      </button>`
-                    : html``}
-                </li>
-              `,
-            )}
-          </ul>
+          <media-footer
+            listed="${items.length}"
+            total="${library.length}"
+            selected="${selected.length}"
+            look="${open}"
+          ></media-footer>
+          <media-status
+            job="${job}"
+            notice="${notice}"
+            selected="${selected.length}"
+            total="${library.length}"
+          ></media-status>
+          ${open && lookPane(host)}
         </div>
       `;
     },

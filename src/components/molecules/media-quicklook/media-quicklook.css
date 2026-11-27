@@ -1,0 +1,61 @@
+media-quicklook {
+  display: block;
+
+  & .media-quicklook-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: clamp(5.5rem, 22vh, 11rem);
+    background: var(--color-timeline-bg);
+    color: var(--color-text-muted);
+  }
+
+  & .media-quicklook-stage video,
+  & .media-quicklook-stage img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  & .media-quicklook-audio,
+  & .media-quicklook-text {
+    height: 3rem;
+  }
+
+  & .media-quicklook-transport {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm) 0;
+  }
+
+  /* The marked range shows as a band behind the scrub bar. */
+  & .media-quicklook-scrub {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(
+      to right,
+      transparent var(--mark-in),
+      color-mix(in srgb, var(--color-selection) 45%, transparent) var(--mark-in),
+      color-mix(in srgb, var(--color-selection) 45%, transparent) var(--mark-out),
+      transparent var(--mark-out)
+    );
+  }
+
+  & .media-quicklook-scrub .field-range {
+    height: var(--control-h);
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  & .media-quicklook-time {
+    flex: none;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    white-space: nowrap;
+  }
+}

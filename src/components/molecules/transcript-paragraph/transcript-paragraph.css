@@ -1,0 +1,81 @@
+transcript-paragraph {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3rem;
+
+  & .transcript-paragraph-stamp {
+    padding-top: 0.2em;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    text-align: right;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  & .transcript-paragraph-stamp:hover {
+    color: var(--color-primary);
+  }
+
+  & .transcript-paragraph-words {
+    line-height: 1.7;
+    user-select: none;
+  }
+
+  /* Words are inline blocks so lines can break between them without spaces. */
+  & .transcript-paragraph-word {
+    display: inline-block;
+    padding: 0 0.14em;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  & .transcript-paragraph-word:hover {
+    background: var(--color-surface-3);
+  }
+
+  & .transcript-paragraph-focus {
+    background: color-mix(in srgb, var(--color-primary) 9%, transparent);
+  }
+
+  /* Not in the edit: cut or trimmed away. */
+  & .transcript-paragraph-off {
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  & .transcript-paragraph-hit {
+    background: color-mix(in srgb, var(--color-snap) 30%, transparent);
+  }
+
+  & .transcript-paragraph-hit-active {
+    outline: 2px solid var(--color-snap);
+    outline-offset: -1px;
+  }
+
+  & .transcript-paragraph-selected,
+  & .transcript-paragraph-selected:hover {
+    border-radius: 0;
+    background: color-mix(in srgb, var(--color-selection) 45%, transparent);
+    color: var(--color-text);
+  }
+
+  & .transcript-paragraph-current,
+  & .transcript-paragraph-current:hover {
+    background: var(--color-playhead);
+    color: var(--color-clip-text);
+    opacity: 1;
+  }
+
+  & .transcript-paragraph-edit {
+    display: inline-block;
+    width: auto;
+    height: 1.5em;
+    margin: 0 0.14em;
+    font-size: inherit;
+  }
+}

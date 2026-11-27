@@ -15,19 +15,24 @@ const LIBRARY_JOBS = ['index', 'analyze', 'transcribe', 'tag', 'beats', 'scenes'
 const FINISHED = ['complete', 'error', 'cancelled'];
 const REFRESH_DELAY_MS = 250;
 
+/** Provider status is cheap to ask for but not free: reuse an answer this long. */
+const STATUS_TTL_MS = 20_000;
+
 /** @type {Promise<Record<string, any>>|null} */
 let statusRequest = null;
+let statusAt = 0;
 
 /**
- * Which analysis providers are usable (GET /intelligence/status), fetched
- * once and shared.
- * @param {{ refresh?: boolean }} [opts]
+ * Which analysis providers are usable (GET /intelligence/status). Answers
+ * are shared and reused for a short while, so every panel can simply ask.
+ * @param {{ refresh?: boolean }} [opts] - `refresh` asks the server now
  * @returns {Promise<Record<string, any>>}
  */
 export function intelligenceStatus(opts = {}) {
-  if (!statusRequest || opts.refresh) {
+  if (!statusRequest || opts.refresh || Date.now() - statusAt > STATUS_TTL_MS) {
     const request = api('/intelligence/status');
     statusRequest = request;
+    statusAt = Date.now();
     request.catch(() => {
       if (statusRequest === request) statusRequest = null;
     });

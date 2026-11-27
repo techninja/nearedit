@@ -125,6 +125,10 @@ export function summarizeAnalysis(result) {
     problems.unshift(count > 1 ? `${text} (${count} files)` : text);
   }
   const plural = files.length === 1 ? 'file' : 'files';
-  const headline = `Analysed ${files.length} ${plural}${failed ? `, ${failed} step${failed === 1 ? '' : 's'} failed` : ''}`;
+  const notes = skipped.size
+    ? `, ${skipped.size} step${skipped.size === 1 ? '' : 's'} skipped`
+    : '';
+  const failures = failed ? `, ${failed} step${failed === 1 ? '' : 's'} failed` : '';
+  const headline = `Analysed ${files.length} ${plural}${failures}${notes}`;
   return { headline, problems, failed };
 }

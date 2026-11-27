@@ -9,7 +9,7 @@
 import { edit, getDoc } from '#utils/editor/session.js';
 import { getView, setSelection } from '#utils/editor/view.js';
 import { insertSequence } from '#utils/media/insertSequence.js';
-import { seek } from '#utils/playback/transport.js';
+import { isPlaying, seek } from '#utils/playback/transport.js';
 
 /**
  * @param {import('#utils/media/insertSequence.js').SequenceEntry[]} entries -
@@ -29,6 +29,6 @@ export function addToTimeline(entries) {
   if (!result.placed) return { clipIds: [], placed: 0 };
   edit(() => result.edl);
   setSelection(result.clipIds, { expand: false });
-  seek(result.end);
+  if (!isPlaying()) seek(result.end); // never yank the playhead out of playback
   return { clipIds: result.clipIds, placed: result.placed };
 }

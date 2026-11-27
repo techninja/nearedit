@@ -1,0 +1,21 @@
+transcript-actions {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--space-sm);
+  padding: 2px var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-selection) 12%, var(--color-surface));
+
+  & .transcript-actions-summary {
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    white-space: nowrap;
+  }
+
+  & .icon-btn {
+    color: var(--color-text);
+  }
+}

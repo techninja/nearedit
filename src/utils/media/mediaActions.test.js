@@ -9,7 +9,7 @@ import {
   summarizeAnalysis,
 } from './analysis.js';
 import { insertSequence } from './insertSequence.js';
-import { NO_MARKS, getMarks, markedRange, setMarks, withIn, withOut } from './ranges.js';
+import { NO_MARKS, getMarks, markFile, markedRange, setMarks, withIn, withOut } from './ranges.js';
 
 const video = {
   filename: 'talk.mp4',
@@ -96,11 +96,16 @@ describe('source marks', () => {
     assert.deepEqual(markedRange({ in: 4, out: null }, null), { sourceIn: 4 });
   });
 
-  it('remembers marks per file', () => {
+  it('remembers marks per file and marks at a time, within the source', () => {
     assert.equal(getMarks('/p/a.mp4'), NO_MARKS);
     setMarks('/p/a.mp4', { in: 1, out: 2 });
     assert.deepEqual(getMarks('/p/a.mp4'), { in: 1, out: 2 });
     assert.equal(setMarks('/p/a.mp4', NO_MARKS), NO_MARKS);
+    assert.deepEqual(markFile('/p/b.mp4', 'in', 3, 10), { in: 3, out: null });
+    assert.deepEqual(markFile('/p/b.mp4', 'out', 99, 10), { in: 3, out: 10 });
+    assert.deepEqual(markFile('/p/b.mp4', 'out', 99, null), { in: 3, out: 99 });
+    assert.equal(markFile('/p/b.mp4', 'clear'), NO_MARKS);
+    assert.equal(getMarks('/p/b.mp4'), NO_MARKS);
   });
 });
 
@@ -161,7 +166,7 @@ describe('analysis', () => {
       ],
     };
     const summary = summarizeAnalysis(result);
-    assert.equal(summary.headline, 'Analysed 2 files, 1 step failed');
+    assert.equal(summary.headline, 'Analysed 2 files, 1 step failed, 1 step skipped');
     assert.deepEqual(summary.problems, [
       'Transcription skipped — no provider (2 files)',
       'Visual tagging failed for a.mp4 — timeout',

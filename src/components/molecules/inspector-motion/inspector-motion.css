@@ -1,0 +1,34 @@
+inspector-motion {
+  display: block;
+
+  & .switch {
+    font-size: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+  }
+
+  & .inspector-motion-presets {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2px;
+    padding: 2px var(--space-sm);
+  }
+
+  & .inspector-motion-presets .icon-btn {
+    justify-content: flex-start;
+    border-color: var(--color-border);
+    overflow: hidden;
+    color: var(--color-text);
+    text-transform: capitalize;
+  }
+
+  & .inspector-motion-row {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
+  & .inspector-motion-triple {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-xs);
+  }
+}

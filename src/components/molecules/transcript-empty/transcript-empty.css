@@ -1,0 +1,24 @@
+transcript-empty {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+
+  & .empty-state {
+    flex: 1;
+    margin: auto;
+    max-width: 34rem;
+  }
+
+  & .transcript-empty-detail {
+    overflow-wrap: anywhere;
+  }
+
+  & .transcript-empty-progress {
+    width: min(16rem, 100%);
+  }
+
+  & .btn {
+    padding: var(--space-xs) var(--space-md);
+  }
+}

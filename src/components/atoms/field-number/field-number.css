@@ -1,0 +1,79 @@
+field-number {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  padding: 2px var(--space-sm);
+
+  & .field-number-label {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: ew-resize;
+    user-select: none;
+    touch-action: none;
+  }
+
+  & .field-number-label:empty {
+    display: none;
+  }
+
+  /* Without a label the box takes the whole width. */
+  & .field-number-label:empty + .field-number-box {
+    grid-column: 1 / -1;
+  }
+
+  & .field-number-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+
+  & .field-range {
+    flex: 1;
+    min-width: 0;
+    height: var(--control-h);
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  & .field-range + .field-input {
+    flex: none;
+    width: 4.5rem;
+  }
+
+  & .field-input:has(+ .field-number-unit) {
+    padding-right: 1.5rem;
+  }
+
+  & .field-number-unit {
+    position: absolute;
+    right: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: 0.6875rem;
+    pointer-events: none;
+  }
+
+  & .field-input:disabled,
+  & .field-range:disabled {
+    opacity: 0.55;
+  }
+}
+
+/* Side by side in a pair: the label shrinks to a letter in front of the box. */
+field-number.field-number-compact {
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-xs);
+  padding: 0;
+
+  & .field-number-label {
+    min-width: 0.9rem;
+    text-align: center;
+  }
+}

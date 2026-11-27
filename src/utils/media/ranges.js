@@ -72,3 +72,18 @@ export function setMarks(path, marks) {
   else store.set(path, marks);
   return getMarks(path);
 }
+
+/**
+ * Mark the in or out point of a file at a time, or clear both marks.
+ * @param {string} path
+ * @param {'in'|'out'|'clear'} edge
+ * @param {number} [time]
+ * @param {number|null} [duration] - Source duration when known
+ * @returns {SourceMarks} The marks now stored
+ */
+export function markFile(path, edge, time = 0, duration = null) {
+  const limit = duration > 0 ? duration : Infinity;
+  if (edge === 'clear') return setMarks(path, NO_MARKS);
+  const marks = getMarks(path);
+  return setMarks(path, edge === 'in' ? withIn(marks, time, limit) : withOut(marks, time, limit));
+}

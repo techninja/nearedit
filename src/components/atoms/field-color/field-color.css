@@ -1,0 +1,50 @@
+field-color {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  padding: 2px var(--space-sm);
+
+  & .field-color-label {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .field-color-box {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+
+  & .field-color-well {
+    flex: none;
+    width: var(--control-h);
+    height: var(--control-h);
+    padding: 1px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    cursor: pointer;
+  }
+
+  /* "None": the well shows through as a struck-out swatch. */
+  & .field-color-none {
+    opacity: 0.35;
+  }
+
+  & .field-color-hex {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  & input:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+}

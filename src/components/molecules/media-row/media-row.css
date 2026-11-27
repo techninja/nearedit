@@ -1,0 +1,114 @@
+media-row {
+  display: block;
+  height: 44px;
+
+  & .media-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    height: 100%;
+    padding: 0 var(--space-xs) 0 var(--space-sm);
+    border-left: 2px solid transparent;
+    cursor: default;
+    user-select: none;
+  }
+
+  & .media-row:hover {
+    background: var(--color-surface-2);
+  }
+
+  & .media-row-selected,
+  & .media-row-selected:hover {
+    border-left-color: var(--color-selection);
+    background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  }
+
+  & .media-row-thumb {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-3);
+    color: var(--color-text-muted);
+    overflow: hidden;
+  }
+
+  & .media-row-thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  & .media-row-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  & .media-row-name {
+    overflow: hidden;
+    font-size: var(--text-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .media-row-meta {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .media-row-range {
+    margin-left: var(--space-xs);
+    background: color-mix(in srgb, var(--color-selection) 25%, transparent);
+    color: var(--color-text);
+    font-size: 0.625rem;
+  }
+
+  & .media-row-badges {
+    display: flex;
+    flex: none;
+    gap: 1px;
+  }
+
+  & .media-row-badge {
+    display: inline-flex;
+    font-size: 0.75rem;
+  }
+
+  & .media-row-badge-done {
+    color: var(--color-success);
+  }
+
+  & .media-row-badge-missing {
+    color: var(--color-text-muted);
+    opacity: 0.35;
+  }
+
+  & .media-row-badge-unavailable {
+    color: var(--color-warning);
+    opacity: 0.6;
+  }
+
+  & .media-row-add {
+    flex: none;
+  }
+}
+
+/* Narrow bins: the badges give way before the name does. */
+@container media-bin (width < 300px) {
+  media-row .media-row-badges {
+    display: none;
+  }
+}

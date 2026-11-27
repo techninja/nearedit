@@ -1,0 +1,73 @@
+/* Fills its parent, whether that is a flex item or a grid or block cell. */
+transcript-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+
+  & .transcript-panel {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  & .transcript-panel-body {
+    flex: 1;
+    min-height: 0;
+    padding: var(--space-xs) 0 var(--space-md);
+    overflow-y: auto;
+    outline: none;
+    font-size: var(--text-sm);
+  }
+
+  & .transcript-panel-body:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-focus);
+  }
+
+  & .transcript-panel-footer {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px var(--space-md);
+    padding: 2px var(--space-sm);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .transcript-panel-facts {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .transcript-panel-message {
+    color: var(--color-text);
+  }
+
+  & .transcript-panel-preview {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  & .transcript-panel-preview audio {
+    height: 1.75rem;
+    max-width: 100%;
+  }
+}
+
+/* Touch screens: finger-sized controls, and roomier lines to tap words in. */
+@media (pointer: coarse) {
+  transcript-panel {
+    --control-h: 2.25rem;
+  }
+
+  transcript-panel .transcript-paragraph-words {
+    line-height: 2.1;
+  }
+}

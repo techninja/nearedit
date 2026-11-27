@@ -1,0 +1,11 @@
+inspector-timing {
+  display: block;
+
+  & .inspector-timing-readout {
+    padding: 0 var(--space-xs);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-align: right;
+  }
+}

@@ -87,7 +87,8 @@ export function sourceToTimeline(segments, sourceTime, preferClipId = '') {
  */
 export function timelineToSource(segments, time) {
   // During a cross-fade two pieces overlap: the incoming (later) one wins.
-  const seg = segments.findLast((s) => time >= s.timelineStart - EPS && time < s.timelineEnd - EPS);
+  const under = segments.filter((s) => time >= s.timelineStart - EPS && time < s.timelineEnd - EPS);
+  const seg = under[under.length - 1];
   return seg ? { sourceTime: seg.sourceIn + (time - seg.timelineStart), clipId: seg.clipId } : null;
 }
 

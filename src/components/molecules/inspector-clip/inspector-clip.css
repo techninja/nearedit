@@ -1,0 +1,12 @@
+inspector-clip {
+  display: block;
+
+  & .inspector-clip-links {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  & .inspector-clip-links .icon-btn {
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+}

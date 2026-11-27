@@ -1,0 +1,104 @@
+media-status {
+  display: block;
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+
+  & .media-status-actions,
+  & .media-status-job {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 2px var(--space-sm);
+  }
+
+  & .media-status-actions .icon-btn {
+    color: var(--color-text);
+  }
+
+  & .media-status-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .media-status-percent {
+    font-family: var(--font-mono);
+    color: var(--color-text-muted);
+  }
+
+  & .progress {
+    margin: 0 var(--space-sm) var(--space-xs);
+  }
+
+  & .media-status-detail {
+    padding: 0 var(--space-sm) var(--space-xs);
+    overflow: hidden;
+    color: var(--color-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .media-status-notice {
+    max-height: 11rem;
+    border-top: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-info);
+    background: var(--color-surface-2);
+    overflow-y: auto;
+  }
+
+  & .media-status-notice summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 2px var(--space-xs) 2px var(--space-sm);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  & .media-status-notice summary::after {
+    order: 1;
+    color: var(--color-text-muted);
+    content: 'why?';
+  }
+
+  & .media-status-notice[open] summary::after {
+    content: 'less';
+  }
+
+  & .media-status-notice summary strong {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .media-status-notice summary .icon-btn {
+    order: 2;
+  }
+
+  & .media-status-notice ul {
+    padding: 0 var(--space-sm) var(--space-xs) 1.75rem;
+    color: var(--color-text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  & .media-status-notice li + li {
+    margin-top: var(--space-xs);
+  }
+
+  & .media-status-success {
+    border-left-color: var(--color-success);
+  }
+
+  & .media-status-warning {
+    border-left-color: var(--color-warning);
+  }
+
+  & .media-status-error {
+    border-left-color: var(--color-danger);
+  }
+}

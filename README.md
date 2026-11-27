@@ -1,22 +1,180 @@
-# nearedit
+# NearEdit
 
-> A Clearstack project
+**A browser-based, Vegas-style video editor with an AI assistant editor —
+running next to your footage, on your own machine.**
 
-Built with the [Clearstack](https://github.com/techninja/clearstack) no-build web component specification.
+NearEdit pairs a fast, direct-manipulation timeline (drag a clip over
+another and you get a cross-fade) with local media analysis: word-level
+transcripts, beats, scene cuts and visual tags. An automatic base edit and
+an optional AI director turn that data into a rough cut. The result is an
+ordinary timeline you can then fine-tune by hand — never a black box.
 
-## Quick Start
-
-```bash
-npm install
-npm run dev       # Start dev server
-npm test          # Run tests
-npm run spec      # Spec compliance checker
+```text
+State (JSON EDL)  →  UI (canvas timeline + preview)  →  FFmpeg (headless render)
+        ↑
+  base edit / AI director  (only ever proposes timeline changes)
 ```
 
-## Specification
+- **Your media stays put.** Source files are never modified or uploaded.
+  The server runs where the footage is; you edit from any browser on your
+  network, desktop or phone.
+- **Works with FFmpeg alone.** Transcription, vision tagging and the LLM
+  are optional, pluggable, and can all be local.
+- **No build step.** Plain ES modules and web components; what is in
+  `src/` is what runs.
 
-See `docs/` for the full specification this project follows.
+## What it does
+
+### Edit
+
+- Multi-track canvas timeline: video tracks layered front to back, audio
+  tracks mixed together, zoom from single frames to hours.
+- Move, trim, slip, split, ripple; linked picture and sound; groups;
+  copy / paste / duplicate; markers; loop region; snapping to clip edges,
+  markers and the playhead.
+- **Overlap means cross-fade.** Drag one clip over another for a dissolve;
+  pull them apart and it is gone. Drag a clip's top corners for fades.
+- Titles, stills with ken-burns moves, per-clip position, scale, rotation,
+  opacity and crop; per-track mute, solo, lock and volume.
+- Undo for everything, including whatever the director did. Autosave.
+- Real-time preview in the browser with every audio track playing.
+- Mouse, keyboard and touch. Remappable shortcuts.
+
+### Analyse (locally)
+
+- **Transcripts** with word timestamps — whisper.cpp, faster-whisper, or any
+  OpenAI-compatible speech server.
+- **Beats and tempo**, **scene cuts**, **silences** — built in, no model
+  needed.
+- **Visual tags** and descriptions from a vision model (Ollama or any
+  OpenAI-compatible server).
+- Everything is cached in a small sidecar file beside each media file and
+  is searchable.
+
+### Assemble
+
+- **Base edit** — an automatic rough cut with no AI at all: speech with the
+  dead air removed, B-roll picked by scene, music cut on the beat.
+- **AI director** — describe the edit; a local LLM chooses what to use and
+  deterministic code does all the timing on word, scene and beat
+  boundaries. Replace the timeline, append, insert at the cursor, or redo
+  just a range.
+- **Text-based editing** — cut, keep or insert by selecting words in the
+  transcript.
+- Remove silences, sync cuts to the beat, add captions, find B-roll.
+
+### Deliver
+
+- **Adaptations**: one project, many timelines — a 16:9 long-form with 9:16
+  and 1:1 versions nested under it.
+- Headless FFmpeg rendering as a background job, with progress, cancel and
+  a browser notification when it is done.
+
+## Quick start
+
+You need **Node 22.9+** and **FFmpeg 6.1+** (`ffmpeg` and `ffprobe` on your
+`PATH`).
+
+```bash
+git clone https://github.com/techninja/nearedit.git
+cd nearedit
+npm install
+npm start
+```
+
+Open <http://localhost:6556>, create a project by picking a folder of
+footage, press **Analyse**, then open the editor and run **Base edit** in
+the Director tab. Tweak, then **Export**.
+
+By default the folder browser can see your home directory. To use footage
+elsewhere, set `BROWSE_ROOTS` in `.env.local`:
+
+```bash
+BROWSE_ROOTS=/mnt/footage,/home/me/Videos
+```
+
+### Docker
+
+```bash
+docker compose up -d      # after editing the two paths in compose.yaml
+```
+
+The image contains only the server and FFmpeg; AI providers stay external.
+
+## Turning on the AI parts
+
+All optional. Without them you still get the editor, beats, scenes,
+silences, the base edit and rendering.
+
+| Feature | Easiest local option | Setting |
+| ------- | -------------------- | ------- |
+| Transcripts | `pip install faster-whisper`, or whisper.cpp | `TRANSCRIBE_PROVIDER` (auto-detected) |
+| AI director | [Ollama](https://ollama.com) with a model such as `qwen3:14b` | `LLM_PROVIDER`, `OLLAMA_URL`, `OLLAMA_MODEL` |
+| Visual tags | Ollama with a vision model such as `llava:7b` | `VISION_PROVIDER`, `VISION_MODEL` |
+
+Any OpenAI-compatible server works for all three. The project page shows
+which providers NearEdit can actually reach. Step-by-step setup:
+[INTELLIGENCE.md](docs/app-spec/INTELLIGENCE.md) and
+[CONFIGURATION.md](docs/app-spec/CONFIGURATION.md).
+
+## Security
+
+NearEdit is meant for a machine and a network you trust. Out of the box it
+listens on every interface with **no login**, so anyone who can reach the
+port can browse the allowed media folders and start renders.
+
+- On a shared network, set `NEAREDIT_PASSWORD`.
+- To keep it to one machine, set `HOST=127.0.0.1`.
+- For access over the internet, put it behind an HTTPS reverse proxy.
+
+The server only reads inside registered project folders, their extra media
+folders and `GLOBAL_MEDIA_PATHS`. Details:
+[CONFIGURATION.md](docs/app-spec/CONFIGURATION.md#access-and-security).
+
+## Status and limits
+
+NearEdit is young. Things worth knowing before you rely on it:
+
+- **Browsers:** developed and tested in Chromium. Firefox, Safari and iOS
+  are untested.
+- **Playback** uses media elements, so it is frame-accurate when paused but
+  not sample-accurate at loop points; scrubbing is silent.
+- **Playback speed** is always 1× — there is no time-stretch.
+- **Rendering** is H.264 + AAC in MP4, 8-bit; HDR sources are converted
+  without tone-mapping. Long timelines render in segments.
+- **Titles** use one font each; emoji are not supported in renders.
+- **AI providers:** faster-whisper and all FFmpeg-based analysis are
+  exercised for real in development; whisper.cpp, Ollama and
+  OpenAI-compatible servers are tested against local fakes that speak
+  their wire format. Reports from real setups are very welcome.
+- No effects or plugins beyond transforms, fades and titles.
+
+## Documentation
+
+| Document | Covers |
+| -------- | ------ |
+| [App specification](docs/app-spec/README.md) | Projects, adaptations, sidecars, shortcuts |
+| [Architecture](docs/app-spec/ARCHITECTURE.md) | Layers, state, pipelines, conventions |
+| [EDL](docs/app-spec/EDL.md) | The timeline document and the editing rules |
+| [API](docs/app-spec/API.md) | HTTP + WebSocket API |
+| [Configuration](docs/app-spec/CONFIGURATION.md) | Environment variables, access and security |
+| [Intelligence](docs/app-spec/INTELLIGENCE.md) | Transcription, tagging, beats, scenes |
+| [Director](docs/app-spec/DIRECTOR.md) | Director actions, edit plans, base edit |
+| [Render](docs/app-spec/RENDER.md) | How a timeline becomes an FFmpeg render |
+| [Clearstack](docs/clearstack/) | The no-build web-component conventions the code follows |
+
+## Development
+
+```bash
+npm run dev        # server with reload
+npm test           # Node tests + browser component tests
+npm run spec all   # format, lint, types, size limits, markdown, audit
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Built on the
+[Clearstack](https://github.com/techninja/clearstack) specification:
+[hybrids](https://hybrids.js.org) web components, Express, and FFmpeg.
 
 ## License
 
-MIT
+[MIT](LICENSE)

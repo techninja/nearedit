@@ -1,0 +1,35 @@
+transcript-find {
+  display: flex;
+  flex: 1 1 8rem;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  max-width: 16rem;
+
+  & .transcript-find-box {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    color: var(--color-text-muted);
+  }
+
+  & .transcript-find-box app-icon {
+    position: absolute;
+    left: var(--space-xs);
+    pointer-events: none;
+  }
+
+  & .transcript-find-box .field-input {
+    padding-left: 1.5rem;
+  }
+
+  & .transcript-find-count {
+    position: absolute;
+    right: 1.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    pointer-events: none;
+  }
+}

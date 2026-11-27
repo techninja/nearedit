@@ -1,0 +1,22 @@
+media-footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+
+  & .media-footer-count {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .media-footer-add {
+    color: var(--color-text);
+  }
+}

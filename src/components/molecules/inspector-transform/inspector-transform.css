@@ -1,0 +1,20 @@
+inspector-transform {
+  display: block;
+
+  & .inspector-transform-scale {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  & .inspector-transform-scale .icon-btn {
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+  }
+
+  /* A segmented control keeps its own width instead of stretching. */
+  & .seg {
+    justify-self: start;
+  }
+}

@@ -1,0 +1,19 @@
+inspector-text {
+  display: block;
+
+  & .inspector-text-style {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  & .seg > button {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  & textarea.field-input {
+    min-height: 3.5rem;
+    line-height: 1.35;
+  }
+}

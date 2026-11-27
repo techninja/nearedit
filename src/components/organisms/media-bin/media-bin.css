@@ -1,134 +1,97 @@
+/* Fills its parent, whether that is a flex item or a grid or block cell. */
 media-bin {
   display: flex;
   flex: 1;
-  min-height: 0;
-}
-
-.media-bin {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.media-bin-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding-bottom: var(--space-xs);
-  border-bottom: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-
-.media-bin-header h3 {
-  font-size: var(--text-sm);
-  flex: 1;
-}
-
-.media-bin-filter {
-  display: flex;
-  gap: 2px;
-  padding: var(--space-xs) 0;
-  flex-shrink: 0;
-}
-
-.media-bin-filter .btn {
-  font-size: 9px;
-  padding: 2px var(--space-xs);
-}
-
-.media-bin-filter .btn.active {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-}
-
-.media-bin-list {
-  list-style: none;
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-}
-
-.media-bin-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: 3px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
-  cursor: default;
-}
-
-.media-bin-item:last-child {
-  border-bottom: none;
-}
-
-.media-bin-item:hover {
-  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-}
-
-.media-bin-thumb {
-  width: 32px;
-  height: 24px;
-  object-fit: cover;
-  border-radius: 2px;
-  background: var(--color-bg);
-  flex-shrink: 0;
-}
-
-.media-bin-icon {
-  width: 32px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  flex-shrink: 0;
-  color: var(--color-text-muted);
-}
-
-.media-bin-info {
-  flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+  height: 100%;
+  min-height: 0;
+  container: media-bin / inline-size;
+
+  & .media-bin {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  & .media-bin-list {
+    position: relative;
+    flex: 1 1 7rem;
+    min-height: 5.5rem;
+    overflow-y: auto;
+    outline: none;
+  }
+
+  & .media-bin-list:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-focus);
+  }
+
+  & .media-bin-sizer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  & .media-bin-window {
+    will-change: transform;
+  }
+
+  & media-toolbar,
+  & media-footer,
+  & media-status {
+    flex: none;
+  }
+
+  /* The quick look has a fixed share of the bin, so picking a file never
+     moves the list under the pointer. */
+  & .media-bin-look {
+    flex: none;
+    height: 42%;
+    min-height: 9rem;
+    max-height: 25rem;
+    border-top: 1px solid var(--color-border);
+    overflow-y: auto;
+  }
+
+  & .media-bin-look .empty-state {
+    height: 100%;
+  }
 }
 
-.media-bin-name {
-  font-size: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* A short bin shows the quick look in the list's place while it is open. */
+media-bin .media-bin-compact .media-bin-list {
+  display: none;
 }
 
-.media-bin-meta {
-  display: flex;
-  gap: var(--space-xs);
-  align-items: center;
+media-bin .media-bin-compact .media-bin-look {
+  flex: 1;
+  height: auto;
+  max-height: none;
+  border-top: 0;
 }
 
-.media-bin-dur {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--color-text-muted);
+/* A wide bin (a bottom dock, a tablet) puts the quick look beside the list. */
+@container media-bin (width >= 40rem) {
+  media-bin .media-bin {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  }
+
+  media-bin .media-bin > * {
+    grid-column: 1;
+  }
+
+  media-bin .media-bin-look {
+    grid-row: 1 / -1;
+    grid-column: 2;
+    height: auto;
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--color-border);
+  }
 }
 
-.media-bin-tags {
-  font-size: 9px;
-  color: var(--color-text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.media-bin-add {
-  font-size: 10px;
-  padding: 2px 4px;
-  opacity: 0;
-  transition: opacity 0.1s;
-}
-
-.media-bin-item:hover .media-bin-add {
-  opacity: 1;
+/* Touch screens: finger-sized controls in the bin and its parts. */
+@media (pointer: coarse) {
+  media-bin {
+    --control-h: 2.25rem;
+  }
 }

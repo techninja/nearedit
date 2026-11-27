@@ -6,6 +6,11 @@
 
 /** @typedef {import('./library.js').MediaItem} MediaItem */
 
+/** Stands in for "no file" where a component property must hold a media item. */
+export const NO_ITEM = /** @type {MediaItem} */ (
+  /** @type {unknown} */ ({ filename: '', filePath: '', type: '', tags: [], analysis: {} })
+);
+
 /** Icon (key of src/icons.json) for each media type. */
 export const TYPE_ICONS = { video: 'film', audio: 'music', image: 'image', text: 'file-text' };
 

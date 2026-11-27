@@ -1,0 +1,22 @@
+media-marks {
+  display: block;
+
+  & .media-marks {
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  & .media-marks-range {
+    padding: 0 var(--space-xs);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    white-space: nowrap;
+  }
+
+  & .media-marks-add {
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+}
