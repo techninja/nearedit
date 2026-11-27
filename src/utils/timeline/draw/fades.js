@@ -5,6 +5,7 @@
  * @module utils/timeline/draw/fades
  */
 
+import { FADE_CURVES } from '#utils/edl/defaults.js';
 import { fadeInLevel, fadeOutRemaining } from '#utils/edl/fadeCurves.js';
 
 /** @typedef {import('#utils/timeline/palette.js').Palette} Palette */
@@ -26,7 +27,8 @@ export function fadeLine(edge, x, y, height, length, curve = 'linear') {
   // The same curve the levels use: at distance p into the fade from its
   // clip edge, a fade-in has risen to, and a fade-out has left, this level.
   const level = edge === 'in' ? fadeInLevel : fadeOutRemaining;
-  const steps = !curve || curve === 'linear' ? 1 : STEPS;
+  const curved = curve !== 'linear' && FADE_CURVES.includes(curve);
+  const steps = curved ? STEPS : 1;
   const sign = edge === 'in' ? 1 : -1;
   return Array.from({ length: steps + 1 }, (_, i) => {
     const p = i / steps;
