@@ -259,7 +259,14 @@ describe('documentSummary', () => {
       [summary.videoTracks, summary.audioTracks, summary.clips, summary.markers],
       [2, 2, 7, 1],
     );
-    assert.deepEqual(summary.kinds, { video: 1, audio: 3, image: 1, title: 1, placeholder: 1 });
+    assert.deepEqual(summary.kinds, {
+      video: 1,
+      audio: 3,
+      image: 1,
+      title: 1,
+      generator: 0,
+      placeholder: 1,
+    });
     assert.deepEqual(summary.tracks[0], {
       trackId: 'v0',
       name: 'V0',
