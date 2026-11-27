@@ -10,13 +10,13 @@ A 25 second piece with **no footage and no images** — every pixel is
 drawn by a generator (gradient, pattern, noise, shape, particles) or is
 text, moved by keyframes and finished with effects.
 
-| Scene       | Seconds | What it shows                                              |
-| ----------- | ------- | ---------------------------------------------------------- |
-| Opening     | 0–5     | Radial gradient with a keyframed centre, dust particles, a title arriving letter by letter with a keyframed glow |
-| Shapes      | 5–10    | Ellipse, star and polygon popping in (`back-out`), turning and changing colour, over a drifting dot pattern revealed by a radial wipe |
-| Particles   | 10–15   | Fireflies, a fountain of sparks and a confetti burst over slow noise |
-| Effects     | 15–20   | A gradient resolving out of a mosaic, a masked stripe overlay in `overlay` blend, a title with keyframed colour fringes, a clock wipe out |
-| End card    | 20–25   | Star field, the name, a line drawn by a keyframe            |
+| Scene     | Seconds | What it shows                                                                                                                             |
+| --------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Opening   | 0–5     | Radial gradient with a keyframed centre, dust particles, a title arriving letter by letter with a keyframed glow                          |
+| Shapes    | 5–10    | Ellipse, star and polygon popping in (`back-out`), turning and changing colour, over a drifting dot pattern revealed by a radial wipe     |
+| Particles | 10–15   | Fireflies, a fountain of sparks and a confetti burst over slow noise                                                                      |
+| Effects   | 15–20   | A gradient resolving out of a mosaic, a masked stripe overlay in `overlay` blend, a title with keyframed colour fringes, a clock wipe out |
+| End card  | 20–25   | Star field, the name, a line drawn by a keyframe                                                                                          |
 
 ```bash
 node examples/made-from-nothing/build.js
@@ -50,6 +50,18 @@ To make your own, copy the folder, change the scenes and run `build.js`;
 or skip the script and write the JSON by hand — `nearedit validate`
 explains what is wrong with a document, and `nearedit catalog` lists every
 generator, effect, preset, font and easing with its parameters.
+
+## Falling logos
+
+Six seconds written **by hand** as JSON: a particle generator that throws
+an image (`"sprite": "image", "image": "logo.png"`, a path relative to the
+document), a title animated in word by word, and a gradient with a
+keyframed angle. `falling-logos.json` is 80 lines; everything it leaves
+out takes its default.
+
+```bash
+node bin/nearedit.js render examples/falling-logos/falling-logos.json -o falling-logos.mp4
+```
 
 Reference: [the document](../docs/app-spec/EDL.md),
 [the compositor](../docs/app-spec/COMPOSITOR.md),

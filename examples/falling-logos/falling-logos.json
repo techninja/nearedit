@@ -1,0 +1,80 @@
+{
+  "fps": 30,
+  "resolution": "1280x720",
+  "tracks": [
+    {
+      "type": "video",
+      "name": "Title",
+      "clips": [
+        {
+          "timelineStart": 0,
+          "timelineEnd": 6,
+          "fadeOut": 0.5,
+          "text": {
+            "content": "Your own sprites",
+            "fontFamily": "Inter",
+            "weight": 900,
+            "fontSize": 96,
+            "shadowBlur": 24,
+            "shadowY": 6,
+            "animateIn": { "type": "slide-up", "by": "word", "stagger": 0.12 }
+          }
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Particles",
+      "clips": [
+        {
+          "timelineStart": 0,
+          "timelineEnd": 6,
+          "fadeOut": 0.5,
+          "generator": {
+            "type": "particles",
+            "seed": 4,
+            "params": {
+              "sprite": "image",
+              "image": "logo.png",
+              "emitter": "line",
+              "position": { "x": 0.5, "y": -0.1 },
+              "emitterWidth": 1.1,
+              "rate": 14,
+              "lifetime": 6,
+              "prewarm": true,
+              "direction": 90,
+              "spread": 10,
+              "speed": 220,
+              "gravityY": 120,
+              "size": 120,
+              "sizeJitter": 0.5,
+              "rotationSpread": 360,
+              "spinSpread": 120
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Background",
+      "clips": [
+        {
+          "timelineStart": 0,
+          "timelineEnd": 6,
+          "fadeOut": 0.5,
+          "generator": {
+            "type": "gradient",
+            "params": { "color1": "#0f172a", "color2": "#0e7490", "angle": 160 }
+          },
+          "keyframes": {
+            "generator.params.angle": [
+              { "t": 0, "v": 130, "ease": "sine" },
+              { "t": 6, "v": 200 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
