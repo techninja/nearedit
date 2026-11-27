@@ -1,0 +1,42 @@
+app-tabs {
+  display: block;
+  min-width: 0;
+
+  & .tab:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+  }
+
+  /* Phone-style bottom bar: equal-width tabs, icon over label, the
+     selection marked along the top edge. */
+  &[variant='bar'] .tabs {
+    gap: 0;
+    padding: 0;
+    border-top: 1px solid var(--color-border);
+    border-bottom: 0;
+  }
+
+  &[variant='bar'] .tab {
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    min-height: 3rem;
+    padding: var(--space-xs) 2px;
+    border-top: 2px solid transparent;
+    border-bottom: 0;
+    font-size: var(--text-xs);
+  }
+
+  &[variant='bar'] .tab[aria-selected='true'] {
+    border-top-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &[variant='bar'] .app-tabs-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

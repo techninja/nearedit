@@ -1,0 +1,71 @@
+app-toast-host {
+  & .toast-stack:empty {
+    display: none;
+  }
+
+  & .toast {
+    animation: fade-in 0.15s ease-out;
+  }
+
+  & .app-toast-icon {
+    flex: none;
+    margin-top: 2px;
+    color: var(--color-info);
+  }
+
+  & .toast-success .app-toast-icon {
+    color: var(--color-success);
+  }
+
+  & .toast-error .app-toast-icon {
+    color: var(--color-danger);
+  }
+
+  & .app-toast-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  & .app-toast-title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  & .app-toast-detail {
+    color: var(--color-text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  & .app-toast-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    margin-top: 2px;
+  }
+
+  & .app-toast-action {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & .app-toast-action:hover {
+    text-decoration: underline;
+  }
+}
+
+/* Phones: the stack spans the width, above the editor's tab bar. */
+@media (width < 480px) {
+  app-toast-host .toast-stack {
+    right: var(--space-sm);
+    bottom: 3.75rem;
+    left: var(--space-sm);
+    width: auto;
+  }
+}

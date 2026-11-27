@@ -1,10 +1,3 @@
 theme-toggle {
-  display: inline-block;
-  margin-left: auto;
-
-  & .theme-toggle-btn {
-    font-size: var(--text-lg);
-    padding: var(--space-xs) var(--space-sm);
-    line-height: 1;
-  }
+  display: inline-flex;
 }

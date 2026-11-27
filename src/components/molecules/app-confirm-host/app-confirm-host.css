@@ -1,0 +1,12 @@
+app-confirm-host {
+  & .app-confirm-message {
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+  }
+
+  & .app-confirm-message:empty {
+    display: none;
+  }
+}

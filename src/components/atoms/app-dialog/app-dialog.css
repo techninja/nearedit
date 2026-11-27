@@ -1,0 +1,69 @@
+/* The host is the backdrop (`.dialog-backdrop` from overlays.css); the
+   parent renders a `.dialog` box inside it. */
+app-dialog {
+  &:not([open]) {
+    display: none;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  & .dialog {
+    max-width: 100%;
+  }
+
+  & .app-dialog-wide {
+    width: min(48rem, 100%);
+  }
+
+  & .app-dialog-huge {
+    width: min(76rem, 100%);
+    height: min(90vh, 52rem);
+    max-height: 90vh;
+  }
+
+  & .app-dialog-small {
+    width: min(26rem, 100%);
+  }
+
+  & .app-dialog-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--text-base);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .dialog-footer {
+    flex-wrap: wrap;
+  }
+
+  & .app-dialog-note {
+    flex: 1;
+    min-width: 8rem;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+}
+
+/* Phones: dialogs use the whole screen width and sit at the bottom edge,
+   where thumbs reach. */
+@media (width < 480px) {
+  app-dialog.dialog-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  app-dialog .dialog {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  app-dialog .app-dialog-huge {
+    height: 92dvh;
+  }
+}

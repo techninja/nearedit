@@ -1,31 +1,45 @@
 /**
- * User preferences — singleton, persisted to localStorage.
- * Display preferences that don't need an API.
+ * User preferences — singleton, persisted to localStorage. Choices the
+ * user made that should survive a reload but are not layout.
  * @module store/UserPrefs
  */
 
 import { store } from 'hybrids';
+import { readStored, writeStored } from '#utils/ui/storage.js';
+
+export const USER_PREFS_KEY = 'nearedit_userPrefs';
 
 /**
- * @typedef {Object} UserPrefs
- * @property {'board'|'list'} defaultView - Preferred task view mode
- * @property {boolean} compactMode - Dense UI toggle
+ * @typedef {Object} UserPrefsShape
+ * @property {'ask'|'on'|'off'} notifications - Desktop notifications for finished jobs
+ * @property {string} exportPreset - Render preset chosen last
+ * @property {boolean} directorHintSeen - The director's first-use hint was dismissed
+ * @property {string} directorAction - Director action used last
  */
 
-/** @type {import('hybrids').Model<UserPrefs>} */
+/** @type {import('hybrids').Model<UserPrefsShape>} */
 const UserPrefs = {
-  defaultView: 'list',
-  compactMode: false,
+  notifications: 'ask',
+  exportPreset: 'standard',
+  directorHintSeen: false,
+  directorAction: '',
   [store.connect]: {
-    get: () => {
-      const raw = localStorage.getItem('userPrefs');
-      return raw ? JSON.parse(raw) : {};
-    },
-    set: (id, values) => {
-      localStorage.setItem('userPrefs', JSON.stringify(values));
+    get: () => readStored(USER_PREFS_KEY),
+    set: (_id, values) => {
+      writeStored(USER_PREFS_KEY, values);
       return values;
     },
   },
 };
 
 export default UserPrefs;
+
+/**
+ * Patch the preferences from plain code.
+ * @param {Partial<UserPrefsShape>} patch
+ */
+export function setUserPrefs(patch) {
+  store
+    .set(UserPrefs, patch)
+    .catch((err) => console.error('[prefs] could not update preferences:', err));
+}
