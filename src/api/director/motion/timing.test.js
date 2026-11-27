@@ -154,6 +154,8 @@ test('clip helpers: whole frames, source time from zero, keys that survive a squ
     [clip.timelineStart, clip.timelineEnd, clip.sourceIn, clip.sourceOut, clip.label],
     [1.5, 3.5, 0, 2, 'x'],
   );
+  const brief = clipAt(0, 6, 30, { fadeIn: 0.3, fadeOut: 0.1 });
+  assert.ok(Math.abs(brief.fadeIn - 0.15) < 1e-9 && Math.abs(brief.fadeOut - 0.05) < 1e-9);
   assert.deepEqual(
     keysAt(
       [

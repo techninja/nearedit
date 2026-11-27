@@ -15,7 +15,8 @@ import { createClip } from '#utils/edl/factory.js';
  */
 
 /**
- * A complete clip over a span of frames.
+ * A complete clip over a span of frames. Fades that would not fit a very
+ * short clip are shortened together (EDL invariant 3).
  * @param {number} startF - Timeline frame it starts on
  * @param {number} endF - Timeline frame it ends before
  * @param {number} fps
@@ -23,13 +24,20 @@ import { createClip } from '#utils/edl/factory.js';
  * @returns {any}
  */
 export function clipAt(startF, endF, fps, fields) {
-  return createClip({
+  const seconds = (endF - startF) / fps;
+  const clip = createClip({
     timelineStart: startF / fps,
     timelineEnd: endF / fps,
     sourceIn: 0,
-    sourceOut: (endF - startF) / fps,
+    sourceOut: seconds,
     ...fields,
   });
+  const fades = clip.fadeIn + clip.fadeOut;
+  if (fades > seconds) {
+    clip.fadeIn = (clip.fadeIn / fades) * seconds;
+    clip.fadeOut = (clip.fadeOut / fades) * seconds;
+  }
+  return clip;
 }
 
 /**

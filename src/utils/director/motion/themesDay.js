@@ -114,7 +114,7 @@ export const DAY_THEMES = [
       ['#134e4a', '#115e59', '#0f766e'],
       ['#1e3a8a', '#1e40af', '#1d4ed8'],
     ],
-    shadow: false,
+    shadow: true,
     title: { fontFamily: 'Inter', weight: 900, size: 0.17, lineHeight: 1, tracking: -0.02 },
     subtitle: { fontFamily: 'Inter', weight: 700, size: 0.05, animation: 'slide-up' },
     backgrounds: ['stripes', 'solid', 'dots', 'checker'],
