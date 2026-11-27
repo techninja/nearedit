@@ -1,7 +1,8 @@
 /**
  * One frame of the timeline canvas, drawn back to front in layers: lanes,
- * clips, lane overlays (loop shade, marker lines), then the ruler and the
- * lines that cross everything (cursor, playhead, snap guide, marquee).
+ * clips, lane overlays (time selection, region and marker lines, the
+ * edge-trim bracket, the ripple arrow), then the ruler and the lines that
+ * cross everything (cursor, playhead, snap guide, marquee).
  * Each layer lives in its own module and draws only what is visible.
  * @module utils/timeline/draw/scene
  */
@@ -11,6 +12,7 @@ import { rulerTicks } from '#utils/timeline/ticks.js';
 import { visibleTimes } from '#utils/timeline/viewport.js';
 import { drawClips } from './clips.js';
 import { drawLanes } from './lanes.js';
+import { drawEdgeTrim, drawPendingRipple } from './marks.js';
 import {
   drawDropTarget,
   drawGuide,
@@ -18,6 +20,7 @@ import {
   drawMarquee,
   drawTimeLines,
 } from './overlays.js';
+import { drawRegionLines } from './regions.js';
 import { drawMarkerLines, drawRuler } from './ruler.js';
 
 /**
@@ -43,6 +46,9 @@ import { drawMarkerLines, drawRuler } from './ruler.js';
  * @property {Overlay} overlay
  * @property {Record<string, number>} durations - Source durations by path
  * @property {boolean} coarse - Finger-sized handles
+ * @property {import('#utils/timeline/edgeTrim.js').EdgeTrim|null} [edgeTrim] - Edge chosen
+ *   in edge-trim mode
+ * @property {{ from: number, by: number }[]|null} [rippleSteps] - What F would ripple
  * @property {import('#utils/timeline/ticks.js').Tick[]} [ticks] - Filled in by `drawScene`
  */
 
@@ -69,7 +75,10 @@ export function drawScene(scene) {
   drawLanes(scene);
   drawClips(scene);
   drawLoopShade(scene);
+  drawRegionLines(scene);
   drawMarkerLines(scene);
+  drawEdgeTrim(scene);
+  drawPendingRipple(scene);
   drawDropTarget(scene);
   ctx.restore();
 

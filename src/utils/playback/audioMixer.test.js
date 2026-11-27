@@ -193,6 +193,43 @@ describe('audio mixer', () => {
     assert.equal(voice.el.seeks.length, 1); // Play did not need another seek
   });
 
+  it('plays fade curves and a keyframed volume, and re-schedules when they change', () => {
+    const base = tracks[0].clips[0];
+    const curved = [audio('a1', [{ ...base, fadeInCurve: 'smooth' }])];
+    mixer.update(curved, 0);
+    const param = voiceOf(mixer, 'voice').gain.gain;
+    const ramps = param.events.filter((event) => event.type === 'ramp');
+    assert.ok(ramps.length > 8, `a curved fade is many short ramps, got ${ramps.length}`);
+    const mid = ramps.find((event) => Math.abs(event.time - 100.5) < 0.2);
+    assert.ok(mid.value < 0.2, `a smooth fade starts slowly: ${mid.value} a quarter of the way in`);
+    const cancels = param.cancels;
+    const keyed = {
+      ...base,
+      keyframes: {
+        volume: [
+          { t: 0, v: 1 },
+          { t: 4, v: 0.5 },
+        ],
+      },
+    };
+    mixer.update([audio('a1', [keyed])], 3);
+    assert.equal(param.cancels, cancels + 1);
+    near(param.events[0].value, 0.625, 1e-6); // volume 0.625 at 3 s, past the fade
+    mixer.update([audio('a1', [keyed])], 3.016);
+    assert.equal(param.cancels, cancels + 1, 'the same envelope is not scheduled twice');
+    const louder = {
+      ...keyed,
+      keyframes: {
+        volume: [
+          { t: 0, v: 1 },
+          { t: 4, v: 1 },
+        ],
+      },
+    };
+    mixer.update([audio('a1', [louder])], 3.032);
+    assert.equal(param.cancels, cancels + 2);
+  });
+
   it('pauses on demand and frees every element on release', () => {
     mixer.update(tracks, 6);
     const elements = mixer.voices().map((v) => v.el);

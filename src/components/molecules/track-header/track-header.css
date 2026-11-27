@@ -66,6 +66,23 @@ track-header {
   }
 }
 
+/* Short lanes (the track-height keys, or minimised): the name only. */
+[data-lanes='compact'] track-header {
+  & .track-header {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  & .track-header-name {
+    height: min(1.375rem, 100%);
+  }
+
+  & .track-header-buttons,
+  & track-volume {
+    display: none;
+  }
+}
+
 /* Touch screens: finger-sized buttons (the lanes are taller too). */
 @media (pointer: coarse) {
   track-header .track-header-buttons .icon-btn {

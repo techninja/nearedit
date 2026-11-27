@@ -14,17 +14,27 @@
  * @property {'sans-serif'|'serif'|'monospace'|'display'|'handwriting'} generic
  * @property {number[]} weights - Available weights
  * @property {boolean} italics - Italic faces are bundled
+ * @property {number[]} [italicWeights] - Weights that have an italic face,
+ *   when not all of them do
  */
 
 /** @type {FontFamily[]} */
 export const FONT_FAMILIES = [
-  { id: 'Inter', label: 'Inter', generic: 'sans-serif', weights: [400, 700, 900], italics: true },
+  {
+    id: 'Inter',
+    label: 'Inter',
+    generic: 'sans-serif',
+    weights: [400, 700, 900],
+    italics: true,
+    italicWeights: [400, 700],
+  },
   {
     id: 'Playfair Display',
     label: 'Playfair Display',
     generic: 'serif',
     weights: [400, 700, 900],
     italics: true,
+    italicWeights: [400, 700],
   },
   {
     id: 'JetBrains Mono',
@@ -63,24 +73,28 @@ export function resolveFamily(name) {
  * The nearest bundled weight of a family.
  * @param {FontFamily} family
  * @param {number} weight
+ * @param {boolean} [italic=false] - Choose among the weights that have an italic face
  * @returns {number}
  */
-export function nearestWeight(family, weight) {
-  return family.weights.reduce((best, w) =>
-    Math.abs(w - weight) < Math.abs(best - weight) ? w : best,
-  );
+export function nearestWeight(family, weight, italic = false) {
+  const weights = (italic && family.italicWeights) || family.weights;
+  return weights.reduce((best, w) => (Math.abs(w - weight) < Math.abs(best - weight) ? w : best));
 }
 
 /**
- * A canvas `font` value for a text style.
+ * A canvas `font` value for a text style. It always names a face that is
+ * bundled — a weight the family has, italic only where an italic file
+ * exists — so neither canvas has to synthesise or substitute one, which the
+ * browser and the server would do differently.
  * @param {{ fontFamily?: string, fontSize?: number, bold?: boolean, italic?: boolean, weight?: number }} style
  * @param {number} [scale=1] - Canvas pixels per output pixel
  * @returns {string} e.g. `italic 700 36px "Inter", "Noto Color Emoji"`
  */
 export function fontString(style, scale = 1) {
   const family = resolveFamily(style.fontFamily);
-  const weight = nearestWeight(family, style.weight || (style.bold ? 700 : 400));
-  const slant = style.italic && family.italics ? 'italic ' : '';
+  const italic = Boolean(style.italic && family.italics);
+  const weight = nearestWeight(family, style.weight || (style.bold ? 700 : 400), italic);
+  const slant = italic ? 'italic ' : '';
   const size = Math.max(1, (style.fontSize || 72) * scale);
   return `${slant}${weight} ${size}px "${family.id}", "${EMOJI_FAMILY}"`;
 }

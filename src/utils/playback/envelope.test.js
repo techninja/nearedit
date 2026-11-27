@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { resolveClip } from '#utils/edl/animate.js';
 import { clipGain } from '#utils/edl/levels.js';
 import { gainAt, gainEvents, gainPoints } from './envelope.js';
 
@@ -123,5 +124,106 @@ describe('gainEvents', () => {
     const out = gainPoints({}, { timelineStart: 0, timelineEnd: 4, fadeOut: 1 });
     const into = gainPoints({}, { timelineStart: 3, timelineEnd: 8, fadeIn: 1 });
     for (const t of [3.1, 3.5, 3.9]) near(gainAt(out, t) + gainAt(into, t), 1);
+  });
+});
+
+describe('curves and volume envelopes', () => {
+  /** Largest distance between the scheduled ramps and the true gain. */
+  const worst = (c, from = c.timelineStart, to = c.timelineEnd) => {
+    const points = gainPoints(track, c);
+    let error = 0;
+    for (let t = from; t < to; t += 0.003) {
+      const truth = clipGain(track, resolveClip(c, t), t);
+      error = Math.max(error, Math.abs(gainAt(points, t) - truth));
+    }
+    return { error, count: points.length };
+  };
+
+  it('follows a curved fade closely, with a handful of points', () => {
+    for (const curve of ['smooth', 'fast', 'slow', 'sharp']) {
+      const c = clip({ fadeIn: 2, fadeInCurve: curve, fadeOut: 3, fadeOutCurve: curve });
+      const { error, count } = worst(c);
+      assert.ok(error < 0.004, `${curve}: off by ${error}`);
+      assert.ok(count > 6 && count < 200, `${curve}: ${count} points`);
+    }
+  });
+
+  it('keeps a linear fade to its corners', () => {
+    const c = clip({ fadeIn: 1, fadeOut: 2, fadeInCurve: 'linear', fadeOutCurve: 'linear' });
+    assert.deepEqual(
+      gainPoints(track, c).map((p) => p.time),
+      [2, 3, 8, 10],
+    );
+  });
+
+  it('plays a keyframed volume as an envelope, in clip-local time', () => {
+    const keyed = clip({
+      sourceIn: 20,
+      keyframes: {
+        volume: [
+          { t: 21, v: 1 },
+          { t: 23, v: 0.25 },
+          { t: 26, v: 1 },
+        ],
+      },
+    });
+    const points = gainPoints(track, keyed);
+    // Keys at 21, 23, 26 s of source are 3, 5, 8 s on the timeline.
+    assert.deepEqual(
+      points.map((p) => p.time),
+      [2, 3, 5, 8, 10],
+    );
+    near(points[2].value, 0.8 * 0.25);
+    near(gainAt(points, 4), 0.8 * 0.625);
+    near(gainAt(points, 9), 0.8);
+  });
+
+  it('follows eased and stepped keyframes', () => {
+    const eased = clip({
+      keyframes: {
+        volume: [
+          { t: 0, v: 0, ease: 'ease-in-out' },
+          { t: 8, v: 1 },
+        ],
+      },
+    });
+    assert.ok(worst(eased).error < 0.004 && worst(eased).count < 200, JSON.stringify(worst(eased)));
+    const stepped = clip({
+      keyframes: {
+        volume: [
+          { t: 0, v: 1, ease: 'hold' },
+          { t: 4, v: 0.2 },
+        ],
+      },
+    });
+    const points = gainPoints(track, stepped);
+    near(gainAt(points, 5.98), 0.8);
+    near(gainAt(points, 6.01), 0.16);
+    assert.ok(points.length < 40, `a step needs few points, got ${points.length}`);
+  });
+
+  it('combines an envelope with fades', () => {
+    const c = clip({
+      fadeIn: 2,
+      fadeInCurve: 'smooth',
+      keyframes: {
+        volume: [
+          { t: 0, v: 1 },
+          { t: 8, v: 0 },
+        ],
+      },
+    });
+    assert.ok(worst(c).error < 0.004);
+    near(gainPoints(track, c)[0].value, 0);
+    near(gainPoints(track, c).at(-1).value, 0);
+  });
+
+  it('schedules the whole envelope as ramps', () => {
+    const c = clip({ fadeIn: 2, fadeInCurve: 'smooth' });
+    const events = gainEvents(gainPoints(track, c), 1);
+    assert.deepEqual(events[0], { type: 'set', time: 1, value: 0 });
+    assert.ok(events.filter((e) => e.type === 'ramp').length > 6);
+    assert.deepEqual(events.at(-1), { type: 'set', time: 10, value: 0 });
+    for (let i = 1; i < events.length; i++) assert.ok(events[i].time >= events[i - 1].time);
   });
 });

@@ -1,24 +1,27 @@
 /**
  * Clip editing commands: split, delete, ripple delete, nudge and trimming
- * the selection to the cursor. Each is one undo step.
+ * the selection to the cursor or to the time selection. Each is one undo
+ * step; with auto ripple on, later clips follow the edit.
  * @module utils/commands/edit
  */
 
 import {
   EPS,
   deleteClips,
-  rippleDelete,
   snapToFrame,
   splitClips,
   trimClipEnd,
   trimClipStart,
 } from '#utils/edl/index.js';
+import { trimToRange } from '#utils/edl/selectionEdits.js';
 import { edit, getDoc } from '#utils/editor/session.js';
-import { getSelection } from '#utils/editor/view.js';
+import { getSelection, getView } from '#utils/editor/view.js';
 import { sourceDurations } from '#utils/media/library.js';
+import { getEdgeTrim } from '#utils/timeline/edgeTrim.js';
 import { movePreview } from '#utils/timeline/reduce/move.js';
 import { clipsAtTime } from '#utils/timeline/visible.js';
-import { editModes, editTime } from './context.js';
+import { editModes, editRippling, editTime } from './context.js';
+import { trimEdgeBy } from './eventKeys.js';
 
 /**
  * The clips a split at `time` would cut: the selected clips under that
@@ -61,36 +64,40 @@ export function splitAtCursor() {
  */
 export function deleteSelection() {
   const ids = getSelection();
-  if (!ids.length) return false;
-  const { ripple, autoCrossfade } = editModes();
-  return edit((doc) =>
-    ripple ? rippleDelete(doc, ids, { autoCrossfade }) : deleteClips(doc, ids),
-  );
+  return ids.length > 0 && editRippling((doc) => deleteClips(doc, ids));
 }
 
 /**
- * Delete the selected clips and close the gap on their tracks.
+ * Delete the selected clips and close the gap, whatever the ripple mode.
  * @returns {boolean}
  */
 export function rippleDeleteSelection() {
   const ids = getSelection();
-  if (!ids.length) return false;
-  return edit((doc) => rippleDelete(doc, ids, { autoCrossfade: editModes().autoCrossfade }));
+  return ids.length > 0 && editRippling((doc) => deleteClips(doc, ids), true);
 }
 
 /**
- * Move the selection by a number of frames (negative = earlier). Follows
- * ripple and auto-crossfade like a drag does; never snaps.
+ * Move the selection in time (negative = earlier) — or, in edge-trim mode,
+ * trim the chosen edge by that much. Follows ripple and auto-crossfade
+ * like a drag does; never snaps.
+ * @param {number} seconds
+ * @returns {boolean}
+ */
+export function nudgeBy(seconds) {
+  if (getEdgeTrim()) return trimEdgeBy(seconds);
+  const clipIds = getSelection();
+  if (!clipIds.length || !seconds) return false;
+  const modes = { ...editModes(), snapping: false, ripple: false };
+  const drag = { clipIds, anchorId: clipIds[0], delta: seconds };
+  return editRippling((doc) => movePreview(doc, drag, modes).doc);
+}
+
+/**
+ * Nudge by a number of frames.
  * @param {number} frames
  * @returns {boolean}
  */
-export function nudgeSelection(frames) {
-  const clipIds = getSelection();
-  if (!clipIds.length || !frames) return false;
-  const delta = frames / (getDoc().fps || 30);
-  const modes = { ...editModes(), snapping: false };
-  return edit((doc) => movePreview(doc, { clipIds, anchorId: clipIds[0], delta }, modes).doc);
-}
+export const nudgeSelection = (frames) => nudgeBy(frames / (getDoc().fps || 30));
 
 /**
  * Trim one edge of every selected clip to the cursor.
@@ -101,11 +108,10 @@ function trimSelection(edge) {
   const ids = getSelection();
   if (!ids.length) return false;
   const time = editTime();
-  const { ripple, autoCrossfade } = editModes();
-  const opts = { sourceDurations: sourceDurations(), ripple, autoCrossfade };
+  const opts = { sourceDurations: sourceDurations(), autoCrossfade: editModes().autoCrossfade };
   const trim = edge === 'start' ? trimClipStart : trimClipEnd;
   // A linked partner is trimmed with its clip; trimming it again is a no-op.
-  return edit((doc) => ids.reduce((next, id) => trim(next, id, time, opts), doc));
+  return editRippling((doc) => ids.reduce((next, id) => trim(next, id, time, opts), doc));
 }
 
 /** @returns {boolean} */
@@ -113,3 +119,22 @@ export const trimStartToCursor = () => trimSelection('start');
 
 /** @returns {boolean} */
 export const trimEndToCursor = () => trimSelection('end');
+
+/** @returns {boolean} True when there is a time selection to trim to */
+export const canTrimToSelection = () => getView().loopEnd > getView().loopStart;
+
+/**
+ * Vegas "Trim": keep only what lies inside the time selection — of the
+ * selected clips, or of every clip when none is selected.
+ * @returns {boolean}
+ */
+export function trimToSelection() {
+  const { loopStart, loopEnd, autoCrossfade } = getView();
+  if (!(loopEnd > loopStart)) return false;
+  const chosen = getSelection();
+  const opts = { sourceDurations: sourceDurations(), autoCrossfade };
+  return editRippling((doc) => {
+    const all = doc.tracks.flatMap((track) => track.clips.map((clip) => clip.clipId));
+    return trimToRange(doc, chosen.length ? chosen : all, loopStart, loopEnd, opts);
+  });
+}

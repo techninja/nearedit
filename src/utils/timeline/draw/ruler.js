@@ -1,12 +1,13 @@
 /**
- * Ruler layer: tick marks with timecode labels, the loop band along the
- * top edge and the marker flags. Marker lines through the lanes are drawn
+ * Ruler layer: tick marks with timecode labels, the time selection along
+ * the top edge, region tags and the marker flags. Marker lines through the lanes are drawn
  * here too, so everything about markers sits in one module.
  * @module utils/timeline/draw/ruler
  */
 
 import { LOOP_BAND_H, RULER_H } from '#utils/timeline/layout.js';
 import { timeToX } from '#utils/timeline/viewport.js';
+import { drawRegionTags } from './regions.js';
 
 /** @typedef {import('./scene.js').Scene} Scene */
 
@@ -14,8 +15,8 @@ const LABEL_FONT_PX = 10;
 const FLAG_W = 9;
 
 /**
- * The loop region on the band at the top of the ruler: solid while looping
- * is on, an outline of where it would loop while it is off.
+ * The time selection on the band at the top of the ruler: solid while
+ * looping is on, paler (but with firm ends) while it is off.
  * @param {Scene} scene
  */
 function drawLoopBand(scene) {
@@ -24,8 +25,8 @@ function drawLoopBand(scene) {
   const x0 = Math.max(-2, timeToX(vp, view.loopStart));
   const x1 = Math.min(vp.width + 2, timeToX(vp, view.loopEnd));
   if (x1 <= x0) return;
-  ctx.fillStyle = view.loopEnabled ? palette.primary : palette.muted;
-  ctx.globalAlpha = view.loopEnabled ? 0.9 : 0.45;
+  ctx.fillStyle = palette.primary;
+  ctx.globalAlpha = view.loopEnabled ? 0.9 : 0.4;
   ctx.fillRect(x0, 1, x1 - x0, LOOP_BAND_H - 3);
   ctx.globalAlpha = 1;
   ctx.fillRect(x0, 0, 2, LOOP_BAND_H);
@@ -40,13 +41,15 @@ function drawMarkerFlags(scene) {
   const { ctx, vp, doc, palette } = scene;
   ctx.font = `600 ${LABEL_FONT_PX}px ${palette.sans}`;
   ctx.textBaseline = 'middle';
-  for (const marker of doc.markers || []) {
+  for (const [index, marker] of (doc.markers || []).entries()) {
     const x = Math.round(timeToX(vp, marker.time));
     if (x < -200 || x > vp.width + FLAG_W) continue;
     const top = LOOP_BAND_H + 1;
     ctx.fillStyle = marker.color || palette.marker;
     ctx.fillRect(x, top, 1, RULER_H - top);
-    const labelWidth = marker.label ? ctx.measureText(marker.label).width + 8 : FLAG_W;
+    // An unnamed marker shows its number: the key that jumps to it (1…9, 0).
+    const label = marker.label || (index < 10 ? String((index + 1) % 10) : '');
+    const labelWidth = label ? ctx.measureText(label).width + 8 : FLAG_W;
     ctx.beginPath();
     ctx.moveTo(x, top);
     ctx.lineTo(x + labelWidth, top);
@@ -55,9 +58,9 @@ function drawMarkerFlags(scene) {
     ctx.lineTo(x, top + 11);
     ctx.closePath();
     ctx.fill();
-    if (marker.label) {
+    if (label) {
       ctx.fillStyle = palette.clipText;
-      ctx.fillText(marker.label, x + 4, top + 6);
+      ctx.fillText(label, x + 4, top + 6);
     }
   }
 }
@@ -84,6 +87,7 @@ export function drawRuler(scene) {
     if (tick.major) ctx.fillText(tick.label, x + 4, RULER_H - 4);
   }
   drawLoopBand(scene);
+  drawRegionTags(scene);
   drawMarkerFlags(scene);
 }
 

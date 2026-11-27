@@ -3,9 +3,17 @@
  * @module utils/commands/select
  */
 
-import { findClip, groupClips, linkClips, ungroupClips, unlinkClips } from '#utils/edl/index.js';
+import {
+  expandSelection,
+  findClip,
+  groupClips,
+  linkClips,
+  ungroupClips,
+  unlinkClips,
+} from '#utils/edl/index.js';
 import { edit, getDoc } from '#utils/editor/session.js';
-import { clearSelection, getSelection, selectAll } from '#utils/editor/view.js';
+import { clearSelection, getSelection, selectAll, setSelection } from '#utils/editor/view.js';
+import { getEdgeTrim, setEdgeTrim } from '#utils/timeline/edgeTrim.js';
 
 /** Select every clip on an unlocked track. */
 export function selectAllClips() {
@@ -13,11 +21,53 @@ export function selectAllClips() {
   return true;
 }
 
-/** @returns {boolean} false when nothing was selected */
+/**
+ * Escape: leave edge-trim mode when it is on; otherwise clear the selection.
+ * @returns {boolean} false when there was nothing to do
+ */
 export function selectNone() {
+  if (getEdgeTrim()) return (setEdgeTrim(null), true);
   if (!getSelection().length) return false;
   clearSelection();
   return true;
+}
+
+/** @returns {boolean} True when Escape has something to do */
+export const canSelectNone = () => !!getEdgeTrim() || getSelection().length > 0;
+
+/**
+ * Shift+G: grow the selection to every clip grouped (or linked) with it.
+ * @returns {boolean} false when it already was
+ */
+export function selectWholeGroups() {
+  const ids = getSelection();
+  const all = expandSelection(getDoc(), ids);
+  if (all.length === ids.length) return false;
+  setSelection(all, { expand: false });
+  return true;
+}
+
+/**
+ * U the Vegas way: take the selected clips out of their groups. The other
+ * members stay grouped — unless only one would be left.
+ * @returns {boolean}
+ */
+export function removeFromGroup() {
+  const leaving = new Set(getSelection());
+  return edit((doc) => {
+    const clips = doc.tracks.flatMap((track) => track.clips);
+    const groups = new Set(clips.filter((c) => leaving.has(c.clipId)).map((c) => c.groupId));
+    let next = ungroupClips(doc, [...leaving]);
+    for (const groupId of groups) {
+      const staying = clips.filter((c) => c.groupId === groupId && !leaving.has(c.clipId));
+      if (groupId)
+        next = groupClips(
+          next,
+          staying.map((c) => c.clipId),
+        );
+    }
+    return next;
+  });
 }
 
 /**

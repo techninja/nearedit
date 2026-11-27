@@ -14,6 +14,9 @@ import { dimLane } from './lanes.js';
 
 /** @typedef {import('./scene.js').Scene} Scene */
 
+/** @type {(clip: object) => any} A clip with the fields newer documents add. */
+const any = (clip) => clip;
+
 /**
  * How strongly a track's clips are washed out: silent or hidden tracks
  * most, locked ones a little.
@@ -49,15 +52,9 @@ export function drawClips(scene) {
       if (outgoing.timelineEnd <= incoming.timelineStart) continue;
       const x0 = timeToX(vp, incoming.timelineStart);
       const x1 = timeToX(vp, Math.min(outgoing.timelineEnd, incoming.timelineEnd));
-      drawCrossfade(
-        ctx,
-        x0,
-        x1,
-        box.y,
-        box.height,
-        clipColor(scene, outgoing, track),
-        scene.palette,
-      );
+      const curves = { in: any(incoming).fadeInCurve, out: any(outgoing).fadeOutCurve };
+      const colour = clipColor(scene, outgoing, track);
+      drawCrossfade(ctx, x0, x1, box.y, box.height, colour, scene.palette, curves);
     }
     const dim = trackDim(doc, track);
     if (dim) dimLane(scene, lane, dim);

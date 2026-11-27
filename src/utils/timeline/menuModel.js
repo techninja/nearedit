@@ -1,15 +1,18 @@
 /**
  * Context menus of the timeline, generated from the command registry: what
- * a right-click (or long-press) offers on a clip, on an empty lane, on the
- * ruler and on a marker.
+ * a right-click (or long-press) offers on a clip (and on its fades), on an
+ * empty lane, on the ruler, on a marker and on a region.
  * @module utils/timeline/menuModel
  */
 
 import { deleteMarker } from '#utils/commands/insert.js';
+import { deleteRegion, selectRegion } from '#utils/commands/marks.js';
 import { getCommand, isEnabled, isPressed, runCommand } from '#utils/commands/registry.js';
-import { getView } from '#utils/editor/view.js';
+import { clearTimeSelection, hasTimeSelection } from '#utils/commands/timeSelection.js';
+import { getDoc } from '#utils/editor/session.js';
 import { shortcutLabel } from '#utils/keyboard/index.js';
-import { setLoopRange } from '#utils/playback/transport.js';
+import { fadeMenu } from './menuFades.js';
+import { CLIP_MENU, LANE_MENU, RULER_MENU } from './menuLists.js';
 
 /**
  * @typedef {Object} MenuItem
@@ -23,52 +26,6 @@ import { setLoopRange } from '#utils/playback/transport.js';
 
 /** @type {MenuItem} */
 const LINE = { separator: true };
-
-const CLIP_MENU = [
-  'edit.split',
-  '-',
-  'edit.cut',
-  'edit.copy',
-  'edit.paste',
-  'edit.duplicate',
-  '-',
-  'edit.delete',
-  'edit.rippleDelete',
-  '-',
-  'edit.trimStart',
-  'edit.trimEnd',
-  '-',
-  'clip.group',
-  'clip.ungroup',
-  'clip.link',
-  'clip.unlink',
-];
-
-const LANE_MENU = [
-  'edit.paste',
-  'edit.split',
-  '-',
-  'marker.add',
-  'title.add',
-  '-',
-  'select.all',
-  'select.none',
-  '-',
-  'track.addVideo',
-  'track.addAudio',
-  '-',
-  'view.zoomFit',
-];
-
-const RULER_MENU = [
-  'marker.add',
-  'transport.toggleLoop',
-  'loop.clear',
-  '-',
-  'view.zoomIn',
-  'view.zoomOut',
-  'view.zoomFit',
-];
 
 /**
  * A menu item for a registered command.
@@ -98,20 +55,24 @@ function build(ids, extra = {}) {
 /**
  * The context menu for what was right-clicked.
  * @param {import('./hitTest.js').Hit} hit
- * @param {{ renameMarker: (markerId: string) => void }} ui
+ * @param {{ renameMarker: (markerId: string) => void,
+ *   renameRegion: (regionId: string) => void }} ui
  * @returns {MenuItem[]}
  */
 export function contextMenu(hit, ui) {
-  if (hit.zone === 'ruler') {
-    const { loopStart, loopEnd } = getView();
-    const clearLoop = {
-      label: 'Clear loop region',
-      disabled: !(loopEnd > loopStart),
-      run: () => setLoopRange(0, 0),
-    };
-    const ruler = build(RULER_MENU, { 'loop.clear': clearLoop });
-    if (!hit.markerId) return ruler;
-    const { markerId } = hit;
+  if (hit.zone !== 'ruler') {
+    const onClip = hit.clipId && !hit.locked;
+    // On a fade the curve choices come first: that is what was pointed at.
+    return [...(onClip ? fadeMenu(getDoc(), hit) : []), ...build(onClip ? CLIP_MENU : LANE_MENU)];
+  }
+  const clear = {
+    label: 'Clear loop region',
+    disabled: !hasTimeSelection(),
+    run: clearTimeSelection,
+  };
+  const ruler = build(RULER_MENU, { 'loop.clear': clear });
+  const { markerId, regionId } = hit;
+  if (markerId) {
     return [
       { label: 'Rename marker', run: () => ui.renameMarker(markerId) },
       { label: 'Delete marker', run: () => deleteMarker(markerId) },
@@ -119,5 +80,12 @@ export function contextMenu(hit, ui) {
       ...ruler,
     ];
   }
-  return build(hit.clipId && !hit.locked ? CLIP_MENU : LANE_MENU);
+  if (!regionId) return ruler;
+  return [
+    { label: 'Select region', run: () => selectRegion(regionId) },
+    { label: 'Rename region', run: () => ui.renameRegion(regionId) },
+    { label: 'Delete region', run: () => deleteRegion(regionId) },
+    LINE,
+    ...ruler,
+  ];
 }

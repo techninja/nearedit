@@ -4,10 +4,11 @@
  * @module utils/commands/context
  */
 
-import { newClipIds } from '#utils/edl/index.js';
+import { findClip, newClipIds } from '#utils/edl/index.js';
 import { edit, getDoc } from '#utils/editor/session.js';
-import { getView, setSelection } from '#utils/editor/view.js';
+import { PX_PER_SECOND, getView, setSelection } from '#utils/editor/view.js';
 import { getPosition, isPlaying } from '#utils/playback/transport.js';
+import { rippled } from './postRipple.js';
 
 /** @typedef {import('#utils/edl/types.js').Edl} Edl */
 
@@ -30,16 +31,42 @@ export function editModes() {
 }
 
 /**
- * Apply an operation as one undo step and select the clips it created.
+ * One screen pixel as time, but never less than a frame: the step of the
+ * Vegas "by pixel" keys, which get finer as you zoom in.
+ * @returns {number} Seconds
+ */
+export function pixelSeconds() {
+  return Math.max(1 / (getDoc().fps || 30), 1 / (PX_PER_SECOND * getView().zoom));
+}
+
+/**
+ * Apply an edit as one undo step; with auto ripple on, later clips follow
+ * it (see `postRipple.js`).
+ * @param {(doc: Edl) => Edl} operation - The edit itself, without any ripple
+ * @param {boolean} [always] - Ripple even when auto ripple is off
+ * @returns {boolean} false when nothing changed
+ */
+export function editRippling(operation, always = false) {
+  const ripple = always || getView().ripple;
+  return edit((doc) => (ripple ? rippled(doc, operation(doc)) : operation(doc)));
+}
+
+/**
+ * Apply an edit (rippling, as above) and select the clips it created.
  * @param {(doc: Edl) => Edl} operation
  * @returns {boolean} false when nothing changed
  */
 export function editAndSelectNew(operation) {
-  const before = getDoc();
-  if (!edit(operation)) return false;
-  const created = newClipIds(before, getDoc());
-  if (created.length) setSelection(created, { expand: false });
-  return true;
+  /** @type {string[]} */
+  let created = [];
+  const done = editRippling((doc) => {
+    const plain = operation(doc);
+    created = newClipIds(doc, plain);
+    return plain;
+  });
+  const kept = created.filter((id) => findClip(getDoc(), id));
+  if (done && kept.length) setSelection(kept, { expand: false });
+  return done;
 }
 
 /**

@@ -1,11 +1,12 @@
 /**
- * Dragging in the ruler: scrub the playhead, set the loop region, move a
- * marker.
+ * Dragging in the ruler: scrub the playhead, set the time selection, move
+ * a marker. (Regions: `regionDrags.js`.)
  * @module utils/timeline/interaction/rulerDrags
  */
 
+import { clearTimeSelection, setTimeSelection } from '#utils/commands/timeSelection.js';
 import { commit, getDoc } from '#utils/editor/session.js';
-import { seek, setLoopRange } from '#utils/playback/transport.js';
+import { seek } from '#utils/playback/transport.js';
 import { markerPreview } from '#utils/timeline/reduce/tweaks.js';
 import { xToTime, xToTimeRaw } from '#utils/timeline/viewport.js';
 import { dragCandidates, snapContext, snapPoint } from './press.js';
@@ -37,18 +38,24 @@ export const scrubDrag = {
 };
 
 /**
- * @type {Gesture} Loop region: drag across the loop band (or Shift-drag in
- *   the ruler). A click without a drag clears the region.
+ * @type {Gesture} Time selection (which is the loop region): drag across
+ *   the loop band, or Shift-drag in the ruler. A click without a drag
+ *   clears it. What it replaces can be recalled.
  */
 export const loopDrag = {
   autoScroll: true,
   begin(stage, press) {
     const { vp } = stage.geometry();
     press.data.from = snapPoint(Math.max(0, press.time0), vp.pps).time;
+    press.data.fresh = true;
   },
   // Shift may be what started this drag, so it cannot also bypass snapping.
-  drag: (stage, press) => setLoopRange(press.data.from, pointedTime(stage, press)),
-  click: () => setLoopRange(0, 0),
+  drag(stage, press) {
+    const remember = press.data.fresh;
+    press.data.fresh = false;
+    setTimeSelection(press.data.from, pointedTime(stage, press), { remember });
+  },
+  click: () => clearTimeSelection(),
 };
 
 /** @type {Gesture} Marker: drag to move (snapping to clip edges), click to go there. */

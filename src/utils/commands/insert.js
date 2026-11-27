@@ -86,12 +86,12 @@ export function removeTrackById(trackId) {
  */
 export function insertMediaItem(item, at = {}) {
   const lane = item?.type === 'audio' ? 'audio' : 'video';
-  const { ripple, autoCrossfade } = editModes();
+  const { autoCrossfade } = editModes();
   const marks = /** @type {any} */ (item);
   const opts = {
     time: at.time ?? editTime(),
     trackId: 'trackId' in at ? at.trackId : targetTrack(lane),
-    ripple,
+    ripple: false, // `editAndSelectNew` ripples
     autoCrossfade,
     // A range marked in the bin's quick look travels with the item.
     ...(Number.isFinite(marks?.sourceIn) && { sourceIn: marks.sourceIn }),

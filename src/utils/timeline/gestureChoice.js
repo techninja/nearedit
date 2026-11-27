@@ -8,8 +8,9 @@
 /** @typedef {import('./hitTest.js').Hit} Hit */
 
 /**
- * @typedef {'pan'|'scrub'|'loop'|'marker'|'move'|'slip'|'trim-start'|'trim-end'|
- *   'fade-in'|'fade-out'|'marquee'|'none'} GestureName
+ * @typedef {'pan'|'scrub'|'loop'|'marker'|'region'|'region-start'|'region-end'|'move'|'copy'|
+ *   'slip'|'slide'|'trim-start'|'trim-end'|'slip-trim-start'|'slip-trim-end'|'roll-start'|
+ *   'roll-end'|'fade-in'|'fade-out'|'marquee'|'none'} GestureName
  */
 
 /**
@@ -35,12 +36,22 @@ export function chooseGesture(hit, input = {}) {
   if (button !== 0) return 'none';
   if (hit.zone === 'ruler') {
     if (hit.band === 'loop' || input.shiftKey) return 'loop';
-    return hit.markerId ? 'marker' : 'scrub';
+    if (hit.markerId) return 'marker';
+    if (!hit.regionId) return 'scrub';
+    return hit.regionPart === 'body' ? 'region' : `region-${hit.regionPart}`;
   }
   if (hit.zone !== 'lane') return pointerType === 'touch' ? 'pan' : 'marquee';
   if (!hit.clipId || hit.locked) return pointerType === 'touch' ? 'pan' : 'marquee';
+  const { altKey: alt, ctrlKey: ctrl } = input;
+  if (hit.part === 'trim-start' || hit.part === 'trim-end') {
+    // Vegas: Alt-drag an edge slip-trims, Ctrl+Alt-drag rolls the cut.
+    const edge = hit.part === 'trim-start' ? 'start' : 'end';
+    return alt ? `${ctrl ? 'roll' : 'slip-trim'}-${edge}` : hit.part;
+  }
   if (hit.part && hit.part !== 'body') return hit.part;
-  return input.altKey ? 'slip' : 'move';
+  // On the body: Alt slips, Ctrl copies, Ctrl+Alt slides between the neighbours.
+  if (alt) return ctrl ? 'slide' : 'slip';
+  return ctrl ? 'copy' : 'move';
 }
 
 /** @type {Record<GestureName, string>} Cursor shown while hovering. */
@@ -49,10 +60,19 @@ const HOVER_CURSOR = {
   scrub: 'default',
   loop: 'col-resize',
   marker: 'pointer',
+  region: 'grab',
+  'region-start': 'ew-resize',
+  'region-end': 'ew-resize',
   move: 'grab',
+  copy: 'copy',
   slip: 'ew-resize',
+  slide: 'all-scroll',
   'trim-start': 'w-resize',
   'trim-end': 'e-resize',
+  'slip-trim-start': 'ew-resize',
+  'slip-trim-end': 'ew-resize',
+  'roll-start': 'col-resize',
+  'roll-end': 'col-resize',
   'fade-in': 'nesw-resize',
   'fade-out': 'nwse-resize',
   marquee: 'default',
@@ -63,6 +83,7 @@ const HOVER_CURSOR = {
 const ACTIVE_CURSOR = {
   pan: 'grabbing',
   move: 'grabbing',
+  region: 'grabbing',
   marker: 'ew-resize',
   marquee: 'crosshair',
   scrub: 'ew-resize',

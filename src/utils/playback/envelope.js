@@ -1,11 +1,14 @@
 /**
- * Gain envelopes — turn a clip's fades into a schedule of Web Audio
- * automation events. Values come from `clipGain` (levels.js), the same
- * function the FFmpeg renderer uses, so preview and render fade alike.
+ * Gain envelopes — turn a clip's level over time into a schedule of Web
+ * Audio automation events. Every value comes from `clipGain` (levels.js) on
+ * the clip as `resolveClip` gives it at that moment — the same two functions
+ * the renderer uses — so fades, fade curves and a keyframed `volume` (a
+ * volume envelope) are heard in the preview exactly as they render.
  * Pure and isomorphic.
  * @module utils/playback/envelope
  */
 
+import { resolveClip } from '#utils/edl/animate.js';
 import { clipGain } from '#utils/edl/levels.js';
 
 /**
@@ -13,15 +16,19 @@ import { clipGain } from '#utils/edl/levels.js';
  * @typedef {{ type: 'set'|'ramp', time: number, value: number }} GainEvent
  */
 
+/** A stretch is a straight ramp when the gain strays less than this from one. */
+const TOLERANCE = 0.002;
+
+/** Points are never placed closer together than this, seconds. */
+const MIN_STEP = 0.004;
+
 /**
- * Breakpoints of a clip's gain over its life, in timeline seconds. Gain is
- * linear between neighbouring points (fades are linear ramps; an audio
- * cross-fade is two of them, one per clip — equal-gain).
- * @param {{ volume?: number }} track
+ * The moments at which a clip's gain may change direction: its edges, the
+ * ends of its fades, and the keys of a keyframed volume.
  * @param {any} clip
- * @returns {GainPoint[]} Sorted by time, first at timelineStart, last at timelineEnd
+ * @returns {number[]} Timeline seconds within the clip, ascending, distinct
  */
-export function gainPoints(track, clip) {
+function corners(clip) {
   const { timelineStart: start, timelineEnd: end } = clip;
   const fadeIn = Math.max(0, clip.fadeIn || 0);
   const fadeOut = Math.max(0, clip.fadeOut || 0);
@@ -30,8 +37,54 @@ export function gainPoints(track, clip) {
   if (fadeIn + fadeOut > end - start) {
     times.push((start * fadeOut + end * fadeIn) / (fadeIn + fadeOut));
   }
-  const unique = [...new Set(times.filter((t) => t >= start && t <= end))].sort((a, b) => a - b);
-  return unique.map((time) => ({ time, value: clipGain(track, clip, time) }));
+  for (const key of clip.keyframes?.volume || []) {
+    times.push(start + key.t - (clip.sourceIn || 0));
+  }
+  return [...new Set(times.filter((t) => t >= start && t <= end))].sort((a, b) => a - b);
+}
+
+/**
+ * Add points between two neighbours until straight ramps follow the gain:
+ * none on a linear stretch, a few dozen along a curve, a tight pair around
+ * a step.
+ * @param {(time: number) => number} gain
+ * @param {GainPoint} a
+ * @param {GainPoint} b
+ * @param {GainPoint[]} out - Receives the points strictly between `a` and `b`
+ */
+function refine(gain, a, b, out) {
+  const span = b.time - a.time;
+  if (span < MIN_STEP * 2) return;
+  const middle = { time: a.time + span / 2, value: gain(a.time + span / 2) };
+  const straight = [0.25, 0.5, 0.75].every((p) => {
+    const value = p === 0.5 ? middle.value : gain(a.time + span * p);
+    return Math.abs(value - (a.value + (b.value - a.value) * p)) <= TOLERANCE;
+  });
+  if (straight) return;
+  refine(gain, a, middle, out);
+  out.push(middle);
+  refine(gain, middle, b, out);
+}
+
+/**
+ * Breakpoints of a clip's gain over its life, in timeline seconds; gain is
+ * linear between neighbours. Linear fades give just their corners (an audio
+ * cross-fade is two ramps, one per clip — equal-gain); fade curves and
+ * volume keyframes with easing are followed closely.
+ * @param {{ volume?: number }} track
+ * @param {any} clip - As stored in the document (keyframes not applied)
+ * @returns {GainPoint[]} Sorted by time, first at timelineStart, last at timelineEnd
+ */
+export function gainPoints(track, clip) {
+  const gain = (/** @type {number} */ time) => clipGain(track, resolveClip(clip, time), time);
+  /** @type {GainPoint[]} */
+  const points = [];
+  for (const time of corners(clip)) {
+    const point = { time, value: gain(time) };
+    if (points.length) refine(gain, points[points.length - 1], point, points);
+    points.push(point);
+  }
+  return points;
 }
 
 /**

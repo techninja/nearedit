@@ -1,0 +1,18 @@
+timeline-goto {
+  display: contents;
+
+  & .timeline-goto {
+    position: absolute;
+    inset: 3px var(--space-xs);
+    width: auto;
+    height: auto;
+    padding: 0 var(--space-xs);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+
+    &[aria-invalid='true'] {
+      border-color: var(--color-danger);
+    }
+  }
+}

@@ -11,6 +11,9 @@ import { getSelection } from '#utils/editor/view.js';
 import { editAndSelectNew, editModes, editTime, targetTrack } from './context.js';
 import { deleteSelection } from './edit.js';
 
+/** @returns {{ ripple: false, autoCrossfade: boolean }} Options of an edit that `editAndSelectNew` ripples itself */
+const plainEdit = () => ({ ripple: false, autoCrossfade: editModes().autoCrossfade });
+
 export const CLIPBOARD_KEY = 'nearedit_clipboard';
 
 /** @typedef {import('#utils/edl/clipboard.js').Clipboard} Clipboard */
@@ -99,14 +102,14 @@ export function cutSelection() {
 /**
  * Paste at the cursor. The top-most copied track lands on the active track
  * when one of the same type is active; other clips keep their rows. The
- * pasted clips become the selection.
+ * pasted clips become the selection; with auto ripple on, what follows on
+ * their tracks makes room.
  * @returns {boolean} false when the clipboard is empty
  */
 export function paste() {
   const payload = getClipboard();
   if (!payload) return false;
-  const { ripple, autoCrossfade } = editModes();
-  const opts = { time: editTime(), trackId: targetTrack(), ripple, autoCrossfade };
+  const opts = { time: editTime(), trackId: targetTrack(), ...plainEdit() };
   return editAndSelectNew((doc) => pasteClips(doc, payload, opts));
 }
 
@@ -117,6 +120,5 @@ export function paste() {
 export function duplicateSelection() {
   const ids = getSelection();
   if (!ids.length) return false;
-  const { ripple, autoCrossfade } = editModes();
-  return editAndSelectNew((doc) => duplicateClips(doc, ids, { ripple, autoCrossfade }));
+  return editAndSelectNew((doc) => duplicateClips(doc, ids, plainEdit()));
 }

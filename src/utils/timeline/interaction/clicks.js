@@ -4,7 +4,8 @@
  * @module utils/timeline/interaction/clicks
  */
 
-import { expandSelection, findClip } from '#utils/edl/index.js';
+import { selectClipSpan } from '#utils/commands/timeSelection.js';
+import { expandSelection } from '#utils/edl/index.js';
 import { getDoc } from '#utils/editor/session.js';
 import {
   clearSelection,
@@ -13,7 +14,7 @@ import {
   setSelection,
   setView,
 } from '#utils/editor/view.js';
-import { seek, setLoopRange } from '#utils/playback/transport.js';
+import { seek } from '#utils/playback/transport.js';
 import { isToggleClick } from '#utils/timeline/gestureChoice.js';
 import { snapPoint } from './press.js';
 
@@ -83,10 +84,8 @@ export function clickEmpty(stage, press) {
 }
 
 /**
- * Double-click on a clip: set the loop region to the clip, Vegas-style.
+ * Double-click on a clip: its span becomes the time selection (and so the
+ * loop region), Vegas-style.
  * @param {string} clipId
  */
-export function loopClip(clipId) {
-  const clip = findClip(getDoc(), clipId)?.clip;
-  if (clip) setLoopRange(clip.timelineStart, clip.timelineEnd);
-}
+export const loopClip = (clipId) => selectClipSpan(clipId);

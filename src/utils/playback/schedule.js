@@ -13,7 +13,7 @@ import { activeTracks } from '#utils/edl/query.js';
  * @typedef {Object} Cue
  * @property {any} clip
  * @property {any} track
- * @property {'video'|'image'|'title'|'audio'} kind
+ * @property {'video'|'image'|'title'|'generator'|'audio'} kind
  * @property {boolean} active - Covers the time now; false = starts within the lookahead
  */
 
@@ -85,6 +85,22 @@ export function videoLayers(tracks, time) {
   return videoCues(tracks, time, 0);
 }
 
+/** @type {WeakMap<object, number>} */
+const identities = new WeakMap();
+let lastIdentity = 0;
+
+/**
+ * A number that stands for one object. Documents are never mutated, so the
+ * same keyframe list is the same object until it is edited.
+ * @param {object|undefined} object
+ * @returns {number} 0 for nothing
+ */
+function identity(object) {
+  if (!object) return 0;
+  if (!identities.has(object)) identities.set(object, ++lastIdentity);
+  return identities.get(object);
+}
+
 /**
  * Fingerprint of everything that shapes how a clip sounds. When it changes
  * the mixer re-schedules that clip's gain and re-checks its position.
@@ -100,7 +116,10 @@ export function audioSignature(track, clip) {
     clip.timelineEnd,
     clip.fadeIn,
     clip.fadeOut,
+    clip.fadeInCurve || '',
+    clip.fadeOutCurve || '',
     clip.volume ?? 1,
+    identity(clip.keyframes?.volume),
     track.volume ?? 1,
   ].join('|');
 }

@@ -1,10 +1,11 @@
 /**
  * Hit-testing: what is under a point of the timeline canvas — the ruler
- * (loop band, a marker), a lane, a clip and which part of that clip (body,
- * a trim edge, a fade handle). Pure: geometry in, description out.
+ * (loop band, a marker, a region), a lane, a clip and which part of that
+ * clip (body, a trim edge, a fade handle). Pure: geometry in, description out.
  * @module utils/timeline/hitTest
  */
 
+import { regionAt } from './hitRuler.js';
 import { CLIP_INSET, LOOP_BAND_H, RULER_H, laneAt, laneY } from './layout.js';
 import { timeToX, xToTime } from './viewport.js';
 import { clipsAtTime, edgeOverlaps } from './visible.js';
@@ -25,6 +26,8 @@ import { clipsAtTime, edgeOverlaps } from './visible.js';
  * @property {number} time - Timeline seconds under the point
  * @property {'loop'|'time'} [band] - Ruler only
  * @property {string} [markerId] - Ruler only
+ * @property {string} [regionId] - Ruler only: the region under the point
+ * @property {'start'|'end'|'body'} [regionPart] - With `regionId`
  * @property {string} [trackId] - Lane only
  * @property {boolean} [locked] - Lane only: the track is locked
  * @property {string} [clipId] - Lane only: the clip under the point
@@ -100,8 +103,10 @@ export function hitTest(geo, x, y) {
   const { vp, lanes, doc } = geo;
   const time = xToTime(vp, x);
   if (y < RULER_H) {
-    const band = y < LOOP_BAND_H ? 'loop' : 'time';
-    return { zone: 'ruler', time, band, markerId: band === 'time' ? markerAt(geo, x) : '' };
+    if (y < LOOP_BAND_H) return { zone: 'ruler', time, band: 'loop', markerId: '' };
+    const markerId = markerAt(geo, x);
+    const region = markerId ? null : regionAt(geo, x, y, hitSizes(geo.coarse).marker);
+    return { zone: 'ruler', time, band: 'time', markerId, ...region };
   }
   const lane = laneAt(lanes, y, vp.scrollY);
   const track = lane && doc.tracks[lane.index];

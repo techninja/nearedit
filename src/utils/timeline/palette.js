@@ -24,6 +24,7 @@ const TOKENS = {
   selection: '--color-selection',
   snap: '--color-snap',
   marker: '--color-marker',
+  region: '--color-success',
   loop: '--color-loop',
   text: '--color-text',
   muted: '--color-text-muted',

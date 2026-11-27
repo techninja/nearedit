@@ -1,87 +1,108 @@
 /**
- * Frame painter — composite every visible layer of the timeline at one
- * moment onto the preview canvas, back to front, following
- * docs/app-spec/EDL.md § Rendering Semantics.
+ * Preview painter — the browser host of the shared frame compositor
+ * (`#utils/compose`). It gives `drawFrame` what only a browser can provide:
+ * scratch canvases, decoded stills, the current frame of each pooled
+ * `<video>` element, and fonts that are loaded the first time a title needs
+ * them. What is not there yet (a still, a font) is left out of the frame and
+ * `onArrive` asks for a repaint once it is.
+ * Contract: docs/app-spec/COMPOSITOR.md § The host environment.
  * @module utils/playback/paintFrame
  */
 
-import { clipProgress, resolveTransform } from '#utils/edl/geometry.js';
-import { videoOpacity } from '#utils/edl/levels.js';
-import { drawPicture, drawTitle } from '#utils/playback/drawLayer.js';
-import { videoLayers } from '#utils/playback/schedule.js';
+import { drawFrame } from '#utils/compose/drawFrame.js';
+import { frameInfo } from '#utils/compose/frame.js';
+import { requirements } from '#utils/compose/requirements.js';
+import { pictureUrl } from '#utils/playback/mediaUrl.js';
+import { hasFrame } from '#utils/playback/videoSlot.js';
+
+/** Font checks remembered before the list is started afresh. */
+const MAX_FONT_KEYS = 500;
 
 /**
- * @typedef {Object} Surface
- * @property {HTMLCanvasElement} canvas
- * @property {CanvasRenderingContext2D} ctx
- * @property {HTMLCanvasElement|null} scratch - Lazily made buffer for fading titles
+ * On-demand font loading. A font counts as ready once the browser has it —
+ * or has given up on it, so a missing file falls back instead of hiding the
+ * title for good.
+ * @param {() => void} onArrive - Called when a font finished loading
+ * @returns {(font: string, text: string) => boolean}
  */
-
-/**
- * @typedef {{ image: CanvasImageSource, width: number, height: number }} Picture
- */
-
-/**
- * A title that is fading is drawn opaque into a scratch buffer and blended
- * in one go, so its outline never shows through its own fill.
- * @param {Surface} surface
- * @param {any} text
- * @param {{ width: number, height: number }} out
- * @param {import('#utils/edl/geometry.js').FlatTransform} t
- * @param {number} alpha
- */
-function paintTitle(surface, text, out, t, alpha) {
-  const { ctx, canvas } = surface;
-  if (alpha >= 1) return drawTitle(ctx, text, out, t);
-  surface.scratch ||= document.createElement('canvas');
-  const scratch = surface.scratch;
-  if (scratch.width !== canvas.width || scratch.height !== canvas.height) {
-    scratch.width = canvas.width;
-    scratch.height = canvas.height;
-  }
-  const buffer = scratch.getContext('2d');
-  buffer.setTransform(1, 0, 0, 1, 0, 0);
-  buffer.clearRect(0, 0, scratch.width, scratch.height);
-  buffer.setTransform(ctx.getTransform());
-  drawTitle(buffer, text, out, t);
-  ctx.save();
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalAlpha = alpha;
-  ctx.drawImage(scratch, 0, 0);
-  ctx.restore();
+export function createFontLoader(onArrive) {
+  /** @type {Set<string>} */
+  const settled = new Set();
+  /** @type {Set<string>} */
+  const loading = new Set();
+  const settle = (/** @type {string} */ key) => {
+    if (settled.size >= MAX_FONT_KEYS) settled.clear();
+    settled.add(key);
+  };
+  return (font, text) => {
+    // The size does not decide which files are needed; leave it out of the key.
+    const key = `${font.replace(/[\d.]+px/, '')}\n${text}`;
+    if (settled.has(key)) return true;
+    if (document.fonts.check(font, text)) {
+      settle(key);
+      return true;
+    }
+    if (!loading.has(key)) {
+      loading.add(key);
+      document.fonts
+        .load(font, text)
+        .catch((err) => console.warn('[playback] could not load font:', font, err.message))
+        .finally(() => {
+          loading.delete(key);
+          settle(key);
+          onArrive();
+        });
+    }
+    return false;
+  };
 }
 
 /**
- * Paint the frame at `time`. Starts from black (gaps are black); the first
- * video track ends up in front. Each layer is laid out in output-resolution
- * pixels and the whole frame is scaled to the canvas, so offsets, font
- * sizes and outlines keep their proportions at any preview size.
- * @param {Surface} surface
- * @param {any[]} tracks
- * @param {number} time - Timeline seconds
- * @param {{ width: number, height: number }} out - Output frame size
- * @param {(cue: import('#utils/playback/schedule.js').Cue) => Picture|null} pictureFor -
- *   The decoded frame or still for a layer, or null when none is ready
+ * @typedef {Object} PainterSources
+ * @property {ReturnType<typeof import('#utils/playback/videoPool.js').createVideoPool>} videos
+ * @property {ReturnType<typeof import('#utils/playback/imageCache.js').createImageCache>} images
+ * @property {() => void} onArrive - A still or a font became available
  */
-export function paintFrame(surface, tracks, time, out, pictureFor) {
-  const { ctx, canvas } = surface;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.setTransform(canvas.width / out.width, 0, 0, canvas.height / out.height, 0, 0);
-  for (const cue of videoLayers(tracks, time)) {
-    const { clip, track } = cue;
-    const t = resolveTransform(clip, clipProgress(clip, time));
-    // Cross-fades are true dissolves: videoOpacity keeps the outgoing clip opaque.
-    const alpha = Math.max(0, Math.min(1, t.opacity * videoOpacity(track, clip, time)));
-    if (alpha <= 0) continue;
-    if (cue.kind === 'title') {
-      paintTitle(surface, clip.text, out, t, alpha);
-      continue;
-    }
-    const picture = pictureFor(cue);
-    if (picture) drawPicture(ctx, picture.image, picture, out, t, alpha);
-  }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+/**
+ * Bind the compositor to a preview canvas.
+ * @param {HTMLCanvasElement} canvas
+ * @param {PainterSources} sources
+ * @returns {{ paint: (doc: any, time: number) => void }}
+ */
+export function createPainter(canvas, { videos, images, onArrive }) {
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const fontReady = createFontLoader(onArrive);
+  /** @type {import('#utils/compose/host.js').HostEnv} */
+  const env = {
+    createCanvas: (width, height) =>
+      Object.assign(document.createElement('canvas'), { width, height }),
+    image(path) {
+      const still = images.get(pictureUrl(path));
+      return still.ready ? still.image : null;
+    },
+    frameOf(clip) {
+      const slot = videos.find(clip.clipId);
+      return slot && hasFrame(slot) ? slot.el : null;
+    },
+    fontReady,
+  };
+  /** @type {any} The document whose fonts were last asked for */
+  let warmed = null;
+
+  return {
+    /**
+     * Draw the frame at `time` onto the canvas, at its current size.
+     * @param {any} doc - The document
+     * @param {number} time - Timeline seconds
+     */
+    paint(doc, time) {
+      if (doc !== warmed) {
+        // A new document: start loading every font it uses, not just this frame's.
+        warmed = doc;
+        for (const { font, text } of requirements(doc).fonts) fontReady(font, text);
+      }
+      drawFrame(ctx, doc, time, env, frameInfo(doc, canvas.width, canvas.height));
+    },
+  };
 }

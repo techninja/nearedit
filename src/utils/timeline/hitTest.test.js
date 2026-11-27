@@ -114,7 +114,13 @@ describe('gesture choice', () => {
     assert.equal(chooseGesture(clip('body')), 'move');
     assert.equal(chooseGesture(clip('body'), { altKey: true }), 'slip');
     assert.equal(chooseGesture(clip('trim-start')), 'trim-start');
-    assert.equal(chooseGesture(clip('trim-end'), { altKey: true }), 'trim-end');
+    assert.equal(chooseGesture(clip('trim-end'), { altKey: true }), 'slip-trim-end');
+    assert.equal(chooseGesture(clip('trim-start'), { altKey: true }), 'slip-trim-start');
+    assert.equal(chooseGesture(clip('trim-end'), { altKey: true, ctrlKey: true }), 'roll-end');
+    assert.equal(chooseGesture(clip('trim-start'), { ctrlKey: true }), 'trim-start');
+    assert.equal(chooseGesture(clip('body'), { ctrlKey: true }), 'copy');
+    assert.equal(chooseGesture(clip('body'), { ctrlKey: true, altKey: true }), 'slide');
+    assert.equal(chooseGesture(clip('fade-in'), { altKey: true }), 'fade-in');
     assert.equal(chooseGesture(clip('fade-in')), 'fade-in');
     assert.equal(chooseGesture(empty), 'marquee');
     assert.equal(chooseGesture({ ...clip('body'), locked: true }), 'marquee');
@@ -122,6 +128,8 @@ describe('gesture choice', () => {
     assert.equal(chooseGesture(ruler({ band: 'loop' })), 'loop');
     assert.equal(chooseGesture(ruler(), { shiftKey: true }), 'loop');
     assert.equal(chooseGesture(ruler({ markerId: 'm1' })), 'marker');
+    assert.equal(chooseGesture(ruler({ regionId: 'r', regionPart: 'body' })), 'region');
+    assert.equal(chooseGesture(ruler({ regionId: 'r', regionPart: 'end' })), 'region-end');
     assert.equal(chooseGesture({ zone: 'none', time: 0 }), 'marquee');
   });
 
@@ -138,6 +146,13 @@ describe('gesture choice', () => {
     assert.equal(cursorFor(clip('body'), { altKey: true }), 'ew-resize');
     assert.equal(cursorFor(clip('trim-start')), 'w-resize');
     assert.equal(cursorFor(clip('trim-end')), 'e-resize');
+    assert.equal(cursorFor(clip('trim-end'), { altKey: true }), 'ew-resize');
+    assert.equal(cursorFor(clip('trim-end'), { altKey: true, ctrlKey: true }), 'col-resize');
+    assert.equal(cursorFor(clip('body'), { ctrlKey: true }), 'copy');
+    assert.equal(cursorFor(clip('body'), { ctrlKey: true, altKey: true }), 'all-scroll');
+    assert.equal(cursorFor(ruler({ regionId: 'r', regionPart: 'body' })), 'grab');
+    assert.equal(cursorFor(ruler({ regionId: 'r', regionPart: 'start' })), 'ew-resize');
+    assert.equal(activeCursor('region'), 'grabbing');
     assert.equal(cursorFor(clip('fade-in')), 'nesw-resize');
     assert.equal(cursorFor(clip('fade-out')), 'nwse-resize');
     assert.equal(cursorFor(ruler({ band: 'loop' })), 'col-resize');

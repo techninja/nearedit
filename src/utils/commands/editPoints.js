@@ -1,5 +1,5 @@
 /**
- * Edit points and markers as places to jump to. Pure.
+ * Edit points, markers and region ends as places to jump to. Pure.
  * @module utils/commands/editPoints
  */
 
@@ -21,11 +21,17 @@ export function editPoints(doc) {
 }
 
 /**
+ * The places the marker keys stop at: markers, and both ends of regions.
  * @param {import('#utils/edl/types.js').Edl} doc
- * @returns {number[]} Marker times, ascending
+ * @returns {number[]} Ascending, without duplicates
  */
 export function markerTimes(doc) {
-  return (doc.markers || []).map((marker) => marker.time).sort((a, b) => a - b);
+  const regions = /** @type {any} */ (doc).regions || [];
+  const times = [
+    ...(doc.markers || []).map((marker) => marker.time),
+    ...regions.flatMap((region) => [region.start, region.end]),
+  ].sort((a, b) => a - b);
+  return times.filter((time, i) => i === 0 || time - times[i - 1] > SAME);
 }
 
 /**

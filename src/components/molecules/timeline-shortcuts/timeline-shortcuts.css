@@ -2,7 +2,7 @@ timeline-shortcuts {
   display: contents;
 
   & .timeline-shortcuts {
-    width: min(38rem, 100%);
+    width: min(46rem, 100%);
 
     &:focus {
       outline: none;
@@ -29,6 +29,10 @@ timeline-shortcuts {
     padding: 2px 0;
     font-size: var(--text-sm);
     break-inside: avoid;
+
+    &.clash {
+      color: var(--color-warning);
+    }
   }
 
   & .timeline-shortcuts-keys {

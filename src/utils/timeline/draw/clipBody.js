@@ -91,8 +91,11 @@ export function drawClip(scene, track, index, lane) {
       y + LABEL_H / 2 + 0.5,
     );
   }
-  if (!(overlaps.in > 0)) drawFadeRamp(ctx, 'in', x0, y, height, clip.fadeIn * vp.pps, palette);
-  if (!(overlaps.out > 0)) drawFadeRamp(ctx, 'out', x1, y, height, clip.fadeOut * vp.pps, palette);
+  const { fadeInCurve, fadeOutCurve } = /** @type {any} */ (clip);
+  const ramp = (edge, x, length, curve) =>
+    drawFadeRamp(ctx, edge, x, y, height, length, palette, curve);
+  if (!(overlaps.in > 0)) ramp('in', x0, clip.fadeIn * vp.pps, fadeInCurve);
+  if (!(overlaps.out > 0)) ramp('out', x1, clip.fadeOut * vp.pps, fadeOutCurve);
 
   if (selected) {
     ctx.strokeStyle = palette.selection;

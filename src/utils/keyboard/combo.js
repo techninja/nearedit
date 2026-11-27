@@ -1,10 +1,12 @@
 /**
  * Key combinations as text. A combo is written `Mod+Shift+Z`: modifiers
  * (`Ctrl`, `Alt`, `Shift`, `Meta`, and `Mod` = Ctrl, or Cmd on macOS) then
- * one key — a character, or a `KeyboardEvent.key` name such as `ArrowLeft`,
- * `Delete`, `Space`. Pure.
+ * one key — a character, a `KeyboardEvent.key` name such as `ArrowLeft`,
+ * `Delete`, `Space`, `F8`, or `Num4` for a key of the numeric keypad. Pure.
  * @module utils/keyboard/combo
  */
+
+export { formatCombo } from './comboFormat.js';
 
 const MODIFIER_ORDER = ['Ctrl', 'Alt', 'Shift', 'Meta'];
 
@@ -39,6 +41,10 @@ const KEY_NAMES = {
   end: 'End',
   pageup: 'PageUp',
   pagedown: 'PageDown',
+  pgup: 'PageUp',
+  pgdn: 'PageDown',
+  ins: 'Insert',
+  insert: 'Insert',
   left: 'ArrowLeft',
   right: 'ArrowRight',
   up: 'ArrowUp',
@@ -51,6 +57,18 @@ const KEY_NAMES = {
   minus: '-',
 };
 
+/** Physical punctuation keys (`KeyboardEvent.code`) → the character they carry unshifted. */
+const PUNCTUATION = {
+  BracketLeft: '[',
+  BracketRight: ']',
+  Comma: ',',
+  Period: '.',
+  Backslash: '\\',
+  Backquote: '`',
+  Minus: '-',
+  Equal: '=',
+};
+
 /**
  * Put a key and its modifiers into canonical form. Shift is dropped for
  * symbols: `?` already says Shift was down, and which key carries a symbol
@@ -60,7 +78,10 @@ const KEY_NAMES = {
  * @returns {string}
  */
 function canonical(key, modifiers) {
-  const name = KEY_NAMES[key.toLowerCase()] || (key.length === 1 ? key.toUpperCase() : key);
+  const pad = /^num(?:pad)?(\d)$/i.exec(key);
+  const fn = /^f\d{1,2}$/i.test(key);
+  const word = pad ? `Num${pad[1]}` : fn ? key.toUpperCase() : KEY_NAMES[key.toLowerCase()];
+  const name = word || (key.length === 1 ? key.toUpperCase() : key);
   const symbol = name.length === 1 && name.toLowerCase() === name.toUpperCase();
   const kept = MODIFIER_ORDER.filter((mod) => modifiers.has(mod) && !(symbol && mod === 'Shift'));
   return [...kept, name].join('+');
@@ -111,31 +132,16 @@ export function eventCombo(event) {
   if (['Control', 'Shift', 'Alt', 'Meta', 'AltGraph', 'Dead', 'Unidentified'].includes(key)) {
     return '';
   }
-  // Option+letter types a symbol on macOS; the physical key says which letter.
-  const physical = /^(?:Key|Digit)(.)$/.exec(event.code || '');
-  if (event.altKey && physical) key = physical[1];
+  const code = event.code || '';
+  // The keypad has commands of its own, whatever NumLock makes its keys type.
+  if (/^Numpad\d$/.test(code)) key = code;
+  // Option+key types a symbol on macOS; the physical key says which key it was.
+  const physical = /^(?:Key|Digit)(.)$/.exec(code)?.[1] || PUNCTUATION[code];
+  if (event.altKey && physical) key = physical;
   const modifiers = new Set();
   if (event.ctrlKey) modifiers.add('Ctrl');
   if (event.altKey) modifiers.add('Alt');
   if (event.shiftKey) modifiers.add('Shift');
   if (event.metaKey) modifiers.add('Meta');
   return key ? canonical(key, modifiers) : '';
-}
-
-/** Canonical key → how it is shown. */
-const DISPLAY = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Escape: 'Esc' };
-const MAC_MODIFIERS = { Ctrl: '⌃', Alt: '⌥', Shift: '⇧', Meta: '⌘' };
-
-/**
- * A combo for people to read: `Ctrl+Shift+Z`, or `⇧⌘Z` on macOS.
- * @param {string} combo - Canonical combo
- * @param {boolean} [mac=false]
- * @returns {string}
- */
-export function formatCombo(combo, mac = false) {
-  if (!combo) return '';
-  const { key, modifiers } = splitCombo(combo);
-  const shown = DISPLAY[key] || (key === 'Delete' && mac ? 'Del' : key);
-  if (mac) return `${modifiers.map((mod) => MAC_MODIFIERS[mod] || mod).join('')}${shown}`;
-  return [...modifiers, shown].join('+');
 }

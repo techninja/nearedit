@@ -1,5 +1,5 @@
 /**
- * Overlay layer: the loop region's shade, the edit cursor and playhead,
+ * Overlay layer: the time selection's shade, the edit cursor and playhead,
  * the snap guide, the marquee box and the drop target for media dragged in
  * from the bin.
  * @module utils/timeline/draw/overlays
@@ -11,18 +11,24 @@ import { timeToX } from '#utils/timeline/viewport.js';
 /** @typedef {import('./scene.js').Scene} Scene */
 
 /**
- * Shade the loop region across the lanes.
+ * The time selection (which is the loop region) across the lanes: a shade
+ * between two edge lines, stronger while looping is on.
  * @param {Scene} scene
  */
 export function drawLoopShade(scene) {
   const { ctx, vp, view, palette } = scene;
   if (!(view.loopEnd > view.loopStart)) return;
-  const x0 = Math.max(0, timeToX(vp, view.loopStart));
-  const x1 = Math.min(vp.width, timeToX(vp, view.loopEnd));
-  if (x1 <= x0) return;
-  ctx.globalAlpha = view.loopEnabled ? 1 : 0.4;
+  const x0 = Math.round(timeToX(vp, view.loopStart));
+  const x1 = Math.round(timeToX(vp, view.loopEnd));
+  if (x1 <= 0 || x0 >= vp.width) return;
+  const height = vp.height - RULER_H;
+  ctx.globalAlpha = view.loopEnabled ? 1 : 0.6;
   ctx.fillStyle = palette.loop;
-  ctx.fillRect(x0, RULER_H, x1 - x0, vp.height - RULER_H);
+  ctx.fillRect(Math.max(0, x0), RULER_H, Math.min(vp.width, x1) - Math.max(0, x0), height);
+  ctx.globalAlpha = view.loopEnabled ? 0.9 : 0.55;
+  ctx.fillStyle = palette.primary;
+  ctx.fillRect(x0, RULER_H, 1, height);
+  ctx.fillRect(x1 - 1, RULER_H, 1, height);
   ctx.globalAlpha = 1;
 }
 

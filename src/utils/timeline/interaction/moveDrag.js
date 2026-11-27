@@ -5,6 +5,8 @@
  * @module utils/timeline/interaction/moveDrag
  */
 
+import { getUserPrefs } from '#store/UserPrefs.js';
+import { rippled } from '#utils/commands/postRipple.js';
 import { commit } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
 import { sourceDurations } from '#utils/media/library.js';
@@ -39,8 +41,15 @@ export const moveDrag = {
       toTrackId: nearestLane(lanes, press.y, vp.scrollY)?.trackId,
     };
     const modes = { ...press.data.modes, snapping: !!snap };
-    const { doc, guide } = movePreview(press.base, drag, modes, snap);
-    commit(doc);
+    // A ripple wider than the dragged tracks is made by following the plain move.
+    const wide = modes.ripple && getUserPrefs().rippleScope !== 'track';
+    const { doc, guide } = movePreview(
+      press.base,
+      drag,
+      { ...modes, ripple: !wide && modes.ripple },
+      snap,
+    );
+    commit(wide ? rippled(press.base, doc) : doc);
     stage.overlay.guide = guide;
   },
   click: clickClip,

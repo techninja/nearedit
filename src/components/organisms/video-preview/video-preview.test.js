@@ -180,6 +180,47 @@ describe('video-preview', () => {
     await waitUntil(() => isColor(el, [0, 128, 0]), `fade midpoint was ${centre(el)}`);
   });
 
+  it('previews generators, track opacity and effects through the shared compositor', async () => {
+    const solid = (clipId, color, extra = {}) =>
+      createClip({
+        clipId,
+        timelineStart: 0,
+        timelineEnd: 4,
+        generator: { type: 'solid', seed: 0, params: { color } },
+        ...extra,
+      });
+    const el = await mount([
+      createTrack('video', { trackId: 'v1', opacity: 0.5, clips: [solid('front', GREEN)] }),
+      createTrack('video', { trackId: 'v2', clips: [solid('back', RED)] }),
+    ]);
+    await waitUntil(() => isColor(el, [128, 128, 0]), `half green over red was ${centre(el)}`);
+    const blur = { effectId: 'fx1', type: 'blur', enabled: true, params: { radius: 30 } };
+    session.edit((doc) => updateClip(doc, 'back', { blendMode: 'add', effects: [blur] }));
+    await waitUntil(() => isColor(el, [128, 128, 0]), 'a blurred flat colour stays flat');
+    expect(previewSurface(el).compositor.stats().paints).to.be.greaterThan(1);
+  });
+
+  it('follows keyframes while scrubbing', async () => {
+    const fading = createClip({
+      clipId: 'k',
+      timelineStart: 0,
+      timelineEnd: 4,
+      generator: { type: 'solid', seed: 0, params: { color: GREEN } },
+      keyframes: {
+        'generator.params.color': [
+          { t: 0, v: GREEN, ease: 'linear' },
+          { t: 4, v: RED, ease: 'linear' },
+        ],
+      },
+    });
+    const el = await mount([createTrack('video', { clips: [fading] })]);
+    await waitUntil(() => isColor(el, [0, 255, 0]), 'first key not shown');
+    transport.seek(2);
+    await waitUntil(() => isColor(el, [128, 128, 0]), `halfway was ${centre(el)}`);
+    transport.seek(3);
+    await waitUntil(() => isColor(el, [191, 64, 0]), `three quarters was ${centre(el)}`);
+  });
+
   it('shows frames from the transport while playing and stops at the end', async () => {
     const el = await mount([
       createTrack('video', { clips: [block('a', GREEN, 0, 0.4), block('b', RED, 0.4, 0.8)] }),

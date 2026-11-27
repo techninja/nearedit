@@ -7,6 +7,7 @@
  */
 
 import { html, define, store } from 'hybrids';
+import UserPrefs from '#store/UserPrefs.js';
 import ViewState from '#store/ViewState.js';
 import { onClipboardChange } from '#utils/commands/clipboard.js';
 import { getCommand, isEnabled, isPressed, runCommand } from '#utils/commands/registry.js';
@@ -19,6 +20,7 @@ import '#atoms/app-icon/app-icon.js';
  * @typedef {Object} TimelineToolbarHost
  * @property {import('#store/ViewState.js').ViewStateShape} view - Selection and modes
  * @property {number} revision - Bumped on every document change
+ * @property {import('#store/UserPrefs.js').UserPrefsShape} prefs - The keymap preset in use
  */
 
 /** Buttons, by command id, in groups separated by a divider. */
@@ -27,7 +29,7 @@ export const TOOLBAR_LAYOUT = [
   ['edit.split', 'edit.delete', 'edit.rippleDelete'],
   ['edit.copy', 'edit.paste', 'edit.duplicate'],
   ['mode.snapping', 'mode.ripple', 'mode.autoCrossfade'],
-  ['marker.add', 'title.add', 'track.addVideo', 'track.addAudio'],
+  ['marker.add', 'region.add', 'title.add', 'track.addVideo', 'track.addAudio'],
   ['view.zoomOut', 'view.zoomIn', 'view.zoomFit'],
   ['help.shortcuts'],
 ];
@@ -70,6 +72,7 @@ function renderButton(id) {
 export default define({
   tag: 'timeline-toolbar',
   view: store(ViewState),
+  prefs: store(UserPrefs),
   revision: {
     value: 0,
     connect(host) {
@@ -81,15 +84,17 @@ export default define({
     },
   },
   render: {
-    // Reading `view` and `revision` makes the buttons follow the selection,
-    // the modes, the undo history and the clipboard.
-    value: ({ view, revision }) => html`
+    // Reading `view`, `revision` and `prefs` makes the buttons follow the
+    // selection, the modes, the undo history, the clipboard and — for the
+    // shortcuts in their tooltips — the keymap preset.
+    value: ({ view, revision, prefs }) => html`
       <div
         class="toolbar timeline-toolbar"
         role="toolbar"
         aria-label="Timeline"
         data-revision="${revision}"
         data-selected="${view.selection.length}"
+        data-keymap="${prefs.keymapPreset}"
       >
         ${TOOLBAR_LAYOUT.map(
           (group, index) => html`

@@ -5,6 +5,8 @@
  * @module utils/timeline/interaction/events
  */
 
+import { selectRegion } from '#utils/commands/marks.js';
+import { selectBetweenMarkers } from '#utils/commands/timeSelection.js';
 import { isPanKeyHeld } from '#utils/keyboard/panKey.js';
 import { cursorFor } from '#utils/timeline/gestureChoice.js';
 import { hitTest } from '#utils/timeline/hitTest.js';
@@ -26,8 +28,10 @@ import { onWheel } from './zoomInput.js';
 function hover(stage, event) {
   const { x, y } = canvasPoint(stage, event);
   const hit = hitTest(stage.geometry(), x, y);
-  const { altKey, shiftKey } = event;
-  stage.canvas.style.cursor = cursorFor(hit, { altKey, shiftKey, panKey: isPanKeyHeld() });
+  const { altKey, shiftKey, ctrlKey, clientX, clientY } = event;
+  stage.hover = { clientX, clientY };
+  const input = { altKey, shiftKey, ctrlKey, panKey: isPanKeyHeld() };
+  stage.canvas.style.cursor = cursorFor(hit, input);
   const clipId = hit.locked ? '' : hit.clipId || '';
   if (clipId === stage.overlay.hoverClipId) return;
   stage.overlay.hoverClipId = clipId;
@@ -35,7 +39,8 @@ function hover(stage, event) {
 }
 
 /**
- * Double-click: rename a marker; on a clip, set the loop region to it.
+ * Double-click: rename a marker; a region, a clip, or the stretch of ruler
+ * between two markers becomes the time selection.
  * @param {Stage} stage
  * @param {MouseEvent} event
  */
@@ -43,6 +48,8 @@ function doubleClick(stage, event) {
   const { x, y } = canvasPoint(stage, event);
   const hit = hitTest(stage.geometry(), x, y);
   if (hit.markerId) stage.ui.renameMarker(hit.markerId);
+  else if (hit.regionId) selectRegion(hit.regionId);
+  else if (hit.zone === 'ruler') selectBetweenMarkers(hit.time);
   else if (hit.clipId && !hit.locked) loopClip(hit.clipId);
 }
 
@@ -64,6 +71,7 @@ export function handleStageEvent(stage, event) {
       return pointerEnd(stage, event, true);
     case 'pointerleave':
       stage.overlay.hoverClipId = '';
+      stage.hover = null;
       return stage.invalidate();
     case 'wheel':
       return onWheel(stage, event);
@@ -85,19 +93,31 @@ export function handleStageEvent(stage, event) {
 }
 
 /**
- * Escape cancels the drag in progress. Listens ahead of the shortcut
- * handler so the same key does not also clear the selection.
+ * Keys the pointer cares about. Escape cancels the drag in progress —
+ * heard ahead of the shortcut handler, so the same key does not also clear
+ * the selection. Ctrl and Alt going down or up change what a drag from
+ * under the resting pointer would do, so the cursor is brought up to date.
  * @param {() => Stage|undefined} getStage - The stage may not exist yet
  * @returns {() => void} Stop listening
  */
 export function watchEscape(getStage) {
   const onKey = (/** @type {KeyboardEvent} */ event) => {
     const stage = getStage();
-    if (event.key !== 'Escape' || !stage?.press?.dragging) return;
+    if (!stage) return;
+    const modifier = event.key === 'Control' || event.key === 'Alt';
+    if (modifier && stage.hover && !stage.press) {
+      const { altKey, shiftKey, ctrlKey } = event;
+      hover(stage, /** @type {any} */ ({ ...stage.hover, altKey, shiftKey, ctrlKey }));
+    }
+    if (event.type !== 'keydown' || event.key !== 'Escape' || !stage.press?.dragging) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     endPress(stage, null);
   };
   window.addEventListener('keydown', onKey, true);
-  return () => window.removeEventListener('keydown', onKey, true);
+  window.addEventListener('keyup', onKey, true);
+  return () => {
+    window.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('keyup', onKey, true);
+  };
 }

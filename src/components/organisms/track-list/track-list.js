@@ -1,16 +1,22 @@
 /**
  * Track list — the column left of the timeline canvas: the playhead
- * timecode in the corner beside the ruler, then one header per track,
- * scrolled vertically in step with the lanes, and the track options menu.
+ * timecode in the corner beside the ruler (with the shuttle rate while J /
+ * L shuttle, and the go-to field when a time is asked for), then one header
+ * per track, scrolled vertically in step with the lanes, and the track
+ * options menu.
  * @module components/organisms/track-list
  */
 
 import { html, define, store } from 'hybrids';
 import ViewState from '#store/ViewState.js';
+import { shuttleLabel } from '#utils/commands/shuttle.js';
+import { onShuttle } from '#utils/commands/shuttleRun.js';
+import { onUiRequest } from '#utils/commands/viewCommands.js';
 import { liveDoc } from '#utils/editor/liveDoc.js';
 import { formatTimecode } from '#utils/playback/timecode.js';
 import { scrollBy } from '#utils/timeline/scroll.js';
 import { trackMenu } from '#utils/timeline/trackMenu.js';
+import '#molecules/timeline-goto/timeline-goto.js';
 import '#molecules/timeline-menu/timeline-menu.js';
 import '#molecules/track-header/track-header.js';
 
@@ -19,6 +25,8 @@ import '#molecules/track-header/track-header.js';
  * @property {any} doc - The current document
  * @property {import('#store/ViewState.js').ViewStateShape} view
  * @property {{ open: boolean, x: number, y: number, trackId: string }} menu - Options menu state
+ * @property {boolean} asking - The go-to field is open
+ * @property {number} rate - Shuttle rate; 0 or 1 shows nothing
  */
 
 /** @typedef {TrackListHost & HTMLElement} Host */
@@ -49,19 +57,43 @@ function handleMenuClose(host) {
   host.menu = MENU_CLOSED;
 }
 
+/** @param {Host} host */
+function handleGotoDone(host) {
+  host.asking = false;
+}
+
 /** @type {import('hybrids').Component<TrackListHost>} */
 export default define({
   tag: 'track-list',
   doc: liveDoc(),
   view: store(ViewState),
   menu: { value: MENU_CLOSED },
+  asking: {
+    value: false,
+    connect: (host) =>
+      onUiRequest((request) => {
+        if (request === 'goto') host.asking = true;
+      }),
+  },
+  rate: {
+    value: 0,
+    connect: (host) =>
+      onShuttle((rate) => {
+        host.rate = rate;
+      }),
+  },
   render: {
-    value: ({ doc, view, menu }) => html`
+    value: ({ doc, view, menu, asking, rate }) => html`
       <div class="track-list" onwheel="${handleWheel}" ontrackmenu="${handleTrackMenu}">
         <div class="track-list-corner">
           <span role="timer" aria-label="Playhead position"
             >${formatTimecode(view.playheadPosition, doc.fps)}</span
           >
+          ${shuttleLabel(rate) &&
+          html`<span class="badge track-list-rate" aria-label="Shuttle rate"
+            >${shuttleLabel(rate)}</span
+          >`}
+          <timeline-goto open="${asking}" ondone="${handleGotoDone}"></timeline-goto>
         </div>
         <div class="track-list-headers">
           <div style="${{ transform: `translateY(${-view.scrollY}px)` }}">

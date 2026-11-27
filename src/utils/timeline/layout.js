@@ -12,6 +12,8 @@
 export const RULER_H = 34;
 /** Height of the loop band at the top of the ruler. */
 export const LOOP_BAND_H = 10;
+/** Height of the row under the loop band that holds marker flags and region tags. */
+export const MARK_ROW_H = 12;
 /** Lane height with a mouse, and with a finger. */
 export const LANE_H = 60;
 export const LANE_H_COARSE = 72;

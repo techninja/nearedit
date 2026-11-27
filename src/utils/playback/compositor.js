@@ -1,5 +1,8 @@
 /**
- * Preview compositor — draws the timeline's picture on a 2D canvas.
+ * Preview compositor — draws the timeline's picture on a 2D canvas. The
+ * drawing itself is the shared frame compositor (`#utils/compose`, the same
+ * code the server renders with); this module feeds it: it keeps a `<video>`
+ * element per visible clip on the right frame and decides when to paint.
  *
  * Two modes, one painter:
  * - `renderPlaying(doc, time)` every animation frame while the transport
@@ -13,11 +16,10 @@
  * @module utils/playback/compositor
  */
 
-import { parseResolution } from '#utils/edl/factory.js';
 import { sourceTimeAt } from '#utils/edl/query.js';
 import { createImageCache } from '#utils/playback/imageCache.js';
 import { pictureUrl } from '#utils/playback/mediaUrl.js';
-import { paintFrame } from '#utils/playback/paintFrame.js';
+import { createPainter } from '#utils/playback/paintFrame.js';
 import { videoCues, videoLayers } from '#utils/playback/schedule.js';
 import { createVideoPool } from '#utils/playback/videoPool.js';
 import { aimSlot, driveSlot, hasFrame, isSettled } from '#utils/playback/videoSlot.js';
@@ -38,35 +40,20 @@ const SEEK_NUDGE = 0.001;
  * @param {HTMLCanvasElement} canvas
  */
 export function createCompositor(canvas) {
-  const surface = { canvas, ctx: canvas.getContext('2d', { alpha: false }), scratch: null };
   const videos = createVideoPool(onMedia);
   const images = createImageCache(onMedia);
+  const painter = createPainter(canvas, { videos, images, onArrive: onMedia });
   /** @type {{ doc: FrameDoc, time: number }|null} The newest paused request */
   let request = null;
   let dirty = true;
   let paints = 0;
 
   /**
-   * The picture for a layer, or null when it has none ready.
-   * @param {import('#utils/playback/schedule.js').Cue} cue
-   * @returns {import('#utils/playback/paintFrame.js').Picture|null}
-   */
-  function pictureFor(cue) {
-    if (cue.kind === 'image') {
-      const { image, ready } = images.get(pictureUrl(cue.clip.sourceFile));
-      return ready ? { image, width: image.naturalWidth, height: image.naturalHeight } : null;
-    }
-    const slot = videos.find(cue.clip.clipId);
-    if (!slot || !hasFrame(slot)) return null;
-    return { image: slot.el, width: slot.el.videoWidth, height: slot.el.videoHeight };
-  }
-
-  /**
    * @param {FrameDoc} doc
    * @param {number} time
    */
   function paint(doc, time) {
-    paintFrame(surface, doc.tracks, time, parseResolution(doc.resolution), pictureFor);
+    painter.paint(doc, time);
     paints++;
   }
 
@@ -89,7 +76,7 @@ export function createCompositor(canvas) {
     return true;
   }
 
-  /** A frame or still arrived: show the newest paused request with it. */
+  /** A frame, a still or a font arrived: show the newest paused request with it. */
   function onMedia() {
     if (request && drawable(false)) paint(request.doc, request.time);
   }

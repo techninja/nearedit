@@ -6,11 +6,12 @@
 
 import { getDoc } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
+import { markerTimes } from './editPoints.js';
 import * as nav from './navigate.js';
 
 /** @typedef {import('./registry.js').Command} Command */
 
-const hasMarkers = () => (getDoc().markers || []).length > 0;
+const hasMarkers = () => markerTimes(getDoc()).length > 0;
 
 /** @type {Command[]} */
 export const TRANSPORT_COMMANDS = [

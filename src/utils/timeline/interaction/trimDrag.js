@@ -3,6 +3,8 @@
  * @module utils/timeline/interaction/trimDrag
  */
 
+import { getUserPrefs } from '#store/UserPrefs.js';
+import { rippled } from '#utils/commands/postRipple.js';
 import { expandSelection, findClip } from '#utils/edl/index.js';
 import { commit } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
@@ -49,9 +51,14 @@ function trimGesture(edge) {
     drag(stage, press) {
       const snap = snapContext(press, stage.geometry().vp.pps);
       const drag = { clipId: press.hit.clipId, edge, time: grabbedTime(stage, press) };
-      const modes = { ...press.data.modes, snapping: !!snap };
+      const wide = press.data.modes.ripple && getUserPrefs().rippleScope !== 'track';
+      const modes = {
+        ...press.data.modes,
+        snapping: !!snap,
+        ripple: !wide && press.data.modes.ripple,
+      };
       const { doc, guide } = trimPreview(press.base, drag, modes, snap, sourceDurations());
-      commit(doc);
+      commit(wide ? rippled(press.base, doc) : doc);
       stage.overlay.guide = guide;
     },
     click: clickClip,

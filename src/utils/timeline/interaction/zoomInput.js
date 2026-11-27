@@ -1,12 +1,16 @@
 /**
- * Wheel and pinch: scrolling, and zooming about the pointer (Ctrl/Cmd +
- * wheel, a trackpad pinch) or about the middle of two fingers.
+ * Wheel and pinch: scrolling, zooming about the pointer or about the
+ * middle of two fingers, and moving the cursor with the wheel.
  * @module utils/timeline/interaction/zoomInput
  */
 
+import { getUserPrefs } from '#store/UserPrefs.js';
+import { getDoc } from '#utils/editor/session.js';
 import { getView, setZoom } from '#utils/editor/view.js';
+import { getPosition, seek } from '#utils/playback/transport.js';
 import { currentViewport, scrollBy, scrollExtent } from '#utils/timeline/scroll.js';
-import { wheelZoomFactor, xToTime } from '#utils/timeline/viewport.js';
+import { xToTime } from '#utils/timeline/viewport.js';
+import { wheelAction } from '#utils/timeline/wheel.js';
 import { canvasPoint } from './pointer.js';
 
 /** @typedef {import('#utils/timeline/stage.js').Stage} Stage */
@@ -20,27 +24,34 @@ import { canvasPoint } from './pointer.js';
  */
 
 /**
- * Wheel: Ctrl/Cmd zooms about the pointer (browsers report a trackpad
- * pinch the same way); otherwise scroll — sideways movement scrolls time,
- * vertical movement scrolls the tracks when they overflow and time when
- * they do not; Shift always scrolls time.
+ * Wheel: scroll, zoom about the pointer or move the cursor, according to
+ * the wheel mode the user chose (`#utils/timeline/wheel.js`).
  * @param {Stage} stage
  * @param {WheelEvent} event
  */
 export function onWheel(stage, event) {
   event.preventDefault();
   const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? stage.canvas.clientHeight : 1;
-  const dx = event.deltaX * unit;
-  const dy = event.deltaY * unit;
-  if (event.ctrlKey || event.metaKey) {
-    const zoom = getView().zoom * wheelZoomFactor(dy);
-    setZoom(zoom, { anchorX: canvasPoint(stage, event).x });
-    return;
-  }
   const extent = scrollExtent();
-  const tracksOverflow = extent.height > extent.viewHeight;
-  if (event.shiftKey || !tracksOverflow) scrollBy(dx + dy, 0);
-  else scrollBy(dx, dy);
+  const { ctrlKey, metaKey, shiftKey } = event;
+  const input = {
+    dx: event.deltaX * unit,
+    dy: event.deltaY * unit,
+    ...{ ctrlKey, metaKey, shiftKey },
+    tracksOverflow: extent.height > extent.viewHeight,
+  };
+  const action = wheelAction(input, getUserPrefs().wheelMode);
+  if (action.kind === 'scroll') return scrollBy(action.dx, action.dy);
+  if (action.kind === 'zoom') {
+    setZoom(getView().zoom * action.factor, { anchorX: canvasPoint(stage, event).x });
+    if (action.dx) scrollBy(action.dx, 0);
+    return undefined;
+  }
+  // The cursor moves at least a frame for every wheel event.
+  const { pps } = currentViewport();
+  const frame = 1 / (getDoc().fps || 30);
+  const by = Math.sign(action.pixels) * Math.max(frame, Math.abs(action.pixels) / pps);
+  return seek(getPosition() + by);
 }
 
 /**

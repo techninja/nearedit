@@ -47,13 +47,13 @@ function comboList(value, mac) {
 }
 
 /**
- * Build the keymap.
- * @param {{ id: string, keys: string[] }[]} commands - The registry
- * @param {Record<string, unknown>} [overrides] - See the module description
- * @param {boolean} [mac=false] - `Mod` means Cmd
- * @returns {Keymap}
+ * Sort the user's overrides into replaced commands and extra bindings.
+ * @param {{ id: string, keys: string[] }[]} commands
+ * @param {Record<string, unknown>} overrides
+ * @param {boolean} mac
+ * @returns {{ replaced: Map<string, string[]>, extra: [string, string][] }}
  */
-export function buildKeymap(commands, overrides = {}, mac = false) {
+function readOverrides(commands, overrides, mac) {
   const known = new Set(commands.map((command) => command.id));
   /** @type {Map<string, string[]>} Commands whose shortcuts the user replaced */
   const replaced = new Map();
@@ -66,7 +66,19 @@ export function buildKeymap(commands, overrides = {}, mac = false) {
       if (combo) extra.push([combo, value]);
     }
   }
+  return { replaced, extra };
+}
 
+/**
+ * Build the keymap.
+ * @param {{ id: string, keys: string[] }[]} commands - The registry, or the
+ *   commands of a preset (`presetCommands`)
+ * @param {Record<string, unknown>} [overrides] - See the module description
+ * @param {boolean} [mac=false] - `Mod` means Cmd
+ * @returns {Keymap}
+ */
+export function buildKeymap(commands, overrides = {}, mac = false) {
+  const { replaced, extra } = readOverrides(commands, overrides, mac);
   /** @type {Map<string, string>} */
   const byCombo = new Map();
   /** Defaults never steal a key; user bindings do. */
@@ -84,6 +96,44 @@ export function buildKeymap(commands, overrides = {}, mac = false) {
   const byCommand = new Map(commands.map((command) => [command.id, []]));
   for (const [combo, id] of byCombo) byCommand.get(id).push(combo);
   return { byCombo, byCommand };
+}
+
+/**
+ * A key that more than one command asks for.
+ * @typedef {Object} Conflict
+ * @property {string} combo - Canonical combo
+ * @property {string} commandId - The command that gets the key
+ * @property {string[]} others - Commands that ask for it too and go without
+ * @property {boolean} byUser - One of the user's overrides is involved
+ */
+
+/**
+ * Find the keys that are asked for twice: a user override that takes a key
+ * another command had, or two defaults that clash (which a preset must not).
+ * @param {{ id: string, keys: string[] }[]} commands
+ * @param {Record<string, unknown>} [overrides]
+ * @param {boolean} [mac=false]
+ * @returns {Conflict[]}
+ */
+export function findConflicts(commands, overrides = {}, mac = false) {
+  const { replaced, extra } = readOverrides(commands, overrides, mac);
+  const { byCombo } = buildKeymap(commands, overrides, mac);
+  /** @type {Map<string, { ids: Set<string>, byUser: boolean }>} */
+  const asked = new Map();
+  const ask = (combo, id, byUser) => {
+    const entry = asked.get(combo) || { ids: new Set(), byUser: false };
+    asked.set(combo, { ids: entry.ids.add(id), byUser: entry.byUser || byUser });
+  };
+  for (const { id, keys } of commands) {
+    for (const combo of replaced.get(id) || comboList(keys, mac)) ask(combo, id, replaced.has(id));
+  }
+  for (const [combo, id] of extra) ask(combo, id, true);
+  return [...asked]
+    .filter(([, { ids }]) => ids.size > 1)
+    .map(([combo, { ids, byUser }]) => {
+      const commandId = byCombo.get(combo);
+      return { combo, commandId, others: [...ids].filter((id) => id !== commandId), byUser };
+    });
 }
 
 /**

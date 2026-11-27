@@ -64,7 +64,7 @@ export const CLIP_COMMANDS = [
     group: 'Selection',
     keys: ['Escape', 'Mod+Shift+A'],
     run: select.selectNone,
-    enabled: () => getSelection().length > 0,
+    enabled: select.canSelectNone,
   },
   {
     id: 'clip.group',

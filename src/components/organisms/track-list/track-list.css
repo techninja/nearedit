@@ -14,8 +14,10 @@ track-list {
 
   & .track-list-corner {
     display: flex;
+    position: relative;
     flex: none;
     align-items: center;
+    gap: var(--space-xs);
     box-sizing: border-box;
     height: var(--timeline-ruler-h, 34px);
     padding: 0 var(--space-sm);

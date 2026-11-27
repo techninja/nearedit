@@ -1,36 +1,26 @@
 /**
  * Shortcuts list — a dialog of every editor command with its current
  * keyboard shortcut (generated from the command registry and the keymap,
- * so remapped keys show up) and the mouse and touch gestures of the
- * timeline. Dispatches `close`.
+ * so the chosen preset and remapped keys show up) and the mouse and touch
+ * gestures of the timeline. Its head switches between the NearEdit and
+ * Vegas layouts and wheel modes, and warns about remapped keys that
+ * collide. Dispatches `close`.
  * @module components/molecules/timeline-shortcuts
  */
 
-import { html, define, dispatch } from 'hybrids';
+import { html, define, dispatch, store } from 'hybrids';
+import UserPrefs from '#store/UserPrefs.js';
 import { commandGroups } from '#utils/commands/registry.js';
-import { shortcutLabels, suspendKeyboard } from '#utils/keyboard/index.js';
+import { overrideConflicts, shortcutLabels, suspendKeyboard } from '#utils/keyboard/index.js';
+import { pointerGestures } from '#utils/timeline/gestureList.js';
 import '#atoms/app-icon/app-icon.js';
+import '#molecules/timeline-shortcut-prefs/timeline-shortcut-prefs.js';
 
 /**
  * @typedef {Object} TimelineShortcutsHost
  * @property {boolean} open
+ * @property {import('#store/UserPrefs.js').UserPrefsShape} prefs - Preset and wheel mode
  */
-
-/** Pointer gestures, which no keymap describes. */
-const GESTURES = [
-  ['Move a clip (onto another to cross-fade)', 'Drag'],
-  ['Trim', 'Drag an edge'],
-  ['Slip the source under a clip', 'Alt + drag'],
-  ['Fade in / out', 'Drag a top corner'],
-  ['Select several', 'Ctrl / Shift + click, or drag a box'],
-  ['Move the playhead', 'Click or drag the ruler'],
-  ['Set the loop region', 'Shift + drag the ruler'],
-  ['Rename a marker', 'Double-click it'],
-  ['Zoom about the pointer', 'Ctrl + wheel, or pinch'],
-  ['Pan', 'Space + drag, or middle button'],
-  ['Ignore snapping for one drag', 'Hold Shift'],
-  ['Context menu', 'Right-click, or long-press'],
-];
 
 /** @type {WeakMap<HTMLElement, () => void>} Resumes the shortcut handler when the dialog closes */
 const resumes = new WeakMap();
@@ -75,15 +65,37 @@ function syncFocus(host) {
 /**
  * @param {string} label
  * @param {string[]} keys
+ * @param {boolean} [clash] - A remapped key of this command collides with another
  */
-function row(label, keys) {
+function row(label, keys, clash = false) {
   return html`
-    <div class="timeline-shortcuts-row">
+    <div class="${{ 'timeline-shortcuts-row': true, clash }}">
       <span>${label}</span>
       <span class="timeline-shortcuts-keys">
+        ${clash && html`<span class="badge badge-warning" title="A remapped key collides">!</span>`}
         ${keys.map((key) => html`<kbd class="kbd">${key}</kbd>`)}
       </span>
     </div>
+  `;
+}
+
+/**
+ * The list itself: every command under its heading, then the pointer.
+ * @param {import('#store/UserPrefs.js').UserPrefsShape} prefs
+ */
+function list(prefs) {
+  const clashing = new Set(overrideConflicts().flatMap((c) => [c.commandId, ...c.others]));
+  return html`
+    ${commandGroups().map(
+      ({ group, commands }) => html`
+        <h3 class="field-group-title">${group}</h3>
+        ${commands.map((command) =>
+          row(command.label, shortcutLabels(command.id), clashing.has(command.id)),
+        )}
+      `,
+    )}
+    <h3 class="field-group-title">Mouse and touch</h3>
+    ${pointerGestures(prefs.wheelMode).map(([label, gesture]) => row(label, [gesture]))}
   `;
 }
 
@@ -91,8 +103,10 @@ function row(label, keys) {
 export default define({
   tag: 'timeline-shortcuts',
   open: false,
+  prefs: store(UserPrefs),
   render: {
-    value: ({ open }) =>
+    // Reading `prefs` redraws the list when the preset or the wheel mode changes.
+    value: ({ open, prefs }) =>
       open
         ? html`
             <div class="dialog-backdrop" onclick="${handleBackdrop}">
@@ -112,16 +126,8 @@ export default define({
                     <app-icon name="x" size="sm"></app-icon>
                   </button>
                 </div>
-                <div class="dialog-body">
-                  ${commandGroups().map(
-                    ({ group, commands }) => html`
-                      <h3 class="field-group-title">${group}</h3>
-                      ${commands.map((command) => row(command.label, shortcutLabels(command.id)))}
-                    `,
-                  )}
-                  <h3 class="field-group-title">Mouse and touch</h3>
-                  ${GESTURES.map(([label, gesture]) => row(label, [gesture]))}
-                </div>
+                <timeline-shortcut-prefs></timeline-shortcut-prefs>
+                <div class="dialog-body" data-preset="${prefs.keymapPreset}">${list(prefs)}</div>
               </div>
             </div>
           `

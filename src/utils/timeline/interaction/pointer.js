@@ -10,6 +10,7 @@
 import { beginGesture, cancelGesture, endGesture } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
 import { isPanKeyHeld } from '#utils/keyboard/panKey.js';
+import { setEdgeTrim } from '#utils/timeline/edgeTrim.js';
 import { activeCursor, chooseGesture, dragThreshold } from '#utils/timeline/gestureChoice.js';
 import { hitTest } from '#utils/timeline/hitTest.js';
 import { xToTimeRaw } from '#utils/timeline/viewport.js';
@@ -52,6 +53,7 @@ export function startPress(stage, event) {
   };
   const gesture = chooseGesture(hit, input);
   if (gesture === 'none') return null;
+  setEdgeTrim(null); // the pointer takes over from the edge-trim keys
   if (event.button === 1) event.preventDefault(); // no middle-click auto-scroll
   try {
     stage.canvas.setPointerCapture(event.pointerId);

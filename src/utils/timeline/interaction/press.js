@@ -5,7 +5,9 @@
  * @module utils/timeline/interaction/press
  */
 
+import { getUserPrefs } from '#store/UserPrefs.js';
 import { snapCandidates, snapTime } from '#utils/edl/index.js';
+import { regionsOf } from '#utils/edl/regions.js';
 import { beatSnapTimes } from '#utils/timeline/beats.js';
 import { getDoc } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
@@ -52,18 +54,34 @@ export const SNAP_PX = 8;
  */
 
 /**
+ * Region ends as snap targets — when snapping to markers is on.
+ * @param {any} doc
+ * @param {string} [skipRegion] - Id of a region that is itself being dragged
+ * @returns {number[]}
+ */
+function regionEnds(doc, skipRegion) {
+  if (!getUserPrefs().snapMarkers) return [];
+  const others = regionsOf(doc).filter((region) => region.regionId !== skipRegion);
+  return others.flatMap((region) => [region.start, region.end]);
+}
+
+/**
  * Snap candidates for a drag, built once when it starts: clip edges,
- * markers, the playhead, and the beats of music on the timeline.
+ * markers and region ends (unless "snap to markers" is off), the playhead,
+ * and the beats of music on the timeline.
  * @param {any} doc - Document the drag starts from
- * @param {{ exclude?: Iterable<string>, markers?: boolean, playhead?: boolean, pps?: number }} [opts] -
- *   `pps`: pixels per second now; beats are offered when it is given
+ * @param {{ exclude?: Iterable<string>, markers?: boolean, playhead?: boolean, pps?: number,
+ *   skipRegion?: string }} [opts] - `pps`: pixels per second now; beats are offered when it
+ *   is given. `markers: false`: a marker is being dragged, so markers do not count
  * @returns {import('#utils/edl/snap.js').SnapTarget[]}
  */
 export function dragCandidates(doc, opts = {}) {
   const playhead = opts.playhead === false ? undefined : getPosition();
   const exclude = [...(opts.exclude || [])];
-  const extra = opts.pps ? beatSnapTimes(doc, opts.pps, { exclude }) : [];
-  return snapCandidates(doc, { exclude, markers: opts.markers, playhead, extra });
+  const markers = opts.markers !== false && getUserPrefs().snapMarkers;
+  const beats = opts.pps ? beatSnapTimes(doc, opts.pps, { exclude }) : [];
+  const extra = markers ? [...beats, ...regionEnds(doc, opts.skipRegion)] : beats;
+  return snapCandidates(doc, { exclude, markers, playhead, extra });
 }
 
 /**
@@ -88,7 +106,8 @@ export function snapContext(press, pps) {
  */
 export function snapPoint(time, pps, bypass = false) {
   if (!getView().snapping || bypass) return { time, guide: null };
-  const extra = beatSnapTimes(getDoc(), pps);
-  const hit = snapTime(getDoc(), time, { threshold: SNAP_PX / pps, extra });
+  const extra = [...beatSnapTimes(getDoc(), pps), ...regionEnds(getDoc())];
+  const markers = getUserPrefs().snapMarkers;
+  const hit = snapTime(getDoc(), time, { threshold: SNAP_PX / pps, extra, markers });
   return { time: hit.time, guide: hit.snapped ? hit.time : null };
 }

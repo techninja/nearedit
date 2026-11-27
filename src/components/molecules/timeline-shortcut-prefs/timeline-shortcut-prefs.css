@@ -1,0 +1,29 @@
+timeline-shortcut-prefs {
+  display: block;
+  flex: none;
+  border-bottom: 1px solid var(--color-border);
+
+  & .timeline-shortcut-prefs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-lg);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  & .field-row {
+    grid-template-columns: auto auto;
+    padding: 0;
+  }
+
+  & .timeline-shortcut-prefs-conflicts {
+    flex-basis: 100%;
+    margin: 0;
+    padding: var(--space-xs) var(--space-sm) var(--space-xs) var(--space-lg);
+    border-left: 3px solid var(--color-warning);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    font-size: var(--text-xs);
+  }
+}

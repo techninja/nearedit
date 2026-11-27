@@ -8,7 +8,10 @@
 
 import { CLIP_COMMANDS } from './catalogClips.js';
 import { EDIT_COMMANDS } from './catalogEdit.js';
+import { EVENT_COMMANDS } from './catalogEvents.js';
 import { INSERT_COMMANDS } from './catalogInsert.js';
+import { NAVIGATE_COMMANDS } from './catalogNavigate.js';
+import { SELECTION_COMMANDS } from './catalogSelection.js';
 import { TRANSPORT_COMMANDS } from './catalogTransport.js';
 import { VIEW_COMMANDS } from './catalogView.js';
 
@@ -17,7 +20,8 @@ import { VIEW_COMMANDS } from './catalogView.js';
  * @property {string} id - Stable id, e.g. `edit.split`
  * @property {string} label - Shown in tooltips, menus and the shortcuts list
  * @property {string} group - Heading in the shortcuts list
- * @property {string[]} keys - Default shortcuts (`Mod` = Ctrl, or Cmd on macOS)
+ * @property {string[]} keys - Shortcuts in the NearEdit preset (`Mod` = Ctrl, or Cmd on
+ *   macOS); other presets: `#utils/keyboard/presets.js`
  * @property {() => unknown} run
  * @property {() => boolean} [enabled] - Omitted = always available
  * @property {() => boolean} [pressed] - Toggles: whether the mode is on
@@ -27,8 +31,11 @@ import { VIEW_COMMANDS } from './catalogView.js';
 /** @type {Command[]} Every command, in the order the shortcuts list shows them. */
 export const COMMANDS = [
   ...TRANSPORT_COMMANDS,
+  ...NAVIGATE_COMMANDS,
   ...EDIT_COMMANDS,
   ...CLIP_COMMANDS,
+  ...EVENT_COMMANDS,
+  ...SELECTION_COMMANDS,
   ...INSERT_COMMANDS,
   ...VIEW_COMMANDS,
 ];

@@ -8,13 +8,17 @@
  */
 
 import { store } from 'hybrids';
+import UserPrefs from '#store/UserPrefs.js';
 import ViewState from '#store/ViewState.js';
+import { onPendingRipple, pendingRipple } from '#utils/commands/postRipple.js';
 import { getDoc, onDocChange } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
 import { onLibraryChange, sourceDurations } from '#utils/media/library.js';
 import { getPosition, isPlaying, onFrame } from '#utils/playback/transport.js';
 import { drawScene, emptyOverlay } from './draw/scene.js';
-import { LANE_H, LANE_H_COARSE, layoutLanes } from './layout.js';
+import { getEdgeTrim, onEdgeTrim } from './edgeTrim.js';
+import { laneHeightFor } from './laneSize.js';
+import { layoutLanes } from './layout.js';
 import { setStageSize } from './metrics.js';
 import { readPalette, watchTheme } from './palette.js';
 import { currentViewport, revealTime } from './scroll.js';
@@ -28,6 +32,7 @@ import { onWaveLoaded } from './waveCache.js';
  * @property {(x: number, y: number, hit: import('./hitTest.js').Hit) => void} openMenu -
  *   Context menu at a client position
  * @property {(markerId: string) => void} renameMarker - Start inline rename
+ * @property {(regionId: string) => void} renameRegion - The same for a region
  */
 
 /**
@@ -35,9 +40,10 @@ import { onWaveLoaded } from './waveCache.js';
  * @property {HTMLCanvasElement} canvas
  * @property {StageUi} ui
  * @property {boolean} coarse - The primary pointer is a finger
- * @property {number} laneHeight
+ * @property {number} laneHeight - Follows the track-height preference
  * @property {import('./draw/scene.js').Overlay} overlay
  * @property {any} press - The pointer press in progress (interaction/pointer.js)
+ * @property {{ clientX: number, clientY: number }|null} hover - Where the pointer rests
  * @property {import('./surface.js').FrameStats} stats - Draw cost, ms
  * @property {() => void} invalidate - Ask for a redraw on the next frame
  * @property {(coarse?: boolean) => import('./hitTest.js').Geometry} geometry
@@ -67,9 +73,12 @@ export function createStage(canvas, ui) {
     canvas,
     ui,
     coarse,
-    laneHeight: coarse ? LANE_H_COARSE : LANE_H,
+    get laneHeight() {
+      return laneHeightFor(store.get(UserPrefs), coarse);
+    },
     overlay: emptyOverlay(),
     press: null,
+    hover: null,
     stats: noFrames(),
     invalidate() {
       if (!frame) frame = requestAnimationFrame(draw);
@@ -113,6 +122,8 @@ export function createStage(canvas, ui) {
       overlay: stage.overlay,
       durations: sourceDurations(),
       coarse,
+      edgeTrim: getEdgeTrim(),
+      rippleSteps: pendingRipple(),
     });
     stage.stats = countFrame(stage.stats, performance.now() - started);
   }
@@ -122,6 +133,9 @@ export function createStage(canvas, ui) {
   const stops = [
     onDocChange(stage.invalidate),
     store.observe(ViewState, stage.invalidate),
+    store.observe(UserPrefs, stage.invalidate),
+    onEdgeTrim(stage.invalidate),
+    onPendingRipple(stage.invalidate),
     onLibraryChange(stage.invalidate),
     onStripLoaded(stage.invalidate),
     onWaveLoaded(stage.invalidate),

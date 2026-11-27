@@ -8,8 +8,46 @@
 /** @typedef {import('#utils/timeline/palette.js').Palette} Palette */
 
 /**
+ * How a fade-in rises, by curve name — for drawing only (the levels that
+ * are heard and rendered come from the EDL library). A fade-out is the
+ * mirror image, so `fast` and `slow` trade places there.
+ * @type {Record<string, (p: number) => number>}
+ */
+const RISE = {
+  linear: (p) => p,
+  smooth: (p) => (1 - Math.cos(Math.PI * p)) / 2,
+  fast: (p) => 1 - (1 - p) * (1 - p),
+  slow: (p) => p * p,
+  sharp: (p) => Math.acos(1 - 2 * p) / Math.PI,
+};
+const MIRROR = { fast: 'slow', slow: 'fast' };
+/** Line segments a curved ramp is drawn with. */
+const STEPS = 12;
+
+/**
+ * The line of a fade as points, from the clip edge inwards.
+ * @param {'in'|'out'} edge
+ * @param {number} x - The clip edge the fade starts from
+ * @param {number} y - Clip top
+ * @param {number} height - Clip height
+ * @param {number} length - Fade length in pixels
+ * @param {string} [curve='linear']
+ * @returns {[number, number][]} From (edge, bottom) to (fade end, top)
+ */
+export function fadeLine(edge, x, y, height, length, curve = 'linear') {
+  const rise = RISE[edge === 'in' ? curve : MIRROR[curve] || curve] || RISE.linear;
+  const steps = rise === RISE.linear ? 1 : STEPS;
+  const sign = edge === 'in' ? 1 : -1;
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const p = i / steps;
+    return [x + sign * p * length, y + height * (1 - rise(p))];
+  });
+}
+
+/**
  * A fade ramp on one edge: the part of the clip that is "not there yet"
- * is washed with the lane colour and the ramp drawn as a line.
+ * is washed with the lane colour and the ramp drawn as a line that shows
+ * the fade's curve.
  * @param {CanvasRenderingContext2D} ctx
  * @param {'in'|'out'} edge
  * @param {number} x - The clip edge the fade starts from
@@ -17,14 +55,14 @@
  * @param {number} height - Clip height
  * @param {number} length - Fade length in pixels
  * @param {Palette} palette
+ * @param {string} [curve='linear']
  */
-export function drawFadeRamp(ctx, edge, x, y, height, length, palette) {
+export function drawFadeRamp(ctx, edge, x, y, height, length, palette, curve) {
   if (!(length > 0.5)) return;
-  const tip = edge === 'in' ? x + length : x - length;
+  const line = fadeLine(edge, x, y, height, length, curve);
   ctx.beginPath();
   ctx.moveTo(x, y);
-  ctx.lineTo(tip, y);
-  ctx.lineTo(x, y + height);
+  for (const [px, py] of line) ctx.lineTo(px, py);
   ctx.closePath();
   ctx.fillStyle = palette.lane;
   ctx.globalAlpha = 0.6;
@@ -33,15 +71,14 @@ export function drawFadeRamp(ctx, edge, x, y, height, length, palette) {
   ctx.strokeStyle = palette.clipText;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(x, y + height);
-  ctx.lineTo(tip, y);
+  line.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
   ctx.stroke();
   ctx.globalAlpha = 1;
 }
 
 /**
  * A cross-fade: the outgoing clip's colour fills the half it still owns
- * and the two ramps cross over the overlap.
+ * and the two ramps cross over the overlap, each with its own curve.
  * @param {CanvasRenderingContext2D} ctx
  * @param {number} x0 - Start of the overlap (the incoming clip's start)
  * @param {number} x1 - End of the overlap (the outgoing clip's end)
@@ -49,14 +86,18 @@ export function drawFadeRamp(ctx, edge, x, y, height, length, palette) {
  * @param {number} height - Clip height
  * @param {string} outgoing - Colour of the outgoing clip
  * @param {Palette} palette
+ * @param {{ in?: string, out?: string }} [curves] - Curve of the incoming
+ *   clip's fade-in and of the outgoing clip's fade-out
  */
-export function drawCrossfade(ctx, x0, x1, y, height, outgoing, palette) {
+export function drawCrossfade(ctx, x0, x1, y, height, outgoing, palette, curves = {}) {
   if (!(x1 - x0 > 0.5)) return;
+  const rising = fadeLine('in', x0, y, height, x1 - x0, curves.in);
+  const falling = fadeLine('out', x1, y, height, x1 - x0, curves.out);
   ctx.fillStyle = outgoing;
   ctx.beginPath();
   ctx.moveTo(x0, y);
-  ctx.lineTo(x1, y);
-  ctx.lineTo(x0, y + height);
+  // Everything above the incoming clip's rising line still belongs to the outgoing one.
+  for (const [px, py] of rising) ctx.lineTo(px, py);
   ctx.closePath();
   ctx.fill();
   ctx.fillStyle = palette.lane;
@@ -66,10 +107,9 @@ export function drawCrossfade(ctx, x0, x1, y, height, outgoing, palette) {
   ctx.strokeStyle = palette.clipText;
   ctx.lineWidth = 1.25;
   ctx.beginPath();
-  ctx.moveTo(x0, y);
-  ctx.lineTo(x1, y + height);
-  ctx.moveTo(x0, y + height);
-  ctx.lineTo(x1, y);
+  for (const line of [rising, falling]) {
+    line.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
+  }
   ctx.stroke();
   ctx.globalAlpha = 1;
 }
