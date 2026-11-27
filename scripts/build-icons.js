@@ -34,6 +34,10 @@ mkdirSync(dirname(OUT), { recursive: true });
 const icons = {};
 let count = 0;
 
+// Both maps are keyed by lucide name; the same icon listed twice would lose a name.
+const clashes = Object.keys(FX_ICON_MAP).filter((name) => name in ICON_MAP);
+if (clashes.length) throw new Error(`Icons listed in both maps: ${clashes.join(', ')}`);
+
 for (const [lucideName, appName] of Object.entries({ ...ICON_MAP, ...FX_ICON_MAP })) {
   const file = resolve(ICONS_DIR, `${lucideName}.svg`);
   if (!existsSync(file)) {
