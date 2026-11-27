@@ -14,6 +14,7 @@ import { geometryFilters } from './layerFilters.js';
  * @property {string} [pad] - Input pad the chain reads, e.g. "[3:v:0]"
  * @property {string[]} [generate] - Source filters when there is no input pad
  * @property {boolean} still - One picture held for the whole layer (image, title)
+ * @property {number} [lead] - Seconds the input starts before the layer's first frame
  * @property {import('./layerParts.js').LayerSource} source
  * @property {import('./placement.js').LayerGeometry} geometry
  * @property {{ count: number, offset: number, shift: number, length: number }} window
@@ -47,6 +48,29 @@ function fadeFilters(spec, fps) {
 }
 
 /**
+ * Bring a source to the output frame rate. Each output frame shows what a
+ * player would show at that moment: the latest source frame that has
+ * started, give or take a third of a frame so timestamps that are rounded
+ * or jitter (variable-rate phone video) do not make frames repeat. The input
+ * starts a little early (`lead`) so that frame is there for the first one.
+ * @param {LayerSpec} spec
+ * @param {import('./timing.js').Timing} timing
+ * @returns {string[]}
+ */
+function conformFilters(spec, { fps, fpsText }) {
+  if (spec.still) return [filter('fps', { fps: fpsText, start_time: 0 })];
+  // 0.3 of a frame: 24, 25, 50 and 60 fps sources never land exactly on it.
+  const tolerance = Math.min(0.3 / fps, 0.012);
+  const shift = Math.round(((spec.lead || 0) + tolerance) * 1e6);
+  // Microsecond time base, so the shift is exact whatever the container's.
+  return [
+    'settb=AVTB',
+    `setpts=PTS-${shift}`,
+    filter('fps', { fps: fpsText, round: 'up', start_time: 0 }),
+  ];
+}
+
+/**
  * Build a layer.
  * @param {LayerSpec} spec
  * @param {LayerContext} ctx
@@ -55,7 +79,7 @@ function fadeFilters(spec, fps) {
  *   the filter that composites `pad` over the picture so far.
  */
 export function buildLayer(spec, ctx) {
-  const { fps, fpsText } = ctx.timing;
+  const { fps } = ctx.timing;
   const { count, offset, shift, length } = spec.window;
   const seconds = length / fps;
   const geometry = geometryFilters(spec.geometry, spec.source, {
@@ -71,7 +95,7 @@ export function buildLayer(spec, ctx) {
 
   // Conform to the output frame rate; hold the last frame if the source runs short.
   const hold = [
-    filter('fps', { fps: fpsText, start_time: 0 }),
+    ...conformFilters(spec, ctx.timing),
     filter('tpad', { stop_mode: 'clone', stop_duration: num(count / fps + 1, 3) }),
     filter('trim', { end_frame: count }),
     ...(offset ? [`setpts=PTS+${offset}`] : []),

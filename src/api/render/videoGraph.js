@@ -18,7 +18,8 @@ import { titleLayer } from './title.js';
  * @property {{ width: number, height: number }} frame - EDL resolution
  * @property {{ width: number, height: number }} out - Rendered frame size
  * @property {import('./presets.js').RenderPreset} preset
- * @property {import('./title.js').TextSupport} text
+ * @property {import('./titleStyle.js').TextSupport} text
+ * @property {boolean} limiterLatency - alimiter supports delay compensation
  * @property {string} workDir - Where title text files will be written
  * @property {(file: string) => import('./sources.js').SourceInfo} source
  * @property {object[]} inputs - FFmpeg inputs, appended to as clips are added

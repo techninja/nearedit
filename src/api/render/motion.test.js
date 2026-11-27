@@ -1,5 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { run } from '../lib/ffmpeg.js';
 import * as kit from './testkit.js';
@@ -60,11 +61,14 @@ describe('render: ken burns, ranges and awkward sources', () => {
     await kit.generate(file('hd709.mp4'), [hd], ['-colorspace', 'bt709']);
     await kit.generate(file('hd-untagged.mp4'), [hd]);
     // A JPEG is full-range BT.601 whatever its size.
-    await kit.generate(
-      file('photo.jpg'),
-      ['color=red:s=1280x720'],
-      ['-frames:v', '1', '-q:v', '2'],
-    );
+    const still = ['-frames:v', '1', '-q:v', '2'];
+    await kit.generate(file('photo.jpg'), ['color=red:s=1280x720'], still);
+    // A phone photo: stored landscape with an EXIF tag saying "show rotated".
+    await kit.generate(file('plain.jpg'), halves('160x180'), [...side, ...still]);
+    const exif = '457869660000 49492a0008000000 0100 1201 0300 01000000 06000000 00000000';
+    const tag = Buffer.from(`ffe10022${exif.replaceAll(' ', '')}`, 'hex');
+    const jpeg = readFileSync(file('plain.jpg'));
+    writeFileSync(file('upright.jpg'), Buffer.concat([jpeg.subarray(0, 2), tag, jpeg.subarray(2)]));
   });
   after(() => tmp.cleanup());
 
@@ -128,6 +132,12 @@ describe('render: ken burns, ranges and awkward sources', () => {
     const top = phone.at(10, 160, 40);
     const bottom = phone.at(10, 160, 140);
     assert.ok(reddish(top) !== reddish(bottom), `halves are stacked: ${top} / ${bottom}`);
+    const upright = createClip({
+      ...{ sourceFile: file('upright.jpg'), timelineStart: 0, timelineEnd: 1 },
+      ...contain,
+    });
+    const photo = (await shoot(edl(video(upright)))).frames;
+    isBox(photo.box(10, lit), [109, 0, 210, 179], 'EXIF-rotated photo is pillarboxed', 3);
     const wide = (await shoot(edl(video(clip('anamorphic.mp4', 0, 1, contain))))).frames;
     isColor(wide.at(10, 20, 90), RED, 'anamorphic source fills the frame (left)');
     isColor(wide.at(10, 300, 90), BLUE, 'anamorphic source fills the frame (right)');

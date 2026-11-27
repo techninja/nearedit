@@ -61,7 +61,10 @@ describe('render: routes and job', () => {
     const saved = { id: 'a1', name: 'Main Edit', edl: edl([clip('red.mp4', 0, 1)]) };
     writeFileSync(
       join(tmp.dir, 'project', '.nearedit', 'project.json'),
-      JSON.stringify({ name: 'Park', adaptations: [saved] }),
+      JSON.stringify({
+        name: 'Park',
+        adaptations: [saved, { ...saved, id: 'a2', name: '16/9 cut' }, { id: 'a3', name: 'New' }],
+      }),
     );
     const registry = { p1: { path: join(tmp.dir, 'project'), name: 'Park' } };
     writeFileSync(join(tmp.dir, 'data', 'registry.json'), JSON.stringify(registry));
@@ -154,7 +157,17 @@ describe('render: routes and job', () => {
     assert.equal(job.status, 'complete', job.error);
     assert.equal(job.result.duration, 1);
     assert.match(job.result.file, /^Main Edit-\d{8}-\d{6}\.mp4$/);
+    const slashed = await post('/render', { projectId: 'p1', adaptationId: 'a2', preset: 'draft' });
+    const named = await finished((await slashed.json()).jobId);
+    assert.match(
+      named.result.file,
+      /^16_9 cut-\d{8}-\d{6}\.mp4$/,
+      'a name with a slash is still a file',
+    );
     assert.equal((await post('/render', { projectId: 'p1', adaptationId: 'nope' })).status, 404);
+    const untouched = await post('/render', { projectId: 'p1', adaptationId: 'a3' });
+    assert.equal(untouched.status, 422, 'an adaptation without an EDL is an empty timeline');
+    assert.match((await untouched.json()).error, /empty/i);
     assert.equal((await post('/render', {})).status, 400);
   });
 
@@ -219,7 +232,10 @@ describe('render: routes and job', () => {
     assert.equal(job.status, 'running');
     assert.ok(job.progress >= 2 && job.progress < 100, `progress ${job.progress}`);
     assert.equal(leftovers().length, 1, 'a work directory exists while rendering');
-    assert.ok(existsSync(join(renders, leftovers()[0], 'output.mp4')), 'partial output exists');
+    const partial = readdirSync(join(renders, leftovers()[0])).filter((name) =>
+      name.endsWith('.mp4'),
+    );
+    assert.ok(partial.length >= 1, 'a partial output exists');
     assert.ok(cancelJob(jobId));
     for (let i = 0; i < 100 && leftovers().length; i++) await sleep(50);
     assert.equal(getJob(jobId).status, 'cancelled');

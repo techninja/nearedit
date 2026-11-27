@@ -6,12 +6,11 @@
 
 import { Router } from 'express';
 import { runJob } from './lib/jobRunner.js';
-import { getCapabilities } from './render/capabilities.js';
 import { RenderError } from './render/errors.js';
 import { runRender } from './render/job.js';
-import { buildRenderPlan, checkRenderable, renderSources } from './render/plan.js';
+import { buildRenderPlan, checkRenderable } from './render/plan.js';
 import { listPresets } from './render/presets.js';
-import { probeSources } from './render/probe.js';
+import { prepareRender } from './render/prepare.js';
 import { parseRenderRequest } from './render/request.js';
 import { renderSegments } from './render/segments.js';
 import {
@@ -63,16 +62,24 @@ renderRouter.post('/render/plan', async (req, res) => {
   try {
     const request = parseRenderRequest(req.body);
     checkRenderable(request.edl, request);
-    const [probes, capabilities] = await Promise.all([
-      probeSources(renderSources(request.edl)),
-      getCapabilities(),
-    ]);
+    const { probes, capabilities } = await prepareRender(request.edl);
     const { preset, range } = request;
     const plan = buildRenderPlan(request.edl, { probes, capabilities, preset, range });
     const { args, filterComplex, duration, inputs, files, warnings, width, height, fps } = plan;
     // A long timeline really runs as several such plans, one per segment.
     const segments = renderSegments(request.edl, { preset, range });
-    res.json({ args, filterComplex, duration, inputs, files, warnings, width, height, fps, segments });
+    res.json({
+      args,
+      filterComplex,
+      duration,
+      inputs,
+      files,
+      warnings,
+      width,
+      height,
+      fps,
+      segments,
+    });
   } catch (err) {
     fail(res, err);
   }

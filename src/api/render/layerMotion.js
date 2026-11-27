@@ -5,7 +5,7 @@
  * @module api/render/layerMotion
  */
 
-import { filter, lerpExpr, quote } from './expr.js';
+import { curveExpr, filter, lerpExpr, quote } from './expr.js';
 import { cropFilter, scaler, side, turnFilters } from './layerParts.js';
 import { rotatedBox } from './placement.js';
 
@@ -13,11 +13,12 @@ import { rotatedBox } from './placement.js';
 
 /**
  * Warp a moving crop window onto the full source frame, frame by frame.
- * @param {import('./placement.js').Rect[]} crop - Window at the start and at the end
+ * @param {import('./placement.js').Rect[]} crop - Window along the clip (it moves linearly)
  * @param {string} progress - 0..1 expression of the frame counter
  * @returns {string}
  */
-function cropWarp([a, b], progress) {
+function cropWarp(crop, progress) {
+  const [a, b] = [crop[0], crop[crop.length - 1]];
   const edge = (from, to) => quote(lerpExpr(from, to, progress));
   const left = edge(a.x, b.x);
   const right = edge(a.x + a.w, b.x + b.w);
@@ -36,30 +37,34 @@ function cropWarp([a, b], progress) {
  */
 export function movingGeometry(g, source, ctx) {
   const scale = scaler(source, ctx.preset);
-  const warnings = [];
-  const w = side(Math.max(g.rect[0].w, g.rect[1].w));
-  const h = side(Math.max(g.rect[0].h, g.rect[1].h));
+  const w = side(Math.max(...g.rect.map((r) => r.w)));
+  const h = side(Math.max(...g.rect.map((r) => r.h)));
   const turn = turnFilters(g, w, h);
   let once;
   let each = [];
-  if (g.cropMoves && !g.rotation) {
+  if (g.cropMoves) {
     once = scale(source.width, source.height);
     const resize = filter('scale', { w, h, flags: ctx.preset.scaleFlags });
     each = [cropWarp(g.crop, ctx.progress.frame), resize, ...turn];
   } else {
-    if (g.cropMoves) warnings.push('an animated crop is not applied to a rotated clip');
     once = [...cropFilter(g.crop[0], source), ...scale(w, h), ...turn];
   }
   const boxes = g.rect.map((r) =>
     g.rotation ? rotatedBox(r, g.rotation, g.anchorX, g.anchorY) : r,
   );
-  const span = (k, p) => lerpExpr(boxes[0][k], boxes[1][k], p);
-  const resizes = ['w', 'h'].some((k) => Math.abs(boxes[0][k] - boxes[1][k]) > 1e-6);
+  const span = (k, p) =>
+    curveExpr(
+      boxes.map((box) => box[k]),
+      p,
+    );
+  const resizes = ['w', 'h'].some((k) =>
+    boxes.some((box) => Math.abs(box[k] - boxes[0][k]) > 1e-6),
+  );
   if (resizes) {
     const size = (k) => quote(`max(1,round(${span(k, ctx.progress.local)}))`);
     const options = { w: size('w'), h: size('h'), eval: 'frame', flags: ctx.preset.scaleFlags };
     each.push(filter('scale', options));
   }
   const at = (k) => quote(`round(${span(k, ctx.progress.output)})`);
-  return { once, each, x: at('x'), y: at('y'), animated: true, warnings };
+  return { once, each, x: at('x'), y: at('y'), animated: true, warnings: [] };
 }

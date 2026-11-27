@@ -73,6 +73,27 @@ export function lerpExpr(a, b, progress) {
 }
 
 /**
+ * A value that passes through evenly spaced samples as progress goes 0..1:
+ * a constant, a straight line, or — when the samples bend — a piecewise
+ * linear curve through all of them.
+ * @param {number[]} values - At least two samples
+ * @param {string} progress - Expression yielding 0..1
+ * @returns {string}
+ */
+export function curveExpr(values, progress) {
+  const steps = values.length - 1;
+  const deltas = values.slice(1).map((value, i) => value - values[i]);
+  if (deltas.every((delta) => Math.abs(delta - deltas[0]) < 1e-6))
+    return lerpExpr(values[0], values[steps], progress);
+  const terms = deltas
+    .map((delta, i) =>
+      Math.abs(delta) < 1e-9 ? '' : `+(${num(delta)})*clip(${steps}*${progress}-${i},0,1)`,
+    )
+    .join('');
+  return `(${num(values[0])}${terms})`;
+}
+
+/**
  * Progress expression 0..1 through a span, from a time variable.
  * @param {string} variable - e.g. 't'
  * @param {number} start - Value of the variable where progress is 0

@@ -37,6 +37,8 @@ describe('render: video layers', () => {
     const stack = ['-filter_complex', '[0][1][2]vstack=inputs=3'];
     await kit.generate(file('bands.mp4'), [...bands, 'color=blue:s=320x70:r=30:d=2'], stack);
     await kit.generate(file('photo.png'), ['color=lime:s=200x100'], ['-frames:v', '1']);
+    const glass = 'color=c=red@0.5:s=100x100,format=rgba';
+    await kit.generate(file('glass.png'), [glass], ['-frames:v', '1']);
   });
   after(() => tmp.cleanup());
 
@@ -192,5 +194,23 @@ describe('render: video layers', () => {
     // 200x100 contained in 320x180 is 320x160: 10 rows of black above and below.
     isColor(frames.at(30, 160, 4), BLACK, 'letterbox above the image');
     isColor(frames.at(30, 160, 14), LIME, 'image starts at y=10');
+    // A half-transparent PNG keeps its own alpha over the track behind.
+    const glass = createClip({
+      ...{ sourceFile: file('glass.png'), timelineStart: 0, timelineEnd: 1 },
+      transform: { fit: 'contain' },
+    });
+    const over = await shoot(
+      edl(
+        createTrack('video', { clips: [glass] }),
+        createTrack('video', { clips: [clip('blue.mp4', 0, 1)] }),
+      ),
+    );
+    isColor(
+      over.frames.at(10, 160, 90),
+      [127, 0, 127],
+      'PNG alpha blends with the layer behind',
+      8,
+    );
+    isColor(over.frames.at(10, 30, 90), BLUE, 'beside the PNG');
   });
 });

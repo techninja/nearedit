@@ -28,22 +28,33 @@ export function layerFades(track, clip) {
 }
 
 /**
+ * Seconds of video decoded ahead of a clip's first frame, so the frame that
+ * is on screen at that moment (it may have started earlier) is available.
+ * @param {number} fps - Output frame rate
+ * @returns {number}
+ */
+const preRoll = (fps) => Math.max(3 / fps, 0.1);
+
+/**
  * Input options for a file. Videos are seeked and bounded so only the used
  * part is decoded; images are read once.
  * @param {string} file
  * @param {boolean} still
  * @param {{ seek: number, count: number }} window
  * @param {number} fps
- * @returns {string[]}
+ * @returns {{ args: string[], lead: number }} `lead` is how long before the
+ *   clip's first frame the input starts
  */
-function inputArgs(file, still, window, fps) {
+function openInput(file, still, window, fps) {
   if (!still) {
-    const read = ['-ss', num(window.seek), '-t', num(window.count / fps + 0.001, 4)];
-    return [...read, '-an', '-sn', '-dn', '-i', file];
+    const from = Math.max(0, window.seek - preRoll(fps));
+    const lead = window.seek - from;
+    const read = ['-ss', num(from), '-t', num(window.count / fps + lead + 0.001, 4)];
+    return { args: [...read, '-an', '-sn', '-dn', '-i', file], lead };
   }
   // A literal % or glob character would otherwise be read as a sequence pattern.
   const literal = /[%*?[\]{}]/.test(file) ? ['-f', 'image2', '-pattern_type', 'none'] : [];
-  return [...literal, '-i', file];
+  return { args: [...literal, '-i', file], lead: 0 };
 }
 
 /**
@@ -62,20 +73,15 @@ export function mediaLayer(clip, track, source, index, ctx) {
   if (!window || !source.hasVideo) return null;
   const still = clipKind(clip, track) === 'image';
   const { width, height, anamorphic, matrix } = source;
+  const { args, lead } = openInput(clip.sourceFile, still, window, ctx.timing.fps);
   const spec = {
     id: `c${index}`,
     pad: `[${index}:v:0]`,
-    still,
+    ...{ still, lead, window },
     source: { width, height, anamorphic, matrix },
     geometry: clipGeometry(clip, source, ctx.frame, ctx.out),
-    window,
     ...layerFades(track, clip),
   };
-  const input = {
-    file: clip.sourceFile,
-    kind: still ? 'image' : 'video',
-    clipId: clip.clipId,
-    args: inputArgs(clip.sourceFile, still, window, ctx.timing.fps),
-  };
-  return { spec, input };
+  const kind = still ? 'image' : 'video';
+  return { spec, input: { file: clip.sourceFile, kind, clipId: clip.clipId, args } };
 }

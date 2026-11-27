@@ -106,5 +106,8 @@ export function audioArgs(preset) {
   return ['-c:a', 'aac', '-b:a', preset.audioBitrate, '-ar', '48000', '-ac', '2'];
 }
 
+/** Container of an intermediate picture segment. */
+export const SEGMENT_ARGS = ['-map_metadata', '-1', '-f', 'mp4'];
+
 /** MP4 with the index up front, so playback can start while downloading. */
-export const CONTAINER_ARGS = ['-movflags', '+faststart', '-map_metadata', '-1', '-f', 'mp4'];
+export const CONTAINER_ARGS = ['-movflags', '+faststart', ...SEGMENT_ARGS];

@@ -19,14 +19,15 @@ import { snapTrack } from './timing.js';
  * @property {string} [outputPath]
  * @property {string} [workDir] - Directory for the graph script and title text.
  *   When given, the graph is passed as a script file instead of an argument
- * @property {Partial<import('./title.js').TextSupport> & { graphFlag?: string }} [capabilities]
+ * @property {Partial<import('./titleStyle.js').TextSupport> & { graphFlag?: string,
+ *   limiterLatency?: boolean }} [capabilities] - What this FFmpeg can do (default: 6.1+)
  * @property {'av'|'video'} [streams] - "video" leaves the sound out (a segment of a long render)
  * @property {string} [graphName] - File name of the graph script inside workDir
  */
 
 export const GLOBAL_ARGS = ['-hide_banner', '-nostdin', '-y', '-loglevel', 'error', '-nostats'];
 export const PROGRESS_ARGS = ['-progress', 'pipe:2', '-stats_period', '0.5'];
-const MODERN = { drawtext: true, textAlign: true, fontconfig: true };
+const MODERN = { drawtext: true, textAlign: true, fontconfig: true, limiterLatency: true };
 
 /**
  * @param {{ fps?: number, resolution?: string, tracks?: any[] }} edl
@@ -39,12 +40,12 @@ const MODERN = { drawtext: true, textAlign: true, fontconfig: true };
 export function createContext(edl, options = {}) {
   const { preset, timing } = checkRenderable(edl, options);
   const frame = parseResolution(edl.resolution);
-  const { graphFlag, ...text } = { ...MODERN, ...options.capabilities };
+  const { graphFlag, limiterLatency, ...text } = { ...MODERN, ...options.capabilities };
   const workDir = options.workDir || '';
   const sources = new Map();
   const files = [];
   return {
-    ...{ timing, frame, preset, text, workDir, files },
+    ...{ timing, frame, preset, text, workDir, files, limiterLatency },
     out: outputSize(frame, preset),
     tracks: (edl.tracks || []).map((track) => snapTrack(track, timing)),
     inputs: [],

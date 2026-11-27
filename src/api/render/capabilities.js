@@ -16,6 +16,7 @@ import { findFontFiles } from './fonts.js';
  * @property {boolean} drawtext
  * @property {boolean} textAlign - drawtext text_align / y_align (6.1+)
  * @property {boolean} fontconfig
+ * @property {boolean} limiterLatency - alimiter can compensate its look-ahead delay (5.1+)
  * @property {Record<string, Record<string, string>>} fontFiles - Only filled without fontconfig
  * @property {string} graphFlag - Option that reads the filter graph from a file
  */
@@ -25,8 +26,8 @@ let cached = null;
 
 /**
  * Interpret FFmpeg's own descriptions of itself.
- * @param {{ version: string, drawtext: string, encoder: string }} text - Output of
- *   `-version`, `-h filter=drawtext` and `-h encoder=libx264`
+ * @param {{ version: string, drawtext: string, encoder: string, limiter?: string }} text -
+ *   Output of `-version`, `-h filter=drawtext`, `-h encoder=libx264`, `-h filter=alimiter`
  * @returns {Omit<Capabilities, 'fontFiles'>}
  */
 export function parseCapabilities(text) {
@@ -39,6 +40,7 @@ export function parseCapabilities(text) {
     drawtext,
     textAlign: drawtext && /\btext_align\b/.test(text.drawtext),
     fontconfig: /--enable-(lib)?fontconfig/.test(text.version),
+    limiterLatency: /\blatency\b/.test(text.limiter || ''),
     // 7.0 added "-/option file" and deprecated -filter_complex_script.
     // Unversioned (git) builds are newer than that.
     graphFlag: match && major < 7 ? '-filter_complex_script' : '-/filter_complex',
@@ -56,12 +58,13 @@ async function detect() {
   };
   let parsed;
   try {
-    const [version, drawtext, encoder] = await Promise.all([
+    const [version, drawtext, encoder, limiter] = await Promise.all([
       ask(['-version']),
       ask(['-h', 'filter=drawtext']),
       ask(['-h', 'encoder=libx264']),
+      ask(['-h', 'filter=alimiter']),
     ]);
-    parsed = parseCapabilities({ version, drawtext, encoder });
+    parsed = parseCapabilities({ version, drawtext, encoder, limiter });
   } catch (err) {
     throw new RenderError(503, 'FFmpeg is not available', { detail: err.message });
   }

@@ -10,9 +10,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createClip, createEdl, createTrack } from '#utils/edl/factory.js';
 import { run } from '../lib/ffmpeg.js';
-import { getCapabilities } from './capabilities.js';
-import { buildRenderPlan, renderSources } from './plan.js';
-import { probeSources } from './probe.js';
+import { buildRenderPlan } from './plan.js';
+import { prepareRender } from './prepare.js';
 
 export { createClip, createEdl, createTrack };
 
@@ -53,8 +52,7 @@ export async function generate(path, sources, options = []) {
 export async function render(edl, dir, options = {}) {
   const workDir = mkdtempSync(join(dir, 'work-'));
   mkdirSync(workDir, { recursive: true });
-  const probes = await probeSources(renderSources(edl));
-  const capabilities = await getCapabilities();
+  const { probes, capabilities } = await prepareRender(edl);
   const output = join(workDir, 'out.mp4');
   const plan = buildRenderPlan(edl, {
     ...{ probes, capabilities, workDir, outputPath: output },

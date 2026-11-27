@@ -7,7 +7,7 @@
 
 import { buildAudioGraph } from './audioGraph.js';
 import { createContext, GLOBAL_ARGS, PROGRESS_ARGS } from './context.js';
-import { audioArgs, CONTAINER_ARGS, videoArgs } from './presets.js';
+import { audioArgs, CONTAINER_ARGS, SEGMENT_ARGS, videoArgs } from './presets.js';
 import { buildVideoGraph } from './videoGraph.js';
 
 export { checkRenderable, renderableClips, renderSources } from './scope.js';
@@ -68,7 +68,7 @@ export function buildRenderPlan(edl, options = {}) {
     ...ctx.graphArgs(filterComplex),
     ...['-map', '[vout]', ...videoArgs(preset, timing)],
     ...(sound ? ['-map', '[aout]', ...audioArgs(preset)] : ['-an']),
-    ...CONTAINER_ARGS,
+    ...(sound ? CONTAINER_ARGS : SEGMENT_ARGS),
     options.outputPath || 'output.mp4',
   ];
   return describePlan(ctx, args, filterComplex);

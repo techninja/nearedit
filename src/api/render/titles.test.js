@@ -53,8 +53,14 @@ describe('render: titles', () => {
     const blue = frames.box(10, (rgb) => rgb[2] > 180 && rgb[0] < 80 && rgb[1] < 80);
     assert.ok(yellow && blue, 'text is yellow on a blue box');
     isNear(centre(blue), [160, 90], 'box is centred');
-    // The box is the text plus 0.2 x fontSize (8px) of padding on every side.
-    assert.ok(Math.abs(yellow[0] - blue[0] - 8) <= 4, `box padding: text ${yellow} box ${blue}`);
+    // The box is the text plus 0.25 x fontSize (10px) of padding on every side;
+    // its height is one 1.2 x fontSize line plus the padding, whatever the font.
+    assert.ok(Math.abs(yellow[0] - blue[0] - 11) <= 3, `box padding: text ${yellow} box ${blue}`);
+    isNear([blue[3] - blue[1] + 1], [48 + 20], 'box height', 2);
+    const three = await single({ content: 'H\nH\nH', fontFamily: 'serif', background: '#0000ff' });
+    const tall = three.frames.box(10, (rgb) => rgb[2] > 180 && rgb[0] < 80 && rgb[1] < 80);
+    isNear([tall[3] - tall[1] + 1], [3 * 48 + 20], 'three lines are pitched 1.2 x fontSize', 2);
+    isNear(centre(tall), [160, 90], 'and stay centred');
     isNear(frames.at(10, blue[0] - 6, 90), [0, 0, 0], 'nothing outside the box', 4);
     const outlined = await single({ color: '#000000', outlineColor: '#ff0000', outlineWidth: 3 });
     const ring = outlined.frames.box(10, (rgb) => rgb[0] > 150 && rgb[1] < 60);

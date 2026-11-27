@@ -7,7 +7,8 @@
 import { filter, num, quote } from './expr.js';
 import { movingGeometry } from './layerMotion.js';
 import { cropFilter, scaler, side, turnFilters } from './layerParts.js';
-import { pixelRect, rotatedBox, visiblePart } from './placement.js';
+import { rotatedBox } from './placement.js';
+import { pixelRect, visiblePart } from './visible.js';
 
 /** @typedef {import('./layerParts.js').GeometryResult} GeometryResult */
 
@@ -56,5 +57,6 @@ export function geometryFilters(g, source, ctx) {
     ? [filter('scale', { w: source.width, h: source.height }), 'setsar=1']
     : [];
   const veil = g.opacity < 1 ? [filter('lut', { a: quote(`val*${num(g.opacity, 4)}`) })] : [];
-  return { ...result, once: [...square, ...result.once, ...veil] };
+  const warnings = g.cropHeld ? ['an animated crop is not applied to a rotated clip'] : [];
+  return { ...result, once: [...square, ...result.once, ...veil], warnings };
 }

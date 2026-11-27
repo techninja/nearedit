@@ -9,6 +9,7 @@
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { parseResolution } from '#utils/edl/factory.js';
+import { normalizeEdl } from '#utils/edl/normalize.js';
 import { getConfig } from '../lib/config.js';
 import { isAllowedPath } from '../lib/paths.js';
 import { getAdaptation } from '../lib/registry.js';
@@ -33,34 +34,27 @@ const invalid = (field, message) =>
   new RenderError(422, `Invalid ${field}`, { fields: { [field]: message } });
 
 /**
- * Copy the EDL with every source path made absolute and checked.
- * @param {any} edl
+ * Copy the EDL with every source path made absolute and checked — on every
+ * track, also muted ones.
+ * @param {any} edl - Normalised EDL
  * @returns {any}
  * @throws {RenderError} 403 for a path outside the allowed roots
  */
 function checkedEdl(edl) {
   const mediaDir = getConfig().devMediaDir;
   const allowed = new Map();
-  const tracks = edl.tracks.filter(Boolean).map((track) => {
-    const clips = (Array.isArray(track.clips) ? track.clips : [])
-      .filter(
-        (clip) => clip && Number.isFinite(clip.timelineStart) && Number.isFinite(clip.timelineEnd),
-      )
-      .map((clip) => {
-        if (!clip.sourceFile) return { ...clip, sourceFile: '' };
-        if (typeof clip.sourceFile !== 'string')
-          throw invalid('edl', 'sourceFile must be a string');
-        // Legacy documents name files relative to the dev media directory.
-        const file = isAbsolute(clip.sourceFile)
-          ? resolve(clip.sourceFile)
-          : resolve(mediaDir, clip.sourceFile);
-        if (!allowed.has(file)) allowed.set(file, isAllowedPath(file));
-        if (!allowed.get(file))
-          throw new RenderError(403, 'Path is outside the allowed media folders', { detail: file });
-        return { ...clip, sourceFile: file };
-      });
-    return { ...track, clips };
-  });
+  const checkedClip = (clip) => {
+    if (!clip.sourceFile) return clip;
+    // Legacy documents name files relative to the dev media directory.
+    const file = isAbsolute(clip.sourceFile)
+      ? resolve(clip.sourceFile)
+      : resolve(mediaDir, clip.sourceFile);
+    if (!allowed.has(file)) allowed.set(file, isAllowedPath(file));
+    if (!allowed.get(file))
+      throw new RenderError(403, 'Path is outside the allowed media folders', { detail: file });
+    return { ...clip, sourceFile: file };
+  };
+  const tracks = edl.tracks.map((track) => ({ ...track, clips: track.clips.map(checkedClip) }));
   return { ...edl, tracks };
 }
 
@@ -92,15 +86,19 @@ export function parseRenderRequest(body) {
   if (edl === undefined || edl === null) {
     if (!projectId) throw new RenderError(400, 'projectId or edl required');
     if (!adaptation) throw new RenderError(404, 'Adaptation not found');
-    edl = { fps: adaptation.fps, resolution: adaptation.resolution, ...adaptation.edl };
+    // An adaptation that was never edited has no EDL yet: an empty timeline.
+    const { fps, resolution } = adaptation;
+    edl = { fps, resolution, tracks: [], ...adaptation.edl };
   }
   if (typeof edl !== 'object' || !Array.isArray(edl.tracks))
     throw invalid('edl', 'Must be an EDL document with a tracks array');
-  const size = parseResolution(edl.resolution);
+  // Same repair the editor applies on load: v1 files, missing fields, bad overlaps.
+  const normal = normalizeEdl(edl);
+  const size = parseResolution(normal.resolution);
   if (size.width < 16 || size.height < 16 || size.width > MAX_SIDE || size.height > MAX_SIDE)
     throw invalid('edl', `resolution must be between 16 and ${MAX_SIDE} pixels a side`);
 
-  const checked = checkedEdl(edl);
+  const checked = checkedEdl(normal);
   for (const file of renderSources(checked)) {
     if (!existsSync(file))
       throw new RenderError(422, `Source file not found: ${file}`, { detail: file });

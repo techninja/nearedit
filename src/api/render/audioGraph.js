@@ -127,7 +127,9 @@ export function buildAudioGraph(tracks, ctx) {
     return { chains, lanes: 0 };
   }
   const mix = pads.length > 1 ? [`amix=inputs=${pads.length}:normalize=0:duration=longest`] : [];
-  const limiter = filter('alimiter', { limit: LIMIT, level: 0, latency: 1 });
+  // Auto-levelling off: the limiter only acts on peaks. Its 5 ms look-ahead is compensated.
+  const latency = ctx.limiterLatency ? 1 : undefined;
+  const limiter = filter('alimiter', { limit: LIMIT, level: 0, latency });
   chains.push(`${pads.join('')}${[...mix, limiter, ...exact].join(',')}[aout]`);
   return { chains, lanes: pads.length };
 }

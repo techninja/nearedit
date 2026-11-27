@@ -8,10 +8,8 @@
 
 import { mkdtempSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { getCapabilities } from './capabilities.js';
-import { RenderError } from './errors.js';
 import { encodeTimeline } from './passes.js';
-import { probeSources } from './probe.js';
+import { prepareRender } from './prepare.js';
 import { renderSources } from './scope.js';
 import { rendersDir, renderUrl, sanitizeFilename, uniqueName, writeRecord } from './store.js';
 
@@ -40,13 +38,17 @@ function sweepStaleWork(dir) {
 }
 
 /**
- * Default output name: the adaptation name and a timestamp.
+ * Default output name: the adaptation name and the local time.
  * @param {string} name
  * @returns {string}
  */
 function defaultName(name) {
-  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-');
-  return sanitizeFilename(`${name || 'render'}-${stamp}`);
+  const now = new Date();
+  const two = (value) => String(value).padStart(2, '0');
+  const day = `${now.getFullYear()}${two(now.getMonth() + 1)}${two(now.getDate())}`;
+  const time = `${two(now.getHours())}${two(now.getMinutes())}${two(now.getSeconds())}`;
+  // An adaptation may be called "16/9 cut": keep the name, lose the separator.
+  return sanitizeFilename(`${(name || 'render').replace(/[/\\\0]/g, '_')}-${day}-${time}`);
 }
 
 /**
@@ -62,14 +64,8 @@ export async function runRender(request, ctx) {
   const workDir = mkdtempSync(join(dir, WORK_PREFIX));
   active.add(basename(workDir));
   try {
-    const sources = renderSources(request.edl);
-    ctx.log(`Probing ${sources.length} source file(s)`);
-    const [probes, capabilities] = await Promise.all([
-      probeSources(sources, { signal: ctx.signal }),
-      getCapabilities(),
-    ]);
-    if (!capabilities.libx264)
-      throw new RenderError(503, 'This FFmpeg build has no libx264 encoder');
+    ctx.log(`Probing ${renderSources(request.edl).length} source file(s)`);
+    const { probes, capabilities } = await prepareRender(request.edl, { signal: ctx.signal });
     const partial = join(workDir, 'output.mp4');
     const plan = await encodeTimeline(
       request.edl,

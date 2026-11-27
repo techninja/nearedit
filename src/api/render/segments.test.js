@@ -3,11 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { run } from '../lib/ffmpeg.js';
-import { getCapabilities } from './capabilities.js';
 import { buildMuxPlan } from './mux.js';
 import { encodeTimeline } from './passes.js';
-import { probeSources } from './probe.js';
-import { renderSources } from './scope.js';
+import { buildRenderPlan } from './plan.js';
+import { prepareRender } from './prepare.js';
 import { planSegments, renderSegments } from './segments.js';
 import * as kit from './testkit.js';
 import { createTiming, snapTrack } from './timing.js';
@@ -23,7 +22,11 @@ describe('planSegments', () => {
   };
   const seq = (n, length = 2) =>
     Array.from({ length: n }, (_, i) =>
-      createClip({ sourceFile: '/m/a.mp4', timelineStart: i * length, timelineEnd: (i + 1) * length }),
+      createClip({
+        sourceFile: '/m/a.mp4',
+        timelineStart: i * length,
+        timelineEnd: (i + 1) * length,
+      }),
     );
 
   it('keeps a short timeline in one segment', () => {
@@ -32,29 +35,53 @@ describe('planSegments', () => {
   });
 
   it('cuts at clip boundaries so no segment touches more than the budget', () => {
-    assert.deepEqual(plan(seq(20)), [[0, 480], [480, 960], [960, 1200]]);
-    assert.deepEqual(plan(seq(5), { maxLayers: 2 }), [[0, 120], [120, 240], [240, 300]]);
+    assert.deepEqual(plan(seq(20)), [
+      [0, 480],
+      [480, 960],
+      [960, 1200],
+    ]);
+    assert.deepEqual(plan(seq(5), { maxLayers: 2 }), [
+      [0, 120],
+      [120, 240],
+      [240, 300],
+    ]);
   });
 
   it('counts a clip spanning many cuts in every segment it touches', () => {
     const bed = createClip({ sourceFile: '/m/bed.mp4', timelineStart: 0, timelineEnd: 12 });
-    assert.deepEqual(plan([bed, ...seq(6)], { maxLayers: 3 }), [[0, 120], [120, 240], [240, 360]]);
+    assert.deepEqual(plan([bed, ...seq(6)], { maxLayers: 3 }), [
+      [0, 120],
+      [120, 240],
+      [240, 360],
+    ]);
   });
 
   it('never cuts a segment shorter than the minimum and merges a short tail', () => {
     const quick = seq(40, 0.1);
     for (const [start, end] of plan(quick, { maxLayers: 2 })) assert.ok(end - start >= 30);
-    const tail = [...seq(4), createClip({ sourceFile: '/m/a.mp4', timelineStart: 8, timelineEnd: 8.5 })];
-    assert.deepEqual(plan(tail, { maxLayers: 2 }), [[0, 120], [120, 255]]);
+    const tail = [
+      ...seq(4),
+      createClip({ sourceFile: '/m/a.mp4', timelineStart: 8, timelineEnd: 8.5 }),
+    ];
+    assert.deepEqual(plan(tail, { maxLayers: 2 }), [
+      [0, 120],
+      [120, 255],
+    ]);
   });
 
   it('only covers the requested range', () => {
-    assert.deepEqual(plan(seq(20), { maxLayers: 2 }, { start: 3, end: 9 }), [[90, 180], [180, 270]]);
-    const edl = createEdl({ tracks: [createTrack('video', { clips: seq(20) })] });
-    assert.deepEqual(renderSegments(edl, { maxLayers: 10, range: { start: 1, end: 30 } }).slice(0, 2), [
-      { start: 1, end: 20, frames: 570 },
-      { start: 20, end: 30, frames: 300 },
+    assert.deepEqual(plan(seq(20), { maxLayers: 2 }, { start: 3, end: 9 }), [
+      [90, 180],
+      [180, 270],
     ]);
+    const edl = createEdl({ tracks: [createTrack('video', { clips: seq(20) })] });
+    assert.deepEqual(
+      renderSegments(edl, { maxLayers: 10, range: { start: 1, end: 30 } }).slice(0, 2),
+      [
+        { start: 1, end: 20, frames: 570 },
+        { start: 20, end: 30, frames: 300 },
+      ],
+    );
   });
 
   it('builds the joining pass: copy the picture, mix the sound once', () => {
@@ -62,16 +89,29 @@ describe('planSegments', () => {
     const edl = createEdl({
       tracks: [createTrack('video', { clips: seq(20) }), createTrack('audio', { clips: [music] })],
     });
-    const probes = { '/m/a.mp4': { hasVideo: true, width: 320, height: 180 }, '/m/music.mp3': { hasAudio: true } };
-    const parts = [{ file: 'segment-00000.mp4', frames: 480 }, { file: 'segment-00001.mp4', frames: 720 }];
+    const probes = {
+      '/m/a.mp4': { hasVideo: true, width: 320, height: 180 },
+      '/m/music.mp3': { hasAudio: true },
+    };
+    const parts = [
+      { file: 'segment-00000.mp4', frames: 480 },
+      { file: 'segment-00001.mp4', frames: 720 },
+    ];
     const mux = buildMuxPlan(edl, { probes, parts, workDir: '/w', outputPath: '/w/out.mp4' });
     assert.equal(
       mux.files[0].content,
       'ffconcat version 1.0\nfile segment-00000.mp4\nduration 16\nfile segment-00001.mp4\nduration 24\n',
     );
     assert.deepEqual(mux.args.slice(10, 14), ['-f', 'concat', '-i', '/w/segments.ffconcat']);
-    assert.match(mux.args.join(' '), /-map 0:v:0 -c:v copy -map \[aout\] -c:a aac .* -movflags \+faststart/);
+    assert.match(
+      mux.args.join(' '),
+      /-map 0:v:0 -c:v copy -map \[aout\] -c:a aac .* -movflags \+faststart/,
+    );
     assert.match(mux.filterComplex, /^\[1:a:0\]aresample/, 'audio inputs follow the segment list');
+    const part = buildRenderPlan(edl, { probes, streams: 'video', range: { start: 16, end: 40 } });
+    assert.ok(part.args.includes('-an') && !part.args.includes('[aout]'), 'a segment has no sound');
+    assert.ok(!part.args.includes('+faststart') && !part.filterComplex.includes('aresample'));
+    assert.equal(part.frames, 720);
     assert.ok(!mux.filterComplex.includes('overlay'), 'no picture work in the joining pass');
   });
 });
@@ -96,8 +136,7 @@ describe('render: segmented encode', () => {
       progress: (percent) => seen.progress.push(percent),
       log: (message) => seen.log.push(message),
     };
-    const probes = await probeSources(renderSources(edl));
-    const capabilities = await getCapabilities();
+    const { probes, capabilities } = await prepareRender(edl);
     const output = join(workDir, 'output.mp4');
     const options = { probes, capabilities, workDir, outputPath: output, preset: 'standard' };
     const plan = await encodeTimeline(edl, { ...options, ...limits }, ctx);
@@ -116,7 +155,10 @@ describe('render: segmented encode', () => {
     const caption = createClip({
       ...{ timelineStart: 0.5, timelineEnd: 5.5, fadeIn: 1, fadeOut: 1 },
       text: { content: 'ACROSS', fontSize: 30, background: '#000000' },
-      transform: { y: 60, kenBurns: { enabled: true, startX: -100, endX: 100, startY: 60, endY: 60 } },
+      transform: {
+        y: 60,
+        kenBurns: { enabled: true, startX: -100, endX: 100, startY: 60, endY: 60 },
+      },
     });
     const cuts = [
       clip('moving.mp4', 0, 1.5, { fadeOut: 0.5 }),
@@ -145,8 +187,20 @@ describe('render: segmented encode', () => {
     assert.equal(Number(info.video.nb_read_frames), 180);
     assert.equal(info.video.r_frame_rate, '30/1');
     assert.ok(Math.abs(info.duration - 6) <= 1 / 30, `duration ${info.duration}`);
-    const stamps = ['-v', 'error', '-select_streams', 'v', '-show_entries', 'frame=pts_time', '-of', 'csv=p=0'];
-    const times = (await run('ffprobe', [...stamps, split.output])).stdout.trim().split('\n').map(parseFloat);
+    const stamps = [
+      '-v',
+      'error',
+      '-select_streams',
+      'v',
+      '-show_entries',
+      'frame=pts_time',
+      '-of',
+      'csv=p=0',
+    ];
+    const times = (await run('ffprobe', [...stamps, split.output])).stdout
+      .trim()
+      .split('\n')
+      .map(parseFloat);
     times.forEach((t, i) => assert.ok(Math.abs(t - i / 30) < 0.001, `frame ${i} is at ${t}`));
 
     const a = await kit.readFrames(whole.output, 320, 180);
@@ -178,6 +232,9 @@ describe('render: segmented encode', () => {
     }
     const increasing = split.progress.every((p, i) => i === 0 || p >= split.progress[i - 1]);
     assert.ok(increasing && split.progress.at(-1) <= 99, `progress ${split.progress}`);
-    assert.ok(split.progress.some((p) => p > 20 && p < 95), 'progress moves through the segments');
+    assert.ok(
+      split.progress.some((p) => p > 20 && p < 95),
+      'progress moves through the segments',
+    );
   });
 });
