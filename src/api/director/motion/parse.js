@@ -106,7 +106,8 @@ export function salvageMotionPlan(reply) {
   if (!scenes.length) return null;
   const plan = { scenes: scenes.slice(0, MOTION_PLAN_SCHEMA.properties.scenes.maxItems) };
   for (const key of ['theme', 'align']) {
-    if (validatePlan({ ...plan, [key]: best[key] })) plan[key] = best[key];
+    if (best[key] !== undefined && validatePlan({ ...plan, [key]: best[key] }))
+      plan[key] = best[key];
   }
   return { plan, dropped };
 }

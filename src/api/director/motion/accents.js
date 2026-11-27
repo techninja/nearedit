@@ -6,6 +6,8 @@
  * @module api/director/motion/accents
  */
 
+import { burst, ring } from './ornaments.js';
+
 /**
  * @typedef {Object} AccentInput
  * @property {import('./layout.js').Composition} text - Where the words are
@@ -14,6 +16,7 @@
  * @property {{ width: number, height: number }} frame
  * @property {number} lengthF - Length of the accent's clip, frames
  * @property {number} drawF - Frames its entrance takes
+ * @property {number} fps
  * @property {number} seed
  * @typedef {Object} Accent
  * @property {Record<string, any>} params - Parameters of the `shape` generator
@@ -90,79 +93,6 @@ function frame({ theme, frame: { width, height }, lengthF, drawF }) {
       ],
     },
     opacity: 0.7,
-  };
-}
-
-/**
- * A thin circle, larger than the words and off to one corner, that keeps
- * growing: part of it always lies outside the picture.
- * @param {AccentInput} input
- * @returns {Accent}
- */
-function ring({ text, theme, frame: { width, height }, lengthF, drawF, seed }) {
-  const short = Math.min(width, height);
-  const size = Math.round(short * 0.8);
-  const side = text.align === 'left' || seed % 2 ? 1 : -1;
-  const up = (seed >> 1) % 2 ? 1 : -1;
-  /** @returns {import('./clips.js').Key[]} */
-  const grow = () => [
-    [0, Math.round(size * 0.75), 'ease-out'],
-    [drawF, size, 'sine'],
-    [lengthF, Math.round(size * 1.15)],
-  ];
-  return {
-    params: {
-      shape: 'ellipse',
-      sizing: 'pixels',
-      filled: false,
-      stroke: theme.accent,
-      strokeWidth: Math.max(2, Math.round(short * 0.005)),
-      widthPx: size,
-      heightPx: size,
-      offsetX: Math.round(side * width * 0.3),
-      offsetY: Math.round(up * height * 0.3),
-    },
-    keys: { widthPx: grow(), heightPx: grow() },
-    opacity: 0.45,
-  };
-}
-
-/**
- * A many-pointed star in the backdrop's light colour, turning slowly
- * behind the words.
- * @param {AccentInput} input
- * @returns {Accent}
- */
-function burst({ text, colors, frame: { width, height }, lengthF, drawF, seed }) {
-  const size = Math.round(Math.hypot(width, height) * 0.62);
-  const turn = (lengthF / 30) * 7 * (seed % 2 ? -1 : 1);
-  return {
-    params: {
-      shape: 'star',
-      sizing: 'pixels',
-      points: 14,
-      inner: 0.72,
-      fill: colors[2],
-      widthPx: size,
-      heightPx: size,
-      offsetX: Math.round(text.group.x),
-      offsetY: Math.round(text.group.y),
-    },
-    keys: {
-      widthPx: [
-        [0, Math.round(size * 0.5), 'back-out'],
-        [drawF, size],
-      ],
-      heightPx: [
-        [0, Math.round(size * 0.5), 'back-out'],
-        [drawF, size],
-      ],
-      rotation: [
-        [0, 0],
-        [lengthF, Math.round(turn)],
-      ],
-    },
-    opacity: 0.55,
   };
 }
 

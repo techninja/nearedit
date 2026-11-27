@@ -10,6 +10,7 @@ import { createEdl } from '#utils/edl/factory.js';
 import { timelineDuration } from '#utils/edl/query.js';
 import { baseEdit } from './actions/baseEdit.js';
 import { insertBroll } from './actions/insertBroll.js';
+import { motionPiece } from './actions/motion.js';
 import { addCaptions } from './inplace/addCaptions.js';
 import { beatSync } from './inplace/beatSync.js';
 import { removeSilence } from './inplace/removeSilence.js';
@@ -73,6 +74,22 @@ test('a generated fragment merges validly in every mode', async (t) => {
       else if (mode === 'range') assert.equal(length, 20 - 4 + done.result.duration);
       else assert.equal(length, 20 + done.result.duration);
     }
+  }
+});
+
+test('a motion piece — generators and titles only — merges validly in every mode', async (t) => {
+  const context = { playheadPosition: 4, range: { start: 2, end: 6 } };
+  const prompt = 'A day at the park | a short film\nThe end';
+  for (const mode of ['replace', 'append', 'prepend', 'insert', 'range']) {
+    const directive = { action: 'motion_piece', mode, context, prompt, params: { seed: 3 } };
+    const done = await merged(t, motionPiece, directive, timeline());
+    if (!done) return;
+    const length = timelineDuration(done.out);
+    if (mode === 'replace') assert.equal(length, done.result.duration);
+    else if (mode === 'range') assert.equal(length, 20 - 4 + done.result.duration);
+    else assert.equal(length, 20 + done.result.duration);
+    const added = done.result.tracks.flatMap((track) => track.clips);
+    assert.ok(added.length >= 5 && added.every((c) => !c.sourceFile), mode);
   }
 });
 

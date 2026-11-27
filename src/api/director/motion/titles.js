@@ -38,18 +38,19 @@ export function pieceCount(content, by, lines) {
  * @returns {{ type: string, by: string, duration: number, stagger: number, ease: string }}
  */
 export function entrance(type, by, count, seconds) {
-  const round = (/** @type {number} */ value) => Math.round(value * 1000) / 1000;
+  // Rounded down, so the pieces together never take longer than they were given.
+  const trim = (/** @type {number} */ value) => Math.floor(value * 10000) / 10000;
   if (type === 'none') return { type, by: 'block', duration: 0, stagger: 0, ease: 'linear' };
   if (type === 'typewriter') {
     const unit = by === 'block' ? 'char' : by;
-    const step = Math.min(STAGGER[unit] || 0.06, seconds / count);
-    return { type, by: unit, duration: round(step), stagger: round(step), ease: 'linear' };
+    const step = trim(Math.min(STAGGER[unit] || 0.06, seconds / count));
+    return { type, by: unit, duration: step, stagger: step, ease: 'linear' };
   }
   const ease = type === 'scale' ? 'back-out' : 'ease-out';
-  if (by === 'block' || count < 2) return { type, by, duration: round(seconds), stagger: 0, ease };
-  const duration = Math.max(0.2, Math.min(0.7, seconds * 0.55));
+  if (by === 'block' || count < 2) return { type, by, duration: trim(seconds), stagger: 0, ease };
+  const duration = trim(Math.max(0.2, Math.min(0.7, seconds * 0.55)));
   const stagger = Math.min(STAGGER[by] || 0.06, Math.max(0, seconds - duration) / (count - 1));
-  return { type, by, duration: round(duration), stagger: round(stagger), ease };
+  return { type, by, duration, stagger: trim(stagger), ease };
 }
 
 /**

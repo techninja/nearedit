@@ -9,7 +9,7 @@
 
 import { rand } from '#utils/compose/random.js';
 import { mix } from '#utils/director/motion/color.js';
-import { PATTERNS } from '#utils/director/motion/vocab.js';
+import { PATTERN_RECIPES } from './patterns.js';
 
 /**
  * @typedef {Object} BackgroundInput
@@ -24,17 +24,6 @@ import { PATTERNS } from '#utils/director/motion/vocab.js';
  * @property {Record<string, import('./clips.js').Key[]>} keys - Paths below
  *   `generator.params.`, keyed in frames since the clip began
  */
-
-/** How each pattern is drawn: cell size (of the shorter side), coverage,
- * angle, how far the pattern colour departs from the ground, drift per second. */
-const PATTERN_STYLE = {
-  dots: { size: 0.06, fill: 0.2, angle: 0, tone: 0.75, drift: [0.012, 0.006] },
-  grid: { size: 0.09, fill: 0.035, angle: 0, tone: 0.85, drift: [0.01, 0.01] },
-  stripes: { size: 0.07, fill: 0.5, angle: 35, tone: 0.5, drift: [0.03, 0] },
-  checker: { size: 0.11, fill: 0.5, angle: 0, tone: 0.4, drift: [0.02, 0.012] },
-};
-/** A pattern the catalog gains later still draws, in a neutral way. */
-const ANY_PATTERN = { size: 0.08, fill: 0.3, angle: 0, tone: 0.5, drift: [0.015, 0.008] };
 
 /**
  * @param {BackgroundInput} input
@@ -129,46 +118,13 @@ function solid({ colors: [edge, middle, light], lengthF, seed }) {
   };
 }
 
-/**
- * @param {string} pattern
- * @returns {(input: BackgroundInput) => Background}
- */
-const patterned = (pattern) => (input) => {
-  const { colors, lengthF, fps, seed, frame } = input;
-  const style = PATTERN_STYLE[pattern] || ANY_PATTERN;
-  const short = Math.min(frame.width, frame.height);
-  const seconds = lengthF / fps;
-  const side = rand(seed, 1) < 0.5 ? -1 : 1;
-  return {
-    type: 'pattern',
-    params: {
-      pattern,
-      background: colors[1],
-      color: mix(colors[1], colors[2], style.tone),
-      size: Math.round(short * style.size),
-      fill: style.fill,
-      angle: style.angle * side,
-    },
-    keys: {
-      offsetX: [
-        [0, 0],
-        [lengthF, Math.round(short * style.drift[0] * seconds * side)],
-      ],
-      offsetY: [
-        [0, 0],
-        [lengthF, Math.round(short * style.drift[1] * seconds)],
-      ],
-    },
-  };
-};
-
 /** @type {Record<string, (input: BackgroundInput) => Background>} */
 const RECIPES = {
   solid,
   gradient,
   spotlight,
   noise,
-  ...Object.fromEntries(PATTERNS.map((pattern) => [pattern, patterned(pattern)])),
+  ...PATTERN_RECIPES,
 };
 
 /**

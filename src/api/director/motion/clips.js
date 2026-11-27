@@ -71,6 +71,17 @@ export function keyframes(paths, fps) {
 }
 
 /**
+ * Keys of generator parameters as full keyframe paths.
+ * @param {Record<string, Key[]>} keys - By parameter name (`angle`, `center.x`)
+ * @returns {Record<string, Key[]>} By path (`generator.params.angle`)
+ */
+export function paramKeys(keys) {
+  return Object.fromEntries(
+    Object.entries(keys).map(([name, list]) => [`generator.params.${name}`, list]),
+  );
+}
+
+/**
  * An effect stack entry.
  * @param {string} effectId - Unique in its clip; keyframe paths refer to it
  * @param {string} type - An effect of the catalog

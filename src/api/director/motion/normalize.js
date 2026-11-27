@@ -96,6 +96,9 @@ export function normalizeMotionPlan(parsed) {
   const plan = {};
   const scenesKey = SCENES_KEYS.find((k) => Array.isArray(raw[k]));
   if (scenesKey) plan.scenes = raw[scenesKey].map(normalizeScene);
+  // One scene written without its list is still a scene; anything else is for validation.
+  else if (raw.scenes && typeof raw.scenes === 'object') plan.scenes = [normalizeScene(raw.scenes)];
+  else if (raw.scenes !== undefined) plan.scenes = raw.scenes;
   for (const key of ['theme', 'align']) {
     if (typeof raw[key] === 'string' && raw[key].trim()) plan[key] = tidyName(raw[key]);
   }

@@ -7,7 +7,6 @@
  * @module api/director/motion/complete
  */
 
-import { seedOf } from '#utils/compose/random.js';
 import { AUTO, choose, getTheme, pickTheme } from '#utils/director/motion/themes.js';
 import { NONE, PARTICLES, vocabulary } from '#utils/director/motion/vocab.js';
 
@@ -37,7 +36,7 @@ const ALIGNS = /** @type {const} */ (['center', 'center', 'left']);
  * @returns {{ plan: CompletePlan, notes: string[] }}
  */
 export function completePlan(plan, params = {}) {
-  const seed = seedOf(params.seed ?? 1);
+  const seed = params.seed ?? 1;
   const notes = [];
   const asked = params.theme && params.theme !== AUTO ? params.theme : plan.theme;
   const theme = pickTheme(asked, seed);
@@ -54,8 +53,26 @@ export function completePlan(plan, params = {}) {
     textAnimation: animation,
     transition: choose(theme.transitions, seed, 24),
   };
-  const align =
-    plan.align === 'left' || plan.align === 'center' ? plan.align : choose([...ALIGNS], seed, 25);
+  const align = ALIGNS.includes(/** @type {any} */ (plan.align))
+    ? /** @type {'center'|'left'} */ (plan.align)
+    : choose([...ALIGNS], seed, 25);
+  if (plan.align && plan.align !== align) {
+    notes.push(`Unknown align “${plan.align}” — the text is set ${align} instead.`);
+  }
+  // The theme's signature background opens the piece; the others follow in the seed's order.
+  const others = theme.backgrounds.slice(1);
+  const turn = others.length
+    ? choose(
+        others.map((_, k) => k),
+        seed,
+        26,
+      )
+    : 0;
+  const grounds = [theme.backgrounds[0], ...others.slice(turn), ...others.slice(0, turn)];
+  /** @param {string} type @returns {string} The unit an animation is staggered over */
+  const unitOf = (type) =>
+    theme.animations.find(([kind]) => kind === type)?.[1] ||
+    (type === 'typewriter' ? 'char' : 'word');
 
   const scenes = plan.scenes.map((scene, i) => {
     /** @param {keyof ReturnType<typeof vocabulary>} field @param {string} fallback */
@@ -66,21 +83,26 @@ export function completePlan(plan, params = {}) {
       notes.push(`Scene ${i + 1}: unknown ${field} “${value}” — ${fallback} is used instead.`);
       return fallback;
     };
-    // The first scene shows the theme's signature background and opens from black.
-    const background = i ? choose(theme.backgrounds.slice(1), seed, 26, i - 1) : theme.backgrounds[0];
+    // Asked in the order the notes should read.
+    const background = name('background', grounds[i % grounds.length]);
+    const particles = forced || name('particles', piece.particles);
+    const accent = name('accent', piece.accent);
+    const look = name('look', piece.look);
     const textAnimation = name('textAnimation', piece.textAnimation);
-    const by = name('by', textAnimation === animation ? unit : 'word');
+    const by = name('by', textAnimation === animation ? unit : unitOf(textAnimation));
+    // The piece opens from black.
+    const transition = name('transition', i ? piece.transition : 'fade');
     /** @type {Scene} */
     const out = {
       title: scene.title,
       ...(scene.subtitle ? { subtitle: scene.subtitle } : {}),
-      background: name('background', background || theme.backgrounds[0]),
-      particles: forced || name('particles', piece.particles),
-      accent: name('accent', piece.accent),
-      look: name('look', piece.look),
+      background,
+      particles,
+      accent,
+      look,
       textAnimation,
       by,
-      transition: name('transition', i ? piece.transition : 'fade'),
+      transition,
     };
     if (scene.duration > 0) out.duration = scene.duration;
     return out;

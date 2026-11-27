@@ -50,7 +50,8 @@ export function particleClips(shots, { fps, seed, frame }) {
   for (let i = 0; i < shots.length; i++) {
     const preset = particlePreset(shots[i].particles);
     if (!preset) continue;
-    const burst = !(preset.params.rate > 0) && !(preset.params.burstEvery > 0);
+    // A single burst: the steady flow is switched off and the burst does not repeat.
+    const burst = preset.params.rate === 0 && !(preset.params.burstEvery > 0);
     let last = i;
     while (!burst && shots[last + 1]?.particles === shots[i].particles) last++;
     const startF = burst ? shots[i].textF : shots[i].startF;

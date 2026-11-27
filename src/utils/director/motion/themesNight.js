@@ -11,7 +11,7 @@ export const NIGHT_THEMES = [
     label: 'Midnight',
     description: 'Deep indigo light, tall condensed capitals, dust in the air',
     ink: '#ffffff',
-    sub: '#c7d2fe',
+    sub: '#e0e7ff',
     accent: '#38bdf8',
     backdrops: [
       ['#020617', '#1e1b4b', '#4338ca'],
@@ -63,7 +63,7 @@ export const NIGHT_THEMES = [
     label: 'Forest',
     description: 'Soft green haze, a handwritten headline, fireflies',
     ink: '#f7fee7',
-    sub: '#bbf7d0',
+    sub: '#d1fae5',
     accent: '#a3e635',
     backdrops: [
       ['#03140f', '#064e3b', '#0f766e'],
@@ -96,7 +96,13 @@ export const NIGHT_THEMES = [
       ['#060607', '#26262a', '#4c4c54'],
     ],
     shadow: true,
-    title: { fontFamily: 'Playfair Display', weight: 900, size: 0.15, lineHeight: 1.08, tracking: 0 },
+    title: {
+      fontFamily: 'Playfair Display',
+      weight: 900,
+      size: 0.15,
+      lineHeight: 1.08,
+      tracking: 0,
+    },
     subtitle: { fontFamily: 'Inter', weight: 400, size: 0.042, tracking: 0.12, animation: 'fade' },
     backgrounds: ['spotlight', 'noise', 'gradient'],
     particles: ['dust', 'none'],

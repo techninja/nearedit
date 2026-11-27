@@ -7,6 +7,7 @@
  */
 
 import { BASE_EDIT, EXECUTE_SCRIPT, GENERATE_EDIT, GENERATE_SCRIPT } from './actionsGenerate.js';
+import { MOTION_PIECE } from './actionsMotion.js';
 import { ADD_CAPTIONS, BEAT_SYNC_ACTION, INSERT_BROLL } from './actionsTimeline.js';
 import { REMOVE_SILENCE } from './actionsTimeline.js';
 
@@ -33,6 +34,7 @@ export const ACTIONS = [
   GENERATE_SCRIPT,
   EXECUTE_SCRIPT,
   INSERT_BROLL,
+  MOTION_PIECE,
   REMOVE_SILENCE,
   BEAT_SYNC_ACTION,
   ADD_CAPTIONS,

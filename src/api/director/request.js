@@ -11,6 +11,7 @@ import { clamp } from '#utils/director/snap.js';
 import { createClip, parseResolution } from '#utils/edl/factory.js';
 import { getAdaptation, getProjectDir } from '../lib/registry.js';
 import { DirectorError } from './errors.js';
+import { checkBrief } from './motion/brief.js';
 import { checkScriptSource } from './scripts/files.js';
 
 /**
@@ -97,6 +98,7 @@ export function prepareRequest(body, route) {
       fields: { edl: 'Send the current timeline document as "edl"' },
     });
   if (action.id === 'execute_script') checkScriptSource(directive);
+  if (action.id === 'motion_piece') checkBrief(directive);
 
   // A generated fragment that replaces a range should, by default, fill it.
   const length = action.fields.find((f) => f.key === 'duration');

@@ -21,6 +21,8 @@ export const PACE = {
 
 /** No scene is shorter than this many seconds: text needs a moment. */
 export const MIN_SCENE = 1;
+/** …nor than this many frames, whatever the frame rate: a scene needs room for its moves. */
+export const MIN_FRAMES = 8;
 
 /**
  * @param {string} [text]
@@ -77,7 +79,7 @@ export function shareFrames(weights, total, floor) {
  */
 export function sceneFrames(scenes, { fps, pacing, target = 0 }) {
   const natural = scenes.map((scene) => naturalSeconds(scene, /** @type {any} */ (pacing)));
-  const floor = Math.round(MIN_SCENE * fps);
+  const floor = Math.max(MIN_FRAMES, Math.round(MIN_SCENE * fps));
   const notes = [];
   if (!(target > 0)) {
     return { frames: natural.map((s) => Math.max(floor, Math.round(s * fps))), notes };

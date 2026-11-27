@@ -10,7 +10,7 @@
  * @module utils/director/motion/themes
  */
 
-import { hash } from '#utils/compose/random.js';
+import { hash, seedOf } from '#utils/compose/random.js';
 import { DAY_THEMES } from './themesDay.js';
 import { NIGHT_THEMES } from './themesNight.js';
 
@@ -69,28 +69,33 @@ export const themeIds = () => THEMES.map((theme) => theme.id);
  * @param {unknown} id
  * @returns {Theme|undefined}
  */
-export const getTheme = (id) =>
-  THEMES.find((theme) => theme.id === String(id ?? '').toLowerCase());
+export const getTheme = (id) => THEMES.find((theme) => theme.id === String(id ?? '').toLowerCase());
 
 /**
- * The theme of a piece: the named one, or the seed's choice.
+ * The theme of a piece: the named one, or the seed's choice. Whole-number
+ * seeds walk through the themes in order (1 is the first), so the next
+ * number always gives another theme; any other seed is hashed.
  * @param {unknown} id - A theme id, `auto` or nothing
- * @param {number} seed
+ * @param {number|string} seed
  * @returns {Theme}
  */
 export function pickTheme(id, seed) {
-  return getTheme(id) || THEMES[hash(seed, 101) % THEMES.length];
+  const named = getTheme(id);
+  if (named) return named;
+  const whole = typeof seed === 'number' && Number.isInteger(seed);
+  const turn = whole ? Math.abs(seed) + THEMES.length - 1 : seedOf(seed);
+  return THEMES[turn % THEMES.length];
 }
 
 /**
  * The seed's choice from a list, stable for a seed and a purpose.
  * @template T
  * @param {T[]} list - Not empty
- * @param {number} seed
+ * @param {number|string} seed
  * @param {number} salt - What is being chosen
  * @param {number} [step=0] - Walk on through the list (scene after scene)
  * @returns {T}
  */
 export function choose(list, seed, salt, step = 0) {
-  return list[(hash(seed, salt) + step) % list.length];
+  return list[(hash(seedOf(seed), salt) + step) % list.length];
 }
