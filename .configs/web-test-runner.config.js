@@ -1,4 +1,5 @@
 import { playwrightLauncher } from '@web/test-runner-playwright';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -32,10 +33,23 @@ function importMapPlugin() {
   };
 }
 
+/** Serve the generated icon sprite at the URL the app uses (the app's web root is src/). */
+function appRootPlugin() {
+  return {
+    name: 'app-root-files',
+    serve(context) {
+      const file = resolve(ROOT, 'src/icons.json');
+      if (context.path === '/icons.json' && existsSync(file)) {
+        return { body: readFileSync(file, 'utf-8'), type: 'json' };
+      }
+    },
+  };
+}
+
 export default {
   files: 'src/components/**/*.test.js',
   nodeResolve: true,
   rootDir: ROOT,
   browsers: [playwrightLauncher({ product: 'chromium', launchOptions })],
-  plugins: [importMapPlugin()],
+  plugins: [importMapPlugin(), appRootPlugin()],
 };

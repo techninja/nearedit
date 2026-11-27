@@ -27,4 +27,17 @@ describe('app-icon', () => {
     const el = await fixture(`<app-icon name="folder"></app-icon>`);
     expect(el.name).to.equal('folder');
   });
+
+  it('follows a changed name', async () => {
+    const el = await fixture(`<app-icon name="play"></app-icon>`);
+    for (let i = 0; i < 20 && !el.querySelector('svg'); i++) await frame();
+    const before = el.querySelector('.icon').innerHTML;
+    expect(before).to.contain('<svg');
+    el.name = 'pause';
+    await frame();
+    await frame();
+    const after = el.querySelector('.icon').innerHTML;
+    expect(after).to.contain('<svg');
+    expect(after).to.not.equal(before);
+  });
 });

@@ -1,4 +1,6 @@
-/* Component styles aggregator. */
+/* Component styles aggregator — core atoms and playback.
+   Each editor area has its own aggregator so areas never edit one file:
+   components-timeline.css, components-panels.css, components-shell.css. */
 
 /* Atoms */
 @import '../components/atoms/app-button/app-button.css';
@@ -7,13 +9,5 @@
 @import '../components/atoms/theme-toggle/theme-toggle.css';
 @import '../components/atoms/transport-controls/transport-controls.css';
 
-/* Organisms */
-@import '../components/organisms/timeline-canvas/timeline-canvas.css';
-@import '../components/organisms/media-bin/media-bin.css';
+/* Playback */
 @import '../components/organisms/video-preview/video-preview.css';
-@import '../components/organisms/director-panel/director-panel.css';
-
-/* Pages */
-@import '../pages/editor/editor-view.css';
-@import '../pages/project/project-view.css';
-@import '../pages/home/home-view.css';

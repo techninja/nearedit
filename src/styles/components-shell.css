@@ -1,0 +1,5 @@
+/* Component styles aggregator — pages, director, export, jobs. */
+@import '../components/organisms/director-panel/director-panel.css';
+@import '../pages/editor/editor-view.css';
+@import '../pages/project/project-view.css';
+@import '../pages/home/home-view.css';

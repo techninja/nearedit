@@ -29,32 +29,44 @@ const loading = fetch('/icons.json')
  * @typedef {Object} AppIconHost
  * @property {string} name
  * @property {'sm'|'md'|'lg'} size
- * @property {string} svgContent - Resolved SVG inner markup
+ * @property {boolean} ready - True once icons.json has loaded
  */
+
+const SVG_ATTRS =
+  'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+
+/**
+ * Markup for one icon; empty when the name is unknown or icons are not loaded.
+ * @param {string} name
+ * @returns {string}
+ */
+function svgFor(name) {
+  const inner = iconCache?.[name];
+  return inner ? `<svg ${SVG_ATTRS}>${inner}</svg>` : '';
+}
 
 /** @type {import('hybrids').Component<AppIconHost>} */
 export default define({
   tag: 'app-icon',
   name: '',
   size: 'md',
-  svgContent: {
-    value: '',
-    connect(host, _key, invalidate) {
+  ready: {
+    value: false,
+    connect(host) {
+      let connected = true;
       loading.then(() => {
-        host.svgContent = iconCache?.[host.name] || '';
-        invalidate();
+        if (connected) host.ready = true;
       });
-    },
-    observe(host, val) {
-      const span = host.querySelector('.icon');
-      if (!span) return;
-      span.innerHTML = val
-        ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${val}</svg>`
-        : '';
+      return () => {
+        connected = false;
+      };
     },
   },
   render: {
-    value: ({ size }) => html`<span class="icon icon-${size}"></span>`,
+    // `ready` is read so the icon re-renders when icons.json arrives; `name`
+    // so it follows a changed name (play ↔ pause).
+    value: ({ name, size, ready }) =>
+      html`<span class="icon icon-${size}" innerHTML="${ready ? svgFor(name) : ''}"></span>`,
     shadow: false,
   },
 });
