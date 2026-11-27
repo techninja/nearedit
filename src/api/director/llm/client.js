@@ -20,7 +20,8 @@ import { translateError, httpError } from './failures.js';
  * @property {boolean} [json] - Ask the provider for a JSON object
  * @property {(delta: string, info: { chars: number, thinking: boolean }) => void} [onToken]
  * @property {AbortSignal} [signal]
- * @property {number} [timeoutMs] - Whole request, default 15 minutes
+ * @property {number} [timeoutMs] - Whole request, default one hour (local models on a
+ *   CPU are slow; the idle limit is what catches a hung server)
  * @property {number} [idleMs] - Longest silence from the server, default 5 minutes
  * @property {number} [temperature]
  * @property {number} [maxTokens]
@@ -79,7 +80,7 @@ export function createLlmClient(cfg = getConfig().llm, deps = {}) {
       const full = { temperature: 0.3, maxTokens: 4096, ...req };
       const dog = watchdog({
         signal: req.signal,
-        timeoutMs: req.timeoutMs ?? 900_000,
+        timeoutMs: req.timeoutMs ?? 3_600_000,
         idleMs: req.idleMs ?? 300_000,
       });
       try {

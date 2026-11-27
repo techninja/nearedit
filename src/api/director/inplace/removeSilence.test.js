@@ -36,6 +36,24 @@ function interviewDoc() {
   });
 }
 
+test('markers move with the timeline and survive the replace', async () => {
+  const edl = interviewDoc();
+  edl.markers = [
+    { markerId: 'm_a', time: 0.5, label: 'start', color: '' },
+    { markerId: 'm_b', time: 10, label: 'title', color: '#f00' },
+    { markerId: 'm_c', time: 18, label: 'city', color: '' },
+  ];
+  const result = await run(edl);
+  assert.deepEqual(
+    result.markers.map((m) => [m.markerId, Math.round(m.time * 30), m.label, m.color]),
+    [
+      ['m_a', 0, 'start', ''],
+      ['m_b', 198, 'title', '#f00'],
+      ['m_c', 345, 'city', ''],
+    ],
+  );
+});
+
 test('timeMap closes removed spans; frames inside one land on its start', () => {
   const map = timeMap(
     mergeSpans([
@@ -176,6 +194,8 @@ test('fades are protected and a locked track is reported, not rippled', async ()
   const [first] = trackClips(result, 'video', 0);
   // The lead-in silence (0–0.9s) lies under the fade-in and stays.
   assert.deepEqual([first.sourceIn, first.fadeIn], [0, 1.5]);
-  assert.deepEqual(spans(trackClips(result, 'video', 1)), [[420, 600]]);
+  // A replace never writes to a locked track, so it travels empty.
+  const locked = result.tracks.find((t) => t.type === 'video' && t.index === 1);
+  assert.deepEqual([locked.locked, locked.clips], [true, []]);
   assert.match(result.notes.join(' '), /Track “Video 2” is locked/);
 });

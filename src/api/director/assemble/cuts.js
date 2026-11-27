@@ -122,7 +122,8 @@ export function cutsForPick(pick, opts, stats) {
   if (pick.end === null && end - start > opts.target) {
     end = start + opts.target;
     stats.notes.push(
-      `No part of ${media.filename} was named — its first ${Math.round(opts.target)}s were used.`,
+      `Pick ${pick.index + 1}: no end was given for ${media.filename} — ` +
+        `capped at ${Math.round(opts.target)}s.`,
     );
   }
   return speechCuts(media, start, Math.min(end, length), opts, stats);

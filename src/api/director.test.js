@@ -111,7 +111,7 @@ test('POST /director runs base_edit as a job with progress and a DirectorResult'
     ['queued', 'complete', 100],
   );
   assert.ok(
-    job.log.some((l) => /9 media files \(8 analysed\) — Base edit/.test(l)),
+    job.log.some((l) => /8 media files \(7 analysed\) — Base edit/.test(l)),
     job.log.join(' | '),
   );
   assert.ok(job.log.some((l) => /Planned a talking-head cut of 3 picks/.test(l)));

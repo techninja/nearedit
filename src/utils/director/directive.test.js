@@ -72,13 +72,21 @@ test('normalizeDirective clamps ranges and coerces toggles', () => {
   if (!out.ok) return;
   assert.equal(out.directive.params.threshold, 3);
   assert.equal(out.directive.params.padding, 0);
-  assert.deepEqual(out.directive.context, { playheadPosition: 12.5, range: null, selection: ['a'] });
+  assert.deepEqual(out.directive.context, {
+    playheadPosition: 12.5,
+    range: null,
+    selection: ['a'],
+  });
   const toggled = normalizeDirective({ action: 'beat_sync', params: { protectSpeech: 'false' } });
   assert.equal(toggled.ok && toggled.directive.params.protectSpeech, false);
 });
 
 test('normalizeDirective rejects unknown actions with 400', () => {
-  assert.deepEqual(normalizeDirective(null), { ok: false, status: 400, error: 'directive required' });
+  assert.deepEqual(normalizeDirective(null), {
+    ok: false,
+    status: 400,
+    error: 'directive required',
+  });
   const out = normalizeDirective({ action: 'explode' });
   assert.equal(out.ok, false);
   assert.equal(!out.ok && out.status, 400);
@@ -117,7 +125,10 @@ test('mode "range" needs a valid context.range', () => {
 });
 
 test('custom select values are allowed only where the field says so', () => {
-  const custom = normalizeDirective({ action: 'generate_edit', params: { style: 'noir thriller' } });
+  const custom = normalizeDirective({
+    action: 'generate_edit',
+    params: { style: 'noir thriller' },
+  });
   assert.equal(custom.ok && custom.directive.params.style, 'noir thriller');
   const strict = normalizeDirective({ action: 'base_edit', params: { style: 'noir thriller' } });
   assert.equal(strict.ok, false);

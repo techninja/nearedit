@@ -68,11 +68,12 @@ export function saveScript(dir, name, text) {
  * Check where an `execute_script` directive gets its script from, so a bad
  * path is refused before a job starts.
  * @param {import('#utils/director/directive.js').Directive} directive
+ * @returns {string} The script file to read, or '' when the prompt holds the script
  * @throws {DirectorError} 403/404 for a bad path, 422 when there is no script at all
  */
 export function checkScriptSource(directive) {
   const path = directive.params.scriptPath;
-  if (directive.prompt) return;
+  if (directive.prompt) return '';
   if (!path)
     throw new DirectorError('No script to execute', {
       status: 422,
@@ -88,6 +89,7 @@ export function checkScriptSource(directive) {
   if (!SCRIPT_EXTS.includes(extname(checked.path).toLowerCase()))
     throw bad('must be a .md or .txt file');
   if (statSync(checked.path).size > MAX_SCRIPT_BYTES) throw bad('the file is larger than 256 KB');
+  return checked.path;
 }
 
 /**
@@ -97,7 +99,6 @@ export function checkScriptSource(directive) {
  * @returns {string}
  */
 export function loadScript(directive) {
-  checkScriptSource(directive);
-  if (directive.prompt) return directive.prompt;
-  return readFileSync(directive.params.scriptPath, 'utf-8');
+  const path = checkScriptSource(directive);
+  return path ? readFileSync(path, 'utf-8') : directive.prompt;
 }

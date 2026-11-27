@@ -5,7 +5,7 @@
  * @module api/director/assemble/spine
  */
 
-import { toFrames } from '#utils/director/snap.js';
+import { floorFrames, toFrames } from '#utils/director/snap.js';
 import { wordRange } from '#utils/director/speech.js';
 import { lengthOnBeat } from './beats.js';
 import { imageClip, speechLabel } from './clips.js';
@@ -52,7 +52,7 @@ function placeCut(fragment, pick, cut, atF, opts, stillIndex) {
   placeAv(fragment, cut, atF, {
     video: showPicture ? 'main' : undefined,
     audio: 'dialogue',
-    intent: 'narration',
+    intent: cut.speech ? 'narration' : 'broll',
     label,
   });
   return showPicture && media.hasVideo;
@@ -79,7 +79,7 @@ export function layoutSpine(fragment, picks, opts, beatsF, stats) {
     for (const cut of cutsForPick(pick, opts, stats)) {
       if (!cut.speech && beatsF.length) {
         const still = cut.media.type === 'image';
-        const lastF = cut.media.duration ? Math.floor(cut.media.duration * fps + 1e-6) : Infinity;
+        const lastF = cut.media.duration ? floorFrames(cut.media.duration, fps) : Infinity;
         const maxF = still ? cut.lenF * 2 : lastF - cut.inF;
         const onBeat = lengthOnBeat(cursorF, cut.lenF, beatsF, minF, maxF);
         if (beatsF.includes(cursorF + onBeat)) stats.beatCuts++;

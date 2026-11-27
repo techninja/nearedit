@@ -78,11 +78,12 @@ test('default: a ripple insert at the playhead on the track it interrupts', asyn
     result.tracks.map((t) => [t.type, t.index, t.name]),
     [
       ['video', 0, 'Video 1'],
-      ['audio', 1, 'Ambience'],
+      ['audio', 0, 'Audio 1'],
     ],
   );
   const [picture] = trackClips(result, 'video', 0);
-  const [sound] = trackClips(result, 'audio', 1);
+  // Its sound goes beside the sound of the picture it interrupts.
+  const [sound] = trackClips(result, 'audio', 0);
   assert.equal(file(picture), 'beach.mp4');
   // Fragment times are relative to 0; 4s around the "dog running" keyframe at 5s.
   assert.deepEqual([picture.timelineStart, picture.timelineEnd], [0, 4]);
@@ -111,6 +112,14 @@ test('count, length and sound follow the params', async () => {
     ],
   );
   assert.match(result.summary, /^2 b-roll clips \(4s\): beach\.mp4, city\.mp4 appended$/);
+  // With sound, and no picture under the insert point, it gets an Ambience track.
+  const loud = await run(talkingHead(), {
+    prompt: 'beach',
+    params: { naturalSound: 'full' },
+    mode: 'append',
+  });
+  const sound = loud.tracks.find((t) => t.type === 'audio');
+  assert.deepEqual([sound.index, sound.name, sound.clips[0].volume], [1, 'Ambience', 1]);
 });
 
 test('range mode fills the range unless a length is given', async () => {

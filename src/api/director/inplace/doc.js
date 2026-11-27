@@ -101,38 +101,25 @@ export function mediaLookup(media) {
 }
 
 /**
- * Wrap rewritten document tracks as a whole-timeline replace.
+ * Wrap rewritten document tracks as a whole-timeline replace. A replace
+ * clears the timeline's markers and never touches locked tracks, so the
+ * document's markers are passed through and locked tracks travel empty.
  * @param {import('../pipeline.js').ActionContext} ctx
  * @param {DocTrack[]} tracks
  * @param {string} summary
  * @param {string[]} notes
+ * @param {any[]} [markers] - Defaults to the document's own markers
  * @returns {import('../result.js').DirectorResult}
  */
-export function inPlaceResult(ctx, tracks, summary, notes) {
+export function inPlaceResult(ctx, tracks, summary, notes, markers = ctx.edl?.markers) {
   for (const track of tracks) track.clips.sort((a, b) => a.timelineStart - b.timelineStart);
+  const sent = tracks.map((track) => (track.locked ? { ...track, clips: [] } : track));
+  const kept = (Array.isArray(markers) ? markers : []).filter((m) => Number.isFinite(m?.time));
   const directive = { ...ctx.directive, mode: 'replace' };
-  return directorResult({ tracks, summary, notes }, directive, null, ctx.format.fps);
-}
-
-/**
- * The clips an in-place action works on: the selection when there is one,
- * else the clips inside `context.range` in range mode, else every clip.
- * @param {DocTrack[]} tracks
- * @param {import('#utils/director/directive.js').Directive} directive
- * @returns {{ clip: any, track: DocTrack, chosen: boolean }[]} `chosen` is true when the
- *   user picked the clip explicitly
- */
-export function scopedClips(tracks, directive) {
-  const { selection, range } = directive.context;
-  const all = tracks
-    .filter((t) => !t.locked)
-    .flatMap((track) => track.clips.map((clip) => ({ clip, track, chosen: false })));
-  if (selection.length) {
-    return all
-      .filter((e) => selection.includes(e.clip.clipId))
-      .map((e) => ({ ...e, chosen: true }));
-  }
-  if (directive.mode === 'range' && range)
-    return all.filter((e) => e.clip.timelineEnd > range.start && e.clip.timelineStart < range.end);
-  return all;
+  return directorResult(
+    { tracks: sent, markers: kept, summary, notes },
+    directive,
+    null,
+    ctx.format.fps,
+  );
 }

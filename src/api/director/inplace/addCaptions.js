@@ -8,7 +8,8 @@
 import { wrapLines } from '#utils/director/phrases.js';
 import { titleClip } from '../assemble/clips.js';
 import { captionStyle, clipCues, timeCues } from './captions.js';
-import { docTracks, inPlaceResult, insertTrack, isFree, mediaLookup, scopedClips } from './doc.js';
+import { docTracks, inPlaceResult, insertTrack, isFree, mediaLookup } from './doc.js';
+import { scopedClips } from './scope.js';
 
 /**
  * The track captions go on: the front-most video track when it is free at

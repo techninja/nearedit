@@ -87,8 +87,9 @@ export function overlayFragment(tracks, fragment, at) {
 
 /**
  * Where a ripple-inserted clip goes in the existing document: the track of
- * the picture under the playhead (else the busiest picture track), and an
- * ambience track for its sound.
+ * the picture under the playhead (else the busiest picture track). Its
+ * sound goes on an "Ambience" track when there is one, else beside the
+ * sound of the picture it interrupts, else on a new track.
  * @param {any} edl
  * @param {number} at
  * @returns {{ video: { index: number, name: string }, audio: { index: number, name: string } }}
@@ -96,15 +97,20 @@ export function overlayFragment(tracks, fragment, at) {
 export function insertTargets(edl, at) {
   const tracks = docTracks(edl);
   const video = tracks.filter((t) => t.type === 'video');
-  const pictures = (/** @type {any} */ t) => t.clips.filter((c) => clipKind(c, t) !== 'title');
-  const under = video.find((t) =>
-    pictures(t).some((c) => at >= c.timelineStart && at < c.timelineEnd),
-  );
+  const audio = tracks.filter((t) => t.type === 'audio');
+  const pictures = (/** @type {DocTrack} */ t) => t.clips.filter((c) => clipKind(c, t) !== 'title');
+  const covers = (/** @type {any} */ c) => at >= c.timelineStart && at < c.timelineEnd;
+  const under = video.find((t) => pictures(t).some(covers));
   const busiest = [...video].sort((a, b) => pictures(b).length - pictures(a).length)[0];
   const picture = under || (busiest && pictures(busiest).length ? busiest : null);
-  const ambience = tracks.find((t) => t.type === 'audio' && /ambien/i.test(t.name));
+  const partnerId = under ? pictures(under).find(covers).linkedClipId : '';
+  const sound =
+    audio.find((t) => /ambien/i.test(t.name)) ||
+    audio.find((t) => partnerId && t.clips.some((c) => c.clipId === partnerId));
   return {
     video: picture ? { index: picture.index, name: picture.name } : LAYOUT.main,
-    audio: ambience ? { index: ambience.index, name: ambience.name } : LAYOUT.ambience,
+    audio: sound
+      ? { index: sound.index, name: sound.name }
+      : { index: audio.length, name: LAYOUT.ambience.name },
   };
 }

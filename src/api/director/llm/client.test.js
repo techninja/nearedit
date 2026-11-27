@@ -68,6 +68,19 @@ test('reasoning blocks are stripped from text but kept in raw', async () => {
   assert.equal(stripReasoning('<thinking>a</thinking>b<think>c</think>d'), 'bd');
 });
 
+test('reasoning sent on a separate channel is reported as activity, never as text', async () => {
+  fake.setReply(() => ({ reasoning: 'Let me think about {"x":1}…', content: '{"picks":[]}' }));
+  for (const provider of ['ollama', 'openai']) {
+    const seen = [];
+    const out = await ask(createLlmClient(cfg(provider)), {
+      onToken: (delta, info) => seen.push([delta, info.thinking]),
+    });
+    assert.deepEqual([out.text, out.raw], ['{"picks":[]}', '{"picks":[]}']);
+    assert.deepEqual(seen[0], ['', true]);
+    assert.ok(seen.slice(1).every(([delta, thinking]) => delta && !thinking));
+  }
+});
+
 test('a server that ignores stream:true is read as one complete message', async () => {
   fake.setReply(() => ({ content: 'whole body', plain: true }));
   for (const provider of ['ollama', 'openai'])

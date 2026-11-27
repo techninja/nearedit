@@ -47,6 +47,8 @@ export async function insertBroll(ctx) {
     });
 
   const chosen = hits.slice(0, params.count);
+  if (chosen.length < params.count)
+    notes.push(`Only ${chosen.length} of the ${params.count} clips asked for could be found.`);
   const picks = chosen.map((hit) => {
     if (hit.matched.length)
       notes.push(`${hit.media.filename} matched “${hit.matched.join(', ')}”.`);

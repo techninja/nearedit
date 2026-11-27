@@ -72,7 +72,7 @@ export function text(key, label, placeholder = '', help = '') {
   return { key, type: 'text', label, help, default: '', placeholder };
 }
 
-export const DURATION = range('duration', 'Target length', [5, 1800, 5], 60, 's');
+export const DURATION = range('duration', 'Target length', [2, 1800, 1], 60, 's');
 
 export const PACING = select(
   'pacing',

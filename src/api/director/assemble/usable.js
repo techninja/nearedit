@@ -74,13 +74,10 @@ export function usablePart(media, need, opts = {}) {
 export function alignPicture(media, start, end, tolerance = SCENE_TOLERANCE) {
   const length = media.duration ?? Infinity;
   const edges = [...new Set(media.scenes.flatMap((s) => [s.start, s.end]))].sort((a, b) => a - b);
-  let a = clamp(snapNear(start, edges, tolerance), 0, length);
-  let b = clamp(snapNear(end, edges, tolerance), 0, length);
-  if (b - a < 0.2) {
-    a = clamp(start, 0, length);
-    b = clamp(end, 0, length);
-  }
-  const moved = (/** @type {number} */ from, /** @type {number} */ to) =>
-    Math.abs(from - to) > 1e-6 && edges.includes(to) ? 1 : 0;
-  return { start: a, end: b, snapped: moved(start, a) + moved(end, b) };
+  let a = snapNear(start, edges, tolerance);
+  let b = snapNear(end, edges, tolerance);
+  // Both ends on the same boundary would leave nothing: keep the rough range.
+  if (b - a < 0.2) [a, b] = [start, end];
+  const snapped = Number(a !== start) + Number(b !== end);
+  return { start: clamp(a, 0, length), end: clamp(b, 0, length), snapped };
 }

@@ -10,6 +10,7 @@ import { createServer } from 'node:http';
 /**
  * @typedef {Object} FakeReply
  * @property {string} [content] - Assistant text, streamed in small pieces
+ * @property {string} [reasoning] - Sent first on the provider's separate reasoning channel
  * @property {number} [status] - Answer with this HTTP status instead
  * @property {any} [body] - JSON body for `status`
  * @property {boolean} [hang] - Accept the request and never answer
@@ -63,6 +64,12 @@ async function sendChat(res, ollama, reply, pieceSize) {
     return;
   }
   res.writeHead(200, { 'Content-Type': ollama ? 'application/x-ndjson' : 'text/event-stream' });
+  if (reply.reasoning) {
+    const thought = ollama
+      ? { message: { role: 'assistant', content: '', thinking: reply.reasoning }, done: false }
+      : { choices: [{ index: 0, delta: { reasoning_content: reply.reasoning } }] };
+    res.write(ollama ? `${JSON.stringify(thought)}\n` : `data: ${JSON.stringify(thought)}\n\n`);
+  }
   const parts = pieces(content, pieceSize);
   for (let i = 0; i < parts.length; i++) {
     res.write(frame(ollama, parts[i]));
