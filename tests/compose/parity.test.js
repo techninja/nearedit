@@ -108,9 +108,21 @@ describe('compositor parity: server canvas vs Chromium', () => {
     });
   }
 
-  // Fails today for a reason outside the compositor; see `emojiDoc`.
-  const todo = 'the vendored emoji WOFF2 subsets draw nothing in Chromium';
-  it('draws colour emoji alike', { todo }, async (t) => {
+  it('tells different frames apart (the comparison is not vacuous)', async (t) => {
+    if (skipped) return t.skip(skipped);
+    const found = referenceCases(fixtures).find((c) => c.name === 'keyframes');
+    const size = { width: WIDTH, height: HEIGHT };
+    const server = renderFrame(found.edl, found.time, { ...size, env });
+    const { data } = server.getContext('2d').getImageData(0, 0, WIDTH, HEIGHT);
+    // One output frame later the shape has moved by a few pixels.
+    const later = await browser.draw({ edl: found.edl, time: found.time + 1 / 30, ...size });
+    const d = difference(data, later, WIDTH, HEIGHT);
+    assert.ok(d.max > MAX_LEVELS, `one frame apart went unnoticed: max ${d.max}`);
+    assert.ok(new Set(data).size > 50, 'the reference frame is not a flat colour');
+  });
+
+  // Depends on the vendored emoji files being ones that draw (see `emojiDoc`).
+  it('draws colour emoji alike', async (t) => {
     const d = await compare(t, emojiCase());
     if (!d) return;
     assert.ok(d.blockMax <= TEXT_BLOCK, `an 8×8 block differs by ${d.blockMax.toFixed(2)}`);

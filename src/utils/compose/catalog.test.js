@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { EASINGS as EDL_EASINGS } from '#utils/edl/easing.js';
-import { doc, fx, gen, media, title } from '../../../tests/compose/build.js';
 import { compositeOperation, isBlended } from './blend.js';
 import {
   BLEND_MODES,
@@ -13,10 +12,7 @@ import {
   generatorModule,
 } from './catalog.js';
 import { cssColor, isHex, parseColor, rgba, withAlpha } from './color.js';
-import { clipTime, frameInfo, timelineTime } from './frame.js';
-import { layerKind, layersAt } from './layers.js';
 import { coerceParam, imageParams, resolveParams } from './params.js';
-import { requirements } from './requirements.js';
 
 const TYPES = ['number', 'color', 'boolean', 'select', 'text', 'image', 'point'];
 
@@ -180,86 +176,5 @@ describe('colours', () => {
     assert.deepEqual(parseColor('nope', [1, 2, 3, 0.5]), [1, 2, 3, 0.5]);
     assert.equal(rgba(255.4, -3, 12, 2), 'rgba(255, 0, 12, 1)');
     assert.equal(withAlpha('#ff000080', 0.5), `rgba(255, 0, 0, ${128 / 255 / 2})`);
-  });
-});
-
-describe('frame, time and layers', () => {
-  it('describes a canvas against the output size', () => {
-    assert.deepEqual(frameInfo({ resolution: '1920x1080', fps: 24 }, 480, 270), {
-      width: 480,
-      height: 270,
-      scale: 0.25,
-      fps: 24,
-      outWidth: 1920,
-      outHeight: 1080,
-    });
-    assert.equal(frameInfo({}, 1920, 1080).fps, 30);
-  });
-
-  it('describes a moment in a clip and on the timeline', () => {
-    const clip = { sourceIn: 10, timelineStart: 2, timelineEnd: 6 };
-    assert.deepEqual(clipTime(clip, 3, 30), {
-      t: 11,
-      age: 1,
-      remaining: 3,
-      duration: 4,
-      frame: 90,
-    });
-    const edl = doc([[gen('a', 'solid')]]);
-    assert.deepEqual(timelineTime(edl, 1, 30), {
-      t: 1,
-      age: 1,
-      remaining: 3,
-      duration: 4,
-      frame: 30,
-    });
-  });
-
-  it('lists the layers of a frame back to front, with their source times', () => {
-    const edl = doc([
-      [title('t', 'Hi'), media('p', '', { placeholder: true })],
-      { muted: true, clips: [gen('hidden', 'solid')] },
-      [
-        media('v', '/m/a.mp4', { sourceIn: 5, sourceOut: 9 }),
-        media('late', '/m/b.png', { timelineStart: 4, timelineEnd: 8 }),
-      ],
-      [gen('g', 'solid')],
-    ]);
-    const layers = layersAt(edl, 1.5);
-    assert.deepEqual(
-      layers.map((l) => [l.clip.clipId, l.kind]),
-      [
-        ['g', 'generator'],
-        ['v', 'video'],
-        ['t', 'title'],
-      ],
-    );
-    assert.equal(layers[1].sourceTime, 6.5);
-    assert.equal(layerKind(media('a', '/m/song.mp3'), {}), null);
-    assert.equal(layerKind(media('i', '/m/pic.JPG'), {}), 'image');
-  });
-});
-
-describe('requirements', () => {
-  it('lists every still and every font a document needs, once', () => {
-    const edl = doc([
-      [
-        title('t1', 'One', { fontFamily: 'Caveat', bold: true }),
-        title('t2', 'One', { fontFamily: 'Caveat', bold: true, fontSize: 90 }),
-      ],
-      [
-        media('a', '/m/a.png'),
-        media('b', '/m/a.png', { timelineStart: 5, timelineEnd: 6 }),
-        media('v', '/m/v.mp4'),
-      ],
-      [gen('g', 'solid', {}, { effects: [fx('blur')] }), media('p', '', { placeholder: true })],
-    ]);
-    const needs = requirements(edl);
-    assert.deepEqual(needs.images, ['/m/a.png']);
-    assert.deepEqual(needs.fonts, [
-      { font: '700 72px "Caveat", "Noto Color Emoji"', text: 'One' },
-      { font: '700 90px "Caveat", "Noto Color Emoji"', text: 'One' },
-    ]);
-    assert.deepEqual(requirements({}), { images: [], fonts: [] });
   });
 });

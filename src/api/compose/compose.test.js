@@ -98,9 +98,9 @@ describe('bundled fonts on the server canvas', () => {
     assert.ok(inkOf(`100px "${EMOJI_FAMILY}"`, '🎬') > 2000, 'the registered emoji font draws');
   });
 
-  // The file the browser is given. Fix: scripts/vendor-fonts.js must vendor
-  // the package's .woff files for this family (see fontFile).
-  it('vendors emoji files that draw', { todo: 'the numbered WOFF2 subsets are blank' }, () => {
+  // The file the browser is given: scripts/vendor-fonts.js vendors the
+  // package's .woff files for this family, because its .woff2 subsets are blank.
+  it('vendors emoji files that draw', () => {
     const face = faces.find((f) => f.family === EMOJI_FAMILY && covers(f.unicodeRange, 0x1f3ac));
     assert.ok(GlobalFonts.registerFromPath(join(FONT_DIR, face.file), 'Vendored Emoji'));
     assert.ok(inkOf('100px "Vendored Emoji"', '🎬') > 2000);

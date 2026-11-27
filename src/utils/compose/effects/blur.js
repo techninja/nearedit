@@ -4,7 +4,7 @@
  * @module utils/compose/effects/blur
  */
 
-/** @type {import('../catalog.js').EffectModule} */
+/** @type {import('#utils/compose/catalog.js').EffectModule} */
 export default {
   type: 'blur',
   label: 'Blur',

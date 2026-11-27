@@ -8,7 +8,7 @@
  * @module utils/compose/text/draw
  */
 
-import { fontString } from '../fonts.js';
+import { fontString } from '#utils/compose/fonts.js';
 import { unitScale } from './layer.js';
 
 /**

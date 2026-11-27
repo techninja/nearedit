@@ -15,7 +15,7 @@ const frameOnly = { sizing: ['frame'] };
 const pixelsOnly = { sizing: ['pixels'] };
 const outlined = { shape: ['rectangle', 'ellipse', 'polygon', 'star'] };
 
-/** @type {import('../catalog.js').GeneratorModule} */
+/** @type {import('#utils/compose/catalog.js').GeneratorModule} */
 export default {
   type: 'shape',
   label: 'Shape',

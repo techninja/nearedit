@@ -3,7 +3,7 @@
  * @module utils/compose/generators/solid
  */
 
-/** @type {import('../catalog.js').GeneratorModule} */
+/** @type {import('#utils/compose/catalog.js').GeneratorModule} */
 export default {
   type: 'solid',
   label: 'Solid colour',

@@ -5,9 +5,9 @@
  * @module utils/compose/effects/glow
  */
 
-import { drawFiltered } from '../filterPass.js';
+import { drawFiltered } from '#utils/compose/filterPass.js';
 
-/** @type {import('../catalog.js').EffectModule} */
+/** @type {import('#utils/compose/catalog.js').EffectModule} */
 export default {
   type: 'glow',
   label: 'Glow',

@@ -49,10 +49,10 @@ function dots(ctx, period, radius, shift, reach, visible) {
 
 /** @type {{ type: 'number', unit: string, animatable: boolean }} A length in output pixels */
 const px = { type: 'number', unit: 'px', animatable: true };
-/** @type {import('../params.js').ParamSpec} */
+/** @type {import('#utils/compose/params.js').ParamSpec} */
 const speed = { type: 'number', unit: 'px/s', default: 0, min: -4000, max: 4000, animatable: true };
 
-/** @type {import('../catalog.js').GeneratorModule} */
+/** @type {import('#utils/compose/catalog.js').GeneratorModule} */
 export default {
   type: 'pattern',
   label: 'Pattern',

@@ -10,8 +10,8 @@
  * @module utils/compose/text/title
  */
 
-import { fontString } from '../fonts.js';
-import { placeVector } from '../place.js';
+import { fontString } from '#utils/compose/fonts.js';
+import { placeVector } from '#utils/compose/place.js';
 import { REST, animateText } from './animate.js';
 import { drawBox, drawInk, setFont } from './draw.js';
 import { drawLayer, unitScale } from './layer.js';
@@ -53,9 +53,9 @@ function laidOut(text, style, measure) {
  * @param {any} text - The clip's `text` block (keyframes applied)
  * @param {import('#utils/edl/geometry.js').FlatTransform} t
  * @param {number} alpha - Opacity to draw with, 0..1
- * @param {import('../frame.js').Time} time
- * @param {import('../frame.js').Frame} frame
- * @param {import('../host.js').Compose} compose
+ * @param {import('#utils/compose/frame.js').Time} time
+ * @param {import('#utils/compose/frame.js').Frame} frame
+ * @param {import('#utils/compose/host.js').Compose} compose
  */
 export function drawTitle(ctx, text, t, alpha, time, frame, compose) {
   const style = textStyle(text);

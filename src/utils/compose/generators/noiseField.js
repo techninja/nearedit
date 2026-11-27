@@ -7,7 +7,7 @@
  * @module utils/compose/generators/noiseField
  */
 
-import { hash, rand } from '../random.js';
+import { hash, rand } from '#utils/compose/random.js';
 
 const fade = (/** @type {number} */ t) => t * t * (3 - 2 * t);
 

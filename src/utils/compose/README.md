@@ -34,12 +34,12 @@ Hosts: `#utils/playback/paintFrame.js` (browser) and `src/api/compose/`
 
 ## What modules receive
 
-| Argument | Contents |
-| -------- | -------- |
+| Argument | Contents                                                                                                                                     |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `params` | Every parameter of the schema: the stored value if usable, else the default. Generators also get `params.seed` (the clip's `generator.seed`) |
-| `time` | `t` (clip-local seconds, the keyframe time base), `age`, `remaining`, `duration`, `frame` (output frame number) |
-| `frame` | `width`, `height` (canvas pixels), `scale` (canvas pixels per output pixel), `fps`, `outWidth`, `outHeight` |
-| `env` | `image(path)`, `frameOf(clip, t)`, `fontReady(font, text)`, `createCanvas(w, h)` and `scratch(w?, h?)` |
+| `time`   | `t` (clip-local seconds, the keyframe time base), `age`, `remaining`, `duration`, `frame` (output frame number)                              |
+| `frame`  | `width`, `height` (canvas pixels), `scale` (canvas pixels per output pixel), `fps`, `outWidth`, `outHeight`                                  |
+| `env`    | `image(path)`, `frameOf(clip, t)`, `fontReady(font, text)`, `createCanvas(w, h)` and `scratch(w?, h?)`                                       |
 
 `env.scratch()` lends a blank pooled surface `{ canvas, ctx, width, height }`
 (frame-sized by default) and takes it back when the module returns. Use it
@@ -60,6 +60,9 @@ Rules every module follows:
    loops belong on small grids (see `generators/noise.js`).
 4. A module may leave the context in any state; the pipeline restores it. A
    module that throws is skipped for that frame with one warning.
+5. Import what a module needs from this folder by alias —
+   `#utils/compose/random.js`, `#utils/compose/color.js`,
+   `#utils/compose/filterPass.js` — never with `../`.
 
 ## Adding a generator
 
@@ -68,7 +71,7 @@ then places it with the clip's transform like any other source. Write
 `generators/<type>.js`:
 
 ```js
-/** @type {import('../catalog.js').GeneratorModule} */
+/** @type {import('#utils/compose/catalog.js').GeneratorModule} */
 export default {
   type: 'rings',
   label: 'Rings',
@@ -152,16 +155,16 @@ values. Do not name a parameter `seed`.
 
 ## Where things are
 
-| File | Job |
-| ---- | --- |
-| `drawFrame.js`, `drawClip.js`, `layers.js` | The layer pipeline |
-| `place.js` | Transform placement: pictures, generator canvases, vector text |
-| `applyEffects.js`, `filterPass.js` | The effect pipeline |
-| `pool.js`, `host.js` | Pooled scratch surfaces; the module `env` |
-| `catalog.js`, `params.js`, `blend.js` | Registry, parameter resolution, blend modes |
-| `frame.js`, `color.js`, `random.js`, `fonts.js` | Time and size, colours, randomness, bundled fonts |
-| `text/` | Titles: style, wrapping, layout, animation, drawing |
-| `generators/`, `effects/` | One module each, listed in their `index.js` |
+| File                                            | Job                                                            |
+| ----------------------------------------------- | -------------------------------------------------------------- |
+| `drawFrame.js`, `drawClip.js`, `layers.js`      | The layer pipeline                                             |
+| `place.js`                                      | Transform placement: pictures, generator canvases, vector text |
+| `applyEffects.js`, `filterPass.js`              | The effect pipeline                                            |
+| `pool.js`, `host.js`                            | Pooled scratch surfaces; the module `env`                      |
+| `catalog.js`, `params.js`, `blend.js`           | Registry, parameter resolution, blend modes                    |
+| `frame.js`, `color.js`, `random.js`, `fonts.js` | Time and size, colours, randomness, bundled fonts              |
+| `text/`                                         | Titles: style, wrapping, layout, animation, drawing            |
+| `generators/`, `effects/`                       | One module each, listed in their `index.js`                    |
 
 ## Text
 

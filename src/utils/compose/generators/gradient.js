@@ -20,7 +20,7 @@ const COLORS = [
   '#ffffff',
 ];
 
-/** @type {import('../params.js').ParamSchema} */
+/** @type {import('#utils/compose/params.js').ParamSchema} */
 const stopParams = {};
 for (let i = 1; i <= MAX_STOPS; i++) {
   const when =
@@ -57,7 +57,7 @@ function stopAt(params, i, count) {
   return own >= 0 ? Math.min(1, own) : (i - 1) / (count - 1);
 }
 
-/** @type {import('../catalog.js').GeneratorModule} */
+/** @type {import('#utils/compose/catalog.js').GeneratorModule} */
 export default {
   type: 'gradient',
   label: 'Gradient',

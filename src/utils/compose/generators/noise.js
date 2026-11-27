@@ -7,7 +7,7 @@
  * @module utils/compose/generators/noise
  */
 
-import { parseColor } from '../color.js';
+import { parseColor } from '#utils/compose/color.js';
 import { noiseField } from './noiseField.js';
 
 /** The grid is never wider or taller than this many samples. */
@@ -17,7 +17,7 @@ const SAMPLES_PER_WAVE = 4;
 const MAX_COLORS = 5;
 const COLORS = ['#0f172a', '#38bdf8', '#f472b6', '#fde047', '#ffffff'];
 
-/** @type {import('../params.js').ParamSchema} */
+/** @type {import('#utils/compose/params.js').ParamSchema} */
 const colorParams = {};
 for (let i = 1; i <= MAX_COLORS; i++) {
   colorParams[`color${i}`] = {
@@ -29,7 +29,7 @@ for (let i = 1; i <= MAX_COLORS; i++) {
   };
 }
 
-/** @type {import('../catalog.js').GeneratorModule} */
+/** @type {import('#utils/compose/catalog.js').GeneratorModule} */
 export default {
   type: 'noise',
   label: 'Noise',

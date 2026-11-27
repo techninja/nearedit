@@ -24,7 +24,7 @@ export function unitScale(ctx) {
  * area it may touch, and a title is usually a small part of the frame.
  * The caller restores the context (the clip stays set).
  * @param {any} ctx - Destination; its transform must be the identity
- * @param {import('../pool.js').Surface} layer - Same size as the destination
+ * @param {import('#utils/compose/pool.js').Surface} layer - Same size as the destination
  * @param {{ m: { a: number, b: number, c: number, d: number, e: number, f: number },
  *   box: { x: number, y: number, width: number, height: number }, margin: number }} area -
  *   The block's box in layout units, the transform that placed it, and how

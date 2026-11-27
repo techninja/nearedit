@@ -90,7 +90,7 @@ async function drawInPage(job) {
     createCanvas,
     image: (path) => state.images.get(path) || null,
     frameOf: (clip) => state.images.get(state.footage[clip.clipId]) || null,
-    fontReady: (font, text) => document.fonts.check(font, text),
+    fontReady: () => true, // every font was loaded above, before drawing
   };
   const canvas = createCanvas(job.width, job.height);
   const ctx = canvas.getContext('2d');

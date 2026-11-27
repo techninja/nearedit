@@ -1,75 +1,29 @@
-import { beforeEach, describe, it } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { doc, gen, media, title } from '../../../tests/compose/build.js';
 import { createCanvas } from '../../api/compose/index.js';
 
-/** A fake `document.fonts`: nothing is loaded until the test says so. */
+/** A fake `document.fonts`: one unloaded face per family, loaded on demand. */
+const face = (family) => ({
+  family,
+  weight: '700',
+  style: 'normal',
+  unicodeRange: 'U+0-FF',
+  status: 'unloaded',
+});
 const fonts = {
-  loaded: new Set(),
-  /** @type {{ font: string, text: string, finish: (ok?: boolean) => void }[]} */
+  faces: [face('Inter'), face('Caveat')],
+  /** @type {string[]} Text of every load that was asked for */
   loads: [],
-  check: (font, text) => fonts.loaded.has(`${font}|${text}`),
+  [Symbol.iterator]: () => fonts.faces[Symbol.iterator](),
+  check: () => true,
   load(font, text) {
-    return new Promise((resolve, reject) => {
-      const finish = (ok = true) => {
-        if (ok) fonts.loaded.add(`${font}|${text}`);
-        return ok ? resolve([]) : reject(new Error('404'));
-      };
-      fonts.loads.push({ font, text, finish });
-    });
+    fonts.loads.push(text);
+    return new Promise(() => {});
   },
 };
 globalThis.document = { fonts, createElement: () => createCanvas(1, 1) };
-const { createFontLoader, createPainter } = await import('./paintFrame.js');
-
-const tick = () => new Promise((resolve) => setImmediate(resolve));
-const FONT = '700 72px "Inter", "Noto Color Emoji"';
-
-describe('on-demand font loading', () => {
-  let arrivals;
-  let ready;
-  beforeEach(() => {
-    fonts.loaded.clear();
-    fonts.loads.length = 0;
-    arrivals = 0;
-    ready = createFontLoader(() => arrivals++);
-  });
-
-  it('asks for a font once and reports it ready when it arrives', async () => {
-    assert.equal(ready(FONT, 'Hi'), false);
-    assert.equal(ready(FONT, 'Hi'), false);
-    assert.equal(fonts.loads.length, 1, 'one load however often the frame is drawn');
-    fonts.loads[0].finish();
-    await tick();
-    assert.equal(arrivals, 1, 'the arrival asks for a repaint');
-    assert.equal(ready(FONT, 'Hi'), true);
-  });
-
-  it('is ready at once for a font the browser already has', () => {
-    fonts.loaded.add(`${FONT}|Hi`);
-    assert.equal(ready(FONT, 'Hi'), true);
-    assert.equal(fonts.loads.length, 0);
-  });
-
-  it('gives up on a font that cannot be loaded, so the title still shows', async () => {
-    const warn = console.warn;
-    console.warn = () => {};
-    assert.equal(ready(FONT, 'Hi'), false);
-    fonts.loads[0].finish(false);
-    await tick();
-    console.warn = warn;
-    assert.equal(arrivals, 1);
-    assert.equal(ready(FONT, 'Hi'), true, 'drawn with the fallback from now on');
-  });
-
-  it('does not load again for another size of the same face and text', async () => {
-    ready(FONT, 'Hi');
-    fonts.loads[0].finish();
-    await tick();
-    assert.equal(ready(FONT.replace('72px', '31.5px'), 'Hi'), true);
-    assert.equal(ready(FONT, 'Other text'), false, 'other text may need other files');
-  });
-});
+const { createPainter } = await import('./paintFrame.js');
 
 describe('preview painter', () => {
   const plate = (color) => {
@@ -138,18 +92,21 @@ describe('preview painter', () => {
   });
 
   it('starts loading the fonts of a whole document when it first sees it', () => {
-    fonts.loaded.clear();
-    fonts.loads.length = 0;
-    const painter = createPainter(createCanvas(160, 90), sources());
+    const canvas = createCanvas(160, 90);
+    const painter = createPainter(canvas, sources());
     const titled = doc([
       [
-        title('now', 'Now'),
+        title('now', 'Now', { fontSize: 200, background: '#ffffff' }),
         title('later', 'Later', { fontFamily: 'Caveat' }, { timelineStart: 60, timelineEnd: 64 }),
       ],
     ]);
     painter.paint(titled, 1);
-    assert.deepEqual(fonts.loads.map((load) => load.text).sort(), ['Later', 'Now']);
+    assert.deepEqual([...fonts.loads].sort(), ['Later', 'Now']);
+    assert.deepEqual(pixel(canvas, 80, 45), [0, 0, 0], 'a title waits for its font');
     painter.paint(titled, 1.1);
     assert.equal(fonts.loads.length, 2, 'the same document asks once');
+    for (const loaded of fonts.faces) loaded.status = 'loaded';
+    painter.paint(titled, 1.2);
+    assert.ok(pixel(canvas, 80, 45)[0] > 200, 'and is drawn once it is there');
   });
 });

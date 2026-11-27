@@ -21,32 +21,40 @@ import { fileURLToPath } from 'node:url';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const OUT = resolve(ROOT, 'src/vendor/fonts');
 
-/** @type {{ pkg: string, variants: string[] }[]} `variants` name the package's CSS files */
+/**
+ * `variants` name the package's CSS files. `format` is woff2 unless stated:
+ * the colour-emoji package's woff2 subsets draw no glyphs (in Chromium and
+ * in Skia alike), its woff files do.
+ * @type {{ pkg: string, variants: string[], format?: 'woff'|'woff2' }[]}
+ */
 const FONTS = [
   { pkg: 'inter', variants: ['400', '400-italic', '700', '700-italic', '900'] },
   { pkg: 'playfair-display', variants: ['400', '400-italic', '700', '700-italic', '900'] },
   { pkg: 'jetbrains-mono', variants: ['400', '700'] },
   { pkg: 'bebas-neue', variants: ['400'] },
   { pkg: 'caveat', variants: ['400', '700'] },
-  { pkg: 'noto-color-emoji', variants: ['400'] },
+  { pkg: 'noto-color-emoji', variants: ['400'], format: 'woff' },
 ];
 
 /**
  * Parse the @font-face blocks of a fontsource CSS file.
  * @param {string} css
- * @returns {{ family: string, style: string, weight: number, file: string, unicodeRange: string }[]}
+ * @param {'woff'|'woff2'} format - Which of the listed files to take
+ * @returns {{ family: string, style: string, weight: number, file: string, format: string, unicodeRange: string }[]}
  */
-function parseFaces(css) {
+function parseFaces(css, format) {
   const faces = [];
+  const source = new RegExp(`url\\(\\./files/([^)]+\\.${format})\\)`);
   for (const block of css.match(/@font-face\s*{[^}]*}/g) || []) {
     const pick = (re) => (block.match(re) || [])[1]?.trim() || '';
-    const file = pick(/url\(\.\/files\/([^)]+\.woff2)\)/);
+    const file = pick(source);
     if (!file) continue;
     faces.push({
       family: pick(/font-family:\s*'([^']+)'/),
       style: pick(/font-style:\s*([^;]+);/) || 'normal',
       weight: Number(pick(/font-weight:\s*(\d+)/)) || 400,
       file,
+      format,
       unicodeRange: pick(/unicode-range:\s*([^;]+);/),
     });
   }
@@ -55,7 +63,7 @@ function parseFaces(css) {
 
 mkdirSync(OUT, { recursive: true });
 const all = [];
-for (const { pkg, variants } of FONTS) {
+for (const { pkg, variants, format = 'woff2' } of FONTS) {
   const dir = resolve(ROOT, 'node_modules/@fontsource', pkg);
   if (!existsSync(dir)) {
     console.warn(`⚠ Font package not installed: @fontsource/${pkg}`);
@@ -63,7 +71,7 @@ for (const { pkg, variants } of FONTS) {
   }
   mkdirSync(resolve(OUT, pkg), { recursive: true });
   for (const variant of variants) {
-    for (const face of parseFaces(readFileSync(resolve(dir, `${variant}.css`), 'utf-8'))) {
+    for (const face of parseFaces(readFileSync(resolve(dir, `${variant}.css`), 'utf-8'), format)) {
       copyFileSync(resolve(dir, 'files', face.file), resolve(OUT, pkg, face.file));
       all.push({ ...face, file: `${pkg}/${face.file}` });
     }
@@ -77,7 +85,7 @@ const css = all
   font-style: ${f.style};
   font-weight: ${f.weight};
   font-display: block;
-  src: url('/vendor/fonts/${f.file}') format('woff2');${f.unicodeRange ? `\n  unicode-range: ${f.unicodeRange};` : ''}
+  src: url('/vendor/fonts/${f.file}') format('${f.format}');${f.unicodeRange ? `\n  unicode-range: ${f.unicodeRange};` : ''}
 }`,
   )
   .join('\n');

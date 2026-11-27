@@ -28,5 +28,6 @@ export {
   generatorModule,
 } from './catalog.js';
 export { fontString, resolveFamily } from './fonts.js';
+export { createFontLoader } from './fontLoader.js';
 export { textStyle, TITLE_BOX_PADDING, TITLE_LINE_HEIGHT } from './text/style.js';
 export { layoutText } from './text/layout.js';

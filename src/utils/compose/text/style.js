@@ -7,7 +7,7 @@
  * @module utils/compose/text/style
  */
 
-import { cssColor, isHex } from '../color.js';
+import { cssColor, isHex } from '#utils/compose/color.js';
 import { textAnimation } from './animation.js';
 
 /** Line pitch as a multiple of the font size. */
