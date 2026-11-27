@@ -31,7 +31,15 @@ export function getAudioGraph() {
   const AudioContextClass =
     globalThis.AudioContext || /** @type {any} */ (globalThis).webkitAudioContext;
   if (!AudioContextClass) return null;
-  const ctx = /** @type {AudioContext} */ (new AudioContextClass({ latencyHint: 'interactive' }));
+  /** @type {AudioContext} */
+  let ctx;
+  try {
+    ctx = new AudioContextClass({ latencyHint: 'interactive' });
+  } catch (err) {
+    // No output device, or too many contexts: play picture only.
+    console.warn('[playback] audio is unavailable:', err.message);
+    return null;
+  }
   const master = ctx.createGain();
   master.gain.value = masterVolume;
   const analyser = ctx.createAnalyser();

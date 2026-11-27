@@ -104,11 +104,11 @@ export function run(from) {
   playing = true;
   resumeAudio();
   jump(from);
-  lastTick = performance.now();
-  rafId = requestAnimationFrame(tick);
   timerId = window.setInterval(() => {
     if (performance.now() - lastTick > WATCHDOG_MS) tick();
   }, WATCHDOG_MS);
+  // First frame now, not a frame later: sound and picture start with the clock.
+  tick();
 }
 
 /**

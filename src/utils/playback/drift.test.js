@@ -53,10 +53,17 @@ describe('correctDrift', () => {
     assert.equal(rate, 1);
   });
 
+  it('corrects faster with a higher gain, still capped', () => {
+    const brisk = { ...limits, maxNudge: 0.1, gain: 2.5 };
+    near(correctDrift(-0.03, brisk).rate, 1.075);
+    near(correctDrift(-0.08, brisk).rate, 1.1);
+  });
+
   it('ships sane presets', () => {
     for (const preset of [AUDIO_DRIFT, VIDEO_DRIFT]) {
       assert.ok(preset.soft > 0 && preset.soft < preset.hard);
       assert.ok(preset.maxNudge > 0 && preset.maxNudge <= 0.1);
     }
+    assert.ok(VIDEO_DRIFT.gain > AUDIO_DRIFT.gain); // picture may be hurried, sound not
   });
 });

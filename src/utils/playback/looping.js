@@ -23,18 +23,22 @@ export function loopRange(view, duration) {
 }
 
 /**
- * Where playback should begin when Play is pressed at `position`: at the
- * end of the timeline it starts over (from the loop start when looping).
- * @param {number} position
- * @param {number} duration
+ * Where playback should begin when Play is pressed at `position`. With
+ * nothing left to play there (the playhead sits at the end), it starts over:
+ * from the loop start when looping, else from the edit cursor if that is
+ * still inside the timeline (replay what was just reviewed), else the top.
+ * @param {number} position - Playhead, seconds
+ * @param {number} duration - Timeline duration, seconds
  * @param {LoopRange|null} loop
+ * @param {number} [cursor=0] - Edit cursor, seconds
  * @returns {number}
  */
-export function playStart(position, duration, loop) {
+export function playStart(position, duration, loop, cursor = 0) {
   const from = Math.max(0, position);
   const stopAt = loop && from < loop.end ? loop.end : duration;
   if (from < stopAt) return from;
-  return loop ? loop.start : 0;
+  if (loop) return loop.start;
+  return cursor >= 0 && cursor < duration ? cursor : 0;
 }
 
 /**

@@ -37,8 +37,9 @@ export function getPosition() {
 }
 
 /**
- * Start playback at the playhead (from the top when it sits at the end).
- * The edit cursor is left at the starting point. Call from a user gesture.
+ * Start playback at the playhead. If it sits at the end, start over from
+ * the edit cursor (or the top). The cursor is left at the starting point.
+ * Call from a user gesture, so the browser lets audio start.
  * @returns {boolean} False when there is nothing to play
  */
 export function play() {
@@ -46,9 +47,10 @@ export function play() {
   const duration = getDuration();
   const loop = loopRange(store.get(ViewState), duration);
   if (duration <= 0 && !loop) return false;
-  const from = playStart(viewNow().playheadPosition, duration, loop);
-  engine.run(from);
+  const { playheadPosition, cursorPosition } = viewNow();
+  const from = playStart(playheadPosition, duration, loop, cursorPosition);
   commit({ playing: true, playheadPosition: from, cursorPosition: from });
+  engine.run(from);
   return true;
 }
 

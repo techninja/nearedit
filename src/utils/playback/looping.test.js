@@ -44,6 +44,13 @@ describe('playStart', () => {
     assert.equal(playStart(12, 10, null), 0);
   });
 
+  it('replays from the edit cursor when it is still inside the timeline', () => {
+    assert.equal(playStart(10, 10, null, 4), 4);
+    assert.equal(playStart(10, 10, null, 10), 0);
+    assert.equal(playStart(10, 10, null, -2), 0);
+    assert.equal(playStart(3, 10, null, 1), 3); // not at the end: the cursor plays no part
+  });
+
   it('starts at the loop start when at the loop end or the end of the timeline', () => {
     const loop = { start: 2, end: 4 };
     assert.equal(playStart(3, 10, loop), 3);

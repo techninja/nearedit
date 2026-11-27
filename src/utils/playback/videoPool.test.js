@@ -189,7 +189,7 @@ describe('video slot: playing', () => {
     slot.el.time = 1 - 0.04;
     driveSlot(slot, 1, 2000);
     assert.ok(slot.el.playbackRate > 1);
-    slot.el.time = 1.5;
+    slot.el.time = 1.5; // half a second behind: a stall, not a slow start
     driveSlot(slot, 2.016, 3016);
     assert.equal(slot.el.currentTime, 2.016);
   });

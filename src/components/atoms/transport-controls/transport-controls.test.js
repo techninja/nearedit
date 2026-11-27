@@ -76,12 +76,14 @@ describe('transport-controls', () => {
     await waitUntil(() => view().playing && button(el, 'Pause'), 'did not start');
     expect(button(el, 'Play')).to.equal(null);
     expect(button(el, 'Pause').querySelector('app-icon').name).to.equal('pause');
-    await waitUntil(() => view().playheadPosition > 2.2, 'playhead did not advance', {
+    await waitUntil(() => view().playheadPosition > 2.3, 'playhead did not advance', {
       timeout: 3000,
     });
     button(el, 'Pause').click();
     await waitUntil(() => !view().playing && button(el, 'Play'), 'did not pause');
-    expect(view().playheadPosition).to.be.greaterThan(2.2);
+    const paused = view().playheadPosition;
+    expect(paused).to.be.greaterThan(2.2);
+    expect(Math.abs(paused * 30 - Math.round(paused * 30))).to.be.below(1e-6); // on a frame
     expect(view().cursorPosition).to.equal(view().playheadPosition);
     expect(button(el, 'Play').querySelector('app-icon').name).to.equal('play');
   });
