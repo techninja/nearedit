@@ -139,6 +139,12 @@ describe('nearedit: reading a document', () => {
     );
     const clean = normalizeEdl(raw);
     assert.deepEqual(repairFindings(clean, normalizeEdl(clean)), [], 'a normal document has none');
+    const saved = { ...clean, playheadPosition: 2, cursorPosition: 1, zoom: 1.5, scrollX: 40 };
+    assert.deepEqual(
+      repairFindings(saved, normalizeEdl(saved)),
+      [],
+      'nor has one the editor saved, with its view fields',
+    );
   });
 
   it('checks generators and effects against the catalog', () => {

@@ -8,6 +8,20 @@
 
 /** @typedef {{ path: string, message: string, level: 'error'|'warning' }} Finding */
 
+/**
+ * Top-level keys that are not compared field by field: the tracks (paired
+ * below), and what the editor saves beside the document — where its
+ * playhead, cursor and view were (EDL.md § Versions, loading and saving).
+ */
+const APART = new Set([
+  'tracks',
+  'project',
+  'playheadPosition',
+  'cursorPosition',
+  'zoom',
+  'scrollX',
+]);
+
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const show = (value) => JSON.stringify(value);
 const same = (a, b) =>
@@ -86,7 +100,7 @@ export function repairFindings(raw, edl) {
     void out.push({ path, level: 'error', message: `could not be used and was dropped${hint}` });
   const doc = Array.isArray(raw) ? { tracks: raw } : raw;
   for (const key of Object.keys(doc)) {
-    if (key !== 'tracks' && key !== 'project') compare(doc[key], edl[key], key, out);
+    if (!APART.has(key)) compare(doc[key], edl[key], key, out);
   }
   const taken = new Set();
   (Array.isArray(doc.tracks) ? doc.tracks : []).forEach((track, t) => {
