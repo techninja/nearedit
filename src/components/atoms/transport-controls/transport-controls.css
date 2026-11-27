@@ -82,3 +82,11 @@ transport-controls {
     display: none;
   }
 }
+
+/* Touch phones: seven finger-sized buttons fill the row, and the position is
+   already shown on the preview and at the head of the timeline. */
+@media (width <= 480px) and (pointer: coarse) {
+  transport-controls .transport-time {
+    display: none;
+  }
+}
