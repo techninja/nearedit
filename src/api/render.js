@@ -13,6 +13,7 @@ import { buildRenderPlan, checkRenderable, renderSources } from './render/plan.j
 import { listPresets } from './render/presets.js';
 import { probeSources } from './render/probe.js';
 import { parseRenderRequest } from './render/request.js';
+import { renderSegments } from './render/segments.js';
 import {
   deleteRender,
   isRenderName,
@@ -69,7 +70,9 @@ renderRouter.post('/render/plan', async (req, res) => {
     const { preset, range } = request;
     const plan = buildRenderPlan(request.edl, { probes, capabilities, preset, range });
     const { args, filterComplex, duration, inputs, files, warnings, width, height, fps } = plan;
-    res.json({ args, filterComplex, duration, inputs, files, warnings, width, height, fps });
+    // A long timeline really runs as several such plans, one per segment.
+    const segments = renderSegments(request.edl, { preset, range });
+    res.json({ args, filterComplex, duration, inputs, files, warnings, width, height, fps, segments });
   } catch (err) {
     fail(res, err);
   }

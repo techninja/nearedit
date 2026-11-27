@@ -4,12 +4,25 @@ import { createClip, createEdl, createTrack } from '#utils/edl/factory.js';
 import { RenderError } from './errors.js';
 import { buildRenderPlan, renderSources } from './plan.js';
 
-const HD = { hasVideo: true, hasAudio: true, width: 1920, height: 1080, channels: 2, pixFmt: 'yuv420p' };
+const HD = {
+  hasVideo: true,
+  hasAudio: true,
+  width: 1920,
+  height: 1080,
+  channels: 2,
+  pixFmt: 'yuv420p',
+};
 const probes = {
   '/m/a.mp4': HD,
   '/m/b.mp4': HD,
   '/m/phone.mp4': { ...HD, rotation: -90 },
-  '/m/photo 100%.jpg': { hasVideo: true, hasAudio: false, width: 4000, height: 3000, codec: 'mjpeg' },
+  '/m/photo 100%.jpg': {
+    hasVideo: true,
+    hasAudio: false,
+    width: 4000,
+    height: 3000,
+    codec: 'mjpeg',
+  },
   '/m/voice.wav': { hasVideo: false, hasAudio: true, channels: 1 },
   '/m/music.mp3': { hasVideo: false, hasAudio: true, channels: 2 },
 };
@@ -32,18 +45,37 @@ describe('buildRenderPlan', () => {
     assert.equal(p.duration, 2);
     assert.deepEqual([p.width, p.height, p.fps, p.frames], [1920, 1080, 30, 60]);
     assert.equal(p.inputs.length, 1);
-    assert.deepEqual(p.inputs[0].args, ['-ss', '5', '-t', '2.001', '-an', '-sn', '-dn', '-i', '/m/a.mp4']);
-    assert.equal(chains(p)[0], 'color=c=black:s=1920x1080:r=30,format=yuv444p,trim=end_frame=60[v0]');
+    assert.deepEqual(p.inputs[0].args, [
+      '-ss',
+      '5',
+      '-t',
+      '2.001',
+      '-an',
+      '-sn',
+      '-dn',
+      '-i',
+      '/m/a.mp4',
+    ]);
+    assert.equal(
+      chains(p)[0],
+      'color=c=black:s=1920x1080:r=30,format=yuv444p,trim=end_frame=60[v0]',
+    );
     const layer = chainOf(p, 'c0');
-    assert.match(layer, /^\[0:v:0\]fps=fps=30:start_time=0,tpad=[^,]+,trim=end_frame=60,scale=w=1920:h=1080:/);
+    assert.match(
+      layer,
+      /^\[0:v:0\]fps=fps=30:start_time=0,tpad=[^,]+,trim=end_frame=60,scale=w=1920:h=1080:/,
+    );
     assert.match(layer, /in_color_matrix=bt709:out_color_matrix=bt709:out_range=tv/);
     assert.ok(!layer.includes('fade') && !layer.includes('crop') && !layer.includes('setpts'));
     assert.equal(count(p.filterComplex, 'overlay='), 1);
-    assert.match(chainOf(p, 'v1'), /^\[v0\]\[c0\]overlay=x=0:y=0:format=yuv444:eof_action=pass:eval=init/);
+    assert.match(
+      chainOf(p, 'v1'),
+      /^\[v0\]\[c0\]overlay=x=0:y=0:format=yuv444:eof_action=pass:eval=init/,
+    );
     assert.equal(chainOf(p, 'vout'), '[v1]format=yuv420p[vout]');
     assert.match(chainOf(p, 'aout'), /^anullsrc=.*atrim=end_sample=96000\[aout\]$/);
-    const tail = p.args.slice(p.args.indexOf('-map'));
-    assert.deepEqual(tail.slice(0, 4), ['-map', '[vout]', '-map', '[aout]']);
+    const maps = p.args.flatMap((arg, i) => (arg === '-map' ? [p.args[i + 1]] : []));
+    assert.deepEqual(maps, ['[vout]', '[aout]']);
     assert.equal(p.args[p.args.indexOf('-filter_complex') + 1], p.filterComplex);
     assert.equal(p.args.at(-1), 'output.mp4');
   });
@@ -75,29 +107,46 @@ describe('buildRenderPlan', () => {
     const a = plan([audio(pair)]);
     assert.match(chainOf(a, 'a0'), /afade=t=out:st=1:d=1/);
     assert.match(chainOf(a, 'a1'), /afade=t=in:st=0:d=1,afade=t=out:st=1\.5:d=0\.5/);
-    assert.match(chainOf(a, 'aout'), /^\[a0\]\[lane1\]amix=inputs=2:normalize=0:duration=longest,alimiter=/);
+    assert.match(
+      chainOf(a, 'aout'),
+      /^\[a0\]\[lane1\]amix=inputs=2:normalize=0:duration=longest,alimiter=/,
+    );
   });
 
   it('draws titles from a text file, never from graph text', () => {
-    const text = { content: "it's; [drawtext=evil]\nline 2", fontFamily: 'x:y', color: 'red:box=1' };
-    const title = createClip({ clipId: 't', timelineStart: 1, timelineEnd: 3, text: { ...text, align: 'evil' } });
+    const text = {
+      content: "it's; [drawtext=evil]\nline 2",
+      fontFamily: 'x:y',
+      color: 'red:box=1',
+    };
+    const title = createClip({
+      clipId: 't',
+      timelineStart: 1,
+      timelineEnd: 3,
+      text: { ...text, align: 'evil' },
+    });
     const p = plan([video([title])], { workDir: '/work' });
     assert.equal(p.inputs.length, 0);
     assert.ok(!p.filterComplex.includes('evil') && !p.filterComplex.includes('line 2'));
     const layer = chainOf(p, 't0');
-    assert.match(layer, /^color=c=black@0:s=1920x1080:r=30,format=gbrap,trim=end_frame=1,drawtext=/);
+    assert.match(
+      layer,
+      /^color=c=black@0:s=1920x1080:r=30,format=gbrap,trim=end_frame=1,drawtext=/,
+    );
     assert.match(layer, /fontfile=sans-serif\\\\:bold:textfile=\/work\/t0\.txt:expansion=none/);
     assert.match(layer, /fontcolor=0xffffff@1:.*text_align=center:y_align=font/);
     assert.match(layer, /unpremultiply=inplace=1,scale=w=1920:h=1080:out_color_matrix=bt709/);
     assert.deepEqual(p.files[0], { path: '/work/t0.txt', content: text.content });
     assert.deepEqual(p.files[1], { path: '/work/graph.txt', content: p.filterComplex });
-    assert.deepEqual(p.args.slice(p.args.indexOf('-map') - 2, p.args.indexOf('-map')), [
-      '-filter_complex_script',
-      '/work/graph.txt',
-    ]);
-    const newer = plan([video([title])], { workDir: '/w', capabilities: { graphFlag: '-/filter_complex' } });
+    assert.equal(p.args[p.args.indexOf('-filter_complex_script') + 1], '/work/graph.txt');
+    const newer = plan([video([title])], {
+      workDir: '/w',
+      capabilities: { graphFlag: '-/filter_complex' },
+    });
     assert.ok(newer.args.includes('-/filter_complex'));
-    const none = plan([video([title, clip('/m/a.mp4', 0, 1)])], { capabilities: { drawtext: false } });
+    const none = plan([video([title, clip('/m/a.mp4', 0, 1)])], {
+      capabilities: { drawtext: false },
+    });
     assert.ok(!none.filterComplex.includes('drawtext'));
     assert.match(none.warnings[0], /title "t" skipped/);
   });
@@ -111,13 +160,24 @@ describe('buildRenderPlan', () => {
     ];
     const files = (p) => p.inputs.map((i) => i.file.split('/').pop());
     assert.deepEqual(files(plan(tracks({}, {}, {}))), ['b.mp4', 'a.mp4', 'voice.wav', 'music.mp3']);
-    assert.deepEqual(files(plan(tracks({ muted: true }, {}, {}))), ['b.mp4', 'voice.wav', 'music.mp3']);
-    assert.deepEqual(files(plan(tracks({}, { solo: true }, { solo: true }))), ['b.mp4', 'voice.wav']);
-    assert.deepEqual(renderSources(createEdl({ tracks: tracks({ muted: true }, {}, { muted: true }) })), [
-      '/m/b.mp4',
-      '/m/music.mp3',
+    assert.deepEqual(files(plan(tracks({ muted: true }, {}, {}))), [
+      'b.mp4',
+      'voice.wav',
+      'music.mp3',
     ]);
-    assert.equal(plan(tracks({}, {}, {})).duration, 9, 'a trailing placeholder still counts as length');
+    assert.deepEqual(files(plan(tracks({}, { solo: true }, { solo: true }))), [
+      'b.mp4',
+      'voice.wav',
+    ]);
+    assert.deepEqual(
+      renderSources(createEdl({ tracks: tracks({ muted: true }, {}, { muted: true }) })),
+      ['/m/b.mp4', '/m/music.mp3'],
+    );
+    assert.equal(
+      plan(tracks({}, {}, {})).duration,
+      9,
+      'a trailing placeholder still counts as length',
+    );
   });
 
   it('builds audio lanes: gain, mono upmix, gaps as padding, one concat per lane', () => {
@@ -126,15 +186,31 @@ describe('buildRenderPlan', () => {
       clip('/m/voice.wav', 3, 4, { sourceIn: 10, sourceOut: 11 }),
     ];
     const p = plan([audio(voice, { volume: 0.5 }), audio([clip('/m/music.mp3', 0, 4)])]);
-    assert.deepEqual(p.inputs[1].args, ['-ss', '0', '-t', '1.001', '-vn', '-sn', '-dn', '-i', '/m/voice.wav']);
+    assert.deepEqual(p.inputs[1].args, [
+      '-ss',
+      '0',
+      '-t',
+      '1.001',
+      '-vn',
+      '-sn',
+      '-dn',
+      '-i',
+      '/m/voice.wav',
+    ]);
     const first = chainOf(p, 'a1');
-    assert.match(first, /^\[1:a:0\]aresample=sample_rate=48000:async=1:first_pts=0,pan=stereo\|c0=c0\|c1=c0,aformat=/);
+    assert.match(
+      first,
+      /^\[1:a:0\]aresample=sample_rate=48000:async=1:first_pts=0,pan=stereo\|c0=c0\|c1=c0,aformat=/,
+    );
     assert.match(first, /atrim=end_sample=48000,volume=volume=0\.25,apad=whole_len=96000\[a1\]$/);
     assert.match(chainOf(p, 'a2'), /volume=volume=0\.5,apad=whole_len=48000\[a2\]$/);
     assert.ok(!/volume=|pan=/.test(chainOf(p, 'a0')), 'unity gain and stereo need no filter');
     assert.match(chainOf(p, 'gap1'), /atrim=end_sample=48000\[gap1\]$/);
     assert.equal(chainOf(p, 'lane1'), '[gap1][a1][a2]concat=n=3:v=0:a=1[lane1]');
-    assert.match(chainOf(p, 'aout'), /alimiter=limit=0\.891:level=0:latency=1,apad=whole_len=192000,atrim=end_sample=192000/);
+    assert.match(
+      chainOf(p, 'aout'),
+      /alimiter=limit=0\.891:level=0:latency=1,apad=whole_len=192000,atrim=end_sample=192000/,
+    );
   });
 
   it('renders a range: seeks into clips and keeps their own clock for fades', () => {
@@ -145,11 +221,21 @@ describe('buildRenderPlan', () => {
     const p = plan(tracks, { range: { start: 2, end: 3 } });
     assert.deepEqual([p.duration, p.frames], [1, 30]);
     assert.deepEqual(p.inputs[0].args.slice(0, 4), ['-ss', '12', '-t', '1.001']);
-    assert.match(chainOf(p, 'c0'), /trim=end_frame=30,setpts=PTS\+60,.*fade=t=in:st=0:d=3:alpha=1,setpts=PTS-60\[c0\]$/);
+    assert.match(
+      chainOf(p, 'c0'),
+      /trim=end_frame=30,setpts=PTS\+60,.*fade=t=in:st=0:d=3:alpha=1,setpts=PTS-60\[c0\]$/,
+    );
     assert.match(chainOf(p, 'v1'), /enable='between\(t,-0\.016667,0\.983333\)'/);
-    assert.match(chainOf(p, 'a1'), /atrim=end_sample=48000,asetpts=PTS\+96000,afade=t=in:st=0:d=3,apad=whole_len=48000\[a1\]$/);
+    assert.match(
+      chainOf(p, 'a1'),
+      /atrim=end_sample=48000,asetpts=PTS\+96000,afade=t=in:st=0:d=3,apad=whole_len=48000\[a1\]$/,
+    );
     assert.deepEqual(p.inputs[1].args.slice(0, 4), ['-ss', '2', '-t', '1.001']);
-    assert.equal(plan(tracks, { range: { start: 3.5, end: 99 } }).duration, 0.5, 'range is clamped');
+    assert.equal(
+      plan(tracks, { range: { start: 3.5, end: 99 } }).duration,
+      0.5,
+      'range is clamped',
+    );
     assert.ok(!plan(tracks, { range: { start: 3.5, end: 4 } }).filterComplex.includes('fade='));
   });
 
@@ -161,9 +247,15 @@ describe('buildRenderPlan', () => {
     assert.match(draft.filterComplex, /format=yuva420p/);
     const args = (p) => p.args.join(' ');
     assert.match(args(draft), /-preset veryfast -crf 28 -pix_fmt yuv420p .* -r 30000\/1001 /);
-    assert.match(args(plan(tracks)), /-c:v libx264 -preset medium -crf 20 .*-c:a aac -b:a 192k -ar 48000 -ac 2 -movflags \+faststart/);
+    assert.match(
+      args(plan(tracks)),
+      /-c:v libx264 -preset medium -crf 20 .*-c:a aac -b:a 192k -ar 48000 -ac 2 -movflags \+faststart/,
+    );
     assert.match(args(plan(tracks, { preset: 'high' })), /-preset slow -crf 16 .*-b:a 320k/);
-    assert.throws(() => plan(tracks, { preset: 'nope' }), (err) => err instanceof RenderError && err.status === 422);
+    assert.throws(
+      () => plan(tracks, { preset: 'nope' }),
+      (err) => err instanceof RenderError && err.status === 422,
+    );
   });
 
   it('places by displayed size and only scales what the frame shows', () => {
@@ -176,8 +268,18 @@ describe('buildRenderPlan', () => {
     assert.match(chainOf(wide, 'c0'), /crop=w=608:h=1080:x=656:y=0:exact=1,scale=w=1080:h=1920:/);
     const still = createClip({ sourceFile: '/m/photo 100%.jpg', timelineStart: 0, timelineEnd: 5 });
     const photo = plan([video([still])]);
-    assert.deepEqual(photo.inputs[0].args, ['-f', 'image2', '-pattern_type', 'none', '-i', '/m/photo 100%.jpg']);
-    assert.match(chainOf(photo, 'c0'), /^\[0:v:0\]crop=w=4000:h=2250:x=0:y=375:exact=1,scale=w=1920:h=1080:in_color_matrix=bt601:.*format=yuva444p,fps=/);
+    assert.deepEqual(photo.inputs[0].args, [
+      '-f',
+      'image2',
+      '-pattern_type',
+      'none',
+      '-i',
+      '/m/photo 100%.jpg',
+    ]);
+    assert.match(
+      chainOf(photo, 'c0'),
+      /^\[0:v:0\]crop=w=4000:h=2250:x=0:y=375:exact=1,scale=w=1920:h=1080:in_color_matrix=bt601:.*format=yuva444p,fps=/,
+    );
     assert.ok(!photo.filterComplex.includes('photo'), 'paths stay in the arguments');
   });
 
@@ -185,9 +287,19 @@ describe('buildRenderPlan', () => {
     const kenBurns = { enabled: true, startScale: 1, endScale: 1.5, startX: 0, endX: -100 };
     const p = plan([video([clip('/m/a.mp4', 1, 3, { transform: { kenBurns } })])]);
     const layer = chainOf(p, 'c0');
-    assert.match(layer, /scale=w=2880:h=1620:in_color_matrix=bt709/, 'scaled once to the largest size');
-    assert.match(layer, /scale=w='max\(1,round\(\(1920\+\(960\)\*clip\(t\/2,0,1\)\)\)\)':h='max\(1,round\(\(1080\+\(540\)\*clip\(t\/2,0,1\)\)\)\)':eval=frame/);
-    assert.match(chainOf(p, 'v1'), /overlay=x='round\(\(0\+\(-580\)\*clip\(\(t-\(1\)\)\/2,0,1\)\)\)':y='round\(\(0\+\(-270\)\*clip\(\(t-\(1\)\)\/2,0,1\)\)\)':.*eval=frame/);
+    assert.match(
+      layer,
+      /scale=w=2880:h=1620:in_color_matrix=bt709/,
+      'scaled once to the largest size',
+    );
+    assert.match(
+      layer,
+      /scale=w='max\(1,round\(\(1920\+\(960\)\*clip\(t\/2,0,1\)\)\)\)':h='max\(1,round\(\(1080\+\(540\)\*clip\(t\/2,0,1\)\)\)\)':eval=frame/,
+    );
+    assert.match(
+      chainOf(p, 'v1'),
+      /overlay=x='round\(\(0\+\(-580\)\*clip\(\(t-\(1\)\)\/2,0,1\)\)\)':y='round\(\(0\+\(-270\)\*clip\(\(t-\(1\)\)\/2,0,1\)\)\)':.*eval=frame/,
+    );
   });
 
   it('skips what cannot be seen or heard and refuses what cannot be rendered', () => {
@@ -207,7 +319,9 @@ describe('buildRenderPlan', () => {
     refused([video([]), audio([])], /empty/);
     refused([video([createClip({ timelineEnd: 5, placeholder: true })])], /empty/);
     refused([video([clip('/m/a.mp4', 0, 1)], { muted: true })], /empty/);
-    refused([video([clip('/m/a.mp4', 0, 1)])], /outside the timeline/, { range: { start: 5, end: 6 } });
+    refused([video([clip('/m/a.mp4', 0, 1)])], /outside the timeline/, {
+      range: { start: 5, end: 6 },
+    });
     refused([video([clip('/m/unknown.mp4', 0, 1)])], /Cannot read source file: \/m\/unknown\.mp4/);
   });
 

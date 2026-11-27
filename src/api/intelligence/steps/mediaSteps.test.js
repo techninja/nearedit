@@ -118,7 +118,7 @@ test('silence: tone–silence–tone gives one silence at 2–4 s', async () => 
   assert.equal(patch.silences.length, 1);
   assert.ok(Math.abs(patch.silences[0].start - 2) < 0.02, `start ${patch.silences[0].start}`);
   assert.ok(Math.abs(patch.silences[0].end - 4) < 0.02, `end ${patch.silences[0].end}`);
-  assert.deepEqual([patch.silenceNoiseDb, patch.silenceMinDuration], [-35, 0.4]);
+  assert.deepEqual([patch.silenceNoiseDb, patch.silenceMinDuration], [-30, 0.4]);
   assert.ok(fractions.length > 0 && fractions.every((f) => f >= 0 && f <= 1));
 
   const strict = stepContext('audio', { sidecar: { duration: 6 }, options: { minDuration: 3 } });
@@ -126,9 +126,9 @@ test('silence: tone–silence–tone gives one silence at 2–4 s', async () => 
 });
 
 test('silence: done() respects the stored parameters; parser closes a trailing silence', () => {
-  const sidecar = { silences: [], silenceNoiseDb: -35, silenceMinDuration: 0.4 };
+  const sidecar = { silences: [], silenceNoiseDb: -30, silenceMinDuration: 0.4 };
   assert.equal(silenceStep.done(sidecar, {}), true);
-  assert.equal(silenceStep.done(sidecar, { noiseDb: -35 }), true);
+  assert.equal(silenceStep.done(sidecar, { noiseDb: -30 }), true);
   assert.equal(silenceStep.done(sidecar, { noiseDb: -50 }), false);
   assert.equal(silenceStep.done(sidecar, { minDuration: 1 }), false);
   assert.equal(silenceStep.done({ silences: null }, {}), false);

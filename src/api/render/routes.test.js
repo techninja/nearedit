@@ -46,7 +46,12 @@ describe('render: routes and job', () => {
     process.env.NEAREDIT_DATA_DIR = join(tmp.dir, 'data');
     process.env.NEAREDIT_MEDIA_DIR = media;
     process.env.GLOBAL_MEDIA_PATHS = '';
-    for (const dir of [media, renders, join(tmp.dir, 'outside'), join(tmp.dir, 'project', '.nearedit')])
+    for (const dir of [
+      media,
+      renders,
+      join(tmp.dir, 'outside'),
+      join(tmp.dir, 'project', '.nearedit'),
+    ])
       mkdirSync(dir, { recursive: true });
     await kit.generate(join(media, 'red.mp4'), ['color=red:s=320x180:r=30:d=2']);
     await kit.generate(join(media, 'busy.mp4'), ['testsrc2=s=640x360:r=30:d=4']);
@@ -75,7 +80,10 @@ describe('render: routes and job', () => {
 
   it('lists the presets', async () => {
     const { data } = await (await fetch(`${base}/render/presets`)).json();
-    assert.deepEqual(data.map((p) => p.id), ['draft', 'standard', 'high']);
+    assert.deepEqual(
+      data.map((p) => p.id),
+      ['draft', 'standard', 'high'],
+    );
     assert.ok(data.every((p) => p.label && p.description));
   });
 
@@ -102,15 +110,14 @@ describe('render: routes and job', () => {
     assert.equal(result.file, 'My Cut.mp4');
     assert.equal(result.output, join(renders, 'My Cut.mp4'));
     assert.equal(result.url, '/api/render/file/My%20Cut.mp4');
-    assert.deepEqual(
-      [result.duration, result.width, result.height, result.fps],
-      [2, 160, 90, 30],
-    );
+    assert.deepEqual([result.duration, result.width, result.height, result.fps], [2, 160, 90, 30]);
     const info = await kit.inspect(result.output);
     assert.equal(Number(info.format?.size ?? result.size), result.size);
     assert.deepEqual(leftovers(), [], 'work directory removed after success');
 
-    const again = await finished((await (await post('/render', { ...body, filename: 'My Cut' })).json()).jobId);
+    const again = await finished(
+      (await (await post('/render', { ...body, filename: 'My Cut' })).json()).jobId,
+    );
     assert.equal(again.result.file, 'My Cut-2.mp4', 'an existing render is never overwritten');
 
     const mine = await (await fetch(`${base}/renders?projectId=p1`)).json();
@@ -125,7 +132,9 @@ describe('render: routes and job', () => {
     assert.equal(whole.status, 200);
     assert.equal(whole.headers.get('content-type'), 'video/mp4');
     assert.equal((await whole.arrayBuffer()).byteLength, result.size);
-    const part = await fetch(`${base}/render/file/My%20Cut.mp4`, { headers: { range: 'bytes=10-109' } });
+    const part = await fetch(`${base}/render/file/My%20Cut.mp4`, {
+      headers: { range: 'bytes=10-109' },
+    });
     assert.equal(part.status, 206);
     assert.equal(part.headers.get('content-range'), `bytes 10-109/${result.size}`);
     assert.equal((await part.arrayBuffer()).byteLength, 100);
@@ -172,20 +181,32 @@ describe('render: routes and job', () => {
       }
     }
     // A muted track may point anywhere on disk — it is still refused.
-    const hidden = createTrack('video', { muted: true, clips: [clip('../outside/secret.mp4', 0, 1)] });
-    const sneaky = createEdl({ tracks: [createTrack('video', { clips: [clip('red.mp4', 0, 1)] }), hidden] });
+    const hidden = createTrack('video', {
+      muted: true,
+      clips: [clip('../outside/secret.mp4', 0, 1)],
+    });
+    const sneaky = createEdl({
+      tracks: [createTrack('video', { clips: [clip('red.mp4', 0, 1)] }), hidden],
+    });
     assert.equal((await post('/render', { edl: sneaky })).status, 403);
   });
 
   it('only serves and deletes plain render names', async () => {
     writeFileSync(join(renders, 'note.txt'), 'x');
-    for (const name of ['..%2Fregistry.json', '..%2F..%2Fmedia%2Fred.mp4', 'note.txt', '.hidden.mp4']) {
+    for (const name of [
+      '..%2Fregistry.json',
+      '..%2F..%2Fmedia%2Fred.mp4',
+      'note.txt',
+      '.hidden.mp4',
+    ]) {
       assert.equal((await fetch(`${base}/render/file/${name}`)).status, 400, name);
       const del = await fetch(`${base}/render/file/${name}`, { method: 'DELETE' });
       assert.equal(del.status, 400, name);
     }
     assert.equal((await fetch(`${base}/render/file/nothing.mp4`)).status, 404);
-    assert.ok(existsSync(join(tmp.dir, 'data', 'registry.json')) && existsSync(join(renders, 'note.txt')));
+    assert.ok(
+      existsSync(join(tmp.dir, 'data', 'registry.json')) && existsSync(join(renders, 'note.txt')),
+    );
   });
 
   it('reports progress, and cancelling kills FFmpeg and removes the partial file', async () => {
@@ -207,7 +228,9 @@ describe('render: routes and job', () => {
   });
 
   it('fails the job with the file name when a source cannot be decoded', async () => {
-    const { jobId } = await (await post('/render', { edl: edl([clip('broken.mp4', 0, 1)]) })).json();
+    const { jobId } = await (
+      await post('/render', { edl: edl([clip('broken.mp4', 0, 1)]) })
+    ).json();
     const job = await finished(jobId);
     assert.equal(job.status, 'error');
     assert.match(job.error, /Cannot read source file: .*broken\.mp4/);

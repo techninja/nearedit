@@ -87,9 +87,7 @@ export async function readFrames(file, width, height) {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (!test(at(frame, x, y))) continue;
-        found = found
-          ? [Math.min(found[0], x), found[1], Math.max(found[2], x), y]
-          : [x, y, x, y];
+        found = found ? [Math.min(found[0], x), found[1], Math.max(found[2], x), y] : [x, y, x, y];
       }
     }
     return found;

@@ -8,7 +8,7 @@
  */
 
 import { cutAround, intersects, isCrossfadeShape } from './clipMath.js';
-import { compareClips, sortClips } from './immutable.js';
+import { sortClips } from './immutable.js';
 import { EPS } from './time.js';
 
 /** @typedef {import('./types.js').Clip} Clip */
@@ -18,54 +18,48 @@ import { EPS } from './time.js';
  * @property {(clip: Clip) => boolean} timed - Is the clip video/audio?
  * @property {(under: Clip, placed: Clip) => boolean} fade - May a new
  *   partial overlap of this pair become a cross-fade?
- * @property {(a: Clip, b: Clip) => boolean} [kept] - Is this pair an
- *   existing cross-fade that must survive as it is?
  * @property {(under: Clip, pieces: Clip[], placed: Clip) => void} [onCut] -
  *   Called for every clip that is overwritten, with what is left of it
  */
 
 /**
- * The loosest overlap that still reads as a cross-fade: in track order the
- * second clip does not end before the first. Unlike `isCrossfadeShape` it
- * allows shared edges, which only a split inside a cross-fade produces.
- * @param {Clip} a
- * @param {Clip} b
- * @returns {boolean}
- */
-export function isOrderedOverlap(a, b) {
-  const [first, second] = compareClips(a, b) <= 0 ? [a, b] : [b, a];
-  return intersects(a, b) && second.timelineEnd - first.timelineEnd > -EPS;
-}
-
-/**
  * Add `clip` to a valid clip list.
- * @param {Clip[]} placed - Clips already on the track (no illegal overlaps)
+ * @param {Clip[]} placed - Clips already on the track, sorted
  * @param {Clip} clip - The incoming clip; it is never modified
  * @param {PlaceContext} ctx
  * @returns {Clip[]} Sorted clip list including `clip`
  */
 export function placeClip(placed, clip, ctx) {
-  const hits = placed.filter((other) => intersects(other, clip));
-  if (!hits.length) return sortClips([...placed, clip]);
+  // On a valid track clips end in the order they start, so the first clip
+  // that reaches `clip` is found by bisection; the ones it overlaps follow.
+  let from = 0;
+  for (let high = placed.length; from < high; ) {
+    const mid = (from + high) >> 1;
+    if (placed[mid].timelineEnd > clip.timelineStart + EPS) high = mid;
+    else from = mid + 1;
+  }
+  from = Math.max(0, from - 1);
+  let to = from;
+  while (to < placed.length && placed[to].timelineStart < clip.timelineEnd - EPS) to++;
+  const near = placed.slice(from, to);
+  const hits = near.filter((other) => intersects(other, clip));
   const crowds = (third, under) =>
     third !== under &&
     third.timelineStart < Math.min(under.timelineEnd, clip.timelineEnd) - EPS &&
     third.timelineEnd > Math.max(under.timelineStart, clip.timelineStart) + EPS;
-  const out = [];
-  for (const under of placed) {
-    const hit = hits.includes(under);
-    const fits =
-      ctx.kept?.(under, clip) || (isCrossfadeShape(under, clip) && ctx.fade(under, clip));
-    if (!hit || (fits && !hits.some((third) => crowds(third, under)))) {
-      out.push(under);
+  const middle = [];
+  for (const under of near) {
+    const fits = isCrossfadeShape(under, clip) && ctx.fade(under, clip);
+    if (!hits.includes(under) || (fits && !hits.some((third) => crowds(third, under)))) {
+      middle.push(under);
       continue;
     }
     const pieces = cutAround(under, clip.timelineStart, clip.timelineEnd, ctx.timed(under));
     ctx.onCut?.(under, pieces, clip);
-    out.push(...pieces);
+    middle.push(...pieces);
   }
-  out.push(clip);
-  return sortClips(out);
+  middle.push(clip);
+  return [...placed.slice(0, from), ...sortClips(middle), ...placed.slice(to)];
 }
 
 /**
@@ -80,7 +74,7 @@ export function placeClip(placed, clip, ctx) {
  */
 export function enforce(clips, ctx, outranks = () => false) {
   let list = sortClips(clips);
-  const legal = (a, b) => !intersects(a, b) || isCrossfadeShape(a, b) || !!ctx.kept?.(a, b);
+  const legal = (a, b) => !intersects(a, b) || isCrossfadeShape(a, b);
   for (;;) {
     let pair = null;
     for (let i = 0; i + 1 < list.length && !pair; i++) {
@@ -98,21 +92,14 @@ export function enforce(clips, ctx, outranks = () => false) {
 /**
  * Make an arbitrary clip list valid, for loaded and generated documents
  * where no clip is "the one being moved". Clips are placed in start order:
- * a pair that already is a cross-fade is kept, other partial overlaps
- * become cross-fades, and a clip that lands inside or over another
- * overwrites it (the later clip wins).
+ * partial overlaps become (or stay) cross-fades, and a clip that lands
+ * inside or over another overwrites it — the later clip wins.
  * @param {Clip[]} clips
  * @param {(clip: Clip) => boolean} timed
  * @returns {Clip[]}
  */
 export function resolveAll(clips, timed) {
-  const kept = (a, b) => {
-    const [first, second] = compareClips(a, b) <= 0 ? [a, b] : [b, a];
-    const overlap = Math.min(first.timelineEnd, second.timelineEnd) - second.timelineStart;
-    const faded = Math.abs(first.fadeOut - overlap) + Math.abs(second.fadeIn - overlap) <= EPS;
-    return isOrderedOverlap(a, b) && faded;
-  };
-  const ctx = { fade: () => true, timed, kept };
+  const ctx = { fade: () => true, timed };
   /** @type {Clip[]} */
   let placed = [];
   for (const clip of sortClips(clips)) placed = placeClip(placed, clip, ctx);

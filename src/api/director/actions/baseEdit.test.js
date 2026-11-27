@@ -1,4 +1,4 @@
-import { test, before, after } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createEdl, createClip } from '#utils/edl/factory.js';
 import { PLAN_SCHEMA } from '#utils/director/planSchema.js';
@@ -43,24 +43,32 @@ test('auto style picks a talking-head cut when the project has speech', async ()
   assert.match(out.result.summary, /^Base edit \(talking head\): \d+ clips, \d+(\.\d)?s/);
   assert.match(
     out.notes,
-    /Media read as — speech: interview\.mp4, voice\.wav; picture: beach\.mp4, city\.mp4; stills: sign\.png, tall\.png; music: bed\.wav\./,
+    /Media read as — speech: interview\.mp4, voice-memo\.wav, voice\.wav; picture: beach\.mp4, city\.mp4; stills: sign\.png, tall\.png; music: bed\.wav\./,
   );
-  assert.match(out.notes, /Style auto → talking head \(12\.\ds of speech found\)/);
+  assert.match(out.notes, /Style auto → talking head \(17\.\ds of speech found\)/);
   // Interview: three sentences with the two pauses cut out, picture and sound linked.
   assert.deepEqual(names(out.main), ['interview.mp4', 'interview.mp4', 'interview.mp4']);
-  assert.equal(out.dialogue.length, 5);
-  assert.deepEqual(names(out.dialogue.slice(3)), ['voice.wav', 'voice.wav']);
-  assert.match(out.notes, /Removed 3 pauses/);
-  // The voice-over has no picture of its own: b-roll covers all of it.
-  const voice = out.dialogue.slice(3);
-  const cover = out.broll.filter((c) => c.timelineStart >= voice[0].timelineStart);
+  assert.ok(out.main.every((c, i) => c.linkedClipId === out.dialogue[i].clipId));
+  // The memo has no transcript (cut on its detected silences); the voice-over has words.
+  const voices = out.dialogue.slice(3);
+  assert.deepEqual(names(voices), [
+    'voice-memo.wav',
+    'voice-memo.wav',
+    'voice-memo.wav',
+    'voice.wav',
+    'voice.wav',
+  ]);
+  assert.match(out.notes, /Removed 5 pauses/);
+  assert.match(out.notes, /1 pick had no word timestamps/);
+  // Neither has a picture of its own: b-roll covers all of it.
+  const cover = out.broll.filter((c) => c.timelineStart >= voices[0].timelineStart);
   const covered = cover.reduce((sum, c) => sum + c.timelineEnd - c.timelineStart, 0);
-  assert.ok(Math.abs(covered - (voice[1].timelineEnd - voice[0].timelineStart)) < 1e-6);
+  assert.ok(Math.abs(covered - (voices.at(-1).timelineEnd - voices[0].timelineStart)) < 1e-6);
   // Music under speech, opening title in front.
   assert.equal(out.music[0].volume, 0.25);
   assert.equal(out.titles[0].text.content, 'Park day');
   assert.equal(out.result.mode, 'replace');
-  assert.ok(Math.abs(out.result.duration - 12.9) < 0.5, String(out.result.duration));
+  assert.ok(Math.abs(out.result.duration - 18.7) < 0.2, String(out.result.duration));
 });
 
 test('the heuristic plan is a valid edit plan', async () => {

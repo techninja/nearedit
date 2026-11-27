@@ -71,7 +71,7 @@ export function checkClip(clip, track, path, report, opts) {
   if (!(duration > EPS)) report(`${path}.timelineEnd`, 'must be after timelineStart');
   if (clip.sourceIn < -EPS) report(`${path}.sourceIn`, 'must not be negative');
   if (clip.fadeIn < 0 || clip.fadeOut < 0) report(`${path}.fadeIn`, 'fades must not be negative');
-  if (clip.fadeIn + clip.fadeOut > duration + EPS) {
+  if (duration > EPS && clip.fadeIn + clip.fadeOut > duration + EPS) {
     report(`${path}.fadeOut`, 'fadeIn + fadeOut exceeds the clip duration (invariant 3)');
   }
   if (typeof clip.sourceFile === 'string' && isTimed(clip, track)) {
@@ -108,8 +108,9 @@ export function checkOverlaps(clips, path, report) {
     }
     const overlap = Math.min(a.timelineEnd, b.timelineEnd) - b.timelineStart;
     if (overlap <= EPS) continue;
-    if (a.timelineEnd - b.timelineEnd > EPS) {
-      report(at, 'clip lies inside the previous clip (invariant 4)');
+    const partial = b.timelineStart - a.timelineStart > EPS && b.timelineEnd - a.timelineEnd > EPS;
+    if (!partial) {
+      report(at, 'clip lies inside or over the previous clip (invariant 4)');
     } else if (Math.abs(a.fadeOut - overlap) > EPS || Math.abs(b.fadeIn - overlap) > EPS) {
       report(
         at,

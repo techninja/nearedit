@@ -56,6 +56,16 @@ export function createParkProject(format) {
       'stills/sign.png': { size: '640x480', sidecar: { tags: ['park', 'sign'] } },
       'stills/tall.png': { size: '480x960', sidecar: false },
       'music/bed.wav': { duration: 30, sidecar: { beats: beatGrid(120, 30), bpm: 120 } },
+      // No transcript: only detected silences (1.5–3.5s and 5–6s).
+      'voice-memo.wav': {
+        duration: 8,
+        sidecar: {
+          silences: [
+            { start: 1.5, end: 3.5 },
+            { start: 5, end: 6 },
+          ],
+        },
+      },
     },
     format,
   );

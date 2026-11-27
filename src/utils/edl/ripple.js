@@ -77,7 +77,8 @@ export function rippleDelete(edl, clipIds, opts = {}) {
 
 /**
  * Remove a stretch of time: clips inside it are deleted, clips that cross
- * its edges are cut, and everything after moves left to close it.
+ * its edges are cut, and everything after moves left to close it. A
+ * cross-fade under one of the edges becomes a hard cut there.
  * @param {Edl} edl
  * @param {number} start
  * @param {number} end
@@ -90,8 +91,8 @@ export function rippleDeleteRange(edl, start, end, opts = {}) {
   const length = to - from;
   if (!(length > EPS)) return edl;
   const scope = scopeOf(edl, opts);
-  let cut = splitClips(edl, from, { trackIds: scope.ids, linked: false });
-  cut = splitClips(cut, to, { trackIds: scope.ids, linked: false });
+  const through = { trackIds: scope.ids, linked: false, cutFades: true };
+  const cut = splitClips(splitClips(edl, from, through), to, through);
   const inside = (clip) => clip.timelineStart >= from - EPS && clip.timelineEnd <= to + EPS;
   const cleared = repairLinks(
     mapClips(cut, (clip, track) => (scope.inScope(track) && inside(clip) ? null : clip)),
@@ -106,7 +107,8 @@ export function rippleDeleteRange(edl, start, end, opts = {}) {
 
 /**
  * Open a gap: clips that cross `time` are split there and everything from
- * `time` on moves right by `duration`.
+ * `time` on moves right by `duration`. A cross-fade under `time` becomes a
+ * hard cut: the outgoing clip stays left of the gap, the incoming one right.
  * @param {Edl} edl
  * @param {number} time
  * @param {number} duration
@@ -118,7 +120,7 @@ export function rippleInsert(edl, time, duration, opts = {}) {
   const length = snap(edl, duration);
   if (!(length > EPS)) return edl;
   const scope = scopeOf(edl, opts);
-  const cut = splitClips(edl, at, { trackIds: scope.ids, linked: false });
+  const cut = splitClips(edl, at, { trackIds: scope.ids, linked: false, cutFades: true });
   const shifted = shiftClips(cut, (clip, track) =>
     scope.inScope(track) && clip.timelineStart >= at - EPS ? length : 0,
   );

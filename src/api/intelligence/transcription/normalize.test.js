@@ -72,4 +72,11 @@ test('normalising, merging, chunk planning and language codes', () => {
     '',
     '',
   ]);
+  assert.deepEqual(['fr', 'french', 'xx', 5, "en'; rm -rf"].map(isLanguage), [
+    true,
+    true,
+    false,
+    false,
+    false,
+  ]);
 });

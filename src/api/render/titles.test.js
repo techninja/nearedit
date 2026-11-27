@@ -109,7 +109,11 @@ describe('render: titles', () => {
     };
     assert.ok(Math.abs(peak(ghost, 10) - 127) <= 10, `half opacity peak ${peak(ghost, 10)}`);
     const fading = (await single({}, { fadeIn: 0.5, fadeOut: 0.5, timelineEnd: 2 })).frames;
-    assert.equal(fading.box(0, (rgb) => rgb[0] > 20), null, 'invisible on the first frame');
+    assert.equal(
+      fading.box(0, (rgb) => rgb[0] > 20),
+      null,
+      'invisible on the first frame',
+    );
     assert.ok(Math.abs(peak(fading, 8) - 136) <= 14, `mid fade-in ${peak(fading, 8)}`);
     assert.ok(peak(fading, 30) >= 245, 'fully visible in the middle');
     assert.ok(Math.abs(peak(fading, 52) - 136) <= 14, `mid fade-out ${peak(fading, 52)}`);
@@ -123,19 +127,32 @@ describe('render: titles', () => {
         createTrack('video', { clips: [white] }),
       ),
     );
-    assert.equal(over.frames.box(10, (rgb) => rgb[0] < 240), null, 'no dark fringe');
+    assert.equal(
+      over.frames.box(10, (rgb) => rgb[0] < 240),
+      null,
+      'no dark fringe',
+    );
   });
 
   it('scales and rotates a title', async () => {
     const size = (box) => [box[2] - box[0] + 1, box[3] - box[1] + 1];
     const base = size((await single({ content: 'IIIIIIII', fontSize: 20 })).frames.box(10, lit));
-    const doubled = await single({ content: 'IIIIIIII', fontSize: 20 }, { transform: { scaleX: 2, scaleY: 2 } });
+    const doubled = await single(
+      { content: 'IIIIIIII', fontSize: 20 },
+      { transform: { scaleX: 2, scaleY: 2 } },
+    );
     const big = size(doubled.frames.box(10, lit));
     isNear(big, [base[0] * 2, base[1] * 2], 'scale 2 doubles the text', 5);
-    const stretched = await single({ content: 'IIIIIIII', fontSize: 20 }, { transform: { scaleX: 2 } });
+    const stretched = await single(
+      { content: 'IIIIIIII', fontSize: 20 },
+      { transform: { scaleX: 2 } },
+    );
     const wide = size(stretched.frames.box(10, lit));
     isNear(wide, [base[0] * 2, base[1]], 'scaleX 2 stretches it', 5);
-    const turned = await single({ content: 'IIIIIIII', fontSize: 20 }, { transform: { rotation: 90, x: 50 } });
+    const turned = await single(
+      { content: 'IIIIIIII', fontSize: 20 },
+      { transform: { rotation: 90, x: 50 } },
+    );
     const box = turned.frames.box(10, lit);
     isNear(size(box), [base[1], base[0]], 'rotated 90°: width and height swap', 4);
     isNear(centre(box), [210, 90], 'rotated about its own centre, then offset');

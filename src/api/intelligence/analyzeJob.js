@@ -13,6 +13,23 @@ import { STEPS } from './steps/index.js';
 /** @typedef {import('./steps/types.js').Step} Step */
 
 /**
+ * Wrap a job's progress callback so it only fires when the whole-number
+ * percentage changes: every call is broadcast to all WebSocket clients, and
+ * FFmpeg reports progress many times a second. 100 is left to job completion.
+ * @param {(percent: number) => void} progress
+ * @returns {(fraction: number) => void} Takes 0..1
+ */
+function percentReporter(progress) {
+  let shown = -1;
+  return (fraction) => {
+    const percent = Math.min(99, Math.floor(fraction * 100));
+    if (percent === shown) return;
+    shown = percent;
+    progress(percent);
+  };
+}
+
+/**
  * @typedef {Object} BatchRequest
  * @property {string} [type] - Job type: 'analyze' or 'index'
  * @property {string} [projectId]
@@ -42,13 +59,10 @@ export function startBatchJob(request) {
   return runJob(type, params, { projectId, label, lane }, async (ctx) => {
     const settings = getSettings();
     const cache = new Map();
+    // Progress unit: one step of one file. `finished` counts completed units.
     const units = Math.max(1, files.length * plan.length);
+    const report = percentReporter(ctx.progress);
     let finished = 0;
-    let shown = -1;
-    const report = (partial) => {
-      const percent = Math.min(99, Math.floor(((finished + partial) / units) * 100));
-      if (percent !== shown) ctx.progress((shown = percent));
-    };
 
     const results = [];
     let failed = 0;
@@ -63,14 +77,14 @@ export function startBatchJob(request) {
         deps,
         cache,
         log: (message) => ctx.log(`${name}: ${message}`),
-        onProgress: (stepIndex, fraction) => report(stepIndex + fraction),
+        onProgress: (stepIndex, fraction) => report((finished + stepIndex + fraction) / units),
       });
       const ran = Object.entries(outcomes).filter(([, outcome]) => outcome !== 'skipped');
       if (ran.length) ctx.log(`${name}: ${ran.map(([step, o]) => `${step} ${o}`).join(', ')}`);
       if (Object.values(outcomes).some((o) => o.startsWith('error'))) failed++;
       results.push({ path, steps: outcomes });
       finished += plan.length;
-      report(0);
+      report(finished / units);
     }
     return { files: results, total: files.length, failed };
   });
@@ -91,7 +105,7 @@ export function startStepJob(step, request) {
   const meta = { projectId, label, lane: /** @type {const} */ ('analysis') };
 
   return runJob(step.jobType, { filePath, ...options, force }, meta, async (ctx) => {
-    let shown = -1;
+    const report = percentReporter(ctx.progress);
     const { outcomes, summaries } = await analyzeFile(filePath, [step], {
       force,
       explicit: true,
@@ -99,10 +113,7 @@ export function startStepJob(step, request) {
       signal: ctx.signal,
       deps,
       log: ctx.log,
-      onProgress: (_index, fraction) => {
-        const percent = Math.min(99, Math.floor(fraction * 100));
-        if (percent !== shown) ctx.progress((shown = percent));
-      },
+      onProgress: (_index, fraction) => report(fraction),
     });
     const outcome = outcomes[step.name] || 'skipped';
     if (outcome.startsWith('error: ')) throw new Error(outcome.slice('error: '.length));

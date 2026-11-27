@@ -60,7 +60,11 @@ describe('render: ken burns, ranges and awkward sources', () => {
     await kit.generate(file('hd709.mp4'), [hd], ['-colorspace', 'bt709']);
     await kit.generate(file('hd-untagged.mp4'), [hd]);
     // A JPEG is full-range BT.601 whatever its size.
-    await kit.generate(file('photo.jpg'), ['color=red:s=1280x720'], ['-frames:v', '1', '-q:v', '2']);
+    await kit.generate(
+      file('photo.jpg'),
+      ['color=red:s=1280x720'],
+      ['-frames:v', '1', '-q:v', '2'],
+    );
   });
   after(() => tmp.cleanup());
 
@@ -75,7 +79,9 @@ describe('render: ken burns, ranges and awkward sources', () => {
 
   it('zooms a ken-burns clip, also when it is rotated', async () => {
     const zoom = { enabled: true, startScale: 0.25, endScale: 0.75 };
-    const { frames } = await shoot(edl(video(clip('red.mp4', 0, 2, { transform: { kenBurns: zoom } }))));
+    const { frames } = await shoot(
+      edl(video(clip('red.mp4', 0, 2, { transform: { kenBurns: zoom } }))),
+    );
     isBox(frames.box(0, lit), [120, 68, 199, 112], 'start: quarter size');
     isBox(frames.box(30, lit), [80, 45, 239, 134], 'middle: half size');
     const turned = clip('red.mp4', 0, 2, { transform: { rotation: 90, kenBurns: zoom } });
@@ -85,12 +91,18 @@ describe('render: ken burns, ranges and awkward sources', () => {
 
   it('animates the crop of a ken-burns clip', async () => {
     const wipe = { enabled: true, startCropLeft: 0, endCropLeft: 0.5 };
-    const { frames } = await shoot(edl(video(clip('halves.mp4', 0, 2, { transform: { kenBurns: wipe } }))));
+    const { frames } = await shoot(
+      edl(video(clip('halves.mp4', 0, 2, { transform: { kenBurns: wipe } }))),
+    );
     // Red is the left half of the source; cropping from the left pushes it out.
     isBox(frames.box(0, reddish), [0, 0, 159, 179], 'start: red fills the left half');
     const middle = frames.box(30, reddish);
     assert.ok(Math.abs(middle[2] - 106) <= 4, `middle: red ends near x=106, got ${middle}`);
-    assert.equal(frames.box(59, reddish) && frames.box(59, reddish)[2] > 8, false, 'end: red is gone');
+    assert.equal(
+      frames.box(59, reddish) && frames.box(59, reddish)[2] > 8,
+      false,
+      'end: red is gone',
+    );
     isColor(frames.at(59, 160, 90), BLUE, 'end: all blue');
   });
 

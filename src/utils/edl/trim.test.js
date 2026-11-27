@@ -180,6 +180,7 @@ describe('ripple trims', () => {
     assert.deepEqual(layout(out).v1, ['a 0-3', 'b 2-7', 'c 7-10']);
     assert.equal(clipOf(out, 'a').fadeOut, 1);
     const least = assertValid(trimClipEnd(start, 'a', 0, { ripple: true }));
-    assert.deepEqual(layout(least).v1, ['a 0-1', 'b 0-5', 'c 5-8'], 'never shorter than its fade');
+    assert.deepEqual(layout(least).v1, ['a 0-1.033', 'b 0.033-5.033', 'c 5.033-8.033']);
+    assert.equal(clipOf(least, 'a').fadeOut, 1, 'never shorter than its fade plus a frame');
   });
 });

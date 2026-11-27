@@ -79,8 +79,10 @@ export function classifyMedia(info) {
   const coverage = speechCoverage(info);
   if (info.type === 'video') return coverage >= 0.3 ? 'speech' : 'picture';
   if (coverage >= 0.25) return 'speech';
+  // Sparse or missing transcript: a telling filename decides, unless the
+  // file has been analysed and holds beats but not a single word.
   const unanalysed = !info.words.length && !info.segments.length && !info.beats.length;
-  return unanalysed && SPEECH_NAME.test(info.filename) ? 'speech' : 'music';
+  return SPEECH_NAME.test(info.filename) && (coverage > 0 || unanalysed) ? 'speech' : 'music';
 }
 
 /**

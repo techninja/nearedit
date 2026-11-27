@@ -72,15 +72,16 @@ export function scriptPrompt({ digest, directive, format, variant }) {
 }
 
 /**
- * Tidy a script reply: drop a code fence wrapped around the whole thing
- * and any chatter before the first heading.
+ * Tidy a script reply: unwrap a code fence put around the script and drop
+ * any chatter before its first heading.
  * @param {string} reply - Reasoning already stripped
  * @returns {string}
  */
 export function cleanScript(reply) {
   let text = reply.trim();
-  const fenced = text.match(/^```[a-zA-Z]*\s*\n([\s\S]*?)\n```\s*$/);
-  if (fenced) text = fenced[1].trim();
+  const fence = text.match(/```[a-zA-Z]*[ \t]*\n([\s\S]*?)\n```/);
+  const firstHeading = text.search(/^# /m);
+  if (fence && /^# /m.test(fence[1]) && firstHeading > fence.index) text = fence[1].trim();
   const heading = text.search(/^# /m);
   if (heading > 0) text = text.slice(heading);
   return `${text.trim()}\n`;

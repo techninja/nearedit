@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { exportTranscript, formatTimestamp, toCues, toSrt, toVtt } from './transcriptExport.js';
-import { excerpt, matchFile } from './search.js';
+import { matchFile } from './search.js';
+import { excerpt, parseQuery } from './searchTerms.js';
 
 const sidecar = {
   duration: 3700,
@@ -187,6 +188,8 @@ test('search: text files match on their sections; excerpts are short', () => {
     { field: 'content', text: 'subtitle about a park bench', start: 3, end: 5 },
   ]);
   const long = `${'lorem ipsum '.repeat(40)}needle ${'dolor sit '.repeat(40)}`;
+  assert.deepEqual(parseQuery('  Dog! (PARK)  dog  — "ice-cream" '), ['dog', 'park', 'ice-cream']);
+  assert.deepEqual(parseQuery('?!'), []);
   const cut = excerpt(long, ['needle'], 30);
   assert.ok(cut.startsWith('…') && cut.endsWith('…') && cut.includes('needle'));
   assert.ok(cut.length < 70);

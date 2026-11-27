@@ -81,12 +81,12 @@ export function outputSize(resolution, preset) {
 }
 
 /**
- * Encoder arguments for a preset.
+ * Video encoder arguments: H.264, yuv420p, tagged BT.709, keyframe every 2 s.
  * @param {RenderPreset} preset
  * @param {{ fps: number, fpsText: string }} timing
  * @returns {string[]}
  */
-export function encodeArgs(preset, timing) {
+export function videoArgs(preset, timing) {
   const bt709 = ['-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709'];
   return [
     ...['-c:v', 'libx264', '-preset', preset.x264Preset, '-crf', String(preset.crf)],
@@ -94,7 +94,17 @@ export function encodeArgs(preset, timing) {
     ...['-g', String(Math.max(1, Math.round(timing.fps * 2)))],
     ...bt709,
     ...['-color_range', 'tv'],
-    ...['-c:a', 'aac', '-b:a', preset.audioBitrate, '-ar', '48000', '-ac', '2'],
-    ...['-movflags', '+faststart', '-map_metadata', '-1', '-f', 'mp4'],
   ];
 }
+
+/**
+ * Audio encoder arguments: AAC, 48 kHz stereo.
+ * @param {RenderPreset} preset
+ * @returns {string[]}
+ */
+export function audioArgs(preset) {
+  return ['-c:a', 'aac', '-b:a', preset.audioBitrate, '-ar', '48000', '-ac', '2'];
+}
+
+/** MP4 with the index up front, so playback can start while downloading. */
+export const CONTAINER_ARGS = ['-movflags', '+faststart', '-map_metadata', '-1', '-f', 'mp4'];

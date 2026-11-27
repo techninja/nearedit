@@ -7,10 +7,11 @@
 
 import { sliceClip } from './clipMath.js';
 import { settle } from './crossfade.js';
-import { neighbourOverlaps } from './fades.js';
+import { NO_OVERLAP, neighbourOverlaps } from './fades.js';
 import { newId } from './factory.js';
-import { indexClips, isTimed, mapClips } from './immutable.js';
+import { indexClips, isTimed, mapTracks, withClips } from './immutable.js';
 import { applyLinks } from './links.js';
+import { expandSelection } from './selection.js';
 import { EPS, snap } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
@@ -22,8 +23,12 @@ import { EPS, snap } from './time.js';
  * @property {Iterable<string>} [trackIds] - Split only on these tracks
  * @property {boolean} [linked=true] - With `clipIds`: split their linked
  *   partners too
- *
- * A cut that passes through a cross-fade always splits both of its clips.
+ * @property {boolean} [cutFades=false] - What to do when the time falls
+ *   inside a cross-fade, where the two clips are fused and a half would end
+ *   up inside the other clip. By default those two clips are left alone.
+ *   With `cutFades` the cross-fade becomes a hard cut at that time: the
+ *   outgoing clip ends there and the incoming clip starts there (used by
+ *   ripple edits, which must open every track at one time).
  */
 
 /**
@@ -52,40 +57,6 @@ function relinkHalves(edl, rights, time) {
 }
 
 /**
- * The clips an explicit split must cut: the requested ones, their linked
- * partners, and — because two clips are fused while they cross-fade — the
- * other clip of any cross-fade the cut passes through.
- * @param {Edl} edl
- * @param {Iterable<string>} clipIds
- * @param {number} at
- * @param {boolean} linked
- * @returns {Set<string>}
- */
-function splitTargets(edl, clipIds, at, linked) {
-  const index = indexClips(edl);
-  /** @type {Map<string, Map<string, import('./fades.js').EdgeOverlap>>} */
-  const overlaps = new Map();
-  /** @type {Set<string>} */
-  const out = new Set();
-  const queue = [...clipIds];
-  while (queue.length) {
-    const ref = index.get(queue.shift());
-    if (!ref || ref.track.locked || out.has(ref.clip.clipId)) continue;
-    const { clip, track } = ref;
-    out.add(clip.clipId);
-    if (linked && clip.linkedClipId) queue.push(clip.linkedClipId);
-    if (!overlaps.has(track.trackId)) overlaps.set(track.trackId, neighbourOverlaps(track.clips));
-    const overlap = overlaps.get(track.trackId).get(clip.clipId);
-    if (!overlap) continue;
-    const intoFadeIn = at - clip.timelineStart > EPS && at - clip.timelineStart < overlap.in - EPS;
-    const intoFadeOut = clip.timelineEnd - at > EPS && clip.timelineEnd - at < overlap.out - EPS;
-    if (intoFadeIn) queue.push(overlap.prev);
-    if (intoFadeOut) queue.push(overlap.next);
-  }
-  return out;
-}
-
-/**
  * Split clips at a time. Clips whose edge is exactly at the time, and clips
  * on locked tracks, are left alone.
  * @param {Edl} edl
@@ -95,19 +66,37 @@ function splitTargets(edl, clipIds, at, linked) {
  */
 export function splitClips(edl, time, opts = {}) {
   const at = snap(edl, time);
-  const only = opts.clipIds ? splitTargets(edl, opts.clipIds, at, opts.linked !== false) : null;
+  const linked = opts.linked !== false;
+  const only = opts.clipIds
+    ? new Set(linked ? expandSelection(edl, opts.clipIds, { grouped: false }) : opts.clipIds)
+    : null;
   const lanes = opts.trackIds ? new Set(opts.trackIds) : null;
   /** @type {Map<string, string>} */
   const rights = new Map();
-  const cut = mapClips(edl, (clip, track) => {
-    if ((only && !only.has(clip.clipId)) || (lanes && !lanes.has(track.trackId))) return clip;
-    if (at - clip.timelineStart < EPS || clip.timelineEnd - at < EPS) return clip;
-    const timed = isTimed(clip, track);
-    const right = sliceClip(clip, at, clip.timelineEnd, timed, newId('clip'));
-    rights.set(clip.clipId, right.clipId);
-    return [sliceClip(clip, clip.timelineStart, at, timed), right];
+  const cut = mapTracks(edl, (track) => {
+    if (track.locked || (lanes && !lanes.has(track.trackId))) return track;
+    const under = (clip) => at - clip.timelineStart > EPS && clip.timelineEnd - at > EPS;
+    const wanted = (clip) => under(clip) && (!only || only.has(clip.clipId));
+    if (!track.clips.some(wanted)) return track;
+    const overlaps = neighbourOverlaps(track.clips);
+    const clips = track.clips.flatMap((clip) => {
+      if (!wanted(clip)) return clip;
+      const timed = isTimed(clip, track);
+      const overlap = overlaps.get(clip.clipId) || NO_OVERLAP;
+      const fadingIn = overlap.in > EPS && at - clip.timelineStart <= overlap.in + EPS;
+      const fadingOut = overlap.out > EPS && clip.timelineEnd - at <= overlap.out + EPS;
+      if (fadingIn || fadingOut) {
+        if (!opts.cutFades) return clip;
+        return fadingOut
+          ? sliceClip(clip, clip.timelineStart, at, timed)
+          : sliceClip(clip, at, clip.timelineEnd, timed);
+      }
+      const right = sliceClip(clip, at, clip.timelineEnd, timed, newId('clip'));
+      rights.set(clip.clipId, right.clipId);
+      return [sliceClip(clip, clip.timelineStart, at, timed), right];
+    });
+    return withClips(track, clips);
   });
-  if (!rights.size) return edl;
-  // settle re-derives the fades of halves that were cut inside a cross-fade.
-  return settle(edl, relinkHalves(cut, rights, at), {});
+  // settle resets the fades of a cross-fade that was cut apart.
+  return cut === edl ? edl : settle(edl, relinkHalves(cut, rights, at), {});
 }

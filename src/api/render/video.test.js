@@ -126,7 +126,9 @@ describe('render: video layers', () => {
   it('letterboxes with contain and crops with cover', async () => {
     // bands.mp4 is 320x320: red (70 rows), lime (180 rows), blue (70 rows).
     const fit = (value) =>
-      edl(createTrack('video', { clips: [clip('bands.mp4', 0, 1, { transform: { fit: value } })] }));
+      edl(
+        createTrack('video', { clips: [clip('bands.mp4', 0, 1, { transform: { fit: value } })] }),
+      );
     const contain = (await shoot(fit('contain'))).frames;
     isColor(contain.at(10, 30, 90), BLACK, 'contain: left bar');
     isColor(contain.at(10, 290, 90), BLACK, 'contain: right bar');
@@ -136,7 +138,12 @@ describe('render: video layers', () => {
     isColor(contain.at(10, 76, 90), LIME, 'contain: picture starts at x=70');
     isColor(contain.at(10, 64, 90), BLACK, 'contain: bar ends at x=70');
     const cover = (await shoot(fit('cover'))).frames;
-    for (const [x, y] of [[4, 4], [160, 4], [316, 176], [160, 176]])
+    for (const [x, y] of [
+      [4, 4],
+      [160, 4],
+      [316, 176],
+      [160, 176],
+    ])
       isColor(cover.at(10, x, y), LIME, `cover: only the middle band is visible at ${x},${y}`);
   });
 
@@ -158,7 +165,14 @@ describe('render: video layers', () => {
     isColor(turned.at(5, 85, 90), BLUE, 'rotated: blue band on the left');
     isColor(turned.at(5, 160, 15), LIME, 'rotated: lime spans top to bottom');
     // Half size (90x90 at 115,45), rotated 90° about its top-left corner: swings to x 25..115.
-    const swung = await one({ fit: 'contain', scaleX: 0.5, scaleY: 0.5, rotation: 90, anchorX: 0, anchorY: 0 });
+    const swung = await one({
+      fit: 'contain',
+      scaleX: 0.5,
+      scaleY: 0.5,
+      rotation: 90,
+      anchorX: 0,
+      anchorY: 0,
+    });
     const box = swung.frames.box(5, (rgb) => rgb[0] + rgb[1] + rgb[2] > 60);
     for (const [i, want] of [25, 45, 114, 134].entries())
       assert.ok(Math.abs(box[i] - want) <= 2, `rotated box ${box} vs 25,45,114,134`);

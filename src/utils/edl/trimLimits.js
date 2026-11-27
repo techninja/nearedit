@@ -30,7 +30,7 @@ export function trimRange(edl, { clip, track }, edge, opts) {
   const overlap = neighbourOverlaps(track.clips).get(clip.clipId) || NO_OVERLAP;
   const duration = clip.timelineEnd - clip.timelineStart;
   const kept = edge === 'start' ? overlap.out : overlap.in;
-  const room = opts.ripple ? Math.max(frame, overlap.in + overlap.out) : frame + kept;
+  const room = frame + (opts.ripple ? overlap.in + overlap.out : kept);
   if (edge === 'start') {
     let min = opts.ripple ? -Infinity : -clip.timelineStart;
     if (timed) min = Math.max(min, -floorToFrame(edl, clip.sourceIn));

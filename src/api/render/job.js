@@ -6,14 +6,13 @@
  * @module api/render/job
  */
 
-import { mkdtempSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { run } from '../lib/ffmpeg.js';
 import { getCapabilities } from './capabilities.js';
 import { RenderError } from './errors.js';
-import { buildRenderPlan, renderSources } from './plan.js';
+import { encodeTimeline } from './passes.js';
 import { probeSources } from './probe.js';
-import { createProgressReader } from './progress.js';
+import { renderSources } from './scope.js';
 import { rendersDir, renderUrl, sanitizeFilename, uniqueName, writeRecord } from './store.js';
 
 const WORK_PREFIX = '.work-';
@@ -37,21 +36,6 @@ function sweepStaleWork(dir) {
     } catch (err) {
       console.warn(`[render] cannot clean ${path}: ${err.message}`);
     }
-  }
-}
-
-/**
- * Run FFmpeg for a plan, reporting progress.
- * @param {import('./plan.js').RenderPlan} plan
- * @param {import('../lib/jobs.js').JobContext} ctx
- */
-async function encode(plan, ctx) {
-  const reader = createProgressReader(plan.duration, (percent) => ctx.progress(percent));
-  try {
-    await run('ffmpeg', plan.args, { signal: ctx.signal, onStderr: reader.line });
-  } catch (err) {
-    if (err.killedBy) throw err;
-    throw new Error(`FFmpeg failed: ${reader.errors.slice(-6).join(' | ') || err.message}`);
   }
 }
 
@@ -87,14 +71,14 @@ export async function runRender(request, ctx) {
     if (!capabilities.libx264)
       throw new RenderError(503, 'This FFmpeg build has no libx264 encoder');
     const partial = join(workDir, 'output.mp4');
-    const plan = buildRenderPlan(request.edl, {
-      ...{ probes, capabilities, workDir, outputPath: partial },
-      ...{ preset: request.preset, range: request.range },
-    });
-    for (const file of plan.files) writeFileSync(file.path, file.content);
-    for (const warning of plan.warnings) ctx.log(`Warning: ${warning}`);
-    ctx.log(`Encoding ${plan.frames} frames at ${plan.width}x${plan.height} (${request.preset})`);
-    await encode(plan, ctx);
+    const plan = await encodeTimeline(
+      request.edl,
+      {
+        ...{ probes, capabilities, workDir, outputPath: partial },
+        ...{ preset: request.preset, range: request.range },
+      },
+      ctx,
+    );
 
     const file = uniqueName(request.filename || defaultName(request.name));
     const output = join(dir, file);

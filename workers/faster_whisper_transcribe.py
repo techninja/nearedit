@@ -132,7 +132,9 @@ def main(argv=None):
             print(f"input not found: {path}", file=sys.stderr)
             return 2
         result = transcribe(prepare(path, directory), args)
-    json.dump(result, sys.stdout, ensure_ascii=False)
+    # ASCII-only JSON (\uXXXX escapes): safe whatever the locale of stdout is,
+    # which matters when this runs over ssh with LANG=C.
+    json.dump(result, sys.stdout)
     sys.stdout.write("\n")
     return 0
 

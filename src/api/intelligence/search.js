@@ -7,6 +7,7 @@
 
 import { scanProject } from '../lib/mediaScan.js';
 import { readSidecar } from '../lib/sidecar.js';
+import { excerpt, parseQuery } from './searchTerms.js';
 import { toCues } from './transcriptExport.js';
 
 const MAX_PER_FIELD = 5;
@@ -20,23 +21,6 @@ const WEIGHTS = { filename: 3, tag: 3, description: 2, keyframe: 1, transcript: 
  * @property {number} [end]
  * @property {number} [time] - Seconds of the keyframe, or of the first matching word
  */
-
-/**
- * Cut a short excerpt around the first occurrence of any term.
- * @param {string} text
- * @param {string[]} terms
- * @param {number} [radius]
- * @returns {string}
- */
-export function excerpt(text, terms, radius = 70) {
-  const lower = text.toLowerCase();
-  const hits = terms.map((t) => lower.indexOf(t)).filter((i) => i >= 0);
-  const at = hits.length ? Math.min(...hits) : 0;
-  const from = Math.max(0, at - radius);
-  const to = Math.min(text.length, at + radius);
-  const body = text.slice(from, to).replace(/\s+/g, ' ').trim();
-  return `${from > 0 ? '…' : ''}${body}${to < text.length ? '…' : ''}`;
-}
 
 /**
  * Match one file against the query terms.
@@ -130,7 +114,7 @@ export function matchFile(entry, sidecar, terms) {
  * @returns {{ data: object[], total: number }}
  */
 export function searchProject(projectId, query, options = {}) {
-  const terms = [...new Set(query.toLowerCase().split(/\s+/).filter(Boolean))];
+  const terms = parseQuery(query);
   if (!terms.length) return { data: [], total: 0 };
   const results = [];
   for (const entry of scanProject(projectId)) {

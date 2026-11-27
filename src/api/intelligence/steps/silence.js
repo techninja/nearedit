@@ -8,7 +8,9 @@ import { progressLines, round3 } from './types.js';
 
 /** @typedef {import('./types.js').Step} Step */
 
-export const SILENCE_DEFAULTS = { noiseDb: -35, minDuration: 0.4 };
+// -30 dB / 0.4 s marks the pauses between sentences in ordinary speech
+// recordings (FFmpeg's own -60 dB default only finds digital silence).
+export const SILENCE_DEFAULTS = { noiseDb: -30, minDuration: 0.4 };
 
 /**
  * Turn silencedetect log lines into ranges. A silence still open at the end

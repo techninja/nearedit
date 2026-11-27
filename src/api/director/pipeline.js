@@ -45,14 +45,14 @@ export function brollPool(media, plan) {
 }
 
 /**
- * Resolve and assemble a schema-valid plan into a DirectorResult.
+ * Resolve and assemble a schema-valid plan into a bare fragment.
  * @param {any} plan - Valid against PLAN_SCHEMA
  * @param {ActionContext} ctx
- * @param {{ notes?: string[], options?: Partial<import('./assemble/options.js').AssembleOptions> }} [pre] -
- *   Notes to put first, and overrides for the assembly options
- * @returns {import('./result.js').DirectorResult}
+ * @param {Partial<import('./assemble/options.js').AssembleOptions>} [options] - Overrides
+ * @returns {import('./assemble/index.js').Assembled & { plan: object }}
+ * @throws {DirectorError} 422 when no pick names a file of this project
  */
-export function assembleResult(plan, ctx, pre = {}) {
+export function assembleFragment(plan, ctx, options = {}) {
   const resolved = resolvePlan(plan, ctx.media);
   if (!resolved.picks.length)
     throw new DirectorError('The plan uses no file from this project', {
@@ -61,11 +61,23 @@ export function assembleResult(plan, ctx, pre = {}) {
     });
   const opts = assembleOptions(ctx.format, ctx.directive.params, {
     pool: brollPool(ctx.media, resolved),
-    ...pre.options,
+    ...options,
   });
-  const built = assemblePlan(resolved, opts);
+  return { ...assemblePlan(resolved, opts), plan: describePlan(resolved) };
+}
+
+/**
+ * Resolve and assemble a schema-valid plan into a DirectorResult.
+ * @param {any} plan - Valid against PLAN_SCHEMA
+ * @param {ActionContext} ctx
+ * @param {{ notes?: string[], options?: Partial<import('./assemble/options.js').AssembleOptions> }} [pre] -
+ *   Notes to put first, and overrides for the assembly options
+ * @returns {import('./result.js').DirectorResult}
+ */
+export function assembleResult(plan, ctx, pre = {}) {
+  const built = assembleFragment(plan, ctx, pre.options);
   return directorResult(
-    { ...built, notes: [...(pre.notes || []), ...built.notes], plan: describePlan(resolved) },
+    { ...built, notes: [...(pre.notes || []), ...built.notes] },
     ctx.directive,
     ctx.edl,
     ctx.format.fps,

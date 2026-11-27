@@ -29,7 +29,7 @@ describe('splitClips', () => {
     assert.deepEqual([left.sourceIn, left.sourceOut], [3, 7]);
     assert.deepEqual([right.sourceIn, right.sourceOut], [7, 13]);
     assert.equal(right.groupId, 'g', 'both halves stay in the group');
-    assert.equal(newClipIds(start, out).length, 2, 'one new id per split clip');
+    assert.equal(newClipIds(start, out).length, 3, 'one new id per split clip');
     assert.deepEqual(layout(out).a1.map((s) => s.split(' ')[1]), ['0-4', '4-10']);
     assert.deepEqual(layout(out).a2.map((s) => s.split(' ')[1]), ['2-4', '4-20']);
   });
@@ -87,16 +87,34 @@ describe('splitClips', () => {
     assert.ok(Math.abs(out.tracks[0].clips[0].timelineEnd - 4 - 1 / 30) < 1e-9);
   });
 
-  it('a cut through a cross-fade splits both clips and keeps every piece fading', () => {
+  it('leaves two cross-fading clips alone when the time is inside their cross-fade', () => {
+    const start = deepFreeze(
+      testEdl({
+        v1: [testClip('a', 0, 5, { fadeOut: 1 }), testClip('b', 4, 8, { fadeIn: 1 })],
+        v2: [testClip('over', 0, 8)],
+      }),
+    );
+    for (const time of [4, 4.5, 5]) {
+      const out = assertValid(splitClips(start, time));
+      assert.equal(out.tracks[0], start.tracks[0], 'v1 is untouched');
+      assert.equal(layout(out).v2.length, 2, 'other clips under the time are still split');
+      assert.equal(splitClips(start, time, { clipIds: ['a', 'b'] }), start);
+    }
+    // Outside the cross-fade both clips split normally and keep fading.
+    const before = assertValid(splitClips(start, 3, { clipIds: ['a'] }));
+    assert.deepEqual(layout(before).v1.map((s) => s.split(' ')[1]), ['0-3', '3-5', '4-8']);
+    assert.deepEqual(before.tracks[0].clips.map((c) => c.fadeOut), [0, 1, 0]);
+  });
+
+  it('cutFades turns a cross-fade under the time into a hard cut', () => {
     const start = deepFreeze(
       testEdl({ v1: [testClip('a', 0, 5, { fadeOut: 1 }), testClip('b', 4, 8, { fadeIn: 1 })] }),
     );
-    for (const opts of [{}, { clipIds: ['a'] }, { clipIds: ['b'], linked: false }]) {
-      const out = assertValid(splitClips(start, 4.5, opts));
-      assert.deepEqual(layout(out).v1.map((s) => s.split(' ')[1]), ['0-4.5', '4-4.5', '4.5-5', '4.5-8']);
-      const [a1, b1, a2, b2] = out.tracks[0].clips;
-      assert.deepEqual([a1.fadeOut, b1.fadeIn, a2.fadeOut, b2.fadeIn], [0.5, 0.5, 0.5, 0.5]);
-      assert.deepEqual([a1.clipId, b1.clipId], ['a', 'b']);
-    }
+    const out = assertValid(splitClips(start, 4.5, { cutFades: true }));
+    assert.deepEqual(layout(out).v1, ['a 0-4.5', 'b 4.5-8']);
+    assert.deepEqual([clipOf(out, 'a').fadeOut, clipOf(out, 'b').fadeIn], [0, 0]);
+    assert.deepEqual([clipOf(out, 'b').sourceIn, clipOf(out, 'b').sourceOut], [0.5, 4]);
+    assert.deepEqual(layout(splitClips(start, 4, { cutFades: true })).v1, ['a 0-4', 'b 4-8']);
+    assert.deepEqual(layout(splitClips(start, 5, { cutFades: true })).v1, ['a 0-5', 'b 5-8']);
   });
 });

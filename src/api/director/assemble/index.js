@@ -56,7 +56,7 @@ function timingNotes(stats, plan, opts, beatsF) {
     );
   if (stats.segmentOnly)
     notes.push(
-      `${stats.segmentOnly} pick${s(stats.segmentOnly)} had no word timestamps; cut on segment boundaries.`,
+      `${stats.segmentOnly} pick${s(stats.segmentOnly)} had no word timestamps; cut on segment or silence boundaries.`,
     );
   if (stats.pausesRemoved)
     notes.push(
