@@ -7,7 +7,6 @@
 import { dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import express from 'express';
-import { assembleRouter } from './api/assemble.js';
 import { browseRouter } from './api/browse.js';
 import { directorRouter } from './api/director.js';
 import { indexerRouter } from './api/indexer.js';
@@ -21,7 +20,6 @@ import { pickerRouter } from './api/picker.js';
 import { previewsRouter } from './api/previews.js';
 import { projectsRouter } from './api/projects.js';
 import { renderRouter } from './api/render.js';
-import { silenceRouter } from './api/silence.js';
 import { transcodeRouter } from './api/transcode.js';
 import { attachWebSocket } from './api/ws.js';
 
@@ -51,8 +49,6 @@ const routers = [
   indexerRouter,
   intelligenceRouter,
   directorRouter,
-  silenceRouter,
-  assembleRouter,
   renderRouter,
 ];
 for (const router of routers) app.use('/api', router);
