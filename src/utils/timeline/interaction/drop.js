@@ -1,14 +1,18 @@
 /**
- * Dropping media dragged from the bin: while it hovers, light up the lane
- * and the insert time; on drop, insert it there.
+ * Dropping what is dragged onto the timeline. Media from the bin, and a
+ * generator or text style from the Create tab: while it hovers, the lane
+ * and the insert time light up; on drop it is inserted there. An effect
+ * from the Create tab: the clip under the pointer lights up and gets it.
  * @module utils/timeline/interaction/drop
  */
 
 import { insertMediaItem } from '#utils/commands/insert.js';
+import { CREATE_DRAG_TYPE, EFFECT_DRAG_TYPE, carries } from '#utils/create/dragTypes.js';
 import { getDoc } from '#utils/editor/session.js';
 import { MEDIA_DRAG_TYPE } from '#utils/media/library.js';
 import { laneAt } from '#utils/timeline/layout.js';
 import { xToTime } from '#utils/timeline/viewport.js';
+import { dropCreated, dropEffect, effectTarget } from './dropCreate.js';
 import { canvasPoint } from './pointer.js';
 import { snapPoint } from './press.js';
 
@@ -39,10 +43,14 @@ const carriesMedia = (event) => !!event.dataTransfer?.types.includes(MEDIA_DRAG_
  * @param {DragEvent} event
  */
 export function onDragOver(stage, event) {
-  if (!carriesMedia(event)) return;
+  const effect = carries(event.dataTransfer, EFFECT_DRAG_TYPE);
+  if (!effect && !carriesMedia(event) && !carries(event.dataTransfer, CREATE_DRAG_TYPE)) return;
+  const clipId = effect ? effectTarget(stage, canvasPoint(stage, event)) : '';
+  if (effect && !clipId) return onDragLeave(stage); // nothing here takes an effect: no drop
   event.preventDefault();
   event.dataTransfer.dropEffect = 'copy';
-  stage.overlay.drop = dropTarget(stage, event);
+  stage.overlay.dropClipId = clipId;
+  stage.overlay.drop = effect ? null : dropTarget(stage, event);
   stage.invalidate();
 }
 
@@ -52,6 +60,7 @@ export function onDragOver(stage, event) {
  */
 export function onDragLeave(stage) {
   stage.overlay.drop = null;
+  stage.overlay.dropClipId = '';
   stage.invalidate();
 }
 
@@ -63,10 +72,17 @@ export function onDragLeave(stage) {
  * @param {DragEvent} event
  */
 export function onDrop(stage, event) {
-  if (!carriesMedia(event)) return;
+  if (carries(event.dataTransfer, EFFECT_DRAG_TYPE)) {
+    event.preventDefault();
+    dropEffect(event.dataTransfer, effectTarget(stage, canvasPoint(stage, event)));
+    return onDragLeave(stage);
+  }
+  const created = carries(event.dataTransfer, CREATE_DRAG_TYPE);
+  if (!created && !carriesMedia(event)) return;
   event.preventDefault();
   const target = dropTarget(stage, event);
   onDragLeave(stage);
+  if (created) return dropCreated(event.dataTransfer, target);
   let item;
   try {
     item = JSON.parse(event.dataTransfer.getData(MEDIA_DRAG_TYPE));

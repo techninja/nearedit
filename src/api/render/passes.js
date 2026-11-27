@@ -1,81 +1,68 @@
 /**
- * Running the FFmpeg passes of a render: one pass for a short timeline;
- * for a long one, a picture pass per segment and a final pass that joins
- * them and mixes the sound.
+ * The passes of a render. A short timeline of plain footage is one FFmpeg
+ * run. Anything else is rendered as picture segments — filter graph or
+ * canvas, several at a time — and a final pass joins them without
+ * re-encoding while it mixes the sound.
  * @module api/render/passes
  */
 
-import { writeFileSync } from 'node:fs';
-import { run } from '../lib/ffmpeg.js';
 import { buildMuxPlan } from './mux.js';
+import { renderParts, runPass, segmentFile, workerCount } from './parts.js';
 import { buildRenderPlan } from './plan.js';
-import { createProgressReader } from './progress.js';
 import { renderSegments } from './segments.js';
 
 /** Share of the progress bar given to the picture segments. */
 const PICTURE_SHARE = 95;
 
+/** @typedef {ReturnType<typeof renderSegments>} Segments */
+
 /**
- * Write a plan's files and run it, mapping its progress into a slice of the
- * job's 0..100.
- * @param {import('./plan.js').RenderPlan} plan
- * @param {import('../lib/jobs.js').JobContext} ctx
- * @param {number} from - Job percent when this pass starts
- * @param {number} share - Job percent this pass covers
+ * The pass that finishes a render: the single pass of a short timeline of
+ * plain footage, otherwise the joining pass over the segment files.
+ * @param {object} edl
+ * @param {import('./context.js').PlanOptions} options
+ * @param {Segments} segments
+ * @returns {import('./plan.js').RenderPlan}
  */
-async function runPass(plan, ctx, from, share) {
-  for (const file of plan.files) writeFileSync(file.path, file.content);
-  const report = (percent) => ctx.progress(Math.min(99, from + (percent * share) / 100));
-  const reader = createProgressReader(plan.duration, report);
-  try {
-    await run('ffmpeg', plan.args, { signal: ctx.signal, onStderr: reader.line });
-  } catch (err) {
-    if (err.killedBy) throw err;
-    throw new Error(`FFmpeg failed: ${reader.errors.slice(-6).join(' | ') || err.message}`);
-  }
+export function lastPass(edl, options, segments) {
+  if (segments.length === 1 && segments[0].engine === 'ffmpeg')
+    return buildRenderPlan(edl, options);
+  const parts = segments.map(({ frames }, index) => ({ file: segmentFile(index), frames }));
+  return buildMuxPlan(edl, { ...options, parts });
 }
 
 /**
  * Encode an EDL to `options.outputPath`.
  * @param {object} edl
  * @param {import('./context.js').PlanOptions & { workDir: string, outputPath: string,
- *   maxLayers?: number, minFrames?: number }} options
+ *   maxLayers?: number, minFrames?: number, chunkFrames?: number, workers?: number }} options
  * @param {import('../lib/jobs.js').JobContext} ctx
- * @returns {Promise<import('./plan.js').RenderPlan & { segments: number }>} The plan
- *   of the (last) pass, with the warnings of all passes
+ * @returns {Promise<import('./plan.js').RenderPlan & { segments: number, drawn: number }>}
+ *   The plan of the last pass, with the warnings of all passes; `drawn` is
+ *   how many segments the compositor drew
  */
 export async function encodeTimeline(edl, options, ctx) {
   const segments = renderSegments(edl, options);
-  if (segments.length === 1) {
-    const plan = buildRenderPlan(edl, options);
-    for (const warning of plan.warnings) ctx.log(`Warning: ${warning}`);
+  const drawn = segments.filter((segment) => segment.engine === 'canvas').length;
+  const plan = lastPass(edl, options, segments);
+  const warnings = [...plan.warnings];
+  let pictureShare = 0;
+  if (segments.length === 1 && !drawn) {
     ctx.log(`Encoding ${plan.frames} frames at ${plan.width}x${plan.height}`);
-    await runPass(plan, ctx, 0, 100);
-    return { ...plan, segments: 1 };
+  } else {
+    pictureShare = PICTURE_SHARE;
+    const total = segments.reduce((sum, segment) => sum + segment.frames, 0);
+    const workers = Math.min(options.workers || workerCount(), segments.length);
+    const how = drawn ? `, ${drawn} drawn by the compositor` : '';
+    ctx.log(`Encoding ${total} frames in ${segments.length} segments${how}, ${workers} at a time`);
+    const onFrames = (done) => ctx.progress(Math.min(99, (done / total) * pictureShare));
+    const hooks = { signal: ctx.signal, log: ctx.log, onFrames };
+    warnings.push(...(await renderParts(edl, segments, { ...options, workers }, hooks)));
+    ctx.log('Joining segments and mixing audio');
   }
-
-  const total = segments.reduce((sum, segment) => sum + segment.frames, 0);
-  ctx.log(`Encoding ${total} frames in ${segments.length} segments`);
-  const warnings = new Set();
-  const parts = [];
-  let done = 0;
-  for (const [index, segment] of segments.entries()) {
-    const file = `segment-${String(index).padStart(5, '0')}.mp4`;
-    const plan = buildRenderPlan(edl, {
-      ...options,
-      range: { start: segment.start, end: segment.end },
-      streams: 'video',
-      outputPath: `${options.workDir}/${file}`,
-    });
-    for (const warning of plan.warnings) warnings.add(warning);
-    const share = (segment.frames / total) * PICTURE_SHARE;
-    await runPass(plan, ctx, (done / total) * PICTURE_SHARE, share);
-    parts.push({ file, frames: plan.frames });
-    done += segment.frames;
-  }
-  for (const warning of warnings) ctx.log(`Warning: ${warning}`);
-  ctx.log('Joining segments and mixing audio');
-  const mux = buildMuxPlan(edl, { ...options, parts });
-  await runPass(mux, ctx, PICTURE_SHARE, 100 - PICTURE_SHARE);
-  return { ...mux, warnings: [...warnings], segments: segments.length };
+  for (const warning of new Set(warnings)) ctx.log(`Warning: ${warning}`);
+  const onPercent = (percent) =>
+    ctx.progress(Math.min(99, pictureShare + (percent * (100 - pictureShare)) / 100));
+  await runPass(plan, { signal: ctx.signal, onPercent });
+  return { ...plan, warnings: [...new Set(warnings)], segments: segments.length, drawn };
 }

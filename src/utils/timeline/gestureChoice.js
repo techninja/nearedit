@@ -10,7 +10,7 @@
 /**
  * @typedef {'pan'|'scrub'|'loop'|'marker'|'region'|'region-start'|'region-end'|'move'|'copy'|
  *   'slip'|'slide'|'trim-start'|'trim-end'|'slip-trim-start'|'slip-trim-end'|'roll-start'|
- *   'roll-end'|'fade-in'|'fade-out'|'marquee'|'none'} GestureName
+ *   'roll-end'|'fade-in'|'fade-out'|'keyframe'|'marquee'|'none'} GestureName
  */
 
 /**
@@ -43,6 +43,7 @@ export function chooseGesture(hit, input = {}) {
   if (hit.zone !== 'lane') return pointerType === 'touch' ? 'pan' : 'marquee';
   if (!hit.clipId || hit.locked) return pointerType === 'touch' ? 'pan' : 'marquee';
   const { altKey: alt, ctrlKey: ctrl } = input;
+  if (hit.part === 'keyframe') return 'keyframe';
   if (hit.part === 'trim-start' || hit.part === 'trim-end') {
     // Vegas: Alt-drag an edge slip-trims, Ctrl+Alt-drag rolls the cut.
     const edge = hit.part === 'trim-start' ? 'start' : 'end';
@@ -75,6 +76,7 @@ const HOVER_CURSOR = {
   'roll-end': 'col-resize',
   'fade-in': 'nesw-resize',
   'fade-out': 'nwse-resize',
+  keyframe: 'pointer',
   marquee: 'default',
   none: 'default',
 };
@@ -85,6 +87,7 @@ const ACTIVE_CURSOR = {
   move: 'grabbing',
   region: 'grabbing',
   marker: 'ew-resize',
+  keyframe: 'ew-resize',
   marquee: 'crosshair',
   scrub: 'ew-resize',
 };

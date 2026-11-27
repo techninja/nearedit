@@ -13,6 +13,7 @@ const KIND_NAMES = {
   audio: 'audio',
   image: 'image',
   title: 'title',
+  generator: 'generator',
   placeholder: 'placeholder',
 };
 
@@ -41,7 +42,11 @@ export function describeSelection(refs) {
   const pair = refs.length === 2 && refs[0].clip.linkedClipId === refs[1].clip.clipId;
   if (refs.length === 1 || pair) {
     const heading =
-      clip.label || baseName(clip.sourceFile) || clip.text?.content?.split('\n')[0] || 'Clip';
+      clip.label ||
+      baseName(clip.sourceFile) ||
+      clip.generator?.type ||
+      clip.text?.content?.split('\n')[0] ||
+      'Clip';
     const tracks = refs.map((ref) => ref.track.name || ref.track.trackId).join(' + ');
     return { heading, detail: `${kinds.join(' + ')} · ${tracks}` };
   }

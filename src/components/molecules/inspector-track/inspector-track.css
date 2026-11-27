@@ -1,0 +1,7 @@
+inspector-track {
+  display: block;
+
+  & select.field-input {
+    padding-block: 0;
+  }
+}

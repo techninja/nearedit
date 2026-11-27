@@ -1,0 +1,89 @@
+effect-catalog {
+  display: block;
+
+  & .effect-catalog-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  & .effect-catalog-search app-icon {
+    position: absolute;
+    left: calc(var(--space-sm) + var(--space-xs));
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  & .effect-catalog-search input {
+    padding-left: 1.5rem;
+  }
+
+  & .effect-catalog-hint {
+    padding: 0 var(--space-sm) var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .effect-catalog-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0 var(--space-xs);
+  }
+
+  /* One row: icon, name, and what it does — in a second line when the
+     panel is too narrow for both. */
+  & .effect-catalog-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0 var(--space-sm);
+    min-height: var(--control-h);
+    padding: 3px var(--space-sm);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    text-align: left;
+  }
+
+  & .effect-catalog-item app-icon {
+    align-self: center;
+    color: var(--color-text-muted);
+  }
+
+  & .effect-catalog-item:hover:not(:disabled),
+  & .effect-catalog-item:focus-visible {
+    background: var(--color-surface-2);
+    outline: none;
+  }
+
+  & .effect-catalog-item:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-focus);
+  }
+
+  & .effect-catalog-item:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  & .effect-catalog-name {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  & .effect-catalog-about {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (pointer: coarse) {
+  effect-catalog .effect-catalog-item {
+    min-height: 2.5rem;
+  }
+}

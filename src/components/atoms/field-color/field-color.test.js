@@ -26,6 +26,19 @@ describe('field-color', () => {
     expect(normalizeHex('#F80')).to.equal('#ff8800');
     expect(normalizeHex('00ff7f')).to.equal('#00ff7f');
     expect(normalizeHex('red')).to.equal(null);
+    expect(normalizeHex('#0F172AE6')).to.equal('#0f172ae6');
+  });
+
+  it('keeps the transparency of a colour the well cannot show', async () => {
+    const { events, well, hex } = await mount({ value: '#000000b3' });
+    expect(well.value).to.equal('#000000');
+    expect(hex.value).to.equal('#000000b3');
+    change(well, '#112233', 'input');
+    change(hex, '#44556680');
+    expect(events).to.deep.equal([
+      { name: 'text.color', value: '#112233b3', phase: 'live' },
+      { name: 'text.color', value: '#44556680', phase: 'commit' },
+    ]);
   });
 
   it('shows the colour in the well and as hex text, with labels', async () => {

@@ -5,6 +5,7 @@
  */
 
 import { copyDrag } from './copyDrag.js';
+import { keyframeDrag } from './keyframeDrag.js';
 import { marqueeDrag, panDrag } from './laneDrags.js';
 import { moveDrag, slipDrag } from './moveDrag.js';
 import { regionDrag, regionEndDrag, regionStartDrag } from './regionDrags.js';
@@ -26,6 +27,7 @@ export const GESTURES = {
   'roll-end': slides.rollEndDrag,
   'fade-in': fadeInDrag,
   'fade-out': fadeOutDrag,
+  keyframe: keyframeDrag,
   scrub: scrubDrag,
   loop: loopDrag,
   marker: markerDrag,

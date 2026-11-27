@@ -80,42 +80,37 @@ describe('buildRenderPlan: picture', () => {
     );
   });
 
-  it('draws titles from a text file, never from graph text', () => {
-    const text = {
-      content: "it's; [drawtext=evil]\nline 2",
-      fontFamily: 'x:y',
-      color: 'red:box=1',
-    };
-    const title = createClip({
-      clipId: 't',
-      timelineStart: 1,
-      timelineEnd: 3,
-      text: { ...text, align: 'evil' },
-    });
-    const p = plan([video([title])], { workDir: '/work' });
-    assert.equal(p.inputs.length, 0);
-    assert.ok(!p.filterComplex.includes('evil') && !p.filterComplex.includes('line 2'));
-    const layer = chainOf(p, 't0');
-    assert.match(
-      layer,
-      /^color=c=black@0:s=1920x1080:r=30,format=gbrap,trim=end_frame=1,drawtext=/,
-    );
-    assert.match(layer, /fontfile=sans-serif\\\\:bold:textfile=\/work\/t0\.txt:expansion=none/);
-    assert.match(layer, /fontcolor=0xffffff@1:.*text_align=center:y_align=font/);
-    assert.match(layer, /unpremultiply=inplace=1,scale=w=1920:h=1080:out_color_matrix=bt709/);
-    assert.deepEqual(p.files[0], { path: '/work/t0.txt', content: text.content });
-    assert.deepEqual(p.files[1], { path: '/work/graph.txt', content: p.filterComplex });
+  it('passes the graph as a script file, and refuses what needs the compositor', () => {
+    const footage = clip('/m/a.mp4', 0, 3);
+    const p = plan([video([footage])], { workDir: '/work' });
+    assert.deepEqual(p.files[0], { path: '/work/graph.txt', content: p.filterComplex });
     assert.equal(p.args[p.args.indexOf('-filter_complex_script') + 1], '/work/graph.txt');
-    const newer = plan([video([title])], {
+    const newer = plan([video([footage])], {
       workDir: '/w',
       capabilities: { graphFlag: '-/filter_complex' },
     });
     assert.ok(newer.args.includes('-/filter_complex'));
-    const none = plan([video([title, clip('/m/a.mp4', 0, 1)])], {
-      capabilities: { drawtext: false },
+
+    const title = createClip({
+      clipId: 't',
+      timelineStart: 1,
+      timelineEnd: 3,
+      text: { content: "it's; [drawtext=evil]" },
     });
-    assert.ok(!none.filterComplex.includes('drawtext'));
-    assert.match(none.warnings[0], /title "t" skipped/);
+    assert.throws(
+      () => plan([video([title]), video([footage])]),
+      (err) => err.status === 422 && /cannot draw clip "t": it has a title/.test(err.message),
+    );
+    // The same timeline is fine where the title is not on screen.
+    const before = plan([video([title]), video([footage])], { range: { start: 0, end: 1 } });
+    assert.ok(!before.filterComplex.includes('evil') && before.frames === 30);
+    const blurred = clip('/m/b.mp4', 0, 1, { effects: [{ effectId: 'fx', type: 'blur' }] });
+    assert.throws(() => plan([video([blurred])]), /it has an effect on a clip/);
+    assert.throws(() => plan([video([footage], { opacity: 0.5 })]), /track opacity below 1/);
+    assert.throws(
+      () => plan([video([footage])], {}, { background: '#102030' }),
+      /cannot draw this timeline: it has a background colour/,
+    );
   });
 
   it('sizes and encodes per preset', () => {

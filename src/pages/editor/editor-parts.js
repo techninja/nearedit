@@ -8,6 +8,7 @@ import { html } from 'hybrids';
 import { failureView } from '#utils/ui/editorFailure.js';
 import '#atoms/app-icon/index.js';
 import '#organisms/clip-inspector/index.js';
+import '#organisms/create-panel/index.js';
 import '#organisms/director-panel/index.js';
 import '#organisms/media-bin/index.js';
 import '#organisms/transcript-panel/index.js';
@@ -15,6 +16,7 @@ import '#organisms/transcript-panel/index.js';
 /** The dock's tabs (ids as in `DOCK_TABS` of `#utils/ui/layout.js`). */
 export const TABS = [
   { id: 'media', label: 'Media', icon: 'film' },
+  { id: 'create', label: 'Create', icon: 'generate' },
   { id: 'inspector', label: 'Inspector', icon: 'sliders' },
   { id: 'transcript', label: 'Transcript', icon: 'captions' },
   { id: 'director', label: 'Director', icon: 'ai' },
@@ -22,6 +24,7 @@ export const TABS = [
 
 const PANELS = {
   media: html`<media-bin></media-bin>`,
+  create: html`<create-panel></create-panel>`,
   inspector: html`<clip-inspector></clip-inspector>`,
   transcript: html`<transcript-panel></transcript-panel>`,
   director: html`<director-panel></director-panel>`,

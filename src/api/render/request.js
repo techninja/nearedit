@@ -1,8 +1,9 @@
 /**
  * Render request validation: preset, range, output name, and the EDL —
- * posted or saved. A posted EDL is untrusted: every `sourceFile` must sit
- * inside an allowed media root, so a request cannot make the server read
- * arbitrary files.
+ * posted or saved. A posted EDL is untrusted: every file it names — a
+ * clip's `sourceFile`, a generator's or effect's image — must sit inside an
+ * allowed media root, so a request cannot make the server read arbitrary
+ * files.
  * @module api/render/request
  */
 
@@ -14,6 +15,7 @@ import { getConfig } from '../lib/config.js';
 import { isAllowedPath } from '../lib/paths.js';
 import { getAdaptation } from '../lib/registry.js';
 import { RenderError } from './errors.js';
+import { mapMediaPaths, renderImages } from './mediaPaths.js';
 import { renderSources } from './plan.js';
 import { DEFAULT_PRESET, getPreset } from './presets.js';
 import { sanitizeFilename } from './store.js';
@@ -34,8 +36,9 @@ const invalid = (field, message) =>
   new RenderError(422, `Invalid ${field}`, { fields: { [field]: message } });
 
 /**
- * Copy the EDL with every source path made absolute and checked — on every
- * track, also muted ones.
+ * Copy the EDL with every file path — clip sources and the image parameters
+ * of generators and effects — made absolute and checked, on every track,
+ * also muted ones.
  * @param {any} edl - Normalised EDL
  * @returns {any}
  * @throws {RenderError} 403 for a path outside the allowed roots
@@ -43,19 +46,14 @@ const invalid = (field, message) =>
 function checkedEdl(edl) {
   const mediaDir = getConfig().devMediaDir;
   const allowed = new Map();
-  const checkedClip = (clip) => {
-    if (!clip.sourceFile) return clip;
+  return mapMediaPaths(edl, (path) => {
     // Legacy documents name files relative to the dev media directory.
-    const file = isAbsolute(clip.sourceFile)
-      ? resolve(clip.sourceFile)
-      : resolve(mediaDir, clip.sourceFile);
+    const file = isAbsolute(path) ? resolve(path) : resolve(mediaDir, path);
     if (!allowed.has(file)) allowed.set(file, isAllowedPath(file));
     if (!allowed.get(file))
       throw new RenderError(403, 'Path is outside the allowed media folders', { detail: file });
-    return { ...clip, sourceFile: file };
-  };
-  const tracks = edl.tracks.map((track) => ({ ...track, clips: track.clips.map(checkedClip) }));
-  return { ...edl, tracks };
+    return file;
+  });
 }
 
 /**
@@ -99,7 +97,7 @@ export function parseRenderRequest(body) {
     throw invalid('edl', `resolution must be between 16 and ${MAX_SIDE} pixels a side`);
 
   const checked = checkedEdl(normal);
-  for (const file of renderSources(checked)) {
+  for (const file of new Set([...renderSources(checked), ...renderImages(checked)])) {
     if (!existsSync(file))
       throw new RenderError(422, `Source file not found: ${file}`, { detail: file });
   }

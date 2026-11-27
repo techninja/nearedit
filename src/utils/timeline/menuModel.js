@@ -9,7 +9,8 @@ import { deleteMarker } from '#utils/commands/insert.js';
 import { deleteRegion, selectRegion } from '#utils/commands/marks.js';
 import { getCommand, isEnabled, isPressed, runCommand } from '#utils/commands/registry.js';
 import { clearTimeSelection, hasTimeSelection } from '#utils/commands/timeSelection.js';
-import { getDoc } from '#utils/editor/session.js';
+import { removeKeyframesAt } from '#utils/edl/keyframes.js';
+import { edit, getDoc } from '#utils/editor/session.js';
 import { shortcutLabel } from '#utils/keyboard/index.js';
 import { fadeMenu } from './menuFades.js';
 import { CLIP_MENU, LANE_MENU, RULER_MENU } from './menuLists.js';
@@ -53,6 +54,17 @@ function build(ids, extra = {}) {
 }
 
 /**
+ * On a keyframe mark of a clip: delete every key the clip has there.
+ * @param {import('./hitTest.js').Hit} hit
+ * @returns {MenuItem[]}
+ */
+function keyframeMenu({ part, clipId, keyTime }) {
+  if (part !== 'keyframe') return [];
+  const run = () => edit((doc) => removeKeyframesAt(doc, clipId, keyTime));
+  return [{ label: 'Delete keyframe', run }, LINE];
+}
+
+/**
  * The context menu for what was right-clicked.
  * @param {import('./hitTest.js').Hit} hit
  * @param {{ renameMarker: (markerId: string) => void,
@@ -62,8 +74,9 @@ function build(ids, extra = {}) {
 export function contextMenu(hit, ui) {
   if (hit.zone !== 'ruler') {
     const onClip = hit.clipId && !hit.locked;
-    // On a fade the curve choices come first: that is what was pointed at.
-    return [...(onClip ? fadeMenu(getDoc(), hit) : []), ...build(onClip ? CLIP_MENU : LANE_MENU)];
+    // On a keyframe mark or a fade, what was pointed at comes first.
+    const pointed = onClip ? [...keyframeMenu(hit), ...fadeMenu(getDoc(), hit)] : [];
+    return [...pointed, ...build(onClip ? CLIP_MENU : LANE_MENU)];
   }
   const clear = {
     label: 'Clear loop region',

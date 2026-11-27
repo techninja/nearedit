@@ -30,6 +30,8 @@ import { drawMarkerLines, drawRuler } from './ruler.js';
  * @property {{ x0: number, y0: number, x1: number, y1: number }|null} marquee - Canvas pixels
  * @property {{ time: number, trackId: string }|null} drop - Where a dragged media item would land
  * @property {string} hoverClipId - Clip under the pointer (shows its handles)
+ * @property {{ clipId: string, time: number }|null} [keyMark] - The keyframe mark being held
+ * @property {string} [dropClipId] - Clip an effect dragged from the Create tab would land on
  */
 
 /**

@@ -1,0 +1,119 @@
+/* Four fixed slots — previous, key, next, menu — so the diamond never
+   moves when a property starts or stops being animated. */
+keyframe-control {
+  --key-slot: 1.0625rem;
+
+  display: grid;
+  grid-template-columns: repeat(4, var(--key-slot));
+  align-items: center;
+  flex: none;
+
+  & .icon-btn {
+    min-width: 0;
+    width: var(--key-slot);
+    height: var(--control-h);
+    padding: 0;
+  }
+
+  & .keyframe-control-step[data-step='previous'] {
+    grid-column: 1;
+  }
+
+  & .keyframe-control-step[data-step='next'] {
+    grid-column: 3;
+  }
+
+  & .keyframe-control-more {
+    grid-column: 4;
+  }
+
+  /* Hollow and quiet until the property is animated. */
+  & .keyframe-control-key {
+    grid-column: 2;
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-text-muted);
+    opacity: 0.55;
+  }
+
+  & .keyframe-control-key:hover:not(:disabled),
+  & .keyframe-control-key:focus-visible {
+    opacity: 1;
+  }
+
+  &[state='between'] .keyframe-control-key,
+  &[state='key'] .keyframe-control-key {
+    color: var(--color-marker);
+    opacity: 1;
+  }
+
+  &[state='key'] .keyframe-control-key svg {
+    fill: currentcolor;
+  }
+
+  & .keyframe-control-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-menu);
+  }
+
+  & .keyframe-control-menu {
+    width: 13rem;
+    overflow-y: auto;
+  }
+
+  & .keyframe-control-heading {
+    padding: 2px var(--space-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .menu-item {
+    font-size: var(--text-sm);
+  }
+
+  & .menu-item[role='menuitemradio']::before {
+    width: 1em;
+    content: '';
+  }
+
+  & .menu-item[aria-checked='true']::before {
+    color: var(--color-primary);
+    content: '✓';
+  }
+}
+
+/* An inspector row with a keyframe button: the field, then a gutter of
+   constant width so every field in a group ends at the same edge. */
+.keyed-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.25rem;
+  align-items: center;
+  padding-right: var(--space-xs);
+}
+
+.keyed-row > :first-child {
+  padding-right: var(--space-xs);
+}
+
+/* Touch screens: the steps move into the menu, the two buttons that stay
+   are finger-sized. */
+@media (pointer: coarse) {
+  keyframe-control {
+    --key-slot: 2rem;
+
+    grid-template-columns: repeat(2, var(--key-slot));
+
+    & .keyframe-control-step {
+      display: none;
+    }
+
+    & .keyframe-control-key {
+      grid-column: 1;
+    }
+
+    & .keyframe-control-more {
+      grid-column: 2;
+    }
+  }
+}

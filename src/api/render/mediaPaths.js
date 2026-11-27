@@ -1,0 +1,86 @@
+/**
+ * Every place a document names a file: a clip's `sourceFile`, and each
+ * `image` parameter of a generator or an effect (a particle sprite, a mask).
+ * Whoever accepts a document from outside — the render routes, the command
+ * line — walks it through here to resolve and check each path before any
+ * of them is read. Pure.
+ * @module api/render/mediaPaths
+ */
+
+import { effectModule, generatorModule } from '#utils/compose/catalog.js';
+import { requirements } from '#utils/compose/requirements.js';
+import { activeTracks } from '#utils/edl/query.js';
+
+/**
+ * @callback ResolvePath
+ * @param {string} path - As the document has it
+ * @param {string} where - Where in the document, e.g. `tracks[0].clips[2].sourceFile`
+ * @returns {string} The path to use; throw to refuse it
+ */
+
+/**
+ * @param {import('#utils/compose/params.js').ParamSchema|undefined} schema
+ * @param {Record<string, any>|undefined} params
+ * @param {ResolvePath} resolvePath
+ * @param {string} where
+ * @returns {Record<string, any>|undefined} The bag with its image paths replaced
+ */
+function mapParams(schema, params, resolvePath, where) {
+  const names = Object.keys(schema || {}).filter(
+    (name) => schema[name].type === 'image' && typeof params?.[name] === 'string' && params[name],
+  );
+  if (!names.length) return params;
+  const out = { ...params };
+  for (const name of names) out[name] = resolvePath(params[name], `${where}.${name}`);
+  return out;
+}
+
+/**
+ * @param {any[]|undefined} effects
+ * @param {ResolvePath} resolvePath
+ * @param {string} where
+ * @returns {any[]|undefined}
+ */
+function mapEffects(effects, resolvePath, where) {
+  if (!Array.isArray(effects)) return effects;
+  return effects.map((fx, i) => {
+    if (!fx) return fx;
+    const schema = effectModule(fx.type)?.params;
+    return { ...fx, params: mapParams(schema, fx.params, resolvePath, `${where}[${i}].params`) };
+  });
+}
+
+/**
+ * Copy a document with every file path passed through `resolvePath` — on
+ * every track, also muted ones, so nothing in a document escapes the check.
+ * @param {{ tracks: any[] }} edl - A normalised document
+ * @param {ResolvePath} resolvePath
+ * @returns {any}
+ */
+export function mapMediaPaths(edl, resolvePath) {
+  const mapClip = (clip, at) => {
+    const schema = generatorModule(clip.generator?.type)?.params;
+    const params = mapParams(schema, clip.generator?.params, resolvePath, `${at}.generator.params`);
+    return {
+      ...clip,
+      sourceFile: clip.sourceFile ? resolvePath(clip.sourceFile, `${at}.sourceFile`) : '',
+      ...(clip.generator && { generator: { ...clip.generator, params } }),
+      effects: mapEffects(clip.effects, resolvePath, `${at}.effects`),
+    };
+  };
+  const tracks = edl.tracks.map((track, t) => ({
+    ...track,
+    effects: mapEffects(track.effects, resolvePath, `tracks[${t}].effects`),
+    clips: (track.clips || []).map((clip, c) => mapClip(clip, `tracks[${t}].clips[${c}]`)),
+  }));
+  return { ...edl, tracks };
+}
+
+/**
+ * The stills and sprites the visible tracks of a document draw.
+ * @param {{ tracks?: any[] }} edl
+ * @returns {string[]} Unique paths
+ */
+export function renderImages(edl) {
+  return requirements({ tracks: activeTracks(edl.tracks || [], 'video') }).images;
+}

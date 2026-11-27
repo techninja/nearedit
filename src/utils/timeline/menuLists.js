@@ -17,6 +17,9 @@ export const CLIP_MENU = [
   '-',
   ...['clip.group', 'clip.removeFromGroup', 'clip.ungroup', 'clip.link', 'clip.unlink'],
   '-',
+  ...['clip.showEffects', 'clip.bypassEffects', 'edit.pasteAttributes'],
+  ...['keyframe.add', 'keyframe.remove', 'keyframe.clear'],
+  '-',
   ...['ripple.postTracks', 'ripple.postMarks', 'ripple.postAll'],
 ];
 
@@ -25,7 +28,7 @@ export const LANE_MENU = [
   '-',
   ...['ripple.postTracks', 'ripple.postMarks', 'ripple.postAll'],
   '-',
-  ...['marker.add', 'region.add', 'title.add'],
+  ...['marker.add', 'region.add', 'title.add', 'generator.addLast'],
   '-',
   'select.all',
   'select.none',

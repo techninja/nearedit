@@ -16,6 +16,8 @@ const CLIPS = [
   ['Slide a clip between its neighbours', 'Ctrl + Alt + drag'],
   ['Fade in / out', 'Drag a top corner'],
   ['Choose a fade curve', 'Right-click the fade'],
+  ['Go to a keyframe / retime it', 'Click / drag its diamond on the clip'],
+  ['Add a generator, a text style or an effect', 'Drag it from the Create tab'],
   ['Select several', 'Ctrl / Shift + click, or drag a box'],
 ];
 

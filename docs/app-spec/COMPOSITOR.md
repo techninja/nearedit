@@ -306,10 +306,11 @@ re-encoding.
 - **Sound** is mixed by FFmpeg and follows `levels.js`: fade curves as the
   matching `afade` curves, a keyframed `volume` as a sampled envelope.
 
-Footage larger than it is shown is reduced by FFmpeg before it reaches the
-canvas (the preview reduces it on the canvas), and where a title appears
-over a running shot the footage changes renderer for that stretch; both are
-described under [Limits](./RENDER.md#limits-and-what-is-not-honoured).
+Footage and stills larger than they are shown are reduced by FFmpeg before
+they reach the canvas (the preview reduces them on the canvas), and where a
+title appears over a running shot the footage changes renderer for that
+stretch; both are described under
+[Limits](./RENDER.md#limits-and-what-is-not-honoured).
 
 ## Authoring without the UI
 

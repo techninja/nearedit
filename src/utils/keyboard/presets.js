@@ -8,6 +8,7 @@
 
 import { VEGAS_TRANSPORT_KEYS } from './vegasKeys.js';
 import { VEGAS_EDIT_KEYS } from './vegasKeysEdit.js';
+import { VEGAS_FX_KEYS } from './vegasKeysFx.js';
 
 /** @typedef {'nearedit'|'vegas'} PresetId */
 
@@ -22,7 +23,7 @@ export const PRESETS = [
 ];
 
 /** @type {Record<string, string[]>} The Vegas preset: command id → shortcuts */
-export const VEGAS_KEYS = { ...VEGAS_TRANSPORT_KEYS, ...VEGAS_EDIT_KEYS };
+export const VEGAS_KEYS = { ...VEGAS_TRANSPORT_KEYS, ...VEGAS_EDIT_KEYS, ...VEGAS_FX_KEYS };
 
 /**
  * @param {unknown} id

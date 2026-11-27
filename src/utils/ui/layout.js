@@ -95,7 +95,7 @@ export function layoutVars(layout) {
 export const isNarrow = (viewportWidth) => viewportWidth < NARROW_BELOW;
 
 /** Ids of the dock's tabs, in order. */
-export const DOCK_TABS = ['media', 'inspector', 'transcript', 'director'];
+export const DOCK_TABS = ['media', 'create', 'inspector', 'transcript', 'director'];
 
 /**
  * The dock tab to show for a stored value.

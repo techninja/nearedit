@@ -102,12 +102,37 @@ export function drawMarquee(scene) {
 }
 
 /**
+ * The clip an effect dragged from the Create tab would land on: outlined
+ * and washed with the accent colour.
+ * @param {Scene} scene
+ * @param {string} clipId
+ */
+function drawDropClip(scene, clipId) {
+  const { ctx, vp, lanes, doc, palette } = scene;
+  for (const lane of lanes) {
+    const clip = doc.tracks[lane.index].clips.find((candidate) => candidate.clipId === clipId);
+    if (!clip) continue;
+    const x = timeToX(vp, clip.timelineStart);
+    const width = timeToX(vp, clip.timelineEnd) - x;
+    const y = laneY(lane, vp.scrollY) + 2;
+    ctx.fillStyle = palette.primary;
+    ctx.globalAlpha = 0.3;
+    ctx.fillRect(x, y, width, lane.height - 4);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = palette.primary;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1, y + 1, Math.max(0, width - 2), lane.height - 6);
+  }
+}
+
+/**
  * Where a media item dragged from the bin would land: its lane lights up
  * and a bar marks the insert time.
  * @param {Scene} scene
  */
 export function drawDropTarget(scene) {
   const { ctx, vp, lanes, overlay, palette } = scene;
+  if (overlay.dropClipId) drawDropClip(scene, overlay.dropClipId);
   if (!overlay.drop) return;
   const x = Math.round(timeToX(vp, overlay.drop.time));
   const lane = lanes.find((candidate) => candidate.trackId === overlay.drop.trackId);

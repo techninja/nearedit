@@ -1,0 +1,143 @@
+import { fixture, expect, waitUntil } from '@open-wc/testing';
+import { store } from 'hybrids';
+import ViewState from '#store/ViewState.js';
+import { GENERATORS } from '#utils/compose/catalog.js';
+import { CREATE_DRAG_TYPE } from '#utils/create/dragTypes.js';
+import { createClip, createEdl, createTrack } from '#utils/edl/factory.js';
+import { findClip } from '#utils/edl/query.js';
+import { getDoc, loadDoc, undo } from '#utils/editor/session.js';
+import { loadStyles } from '#utils/media/testing/fakeServer.js';
+import './create-panel.js';
+
+const document = () =>
+  createEdl({
+    tracks: [
+      createTrack('video', { trackId: 'v1', name: 'Video 1' }),
+      createTrack('video', {
+        trackId: 'v2',
+        name: 'Video 2',
+        clips: [createClip({ clipId: 'talk', sourceFile: '/m/talk.mp4', timelineEnd: 10 })],
+      }),
+      createTrack('audio', { trackId: 'a1' }),
+    ],
+  });
+const selection = () => [...store.get(ViewState).selection];
+const steps = () => {
+  let n = 0;
+  while (undo()) n++;
+  return n;
+};
+
+async function mount() {
+  loadDoc(document());
+  await store.set(ViewState, { selection: [], cursorPosition: 2, playheadPosition: 2 });
+  const stage = await fixture(
+    '<div style="display:flex;width:380px;height:600px"><create-panel></create-panel></div>',
+  );
+  const el = stage.querySelector('create-panel');
+  await waitUntil(() => el.querySelector('.create-panel-tile'));
+  const section = async (id) => {
+    el.querySelector(`[data-section="${id}"]`).click();
+    await waitUntil(
+      () => el.querySelector(`[data-section="${id}"]`).getAttribute('aria-pressed') === 'true',
+    );
+  };
+  return { el, section, status: () => el.querySelector('.create-panel-status').textContent.trim() };
+}
+
+describe('create-panel', () => {
+  before(() =>
+    loadStyles([
+      'styles/tokens.css',
+      'styles/editor.css',
+      'styles/fields.css',
+      'styles/components-panels.css',
+      'styles/components-create.css',
+    ]),
+  );
+
+  it('offers a tile with a live thumbnail for every generator of the catalog', async () => {
+    const { el } = await mount();
+    for (const { type } of GENERATORS) {
+      const tile = el.querySelector(`.create-panel-tile[data-key="${type}"]`);
+      expect(tile, type).to.exist;
+      expect(tile.querySelector('create-thumb canvas'), `${type} thumbnail`).to.exist;
+    }
+    expect(el.querySelectorAll('.field-group-title').length).to.be.at.least(3);
+  });
+
+  it('adds a background behind the picture at the cursor and selects it', async () => {
+    const { el, status } = await mount();
+    el.querySelector('.create-panel-tile[data-key="gradient"]').click();
+    await waitUntil(() => selection().length === 1);
+    const { clip, track } = findClip(getDoc(), selection()[0]);
+    expect(clip.generator.type).to.equal('gradient');
+    expect([clip.timelineStart, clip.timelineEnd]).to.deep.equal([2, 7]);
+    expect(getDoc().tracks.indexOf(track), 'a new track under the footage').to.equal(2);
+    expect(status()).to.contain('Added Gradient');
+    expect(steps()).to.equal(1);
+  });
+
+  it('adds a shape in front, and a text style as an animated title', async () => {
+    const { el, section } = await mount();
+    el.querySelector('.create-panel-tile[data-key="shape"]').click();
+    await waitUntil(() => selection().length === 1);
+    expect(findClip(getDoc(), selection()[0]).track.trackId).to.equal('v1');
+    await section('text');
+    await waitUntil(() => el.querySelectorAll('.create-panel-tile[data-kind="text"]').length === 5);
+    el.querySelector('.create-panel-tile[data-key="lower-third"]').click();
+    await waitUntil(() => findClip(getDoc(), selection()[0])?.clip.text.content);
+    const { clip, trackIndex } = findClip(getDoc(), selection()[0]);
+    expect(clip.text.animateIn.type).to.equal('slide-right');
+    expect(trackIndex, 'on a new top track: the front one is taken').to.equal(0);
+    expect(getDoc().tracks.length).to.equal(4);
+  });
+
+  it('plays a thumbnail under the pointer and narrows the tiles by search', async () => {
+    const { el } = await mount();
+    const tile = el.querySelector('.create-panel-tile[data-key="noise"]');
+    tile.dispatchEvent(new PointerEvent('pointerenter'));
+    await waitUntil(() => tile.querySelector('create-thumb').playing === true);
+    tile.dispatchEvent(new PointerEvent('pointerleave'));
+    await waitUntil(() => tile.querySelector('create-thumb').playing === false);
+    const input = el.querySelector('.create-panel-search input');
+    input.value = 'gradi';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await waitUntil(() => el.querySelectorAll('.create-panel-tile').length === 1);
+    let leaked = 0;
+    const count = () => leaked++;
+    window.addEventListener('keydown', count);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 's', bubbles: true }));
+    window.removeEventListener('keydown', count);
+    expect(leaked, 'typing in the search box stays there').to.equal(0);
+  });
+
+  it('applies an effect to the selected clips, or asks for a selection', async () => {
+    const { el, section, status } = await mount();
+    await section('effects');
+    await waitUntil(() => el.querySelector('.effect-catalog-item[data-key="blur"]'));
+    expect(el.querySelector('.effect-catalog-hint').textContent).to.contain('Select a clip');
+    el.querySelector('.effect-catalog-item[data-key="blur"]').click();
+    await waitUntil(() => status().includes('Select a clip'));
+    expect(findClip(getDoc(), 'talk').clip.effects).to.deep.equal([]);
+    await store.set(ViewState, { selection: ['talk'] });
+    await waitUntil(
+      () => el.querySelector('.effect-catalog-hint').textContent.includes('talk') === false,
+    );
+    el.querySelector('.effect-catalog-item[data-key="blur"]').click();
+    await waitUntil(() => findClip(getDoc(), 'talk').clip.effects.length === 1);
+    expect(status()).to.contain('Blur added');
+    expect(steps()).to.equal(1);
+  });
+
+  it('lets a tile be dragged, carrying what it stands for', async () => {
+    const { el } = await mount();
+    const tile = el.querySelector('.create-panel-tile[data-key="shape"]');
+    expect(tile.getAttribute('draggable')).to.equal('true');
+    const dataTransfer = new DataTransfer();
+    tile.dispatchEvent(new DragEvent('dragstart', { dataTransfer, bubbles: true }));
+    const payload = JSON.parse(dataTransfer.getData(CREATE_DRAG_TYPE));
+    expect(payload).to.include({ kind: 'generator', type: 'shape', category: 'shape' });
+    tile.dispatchEvent(new DragEvent('dragend', { bubbles: true }));
+  });
+});

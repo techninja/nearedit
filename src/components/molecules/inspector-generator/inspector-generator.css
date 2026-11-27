@@ -1,0 +1,23 @@
+inspector-generator {
+  display: block;
+
+  & .inspector-generator-seed {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  & .inspector-generator-seed field-number {
+    padding-right: var(--space-xs);
+  }
+
+  & .inspector-generator-note {
+    padding: 0 var(--space-sm) var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & select.field-input {
+    padding-block: 0;
+  }
+}

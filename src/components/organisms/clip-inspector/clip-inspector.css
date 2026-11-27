@@ -70,6 +70,56 @@ clip-inspector .clip-inspector-group-heading .icon-btn {
   height: 1.25rem;
 }
 
+/* A group that opens and closes: its heading is the switch. */
+clip-inspector details.inspector-section > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding-right: var(--space-xs);
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+clip-inspector details.inspector-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+clip-inspector details.inspector-section > summary::before {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-right: 1.5px solid currentcolor;
+  border-bottom: 1.5px solid currentcolor;
+  content: '';
+  transform: rotate(-45deg);
+  transition: transform 0.12s ease;
+}
+
+clip-inspector details.inspector-section[open] > summary::before {
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+clip-inspector details.inspector-section > summary > span {
+  flex: 1;
+}
+
+clip-inspector details.inspector-section > summary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+clip-inspector details.inspector-section > summary .icon-btn {
+  min-width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* The keyframe strip stays in view under the scrolling groups. */
+clip-inspector .clip-inspector-strip {
+  flex: none;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+}
+
 /* Touch screens: finger-sized fields and buttons. */
 @media (pointer: coarse) {
   clip-inspector {

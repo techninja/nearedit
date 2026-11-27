@@ -1,1 +1,6 @@
-/* Component styles aggregator — generators, effects and keyframe UI. */
+/* Component styles aggregator — the Create tab and the preview overlay.
+   (The inspector's generator, effect and keyframe groups are in
+   components-panels.css.) */
+@import '../components/atoms/create-thumb/create-thumb.css';
+@import '../components/organisms/create-panel/create-panel.css';
+@import '../components/molecules/preview-overlay/preview-overlay.css';

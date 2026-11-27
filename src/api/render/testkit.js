@@ -14,6 +14,7 @@ import { buildRenderPlan } from './plan.js';
 import { prepareRender } from './prepare.js';
 
 export { createClip, createEdl, createTrack };
+export { draw, encode, mixdown } from './testRuns.js';
 
 const QUIET = ['-hide_banner', '-loglevel', 'error', '-y'];
 export const RATE = 48000;

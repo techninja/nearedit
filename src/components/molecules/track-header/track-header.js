@@ -11,6 +11,7 @@ import { liveDoc } from '#utils/editor/liveDoc.js';
 import { setView } from '#utils/editor/view.js';
 import { releasePointerFocus } from '#utils/keyboard/focus.js';
 import { renameTrackTo, toggleTrackFlag } from '#utils/timeline/trackActions.js';
+import { trackIsProcessed } from '#utils/timeline/clipMarks.js';
 import '#atoms/app-icon/app-icon.js';
 import '#atoms/track-volume/track-volume.js';
 
@@ -92,6 +93,13 @@ function toggle(flag, label, icon, pressed) {
   `;
 }
 
+/** Marks a track that is composited on its own: effects, opacity or a blend mode. */
+const FX_MARK = html`<span
+  class="track-header-fx"
+  title="This track has effects, an opacity or a blend mode: see the inspector"
+  >fx</span
+>`;
+
 /** @type {import('hybrids').Component<TrackHeaderHost>} */
 export default define({
   tag: 'track-header',
@@ -121,6 +129,7 @@ export default define({
             ${toggle('muted', audio ? 'Mute' : 'Hide', muteIcon, muted)}
             ${toggle('solo', 'Solo', 'solo', solo)}
             ${toggle('locked', 'Lock', locked ? 'lock' : 'unlock', locked)}
+            ${trackIsProcessed(track) ? FX_MARK : html``}
             <button
               type="button"
               class="icon-btn"

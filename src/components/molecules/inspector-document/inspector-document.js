@@ -21,6 +21,7 @@ const KIND_LABELS = {
   audio: 'audio',
   image: 'still',
   title: 'title',
+  generator: 'generator',
   placeholder: 'placeholder',
 };
 

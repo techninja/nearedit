@@ -6,6 +6,7 @@ import * as kit from './testkit.js';
 /**
  * Frame accuracy. The sources carry their frame number as a bright bar at
  * x = 4N, so a rendered frame says exactly which source frame it shows.
+ * Every case runs through both renderers: they must pick the same frames.
  */
 
 const { createClip, createEdl, createTrack } = kit;
@@ -13,7 +14,8 @@ const [W, H] = [256, 16];
 /** A third of an output frame: how early a source frame may count as "on screen". */
 const TOLERANCE = 0.01;
 
-describe('render: frame accuracy', () => {
+/** The same rule on both renderers: the filter graph and the canvas path. */
+const frameAccuracy = (engine) => () => {
   const tmp = kit.scratch();
   const file = (name) => join(tmp.dir, name);
   const numbered = (rate) =>
@@ -31,7 +33,8 @@ describe('render: frame accuracy', () => {
       fps: 30,
       tracks: [createTrack('video', { clips })],
     });
-    const { output } = await kit.render(edl, tmp.dir, { preset: 'high', ...options });
+    const run = engine === 'canvas' ? kit.draw : kit.render;
+    const { output } = await run(edl, tmp.dir, { preset: 'high', ...options });
     const frames = await kit.readFrames(output, W, H);
     return Array.from({ length: frames.count }, (_, n) => {
       let [best, at] = [0, -1];
@@ -112,4 +115,7 @@ describe('render: frame accuracy', () => {
       assert.deepEqual(part, whole.slice(from, Math.round(end * 30)), `range ${start}-${end}`);
     }
   });
-});
+};
+
+describe('render: frame accuracy (filter graph)', frameAccuracy('ffmpeg'));
+describe('render: frame accuracy (canvas path)', frameAccuracy('canvas'));

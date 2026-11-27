@@ -1,16 +1,18 @@
 /**
  * Hit-testing: what is under a point of the timeline canvas — the ruler
  * (loop band, a marker, a region), a lane, a clip and which part of that
- * clip (body, a trim edge, a fade handle). Pure: geometry in, description out.
+ * clip (body, a trim edge, a fade handle, a keyframe mark). Pure: geometry
+ * in, description out.
  * @module utils/timeline/hitTest
  */
 
+import { KEY_BAND, keyMarkAt } from './clipMarks.js';
 import { regionAt } from './hitRuler.js';
 import { CLIP_INSET, LOOP_BAND_H, RULER_H, laneAt, laneY } from './layout.js';
 import { timeToX, xToTime } from './viewport.js';
 import { clipsAtTime, edgeOverlaps } from './visible.js';
 
-/** @typedef {'body'|'trim-start'|'trim-end'|'fade-in'|'fade-out'} ClipPart */
+/** @typedef {'body'|'trim-start'|'trim-end'|'fade-in'|'fade-out'|'keyframe'} ClipPart */
 
 /**
  * @typedef {Object} Geometry
@@ -32,6 +34,7 @@ import { clipsAtTime, edgeOverlaps } from './visible.js';
  * @property {boolean} [locked] - Lane only: the track is locked
  * @property {string} [clipId] - Lane only: the clip under the point
  * @property {ClipPart} [part] - With `clipId`
+ * @property {number} [keyTime] - With part `keyframe`: timeline time of the keyframe mark
  */
 
 /**
@@ -123,6 +126,9 @@ export function hitTest(geo, x, y) {
     const fades = { fadeIn: clip.fadeIn * vp.pps, fadeOut: clip.fadeOut * vp.pps };
     const overlaps = edgeOverlaps(track.clips, index);
     const part = clipPartAt(x, fromTop, rect, fades, overlaps, geo.coarse);
+    const low = lane.height - 2 * CLIP_INSET - fromTop <= KEY_BAND;
+    const keyTime = low ? keyMarkAt(clip, time, vp.pps, hitSizes(geo.coarse).handle) : null;
+    if (keyTime !== null) return { ...hit, clipId: clip.clipId, part: 'keyframe', keyTime };
     if (!found || part !== 'body' || found.part === 'body') found = { clipId: clip.clipId, part };
   }
   return found ? { ...hit, ...found } : hit;

@@ -1,0 +1,140 @@
+/* Lies exactly over the canvas; everything inside is placed in percent of
+   the frame, so it follows the preview at any size. The lines are drawn
+   light with a dark edge to read on any picture. */
+preview-overlay {
+  --overlay-line: #fff;
+  --overlay-edge: rgb(0 0 0 / 55%);
+  --overlay-handle: 0.625rem;
+
+  position: absolute;
+  inset: 0;
+
+  & .preview-overlay {
+    position: absolute;
+    inset: 0;
+    touch-action: none;
+    user-select: none;
+  }
+
+  & .preview-overlay-box {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px solid var(--overlay-line);
+    outline: 1px solid var(--overlay-edge);
+    cursor: move;
+  }
+
+  & .preview-overlay-box:focus-visible {
+    border-color: var(--color-selection);
+    outline: 2px solid var(--color-selection);
+  }
+
+  & .preview-overlay-box[data-locked='true'] {
+    border-style: dashed;
+    cursor: not-allowed;
+  }
+
+  /* A small square with a finger-sized invisible margin around it. */
+  & .preview-overlay-handle {
+    position: absolute;
+    box-sizing: border-box;
+    width: var(--overlay-handle);
+    height: var(--overlay-handle);
+    margin: calc(var(--overlay-handle) / -2);
+    border: 1px solid var(--overlay-edge);
+    background: var(--overlay-line);
+  }
+
+  & .preview-overlay-handle::after {
+    position: absolute;
+    inset: -0.5rem;
+    content: '';
+  }
+
+  & .preview-overlay-handle[data-corner='nw'] {
+    top: 0;
+    left: 0;
+    cursor: nwse-resize;
+  }
+
+  & .preview-overlay-handle[data-corner='ne'] {
+    top: 0;
+    left: 100%;
+    cursor: nesw-resize;
+  }
+
+  & .preview-overlay-handle[data-corner='se'] {
+    top: 100%;
+    left: 100%;
+    cursor: nwse-resize;
+  }
+
+  & .preview-overlay-handle[data-corner='sw'] {
+    top: 100%;
+    left: 0;
+    cursor: nesw-resize;
+  }
+
+  /* The rotate handle: a dot on a stalk above the box. */
+  & .preview-overlay-rotate {
+    top: -1.5rem;
+    left: 50%;
+    border-radius: 50%;
+    cursor: grab;
+  }
+
+  & .preview-overlay-rotate::before {
+    position: absolute;
+    top: 100%;
+    left: calc(50% - 0.5px);
+    width: 1px;
+    height: calc(1.5rem - var(--overlay-handle) / 2);
+    background: var(--overlay-line);
+    content: '';
+    pointer-events: none;
+  }
+
+  & .preview-overlay-guide {
+    position: absolute;
+    background: var(--color-snap);
+    pointer-events: none;
+  }
+
+  & .preview-overlay-safe {
+    position: absolute;
+    border: 1px dashed rgb(255 255 255 / 70%);
+    outline: 1px dashed rgb(0 0 0 / 35%);
+    pointer-events: none;
+  }
+
+  & .preview-overlay-safe[data-area='title'] {
+    border-color: rgb(250 204 21 / 80%);
+  }
+
+  & .preview-overlay-safe-toggle {
+    position: absolute;
+    top: var(--space-xs);
+    right: var(--space-xs);
+    background: rgb(0 0 0 / 55%);
+    color: #fff;
+    opacity: 0.6;
+  }
+
+  & .preview-overlay-safe-toggle:hover,
+  & .preview-overlay-safe-toggle:focus-visible,
+  & .preview-overlay-safe-toggle[aria-pressed='true'] {
+    background: rgb(0 0 0 / 75%);
+    color: #fff;
+    opacity: 1;
+  }
+}
+
+@media (pointer: coarse) {
+  preview-overlay {
+    --overlay-handle: 0.875rem;
+  }
+
+  preview-overlay .preview-overlay-handle::after {
+    inset: -0.75rem;
+  }
+}

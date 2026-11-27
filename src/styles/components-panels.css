@@ -1,6 +1,9 @@
 /* Component styles aggregator — media bin, inspector, transcript. */
 @import '../components/atoms/field-number/field-number.css';
 @import '../components/atoms/field-color/field-color.css';
+@import '../components/atoms/field-font/field-font.css';
+@import '../components/atoms/field-image/field-image.css';
+@import '../components/atoms/keyframe-control/keyframe-control.css';
 @import '../components/molecules/media-row/media-row.css';
 @import '../components/molecules/media-toolbar/media-toolbar.css';
 @import '../components/molecules/media-footer/media-footer.css';
@@ -14,6 +17,15 @@
 @import '../components/molecules/inspector-transform/inspector-transform.css';
 @import '../components/molecules/inspector-motion/inspector-motion.css';
 @import '../components/molecules/inspector-text/inspector-text.css';
+@import '../components/molecules/inspector-text-style/inspector-text-style.css';
+@import '../components/molecules/inspector-text-motion/inspector-text-motion.css';
+@import '../components/molecules/inspector-crop/inspector-crop.css';
+@import '../components/molecules/inspector-generator/inspector-generator.css';
+@import '../components/molecules/inspector-track/inspector-track.css';
+@import '../components/molecules/effect-catalog/effect-catalog.css';
+@import '../components/molecules/effect-card/effect-card.css';
+@import '../components/molecules/inspector-effects/inspector-effects.css';
+@import '../components/molecules/keyframe-strip/keyframe-strip.css';
 @import '../components/molecules/inspector-document/inspector-document.css';
 @import '../components/organisms/clip-inspector/clip-inspector.css';
 @import '../components/molecules/transcript-find/transcript-find.css';

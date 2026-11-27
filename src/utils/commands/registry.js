@@ -9,6 +9,7 @@
 import { CLIP_COMMANDS } from './catalogClips.js';
 import { EDIT_COMMANDS } from './catalogEdit.js';
 import { EVENT_COMMANDS } from './catalogEvents.js';
+import { FX_EDIT_COMMANDS, FX_INSERT_COMMANDS, FX_NAVIGATE_COMMANDS } from './catalogFx.js';
 import { INSERT_COMMANDS } from './catalogInsert.js';
 import { NAVIGATE_COMMANDS } from './catalogNavigate.js';
 import { SELECTION_COMMANDS } from './catalogSelection.js';
@@ -32,11 +33,14 @@ import { VIEW_COMMANDS } from './catalogView.js';
 export const COMMANDS = [
   ...TRANSPORT_COMMANDS,
   ...NAVIGATE_COMMANDS,
+  ...FX_NAVIGATE_COMMANDS,
   ...EDIT_COMMANDS,
+  ...FX_EDIT_COMMANDS,
   ...CLIP_COMMANDS,
   ...EVENT_COMMANDS,
   ...SELECTION_COMMANDS,
   ...INSERT_COMMANDS,
+  ...FX_INSERT_COMMANDS,
   ...VIEW_COMMANDS,
 ];
 

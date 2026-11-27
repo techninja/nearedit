@@ -7,6 +7,7 @@
 import { parseResolution } from '#utils/edl/factory.js';
 import { RenderError } from './errors.js';
 import { outputSize } from './presets.js';
+import { documentNeeds } from './route.js';
 import { checkRenderable } from './scope.js';
 import { describeSource } from './sources.js';
 import { snapTrack } from './timing.js';
@@ -17,20 +18,22 @@ import { snapTrack } from './timing.js';
  * @property {string} [preset] - Preset id (default "standard")
  * @property {{ start?: number, end?: number } | null} [range] - Seconds; omit for everything
  * @property {string} [outputPath]
- * @property {string} [workDir] - Directory for the graph script and title text.
- *   When given, the graph is passed as a script file instead of an argument
- * @property {Partial<import('./titleStyle.js').TextSupport> & { graphFlag?: string,
- *   limiterLatency?: boolean }} [capabilities] - What this FFmpeg can do (default: 6.1+)
+ * @property {string} [workDir] - Directory for the graph script. When given,
+ *   the graph is passed as a script file instead of an argument
+ * @property {{ graphFlag?: string, limiterLatency?: boolean }} [capabilities] - What
+ *   this FFmpeg can do (default: 6.1+)
  * @property {'av'|'video'} [streams] - "video" leaves the sound out (a segment of a long render)
  * @property {string} [graphName] - File name of the graph script inside workDir
+ * @property {import('./route.js').EngineChoice} [engine] - Overrides `RENDER_ENGINE`
+ * @property {boolean} [lossless] - Tests only: encode canvas segments without
+ *   loss (RGB), so decoded frames can be compared bit for bit
  */
 
 export const GLOBAL_ARGS = ['-hide_banner', '-nostdin', '-y', '-loglevel', 'error', '-nostats'];
 export const PROGRESS_ARGS = ['-progress', 'pipe:2', '-stats_period', '0.5'];
-const MODERN = { drawtext: true, textAlign: true, fontconfig: true, limiterLatency: true };
 
 /**
- * @param {{ fps?: number, resolution?: string, tracks?: any[] }} edl
+ * @param {{ fps?: number, resolution?: string, tracks?: any[], background?: string }} edl
  * @param {PlanOptions} [options]
  * @returns {import('./videoGraph.js').GraphContext & { tracks: any[],
  *   graphArgs: (filterComplex: string) => string[] }}
@@ -40,13 +43,14 @@ const MODERN = { drawtext: true, textAlign: true, fontconfig: true, limiterLaten
 export function createContext(edl, options = {}) {
   const { preset, timing } = checkRenderable(edl, options);
   const frame = parseResolution(edl.resolution);
-  const { graphFlag, limiterLatency, ...text } = { ...MODERN, ...options.capabilities };
+  const { graphFlag, limiterLatency = true } = options.capabilities || {};
   const workDir = options.workDir || '';
   const sources = new Map();
   const files = [];
   return {
-    ...{ timing, frame, preset, text, workDir, files, limiterLatency },
+    ...{ timing, frame, preset, workDir, files, limiterLatency },
     out: outputSize(frame, preset),
+    needs: documentNeeds(edl),
     tracks: (edl.tracks || []).map((track) => snapTrack(track, timing)),
     inputs: [],
     warnings: [],

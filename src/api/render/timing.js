@@ -77,8 +77,10 @@ export function createTiming(edl, range) {
 /**
  * Copy of a track whose clips sit exactly on frame boundaries, sorted by
  * start, with unrenderable clips (placeholders, zero length) removed. The
- * source offset moves with the snapped start so the picture stays in sync,
- * and fades are clamped to the clip (EDL invariant 3).
+ * source window moves with the snapped start so the picture — and every
+ * keyframe, which is timed in source seconds — stays in sync, and fades are
+ * clamped to the clip (EDL invariant 3). Only a file has a start: the
+ * window of a generator, title or still may begin before 0.
  * @param {{ type?: string, clips?: any[] }} track
  * @param {Timing} timing
  * @returns {any}
@@ -86,18 +88,21 @@ export function createTiming(edl, range) {
 export function snapTrack(track, timing) {
   const clips = [];
   for (const clip of track.clips || []) {
-    if (!clip || clipKind(clip, track) === 'placeholder') continue;
+    const kind = clip ? clipKind(clip, track) : 'placeholder';
+    if (kind === 'placeholder') continue;
     const startFrame = Math.max(0, Math.round(clip.timelineStart * timing.fps));
     const endFrame = Math.round(clip.timelineEnd * timing.fps);
     if (!(endFrame > startFrame)) continue;
     const timelineStart = startFrame / timing.fps;
     const length = (endFrame - startFrame) / timing.fps;
     const fadeIn = clamp(Number(clip.fadeIn) || 0, 0, length);
+    const moved = (Number(clip.sourceIn) || 0) + timelineStart - clip.timelineStart;
+    const sourceIn = kind === 'video' || kind === 'audio' ? Math.max(0, moved) : moved;
     clips.push({
       ...clip,
-      ...{ startFrame, endFrame, timelineStart, fadeIn },
+      ...{ startFrame, endFrame, timelineStart, fadeIn, sourceIn },
       timelineEnd: endFrame / timing.fps,
-      sourceIn: Math.max(0, (Number(clip.sourceIn) || 0) + timelineStart - clip.timelineStart),
+      sourceOut: sourceIn + length,
       fadeOut: clamp(Number(clip.fadeOut) || 0, 0, length - fadeIn),
     });
   }

@@ -1,6 +1,7 @@
 /**
- * Render routes — thin: validation in render/request.js, the graph in
- * render/plan.js, the job in render/job.js. Contract: docs/app-spec/API.md.
+ * Render routes — thin: validation in render/request.js, planning in
+ * render/segments.js and render/passes.js, the job in render/job.js.
+ * Contract: docs/app-spec/API.md.
  * @module api/render
  */
 
@@ -8,10 +9,11 @@ import { Router } from 'express';
 import { runJob } from './lib/jobRunner.js';
 import { RenderError } from './render/errors.js';
 import { runRender } from './render/job.js';
-import { buildRenderPlan, checkRenderable } from './render/plan.js';
+import { lastPass } from './render/passes.js';
 import { listPresets } from './render/presets.js';
 import { prepareRender } from './render/prepare.js';
 import { parseRenderRequest } from './render/request.js';
+import { engineChoice } from './render/route.js';
 import { renderSegments } from './render/segments.js';
 import {
   deleteRender,
@@ -43,7 +45,8 @@ renderRouter.get('/render/presets', (_req, res) => {
 renderRouter.post('/render', (req, res) => {
   try {
     const request = parseRenderRequest(req.body);
-    checkRenderable(request.edl, request);
+    // Planning the segments also refuses what the chosen renderer cannot draw.
+    renderSegments(request.edl, request);
     const { projectId, adaptationId, preset, range, filename } = request;
     const job = runJob(
       'render',
@@ -57,28 +60,26 @@ renderRouter.post('/render', (req, res) => {
   }
 });
 
-/** POST /api/render/plan — the FFmpeg arguments and graph, without running */
+/**
+ * POST /api/render/plan — what a render would run, without running it: the
+ * segments with the renderer each takes, and the arguments of the last pass
+ */
 renderRouter.post('/render/plan', async (req, res) => {
   try {
     const request = parseRenderRequest(req.body);
-    checkRenderable(request.edl, request);
-    const { probes, capabilities } = await prepareRender(request.edl);
     const { preset, range } = request;
-    const plan = buildRenderPlan(request.edl, { probes, capabilities, preset, range });
-    const { args, filterComplex, duration, inputs, files, warnings, width, height, fps } = plan;
-    // A long timeline really runs as several such plans, one per segment.
     const segments = renderSegments(request.edl, { preset, range });
+    const { probes, capabilities } = await prepareRender(request.edl);
+    const plan = lastPass(request.edl, { probes, capabilities, preset, range }, segments);
+    const { args, filterComplex, duration, inputs, warnings, width, height, fps } = plan;
+    // An envelope's control track is binary: say how big it is instead.
+    const files = plan.files.map(({ path, content }) => ({
+      path,
+      content: typeof content === 'string' ? content : `<${content.length} bytes>`,
+    }));
     res.json({
-      args,
-      filterComplex,
-      duration,
-      inputs,
-      files,
-      warnings,
-      width,
-      height,
-      fps,
-      segments,
+      ...{ args, filterComplex, duration, inputs, files, warnings, width, height, fps },
+      ...{ segments, engine: engineChoice() },
     });
   } catch (err) {
     fail(res, err);

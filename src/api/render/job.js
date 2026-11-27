@@ -1,8 +1,8 @@
 /**
- * The render job: probe sources → build the plan → run FFmpeg → move the
- * finished file into the renders directory with its record. Everything
- * temporary (graph script, title text, the partial output) lives in one
- * work directory that is removed on success, failure and cancellation.
+ * The render job: probe sources → render the passes → move the finished
+ * file into the renders directory with its record. Everything temporary
+ * (graph scripts, envelope tracks, segments, the partial output) lives in
+ * one work directory that is removed on success, failure and cancellation.
  * @module api/render/job
  */
 

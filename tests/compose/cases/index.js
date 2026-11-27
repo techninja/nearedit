@@ -5,8 +5,10 @@
  * @module tests/compose/cases
  */
 
+import { effectDocs } from './effects.js';
 import { generatorDocs } from './generators.js';
 import { motionDocs } from './motion.js';
+import { particleCases } from './particles.js';
 import { pipelineDocs } from './pipeline.js';
 import { emojiDoc, textDocs } from './text.js';
 
@@ -41,8 +43,10 @@ export function referenceCases(files) {
   return [
     ...still(generatorDocs(), false),
     ...still(pipelineDocs(files), false),
+    ...still(effectDocs(files), false),
     ...still(textDocs(), true),
     ...moving,
+    ...particleCases(files),
   ];
 }
 

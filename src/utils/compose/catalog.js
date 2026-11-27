@@ -12,6 +12,7 @@
 import { EASINGS } from '#utils/edl/easing.js';
 import { BLEND_MODES } from './blend.js';
 import effects from './effects/index.js';
+import { EFFECT_PRESETS } from './effects/presets.js';
 import { FONT_FAMILIES } from './fonts.js';
 import generators from './generators/index.js';
 import { TEXT_ANIMATIONS, TEXT_UNITS } from './text/animation.js';
@@ -107,6 +108,12 @@ export const EFFECTS = effects.map((module) => ({
   kind: module.filter ? 'filter' : 'apply',
 }));
 
+/**
+ * Effect presets: ready-made stacks, `{ name, label, description, effects:
+ * [{ type, params }] }`, added to a clip or a track in order.
+ */
+export { EFFECT_PRESETS };
+
 export { BLEND_MODES, EASINGS, FONT_FAMILIES, TEXT_ANIMATIONS, TEXT_UNITS };
 
 /**
@@ -117,6 +124,7 @@ export function catalog() {
   return {
     generators: GENERATORS,
     effects: EFFECTS,
+    effectPresets: EFFECT_PRESETS,
     blendModes: BLEND_MODES.map(({ id, label }) => ({ id, label })),
     easings: EASINGS,
     textAnimations: TEXT_ANIMATIONS,

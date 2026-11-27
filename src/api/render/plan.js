@@ -1,7 +1,8 @@
 /**
- * The render plan: EDL → FFmpeg arguments and filter graph. No I/O happens
- * here — sources are described by the probes passed in and files the graph
- * needs (title text, the graph script) are returned for the caller to write.
+ * The filter-graph render plan: EDL → FFmpeg arguments and filter graph. No
+ * I/O happens here — sources are described by the probes passed in and files
+ * the graph needs (the graph script, envelope tracks) are returned for the
+ * caller to write. What the graph cannot draw goes to `canvas/plan.js`.
  * @module api/render/plan
  */
 
@@ -19,7 +20,7 @@ export { checkRenderable, renderableClips, renderSources } from './scope.js';
  * @property {string} filterComplex
  * @property {number} duration - Seconds of output
  * @property {{ index: number, file: string, kind: string, clipId: string, args: string[] }[]} inputs
- * @property {{ path: string, content: string }[]} files - To write before running
+ * @property {{ path: string, content: string|Buffer }[]} files - To write before running
  * @property {string[]} warnings - Things the render could not honour
  * @property {number} width
  * @property {number} height

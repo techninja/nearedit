@@ -17,6 +17,7 @@ const TOKENS = {
   audio: '--color-clip-audio',
   image: '--color-clip-image',
   title: '--color-clip-title',
+  generator: '--color-clip-generator',
   placeholder: '--color-clip-placeholder',
   clipText: '--color-clip-text',
   playhead: '--color-playhead',

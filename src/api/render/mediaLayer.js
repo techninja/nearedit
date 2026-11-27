@@ -6,7 +6,7 @@
 
 import { clipKind } from '#utils/edl/factory.js';
 import { videoFadeOutWindow } from '#utils/edl/levels.js';
-import { num } from './expr.js';
+import { openInput } from './conform.js';
 import { clipGeometry } from './placement.js';
 import { clipWindow } from './timing.js';
 
@@ -25,36 +25,6 @@ export function layerFades(track, clip) {
     fadeIn: clip.fadeIn,
     fadeOut: out && { start: out.start - clip.timelineStart, duration: out.end - out.start },
   };
-}
-
-/**
- * Seconds of video decoded ahead of a clip's first frame, so the frame that
- * is on screen at that moment (it may have started earlier) is available.
- * @param {number} fps - Output frame rate
- * @returns {number}
- */
-const preRoll = (fps) => Math.max(3 / fps, 0.1);
-
-/**
- * Input options for a file. Videos are seeked and bounded so only the used
- * part is decoded; images are read once.
- * @param {string} file
- * @param {boolean} still
- * @param {{ seek: number, count: number }} window
- * @param {number} fps
- * @returns {{ args: string[], lead: number }} `lead` is how long before the
- *   clip's first frame the input starts
- */
-function openInput(file, still, window, fps) {
-  if (!still) {
-    const from = Math.max(0, window.seek - preRoll(fps));
-    const lead = window.seek - from;
-    const read = ['-ss', num(from), '-t', num(window.count / fps + lead + 0.001, 4)];
-    return { args: [...read, '-an', '-sn', '-dn', '-i', file], lead };
-  }
-  // A literal % or glob character would otherwise be read as a sequence pattern.
-  const literal = /[%*?[\]{}]/.test(file) ? ['-f', 'image2', '-pattern_type', 'none'] : [];
-  return { args: [...literal, '-i', file], lead: 0 };
 }
 
 /**

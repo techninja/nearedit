@@ -2,7 +2,8 @@
  * Video preview — the program monitor. Shows the timeline's picture at the
  * adaptation's aspect ratio: the transport feeds it frames while playing,
  * and while paused it follows the playhead and the document (scrub). The
- * picture is always drawn from the edit session's current document.
+ * picture is always drawn from the edit session's current document. Over
+ * the picture lies the overlay for direct manipulation (`<preview-overlay>`).
  * @module components/organisms/video-preview
  */
 
@@ -14,6 +15,7 @@ import { createPreviewSurface } from '#utils/playback/previewSurface.js';
 import { formatTimecode } from '#utils/playback/timecode.js';
 import { isPlaying, onFrame, shutdown } from '#utils/playback/transport.js';
 import { warmAudio } from '#utils/playback/warmup.js';
+import '#molecules/preview-overlay/preview-overlay.js';
 
 /**
  * @typedef {Object} VideoPreviewHost
@@ -31,6 +33,28 @@ const surfaces = new WeakMap();
  * @returns {import('#utils/playback/previewSurface.js').PreviewSurface|undefined}
  */
 export const previewSurface = (host) => surfaces.get(host);
+
+/** @type {WeakMap<HTMLElement, { footage: (clip: any) => { width: number, height: number }|null }>} */
+const sizers = new WeakMap();
+
+/**
+ * What the overlay needs from the players: the size of the frame a video
+ * clip is showing. One object per preview, so the overlay is not handed a
+ * new one on every render.
+ * @param {HTMLElement} host
+ * @returns {{ footage: (clip: any) => { width: number, height: number }|null }}
+ */
+function sizesOf(host) {
+  if (!sizers.has(host)) {
+    const footage = (/** @type {any} */ clip) => {
+      const slots = surfaces.get(host)?.compositor.stats().slots || [];
+      const video = slots.find((slot) => slot.clipId === clip.clipId)?.el;
+      return video?.videoWidth > 0 ? { width: video.videoWidth, height: video.videoHeight } : null;
+    };
+    sizers.set(host, { footage });
+  }
+  return sizers.get(host);
+}
 
 /**
  * After every render — so after every change of the document or the view:
@@ -74,12 +98,13 @@ export default define({
   timeline: store(TimelineState),
   view: store(ViewState),
   render: {
-    value: ({ timeline, view }) => html`
+    value: (host) => html`
       <div class="video-preview">
         <div class="preview-frame">
           <canvas role="img" aria-label="Program preview"></canvas>
+          <preview-overlay sizes="${sizesOf(host)}"></preview-overlay>
           <span class="preview-timecode" aria-hidden="true"
-            >${formatTimecode(view.playheadPosition, timeline.fps)}</span
+            >${formatTimecode(host.view.playheadPosition, host.timeline.fps)}</span
           >
         </div>
       </div>

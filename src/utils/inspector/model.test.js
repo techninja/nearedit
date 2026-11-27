@@ -74,6 +74,7 @@ describe('inspectorModel', () => {
       volume: true,
       transform: 'full',
       text: false,
+      generator: false,
       placeholder: false,
     });
     assert.deepEqual(model.fields.volume, { value: 1, mixed: false, count: 1 });
@@ -107,11 +108,12 @@ describe('inspectorModel', () => {
 
   it('shows text for titles, basics only for their transform, and notes for placeholders', () => {
     const t = inspectorModel(edl, ['t']);
-    assert.deepEqual(t.show, { volume: false, transform: 'basic', text: true, placeholder: false });
+    const none = { volume: false, generator: false, placeholder: false };
+    assert.deepEqual(t.show, { ...none, transform: 'basic', text: true });
     assert.equal(t.heading, 'Hello');
     assert.equal(t.timing.timed, false);
     const p = inspectorModel(edl, ['p']);
-    assert.deepEqual(p.show, { volume: false, transform: '', text: false, placeholder: true });
+    assert.deepEqual(p.show, { ...none, transform: '', text: false, placeholder: true });
     assert.equal(p.heading, 'B-roll here');
   });
 

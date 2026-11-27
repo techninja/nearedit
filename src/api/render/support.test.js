@@ -2,12 +2,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseCapabilities } from './capabilities.js';
 import { RenderError } from './errors.js';
-import { pickFontFiles } from './fonts.js';
 import { getPreset, listPresets, outputSize } from './presets.js';
 import { createProgressReader } from './progress.js';
 import { describeSource, parseSar, sourceMatrix } from './sources.js';
 import { isRenderName, sanitizeFilename } from './store.js';
-import { drawtextFilter, fontOption, titleText } from './titleStyle.js';
 
 describe('render: sources and capabilities', () => {
   it('describes sources by what the viewer sees', () => {
@@ -38,109 +36,30 @@ describe('render: sources and capabilities', () => {
   });
 
   it('reads FFmpeg capabilities from its own output', () => {
-    const drawtext = 'Filter drawtext\n   text_align  <flags>\n   y_align <int>';
     const encoder = 'Encoder libx264 [libx264 H.264]';
     const limiter = 'Filter alimiter\n   latency  <boolean>';
     const six = parseCapabilities({
       version: 'ffmpeg version 6.1.1-3ubuntu5\nconfiguration: --enable-libfontconfig',
-      drawtext,
       encoder,
       limiter,
     });
     assert.deepEqual(six, {
       version: '6.1.1',
       libx264: true,
-      drawtext: true,
-      textAlign: true,
-      fontconfig: true,
       limiterLatency: true,
       graphFlag: '-filter_complex_script',
     });
     const seven = parseCapabilities({
       version: 'ffmpeg version n7.1 Copyright',
-      drawtext: 'Filter drawtext\n  fontfile',
       encoder: "Codec 'libx264' is not recognized",
     });
     assert.deepEqual(
-      [seven.version, seven.graphFlag, seven.textAlign, seven.fontconfig, seven.libx264],
-      ['7.1', '-/filter_complex', false, false, false],
+      [seven.version, seven.graphFlag, seven.libx264],
+      ['7.1', '-/filter_complex', false],
     );
     assert.equal(seven.limiterLatency, false, 'an old alimiter has no latency option');
-    const git = parseCapabilities({
-      version: 'ffmpeg version N-118000-gabc',
-      drawtext: "Unknown filter 'drawtext'.",
-      encoder,
-    });
-    assert.deepEqual(
-      [git.version, git.graphFlag, git.drawtext, git.textAlign],
-      ['', '-/filter_complex', false, false],
-    );
-  });
-
-  it('picks font files per family and style', () => {
-    const picked = pickFontFiles([
-      '/f/dejavu/DejaVuSans.ttf',
-      '/f/dejavu/DejaVuSans-Bold.ttf',
-      '/f/dejavu/DejaVuSans-BoldOblique.ttf',
-      '/f/dejavu/DejaVuSansMono.ttf',
-      '/f/lib/LiberationSerif-Regular.ttf',
-      '/f/lib/LiberationSerif-Italic.ttf',
-      '/f/other/Fancy.otf',
-    ]);
-    assert.deepEqual(picked['sans-serif'], {
-      regular: '/f/dejavu/DejaVuSans.ttf',
-      bold: '/f/dejavu/DejaVuSans-Bold.ttf',
-      bolditalic: '/f/dejavu/DejaVuSans-BoldOblique.ttf',
-    });
-    assert.deepEqual(picked.serif, {
-      regular: '/f/lib/LiberationSerif-Regular.ttf',
-      italic: '/f/lib/LiberationSerif-Italic.ttf',
-    });
-    assert.equal(picked.monospace.regular, '/f/dejavu/DejaVuSansMono.ttf');
-    assert.deepEqual(
-      pickFontFiles(['C:\\Windows\\Fonts\\arialbd.ttf']),
-      {},
-      'a family needs its regular face',
-    );
-    const support = { drawtext: true, textAlign: true, fontconfig: false, fontFiles: picked };
-    assert.equal(
-      fontOption({ fontFamily: 'sans-serif', bold: true }, support).fontfile,
-      '/f/dejavu/DejaVuSans-Bold.ttf',
-    );
-    assert.equal(
-      fontOption({ fontFamily: 'serif', bold: true }, support).fontfile,
-      '/f/lib/LiberationSerif-Regular.ttf',
-    );
-    assert.equal(fontOption({}, { ...support, fontFiles: {} }), null);
-    const named = { ...support, fontconfig: true };
-    assert.equal(
-      fontOption({ fontFamily: 'evil:x', italic: true }, named).fontfile,
-      'sans-serif\\\\:italic',
-    );
-  });
-
-  it('lays titles out like the preview: 1.2 line pitch, 0.25 box padding', () => {
-    const font = { fontfile: 'serif' };
-    const support = {
-      drawtext: true,
-      textAlign: true,
-      fontconfig: true,
-      fontMetrics: { serif: { lineBox: 1.16, pitch: 1.16 } },
-    };
-    const text = { content: 'a', fontSize: 100, background: '#000000', align: 'right' };
-    const drawn = drawtextFilter(text, { font, path: '/w/t0.txt', scale: 0.5, support });
-    assert.match(
-      drawn,
-      /fontsize=50:.*text_align=right:y_align=font:line_spacing=2:box=1:boxcolor=0x000000@1:boxborderw=14\|13$/,
-    );
-    const old = drawtextFilter(text, {
-      font,
-      path: '/w/t0.txt',
-      scale: 1,
-      support: { ...support, textAlign: false },
-    });
-    assert.ok(!/text_align|y_align|line_spacing/.test(old) && old.endsWith('boxborderw=25'));
-    assert.equal(titleText('a\r\nb\rc\u0000\u0007\td'), 'a\nb\nc\td');
+    const git = parseCapabilities({ version: 'ffmpeg version N-118000-gabc', encoder });
+    assert.deepEqual([git.version, git.graphFlag, git.libx264], ['', '-/filter_complex', true]);
   });
 });
 

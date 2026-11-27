@@ -1,0 +1,46 @@
+inspector-effects {
+  display: block;
+
+  & .clip-inspector-group-heading .icon-btn {
+    min-width: var(--control-h);
+    height: var(--control-h);
+  }
+
+  & .inspector-effects-add {
+    padding: 0 var(--space-sm);
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+
+  /* The effect list opens in place, as an inset of its own. */
+  & .inspector-effects-catalog {
+    max-height: 18rem;
+    margin: 0 var(--space-xs) var(--space-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    overflow-y: auto;
+  }
+
+  & .inspector-effects-stack {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Gaps between cards; the one a dragged card would drop into lights up. */
+  & .inspector-effects-gap {
+    height: var(--space-xs);
+    margin: 0 var(--space-xs);
+    border-radius: 2px;
+  }
+
+  & .inspector-effects-gap.active {
+    background: var(--color-primary);
+  }
+
+  & .inspector-effects-note {
+    padding: 0 var(--space-sm) var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+}

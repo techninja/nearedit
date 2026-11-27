@@ -1,6 +1,6 @@
 /**
- * Colour field — a colour well, the hex value as text and, for optional
- * colours, a "none" button. Reports changes as bubbling `field-change`
+ * Colour field — a colour well, the hex value as text (`#rrggbb`, or
+ * `#rrggbbaa` with transparency) and, for optional colours, a "none" button. Reports changes as bubbling `field-change`
  * events with `{ name, value, phase }`: `live` while the picker is being
  * dragged, `commit` for the final choice. An empty value means "none".
  * @module components/atoms/field-color
@@ -22,11 +22,12 @@ import '#atoms/app-icon/app-icon.js';
 
 /** @typedef {FieldColorHost & HTMLElement} Host */
 
-const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
+const HEX = /^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 /**
  * @param {string} text
- * @returns {string|null} `#rrggbb` in lower case, null when it is not a hex colour
+ * @returns {string|null} `#rrggbb` (or `#rrggbbaa` for a colour with
+ *   transparency) in lower case, null when it is not a hex colour
  */
 export function normalizeHex(text) {
   const match = HEX.exec(String(text ?? '').trim());
@@ -34,6 +35,13 @@ export function normalizeHex(text) {
   const digits = match[1].toLowerCase();
   return `#${digits.length === 3 ? [...digits].map((d) => d + d).join('') : digits}`;
 }
+
+/**
+ * The part of a colour a colour well can show.
+ * @param {string} value
+ * @returns {string|null} `#rrggbb`, without any transparency
+ */
+const opaque = (value) => normalizeHex(value)?.slice(0, 7) || null;
 
 /**
  * @param {Host} host
@@ -47,8 +55,10 @@ function emit(host, value, phase) {
 /** @param {Host} host @param {Event} event */
 function handleWell(host, event) {
   event.stopPropagation();
-  const value = /** @type {HTMLInputElement} */ (event.target).value;
-  emit(host, value, event.type === 'input' ? 'live' : 'commit');
+  const picked = /** @type {HTMLInputElement} */ (event.target).value;
+  // The well knows no transparency: what the colour had, it keeps.
+  const alpha = (normalizeHex(host.value) || '').slice(7);
+  emit(host, picked + alpha, event.type === 'input' ? 'live' : 'commit');
 }
 
 /** @param {Host} host @param {Event} event */
@@ -84,7 +94,7 @@ export default define({
           class="${{ 'field-color-well': true, 'field-color-none': !value && !mixed }}"
           type="color"
           aria-label="${label}"
-          value="${normalizeHex(value) || fallback}"
+          value="${opaque(value) || fallback}"
           disabled="${disabled}"
           oninput="${handleWell}"
           onchange="${handleWell}"

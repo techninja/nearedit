@@ -1,0 +1,17 @@
+/* The frame is black in every theme, like the preview; a picture narrower
+   than the tile (a vertical format) sits centred in it. */
+create-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-sm);
+  background: #000;
+  overflow: hidden;
+
+  & canvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}

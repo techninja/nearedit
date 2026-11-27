@@ -1,0 +1,82 @@
+effect-card {
+  display: block;
+
+  & .effect-card {
+    margin: 0 var(--space-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  & .effect-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    padding: 1px 2px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+  }
+
+  & .effect-card-grip {
+    cursor: grab;
+    touch-action: none;
+  }
+
+  & .effect-card-grip:active {
+    cursor: grabbing;
+  }
+
+  /* The name is the collapse switch and takes the room that is left. */
+  & .effect-card-title {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    min-width: 0;
+    height: var(--control-h);
+    padding: 0 var(--space-xs);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-align: left;
+  }
+
+  & .effect-card-title > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .effect-card-title:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+  }
+
+  & .effect-card-title app-icon {
+    color: var(--color-text-muted);
+  }
+
+  & .effect-card-body {
+    padding: var(--space-xs) 0;
+  }
+
+  & .effect-card-note {
+    padding: var(--space-xs) var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  /* Switched off: still there, visibly out of the picture. */
+  & .effect-card[data-enabled='false'] .effect-card-title > span {
+    color: var(--color-text-muted);
+    text-decoration: line-through;
+  }
+
+  & .effect-card[data-enabled='false'] .effect-card-body {
+    opacity: 0.55;
+  }
+}

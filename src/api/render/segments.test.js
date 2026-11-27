@@ -78,8 +78,8 @@ describe('planSegments', () => {
     assert.deepEqual(
       renderSegments(edl, { maxLayers: 10, range: { start: 1, end: 30 } }).slice(0, 2),
       [
-        { start: 1, end: 20, frames: 570 },
-        { start: 20, end: 30, frames: 300 },
+        { start: 1, end: 20, frames: 570, engine: 'ffmpeg', reasons: [] },
+        { start: 20, end: 30, frames: 300, engine: 'ffmpeg', reasons: [] },
       ],
     );
   });
@@ -175,7 +175,7 @@ describe('render: segmented encode', () => {
         createTrack('audio', { clips: [clip('moving.mp4', 0, 6)] }),
       ],
     });
-    const whole = await encode(edl, 'whole', { maxLayers: 99 });
+    const whole = await encode(edl, 'whole', { maxLayers: 99, chunkFrames: 999 });
     const split = await encode(edl, 'split', { maxLayers: 2, minFrames: 15 });
     assert.equal(whole.plan.segments, 1);
     assert.ok(split.plan.segments >= 3, `rendered in ${split.plan.segments} segments`);

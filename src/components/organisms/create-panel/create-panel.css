@@ -1,0 +1,119 @@
+/* Fills its parent, whether that is a flex item or a grid or block cell. */
+create-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+
+  & .create-panel {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Three equal segments across the panel. */
+  & .create-panel-sections {
+    display: flex;
+    flex: none;
+    margin: var(--space-sm) var(--space-sm) var(--space-xs);
+  }
+
+  & .create-panel-sections > button {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    min-width: 0;
+    height: var(--control-h);
+    font-size: var(--text-sm);
+  }
+
+  & .create-panel-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  & .create-panel-search app-icon {
+    position: absolute;
+    left: calc(var(--space-sm) + var(--space-xs));
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  & .create-panel-search input {
+    padding-left: 1.5rem;
+  }
+
+  & .create-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+    gap: var(--space-sm);
+    padding: 0 var(--space-sm) var(--space-xs);
+  }
+
+  /* Names line up along the bottom of a row of tiles. */
+  & .create-panel-tile {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2px;
+    min-width: 0;
+    padding: 3px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  & .create-panel-tile:hover {
+    border-color: var(--color-border);
+    background: var(--color-surface-2);
+  }
+
+  & .create-panel-tile:focus-visible {
+    border-color: var(--color-focus);
+    outline: 1px solid var(--color-focus);
+  }
+
+  & .create-panel-tile:active create-thumb {
+    opacity: 0.8;
+  }
+
+  & .create-panel-name {
+    padding: 0 2px;
+    overflow: hidden;
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .create-panel-status {
+    flex: none;
+    padding: var(--space-xs) var(--space-sm);
+    border-top: 1px solid var(--color-border);
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* With the Create tab the dock's strip holds five tabs: at the dock's
+   usual width their names only fit without the icons. */
+@container (width < 27rem) {
+  editor-view .editor-view-tabs app-icon {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  create-panel {
+    --control-h: 2.25rem;
+  }
+}

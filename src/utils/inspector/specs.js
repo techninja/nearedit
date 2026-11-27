@@ -11,6 +11,7 @@ const PERCENT = { min: 0, max: 1, step: 0.01, scale: 100, decimals: 0, unit: '%'
 const PIXELS = { step: 1, decimals: 0, unit: 'px' };
 const ZOOM = { min: 0.01, max: 20, step: 0.01, scale: 100, decimals: 0, unit: '%' };
 const SECONDS = { min: 0, step: 0.1, decimals: 2, unit: 's' };
+const STAGGER = { min: 0, max: 60, step: 0.01, decimals: 2, unit: 's' };
 
 /** @type {Record<string, NumberSpec>} */
 export const FIELD_SPECS = {
@@ -36,6 +37,21 @@ export const FIELD_SPECS = {
   'transform.kenBurns.endScale': ZOOM,
   'text.fontSize': { min: 1, max: 4000, step: 1, decimals: 0, unit: 'px' },
   'text.outlineWidth': { min: 0, max: 200, step: 1, decimals: 0, unit: 'px' },
+  'text.lineHeight': { min: 0.1, max: 10, step: 0.05, decimals: 2, unit: '×' },
+  'text.letterSpacing': { min: -1000, max: 1000, step: 1, decimals: 1, unit: 'px' },
+  'text.maxWidth': { min: 0, max: 100000, step: 10, decimals: 0, unit: 'px' },
+  'text.boxPadding': { min: 0, max: 10, step: 0.05, decimals: 2, unit: '×' },
+  'text.boxRadius': { ...PIXELS, min: 0, max: 10000 },
+  'text.shadowBlur': { ...PIXELS, min: 0, max: 1000 },
+  'text.shadowX': PIXELS,
+  'text.shadowY': PIXELS,
+  'text.animateIn.duration': { ...SECONDS, max: 600 },
+  'text.animateIn.stagger': STAGGER,
+  'text.animateOut.duration': { ...SECONDS, max: 600 },
+  'text.animateOut.stagger': STAGGER,
+  'generator.seed': { min: 0, max: 4294967295, step: 1, decimals: 0 },
+  'track.opacity': PERCENT,
+  'track.volume': { ...PERCENT, max: 2 },
 };
 
 /**
@@ -61,6 +77,15 @@ export const FIELD_NAMES = {
   'transform.kenBurns.endX': 'Ken Burns end X',
   'transform.kenBurns.endY': 'Ken Burns end Y',
   'transform.kenBurns.endScale': 'Ken Burns end scale',
+  'text.shadowBlur': 'Shadow blur',
+  'text.shadowX': 'Shadow offset X',
+  'text.shadowY': 'Shadow offset Y',
+  'text.boxPadding': 'Box padding',
+  'text.boxRadius': 'Box corner radius',
+  'text.animateIn.duration': 'Animate in: duration',
+  'text.animateIn.stagger': 'Animate in: stagger',
+  'text.animateOut.duration': 'Animate out: duration',
+  'text.animateOut.stagger': 'Animate out: stagger',
 };
 
 /**

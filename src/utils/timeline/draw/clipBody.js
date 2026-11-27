@@ -1,16 +1,25 @@
 /**
- * One clip: coloured body, content (filmstrip / waveform / hatching),
- * label, deliberate fade ramps, fade handles and the selection outline.
+ * One clip: coloured body, content (filmstrip / waveform / hatching / a
+ * generator's colours), label, the "fx" badge and keyframe marks,
+ * deliberate fade ramps, fade handles and the selection outline.
  * Detail drops away as the clip gets narrower, so a zoomed-out timeline of
  * a thousand slivers costs a thousand rectangles.
  * @module utils/timeline/draw/clipBody
  */
 
 import { clipKind } from '#utils/edl/factory.js';
+import { generatorLabel } from '#utils/timeline/clipMarks.js';
 import { hitSizes } from '#utils/timeline/hitTest.js';
 import { timeToX } from '#utils/timeline/viewport.js';
 import { edgeOverlaps } from '#utils/timeline/visible.js';
 import { drawFilmstrip, drawPlaceholder, drawWaveform } from './clipContent.js';
+import {
+  BADGE_W,
+  drawEffectBadge,
+  drawGeneratorSwatch,
+  drawKeyMarks,
+  showsBadge,
+} from './clipMarks.js';
 import { drawFadeHandle, drawFadeRamp } from './fades.js';
 import { boxPath, fitText } from './shapes.js';
 
@@ -32,6 +41,7 @@ const LABEL_MIN = 30;
 export function clipLabel(clip) {
   if (clip.label) return clip.label;
   if (clip.sourceFile) return clip.sourceFile.split(/[\\/]/).pop();
+  if (clip.generator?.type) return generatorLabel(clip.generator);
   return clip.text?.content?.split('\n')[0] || clip.prompt || clip.intent || 'Placeholder';
 }
 
@@ -80,20 +90,21 @@ export function drawClip(scene, track, index, lane) {
       });
     } else if (kind === 'audio') drawWaveform(scene, clip, box);
     else if (kind === 'placeholder') drawPlaceholder(scene, clip, box);
+    else if (kind === 'generator') drawGeneratorSwatch(scene, clip, box, y + LABEL_H + 1);
   }
   const overlaps = edgeOverlaps(track.clips, index);
   // The label starts after a cross-fade, where the outgoing clip still shows.
   const labelFrom = Math.max(x0 + overlaps.in * vp.pps, 0) + 5;
-  if (x1 - labelFrom >= LABEL_MIN) {
+  const badge = showsBadge(clip, { x0, x1, y, height });
+  const labelRoom = x1 - labelFrom - (badge ? BADGE_W : 0);
+  if (labelRoom >= LABEL_MIN) {
     ctx.font = `11px ${palette.sans}`;
     ctx.textBaseline = 'middle';
     ctx.fillStyle = palette.clipText;
-    ctx.fillText(
-      fitText(ctx, clipLabel(clip), x1 - labelFrom - 5),
-      labelFrom,
-      y + LABEL_H / 2 + 0.5,
-    );
+    ctx.fillText(fitText(ctx, clipLabel(clip), labelRoom - 5), labelFrom, y + LABEL_H / 2 + 0.5);
   }
+  if (badge) drawEffectBadge(scene, { x0, x1, y, height });
+  drawKeyMarks(scene, clip, { x0, x1, y, height });
   const { fadeInCurve, fadeOutCurve } = /** @type {any} */ (clip);
   const ramp = (edge, x, length, curve) =>
     drawFadeRamp(ctx, edge, x, y, height, length, palette, curve);

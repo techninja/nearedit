@@ -36,19 +36,22 @@ export function selectedClips(edl, selection) {
 /** @type {(ref: SelectedClip) => boolean} Has a picture that can be cropped and fitted */
 const isPicture = (ref) => ref.track.type === 'video' && ['video', 'image'].includes(ref.kind);
 /** @type {(ref: SelectedClip) => boolean} Anything drawn in the frame */
-const isVisual = (ref) => isPicture(ref) || ref.kind === 'title';
+export const isVisual = (ref) =>
+  isPicture(ref) || (ref.track.type === 'video' && ['title', 'generator'].includes(ref.kind));
 
 /**
  * The scope of a field: which kind of clip it means anything for.
  * @param {string} name - Field path
- * @returns {'all'|'audio'|'picture'|'visual'|'title'|'placeholder'}
+ * @returns {'all'|'audio'|'picture'|'visual'|'title'|'generator'|'placeholder'}
  */
 export function fieldScope(name) {
   if (name === 'volume') return 'audio';
   if (name.startsWith('text.')) return 'title';
+  if (name.startsWith('generator.')) return 'generator';
   if (name === 'prompt' || name === 'intent') return 'placeholder';
   if (/^transform\.(fit|crop|kenBurns)/.test(name)) return 'picture';
-  return name.startsWith('transform.') ? 'visual' : 'all';
+  const drawn = name.startsWith('transform.') || name.startsWith('effects.');
+  return drawn || name === 'blendMode' ? 'visual' : 'all';
 }
 
 /** @type {Record<string, (ref: SelectedClip) => boolean>} */
@@ -58,17 +61,22 @@ const IN_SCOPE = {
   picture: isPicture,
   visual: isVisual,
   title: (ref) => ref.kind === 'title',
+  generator: (ref) => ref.kind === 'generator',
   placeholder: (ref) => ref.kind === 'placeholder',
 };
 
 /**
- * The clips of a selection that a field applies to.
+ * The clips of a selection that a field applies to. A parameter of an
+ * effect (`effects.<effectId>.<param>`) applies to the clips that have it.
  * @param {SelectedClip[]} refs
  * @param {string} name - Field path
  * @returns {SelectedClip[]}
  */
 export function targetsOf(refs, name) {
-  return refs.filter(IN_SCOPE[fieldScope(name)]);
+  const scoped = refs.filter(IN_SCOPE[fieldScope(name)]);
+  if (!name.startsWith('effects.')) return scoped;
+  const effectId = name.split('.')[1];
+  return scoped.filter((ref) => (ref.clip.effects || []).some((fx) => fx.effectId === effectId));
 }
 
 /**
