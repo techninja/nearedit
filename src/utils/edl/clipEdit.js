@@ -4,18 +4,15 @@
  * @module utils/edl/clipEdit
  */
 
+import { patchClip } from './clipPatch.js';
 import { settle } from './crossfade.js';
 import { NO_OVERLAP, fitFades, neighbourOverlaps } from './fades.js';
-import { indexClips, isTimed, mapClips } from './immutable.js';
+import { changeClip, indexClips, isTimed, mapClips } from './immutable.js';
 import { repairLinks } from './links.js';
-import { mergeShape } from './sanitize.js';
 import { expandSelection } from './selection.js';
 import { EPS, clamp, finite, snap, sourceDurationOf } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
-
-/** Fields `updateClip` never writes: they belong to move/trim/slip/fade/link. */
-const STRUCTURAL = ['clipId', 'timelineStart', 'timelineEnd', 'sourceOut', 'fadeIn', 'fadeOut'];
 
 /**
  * Delete clips. Linked partners go with them; the fades of the neighbours
@@ -35,7 +32,9 @@ export function deleteClips(edl, clipIds, opts = {}) {
 /**
  * Slip: show a different part of the source without moving the clip.
  * A positive delta shows later material. The linked partner slips too so
- * picture and sound stay in sync. Images, titles and placeholders ignore it.
+ * picture and sound stay in sync. Video and audio stay inside their source;
+ * a generator, title, image or placeholder slips freely — what moves is its
+ * keyframes and generator motion, which live in source time.
  * @param {Edl} edl
  * @param {string} clipId
  * @param {number} delta - Seconds to add to sourceIn/sourceOut
@@ -45,11 +44,12 @@ export function deleteClips(edl, clipIds, opts = {}) {
 export function slipClip(edl, clipId, delta, opts = {}) {
   const index = indexClips(edl);
   const ids = expandSelection(edl, [clipId], { linked: opts.linked !== false, grouped: false });
-  const targets = ids.map((id) => index.get(id)).filter((ref) => isTimed(ref.clip, ref.track));
+  const targets = ids.map((id) => index.get(id));
   if (!targets.some((ref) => ref.clip.clipId === clipId)) return edl;
   let min = -Infinity;
   let max = Infinity;
-  for (const { clip } of targets) {
+  for (const { clip, track } of targets) {
+    if (!isTimed(clip, track)) continue;
     const known = sourceDurationOf(opts.sourceDurations, clip.sourceFile);
     min = Math.max(min, -clip.sourceIn);
     if (known !== undefined) max = Math.min(max, known - clip.sourceOut);
@@ -94,26 +94,20 @@ export function setClipFades(edl, clipId, fades) {
 
 /**
  * Deep-merge an inspector patch into a clip: label, colour, volume, prompt,
- * intent, `text.*`, `transform.*`, `transform.kenBurns.*`, `sourceFile`…
+ * intent, `text.*`, `transform.*`, `transform.kenBurns.*`, `sourceFile`,
+ * `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator.*`…
  * Values of the wrong type and unknown keys are ignored, numbers are
- * clamped to their range. Timing, fades, ids and links are not writable
- * here; `sourceIn` is (to choose what a replaced source shows) and the
- * source range is then re-derived from the clip's duration.
+ * clamped to their range. The free-form fields merge by their own rules:
+ * `generator.params` and `keyframes` key by key (`null` removes a key),
+ * `effects` as a whole list; keyframes that no longer address anything are
+ * dropped. Timing, fade lengths, ids and links are not writable here;
+ * `sourceIn` is (to choose what a replaced source shows) and the source
+ * range is then re-derived from the clip's duration.
  * @param {Edl} edl
  * @param {string} clipId
  * @param {Record<string, any>} patch
  * @returns {Edl}
  */
 export function updateClip(edl, clipId, patch) {
-  const ref = indexClips(edl).get(clipId);
-  if (!ref || ref.track.locked || !patch) return edl;
-  const safe = { ...patch, linkedClipId: undefined, groupId: undefined };
-  for (const key of STRUCTURAL) delete safe[key];
-  const merged = mergeShape(ref.clip, safe);
-  if (merged === ref.clip) return edl;
-  const sourceIn = Math.max(0, merged.sourceIn);
-  const sourceOut = sourceIn + (merged.timelineEnd - merged.timelineStart);
-  const resourced = sourceIn !== ref.clip.sourceIn || merged.sourceFile !== ref.clip.sourceFile;
-  const next = resourced ? { ...merged, sourceIn, sourceOut } : merged;
-  return mapClips(edl, (clip) => (clip === ref.clip ? /** @type {any} */ (next) : clip));
+  return changeClip(edl, clipId, (clip, track) => patchClip(clip, track, patch));
 }

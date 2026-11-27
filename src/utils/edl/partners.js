@@ -6,7 +6,6 @@
  */
 
 import { cutAround, intersects } from './clipMath.js';
-import { isTimed } from './immutable.js';
 import { pairPieces } from './links.js';
 import { load, noteCut, rootId } from './session.js';
 
@@ -33,7 +32,7 @@ export function spreadCuts(s, index) {
       const span = { timelineStart: from, timelineEnd: to };
       work.clips = work.clips.flatMap((clip) => {
         if (rootId(s, clip.clipId) !== cut.link || !intersects(clip, span)) return clip;
-        const pieces = cutAround(clip, from, to, isTimed(clip, track));
+        const pieces = cutAround(clip, from, to);
         noteCut(s, clip, pieces, [from, to]);
         return pieces;
       });

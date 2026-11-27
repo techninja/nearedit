@@ -28,7 +28,7 @@ describe('normalizeEdl — garbage in, valid document out', () => {
 
   it('repairs head fields', () => {
     const edl = normalizeEdl({ version: 1, fps: -5, resolution: 'huge', markers: 'none' });
-    assert.deepEqual([edl.version, edl.fps, edl.resolution, edl.markers], [2, 30, '1920x1080', []]);
+    assert.deepEqual([edl.version, edl.fps, edl.resolution, edl.markers], [3, 30, '1920x1080', []]);
     assert.equal(normalizeEdl({ fps: '25' }).fps, 25);
   });
 

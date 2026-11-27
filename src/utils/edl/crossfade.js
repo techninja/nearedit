@@ -20,14 +20,7 @@
 
 import { reuseClip } from './clipMath.js';
 import { settleFades } from './fades.js';
-import {
-  compareClips,
-  indexClips,
-  isTimed,
-  sameItems,
-  sortClips,
-  withTracks,
-} from './immutable.js';
+import { compareClips, indexClips, sameItems, sortClips, withTracks } from './immutable.js';
 import { relinkCuts, spreadCuts } from './partners.js';
 import { enforce, placeClip } from './place.js';
 import { createSession, load, noteCut, rootId } from './session.js';
@@ -41,7 +34,7 @@ import { createSession, load, noteCut, rootId } from './session.js';
 const sameExcept = (a, b, skip) => Object.keys(b).every((k) => k === skip || a[k] === b[k]);
 
 /**
- * The overlap rules of one track for this edit.
+ * The overlap rules of this edit.
  *
  * - `fade`: a partial overlap may cross-fade when auto-crossfade is on,
  *   when the clip underneath is itself incoming, or when the two clips were
@@ -50,11 +43,10 @@ const sameExcept = (a, b, skip) => Object.keys(b).every((k) => k === skip || a[k
  * - `outranks`: in a conflict an incoming clip beats a clip that stayed
  *   put, which beats the remnant of an overwritten clip.
  * @param {Session} s
- * @param {Work} work
  * @returns {{ ctx: import('./place.js').PlaceContext,
  *   outranks: (a: Clip, b: Clip) => boolean }}
  */
-function rulesFor(s, work) {
+function rulesFor(s) {
   const root = (clip) => rootId(s, clip.clipId);
   const rank = (clip) => (s.incoming.has(root(clip)) ? 2 : s.cuts.has(root(clip)) ? 0 : 1);
   const fadedBefore = (a, b) => {
@@ -63,7 +55,6 @@ function rulesFor(s, work) {
   };
   /** @type {import('./place.js').PlaceContext} */
   const ctx = {
-    timed: (clip) => isTimed(clip, work.track),
     fade: (under, placed) => s.auto || rank(under) === 2 || fadedBefore(under, placed),
     onCut: (under, pieces, by) => noteCut(s, under, pieces, [by.timelineStart, by.timelineEnd]),
   };
@@ -78,7 +69,7 @@ function rulesFor(s, work) {
 function resolveTrack(s, work) {
   const moving = work.clips.filter((clip) => s.incoming.has(clip.clipId));
   if (!moving.length) return;
-  const { ctx, outranks } = rulesFor(s, work);
+  const { ctx, outranks } = rulesFor(s);
   let placed = work.clips.filter((clip) => !s.incoming.has(clip.clipId));
   for (const clip of sortClips(moving)) placed = placeClip(placed, clip, ctx);
   work.clips = enforce(placed, ctx, outranks);
@@ -104,10 +95,8 @@ export function settle(before, after, opts = {}) {
     const index = indexClips(after);
     const reached = opts.linked !== false ? spreadCuts(s, index) : [];
     // A partner that was cut may be left with a remnant inside a neighbour.
-    for (const work of reached) {
-      const { ctx, outranks } = rulesFor(s, work);
-      work.clips = enforce(work.clips, ctx, outranks);
-    }
+    const { ctx, outranks } = rulesFor(s);
+    for (const work of reached) work.clips = enforce(work.clips, ctx, outranks);
     relinkCuts(s, index);
   }
   const was = (id) => s.was.get(rootId(s, id));

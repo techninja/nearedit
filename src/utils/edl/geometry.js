@@ -39,7 +39,12 @@ export function clipProgress(clip, time) {
 
 /**
  * The transform in effect at a moment, with ken burns already applied.
- * @param {{ transform?: any }} clip
+ * Pass the clip as `resolveClip` returned it: a property that is keyframed
+ * (`clip.keyframes['transform.x']`…) keeps its keyframed value, ken burns
+ * drives only the properties that are not. Opacity and crops are clamped
+ * to 0..1, since an overshooting easing may carry a keyframed value past
+ * its range.
+ * @param {{ transform?: any, keyframes?: Record<string, any> }} clip
  * @param {number} [progress=0] - 0..1 through the clip
  * @returns {FlatTransform}
  */
@@ -52,11 +57,11 @@ export function resolveTransform(clip, progress = 0) {
     scaleX: t.scaleX ?? 1,
     scaleY: t.scaleY ?? 1,
     rotation: t.rotation ?? 0,
-    opacity: t.opacity ?? 1,
-    cropTop: t.cropTop ?? 0,
-    cropBottom: t.cropBottom ?? 0,
-    cropLeft: t.cropLeft ?? 0,
-    cropRight: t.cropRight ?? 0,
+    opacity: clamp01(t.opacity ?? 1),
+    cropTop: clamp01(t.cropTop ?? 0),
+    cropBottom: clamp01(t.cropBottom ?? 0),
+    cropLeft: clamp01(t.cropLeft ?? 0),
+    cropRight: clamp01(t.cropRight ?? 0),
     anchorX: t.anchorX ?? 0.5,
     anchorY: t.anchorY ?? 0.5,
   };
@@ -64,8 +69,7 @@ export function resolveTransform(clip, progress = 0) {
   if (!kb?.enabled) return /** @type {FlatTransform} */ (flat);
   const p = clamp01(progress);
   const scale = lerp(kb.startScale ?? 1, kb.endScale ?? 1, p);
-  return /** @type {FlatTransform} */ ({
-    ...flat,
+  const moved = {
     x: lerp(kb.startX ?? 0, kb.endX ?? 0, p),
     y: lerp(kb.startY ?? 0, kb.endY ?? 0, p),
     scaleX: scale,
@@ -74,7 +78,10 @@ export function resolveTransform(clip, progress = 0) {
     cropBottom: lerp(kb.startCropBottom ?? 0, kb.endCropBottom ?? 0, p),
     cropLeft: lerp(kb.startCropLeft ?? 0, kb.endCropLeft ?? 0, p),
     cropRight: lerp(kb.startCropRight ?? 0, kb.endCropRight ?? 0, p),
-  });
+  };
+  const keyed = clip.keyframes || {};
+  for (const key of Object.keys(moved)) if (keyed[`transform.${key}`]?.length) delete moved[key];
+  return /** @type {FlatTransform} */ ({ ...flat, ...moved });
 }
 
 /**

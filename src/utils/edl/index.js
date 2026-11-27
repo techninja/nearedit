@@ -11,6 +11,8 @@ export * from './factory.js';
 export * from './query.js';
 export * from './geometry.js';
 export * from './levels.js';
+export { fadeInLevel, fadeOutLevel } from './fadeCurves.js';
+export { ENVELOPE_STEP, gainEnvelope, hasGainEnvelope } from './gainEnvelope.js';
 export { EPS, floorToFrame, frameDuration, snap, sourceDurationOf } from './time.js';
 export { isTimed, tracksOfType } from './immutable.js';
 export { neighbourOverlaps } from './fades.js';
@@ -41,6 +43,8 @@ export {
   nextTrackName,
   removeTrack,
   renameTrack,
+  setTrackBlendMode,
+  setTrackOpacity,
   setTrackVolume,
   toggleTrackLock,
   toggleTrackMute,
@@ -61,7 +65,34 @@ export {
 } from './selection.js';
 export { copyClips, duplicateClips, pasteClips } from './clipboard.js';
 export { insertMedia, insertTitle } from './insert.js';
+export { insertGenerator, updateGenerator } from './generator.js';
+export { pasteAttributes } from './attributes.js';
 export { repairLinks } from './links.js';
+
+// Keyframes: evaluation, operations (timeline times in, clip-local keys stored), queries
+export * from './animate.js';
+export { describePath } from './clipPaths.js';
+export {
+  clearKeyframes,
+  moveKeyframe,
+  moveKeyframesAt,
+  removeKeyframe,
+  removeKeyframesAt,
+  setKeyframe,
+  setKeyframeEase,
+} from './keyframes.js';
+export { setAnimated, setValueAt } from './autoKey.js';
+export * from './keyframeQuery.js';
+
+// Effect stacks of clips and tracks
+export {
+  addEffect,
+  effectsOf,
+  moveEffect,
+  removeEffect,
+  setEffectEnabled,
+  updateEffect,
+} from './effects.js';
 
 // Director results and undo
 export { applyDirectorResult } from './apply.js';

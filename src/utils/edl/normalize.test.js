@@ -97,10 +97,18 @@ const v1 = () =>
   });
 
 describe('normalizeEdl — v1 migration', () => {
-  it('produces a valid v2 document', () => {
+  it('produces a valid v3 document', () => {
     const edl = assertValid(normalizeEdl(v1()));
-    assert.deepEqual([edl.version, edl.fps, edl.resolution], [2, 30, '1280x720']);
-    assert.deepEqual(Object.keys(edl), ['version', 'fps', 'resolution', 'tracks', 'markers']);
+    assert.deepEqual([edl.version, edl.fps, edl.resolution], [3, 30, '1280x720']);
+    assert.deepEqual(Object.keys(edl), [
+      'version',
+      'fps',
+      'resolution',
+      'background',
+      'tracks',
+      'markers',
+      'regions',
+    ]);
     assert.deepEqual(
       edl.tracks.map((t) => t.trackId),
       ['v1', 'a1'],
@@ -208,8 +216,10 @@ describe('saved document', () => {
       'version',
       'fps',
       'resolution',
+      'background',
       'tracks',
       'markers',
+      'regions',
       'playheadPosition',
       'cursorPosition',
       'zoom',

@@ -1,6 +1,8 @@
 /**
  * Trimming a clip edge, with optional ripple. The linked partner trims by
- * the same amount; images, titles and placeholders have a free duration.
+ * the same amount. Trimming the start moves `sourceIn` on every kind of
+ * clip, so footage, keyframes and generator motion stay where they were on
+ * the timeline; only video and audio are held inside their source.
  * Isomorphic and pure.
  * @module utils/edl/trim
  */
@@ -22,7 +24,8 @@ import { limitTrim } from './trimLimits.js';
 /**
  * @typedef {Object} TrimOptions
  * @property {import('./types.js').SourceDurations} [sourceDurations] - Known
- *   source lengths; without one a video/audio clip may be extended freely
+ *   source lengths; without one a video/audio clip may be extended freely.
+ *   Generators, titles, images and placeholders always trim freely
  * @property {boolean} [ripple=false] - Later clips follow the edit. Trimming
  *   the start with ripple keeps the clip where it is and pulls the rest in
  * @property {'track'|'all'} [rippleScope='track'] - Ripple the trimmed
@@ -46,7 +49,8 @@ function retime(edl, { clip, track }, edge, delta, ripple) {
   if (edge === 'end') timelineEnd = snap(edl, timelineEnd + delta);
   else if (ripple) timelineEnd = snap(edl, timelineEnd - delta);
   else timelineStart = snap(edl, timelineStart + delta);
-  if (edge === 'start' && isTimed(clip, track)) sourceIn = Math.max(0, sourceIn + delta);
+  if (edge === 'start') sourceIn += delta;
+  if (isTimed(clip, track)) sourceIn = Math.max(0, sourceIn);
   const sourceOut = sourceIn + (timelineEnd - timelineStart);
   return { ...clip, timelineStart, timelineEnd, sourceIn, sourceOut };
 }

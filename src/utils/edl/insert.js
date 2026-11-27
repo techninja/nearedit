@@ -3,14 +3,13 @@
  * @module utils/edl/insert
  */
 
-import { intersects } from './clipMath.js';
 import { createClip, defaultText, newId } from './factory.js';
 import { timelineDuration } from './query.js';
 import { tracksOfType } from './immutable.js';
+import { addOverlay, overlaySpan } from './overlayClip.js';
 import { addClips, pairedAudioTracks, pickTrack } from './placement.js';
 import { rippleInsert } from './ripple.js';
 import { mergeShape } from './sanitize.js';
-import { addTrack } from './trackOps.js';
 import { EPS, clamp, finite, floorToFrame, frameDuration, snap } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
@@ -37,7 +36,8 @@ import { EPS, clamp, finite, floorToFrame, frameDuration, snap } from './time.js
 /**
  * Put a media item on the timeline. A video with sound becomes a video clip
  * plus a linked audio clip; an audio file goes to an audio track; an image
- * gets a free duration (5 s by default).
+ * gets a duration of its own (5 s by default) and a source window that
+ * starts at 0.
  * @param {Edl} edl
  * @param {{ filePath: string, type: string, duration?: number, hasAudio?: boolean,
  *   filename?: string }} item - A MediaItem (API.md)
@@ -110,26 +110,11 @@ export function insertTitle(edl, title) {
   const patch = typeof title?.text === 'string' ? { content: title.text } : title?.text;
   const text = mergeShape(defaultText(), patch);
   if (!text.content) return edl;
-  const start = Math.max(0, snap(edl, finite(title.time, 0)));
-  const wanted = finite(title.duration, 0) > 0 ? title.duration : 5;
-  const length = Math.max(frameDuration(edl), snap(edl, wanted));
-  const span = { timelineStart: start, timelineEnd: snap(edl, start + length) };
-
-  const lane = tracksOfType(edl, 'video');
-  let doc = edl;
-  let track = lane.find((t) => t.trackId === title.trackId && !t.locked);
-  if (!track) {
-    const front = lane[0];
-    const free = front && !front.locked && !front.clips.some((clip) => intersects(clip, span));
-    if (!free) doc = addTrack(edl, 'video', { position: 'top' });
-    track = free ? front : doc.tracks[0];
-  }
   const clip = createClip({
-    ...span,
-    sourceOut: length,
+    ...overlaySpan(edl, title.time, title.duration),
     text,
     intent: 'title',
     label: text.content.split('\n')[0].slice(0, 40),
   });
-  return addClips(doc, [{ trackId: track.trackId, clip }], { autoCrossfade: title.autoCrossfade });
+  return addOverlay(edl, clip, title);
 }

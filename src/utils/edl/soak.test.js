@@ -1,6 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import * as E from './index.js';
+import { v3Clips } from './soakFixture.js';
+import { v3Ops } from './soakOps.js';
 import { assertValid, deepFreeze, onFrameGrid, testClip, testEdl } from './testkit.js';
 
 /** Small deterministic PRNG so failures can be replayed by seed. */
@@ -46,7 +48,13 @@ function startDocument() {
     fadeOut: 0.5,
   });
   const music = testClip('music', 0, 40, { sourceFile: '/media/music.mp3' });
-  const doc = testEdl({ v2: [still, title], v1: [p1, p2, p3], a1: [p1a, p2a, p3a], a2: [music] });
+  // Schema v3: a keyframed generator with an effect, a keyframed title, track
+  // settings and a region ride through every operation below.
+  const v3 = v3Clips();
+  const lanes = { v3: [v3.generator, v3.title], v2: [still, title], v1: [p1, p2, p3] };
+  const regions = [{ regionId: 'r1', start: 4, end: 9, label: 'verse', color: '' }];
+  let doc = testEdl({ ...lanes, a1: [p1a, p2a, p3a], a2: [music] }, { regions });
+  doc = E.updateTrack(doc, 'v3', { opacity: 0.8, blendMode: 'add', effects: [{ type: 'grain' }] });
   return E.addMarker(E.addMarker(doc, 5, { label: 'one' }), 15, { label: 'two' });
 }
 
@@ -68,6 +76,25 @@ function makeFragment(rand) {
     t += length - (rand() < 0.3 ? 0.4 : 0);
   }
   const audio = clips.map((c) => ({ ...c, clipId: `${c.clipId}a`, linkedClipId: c.clipId }));
+  if (rand() < 0.5) {
+    // What a v3-aware director may send: a keyframed generator with an effect.
+    clips.push({
+      clipId: 'fg',
+      timelineStart: t,
+      timelineEnd: t + 2,
+      sourceIn: -0.5,
+      generator: { type: 'particles', seed: 3, params: { rate: 40, bad: null } },
+      effects: [{ effectId: 'glow', type: 'glow', params: { radius: 6 } }, { type: '' }],
+      keyframes: {
+        'effects.glow.radius': [
+          { t: 1, v: 0 },
+          { t: 0, v: 12, ease: 'ease-out' },
+        ],
+        'effects.gone.radius': [{ t: 0, v: 1 }],
+      },
+      blendMode: 'add',
+    });
+  }
   return {
     tracks: [
       { type: 'video', index: Math.floor(rand() * 3), name: 'Director V', clips },
@@ -173,6 +200,7 @@ function randomOp(doc, rand) {
         ...makeFragment(rand),
       });
     }),
+    ...v3Ops(doc, rand),
   ];
   const index = Math.floor(rand() * ops.length);
   return { index, next: ops[index]() };

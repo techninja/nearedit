@@ -68,9 +68,14 @@ describe('slipClip', () => {
     assert.equal(clipOf(free, 'b').sourceIn, 100, 'unknown duration: no upper bound');
   });
 
-  it('ignores images, locked clips and unknown ids', () => {
+  it('slips an image freely (its source is unbounded): the window moves, also below 0', () => {
+    const out = assertValid(slipClip(doc(), 'still', -6, { sourceDurations }), { sourceDurations });
+    assert.deepEqual([clipOf(out, 'still').sourceIn, clipOf(out, 'still').sourceOut], [-6, -2]);
+    assert.deepEqual(layout(out), layout(doc()));
+  });
+
+  it('ignores locked clips and unknown ids', () => {
     const start = doc();
-    assert.equal(slipClip(start, 'still', 2), start);
     assert.equal(slipClip(start, 'nope', 2), start);
     const locked = deepFreeze(toggleTrackLock(start, 'v1'));
     assert.equal(slipClip(locked, 'a', 2), locked);
@@ -144,8 +149,13 @@ describe('updateClip', () => {
   });
 
   it('replacing the source keeps invariant 1', () => {
-    const placeholder = testClip('ph', 0, 4, { sourceFile: '', placeholder: true, sourceOut: 0 });
-    const start = deepFreeze(testEdl({ v1: [placeholder] }));
+    const placeholder = testClip('ph', 0, 4, {
+      sourceFile: '',
+      placeholder: true,
+      sourceIn: -3,
+      sourceOut: 1,
+    });
+    const start = deepFreeze(assertValid(testEdl({ v1: [placeholder] })));
     const out = assertValid(
       updateClip(start, 'ph', { sourceFile: '/media/real.mp4', placeholder: false, sourceIn: 12 }),
     );

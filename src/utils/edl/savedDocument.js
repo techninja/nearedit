@@ -37,19 +37,22 @@ function viewOf(source) {
 
 /**
  * Merge the document and the view fields into the shape that is saved
- * (`PUT /api/projects/:id/edl/:aid`).
+ * (`PUT /api/projects/:id/edl/:aid`). Tracks and clips are passed on as
+ * they are, so everything a clip carries — effects, keyframes, generator
+ * parameters — is saved with it.
  * @param {Edl} edl
  * @param {Partial<SavedView>} [view] - e.g. the ViewState store model
  * @returns {Edl & SavedView}
  */
 export function toSavedDocument(edl, view = {}) {
-  const { version, fps, resolution, tracks, markers } = edl;
-  return { version, fps, resolution, tracks, markers: markers || [], ...viewOf(view) };
+  const { version, fps, resolution, background, tracks, markers, regions } = edl;
+  const saved = { version, fps, resolution, background: background || '#000000', tracks };
+  return { ...saved, markers: markers || [], regions: regions || [], ...viewOf(view) };
 }
 
 /**
  * Split a loaded document into the normalised EDL (for the edit session)
- * and the view fields (for `ViewState`). Accepts v1 files and garbage.
+ * and the view fields (for `ViewState`). Accepts v1 and v2 files and garbage.
  * @param {any} doc
  * @returns {{ edl: Edl, view: SavedView }}
  */

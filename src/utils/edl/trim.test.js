@@ -61,9 +61,10 @@ describe('trimClipEnd', () => {
     near(clipOf(out, 'b').sourceOut, FRAME);
   });
 
-  it('images have a free duration', () => {
+  it('an image has an unbounded source: it extends freely and its window follows', () => {
     const out = assertValid(trimClipEnd(doc(), 'still', 90, { sourceDurations }));
     assert.equal(clipOf(out, 'still').timelineEnd, 90);
+    assert.deepEqual([clipOf(out, 'still').sourceIn, clipOf(out, 'still').sourceOut], [0, 70]);
   });
 
   it('dragging an edge over the next clip cross-fades, or overwrites with auto-crossfade off', () => {
@@ -103,10 +104,10 @@ describe('trimClipStart', () => {
     assert.equal(clipOf(out, 'a').timelineStart, 1);
   });
 
-  it('an image can grow to the left, down to time 0', () => {
+  it('an image can grow to the left, down to time 0, and its source window goes below 0', () => {
     const out = assertValid(trimClipStart(doc(), 'still', -4));
     assert.deepEqual(layout(out).v1, ['still 0-25']);
-    assert.ok(clipOf(out, 'still').sourceIn >= 0);
+    assert.deepEqual([clipOf(out, 'still').sourceIn, clipOf(out, 'still').sourceOut], [-20, 5]);
   });
 });
 

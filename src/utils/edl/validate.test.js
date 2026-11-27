@@ -11,7 +11,7 @@ function problemsAfter(mutate, opts) {
       v1: [
         testClip('a', 0, 5, { fadeOut: 1, linkedClipId: 'a_s' }),
         testClip('b', 4, 9, { fadeIn: 1 }),
-        testClip('still', 12, 15, { sourceFile: '/media/still.png', sourceIn: 0, sourceOut: 0 }),
+        testClip('still', 12, 15, { sourceFile: '/media/still.png', sourceIn: -2, sourceOut: 1 }),
       ],
       a1: [testClip('a_s', 0, 5, { linkedClipId: 'a' })],
     }),
@@ -39,14 +39,18 @@ describe('validateEdl — document and tracks', () => {
     for (const junk of [null, 5, 'x', [], {}]) assert.equal(validateEdl(junk).valid, false);
     assert.deepEqual(
       validateEdl({}).problems.map((p) => p.path),
-      ['version', 'fps', 'resolution', 'markers', 'tracks'],
+      ['version', 'fps', 'resolution', 'background', 'markers', 'tracks'],
     );
   });
 
   it('checks the head fields', () => {
     assert.deepEqual(
-      paths((edl) => (edl.version = 1)),
+      paths((edl) => (edl.version = 2)),
       ['version'],
+    );
+    assert.deepEqual(
+      paths((edl) => (edl.background = 'black')),
+      ['background'],
     );
     assert.deepEqual(
       paths((edl) => (edl.fps = 0)),
@@ -153,14 +157,14 @@ describe('validateEdl — clips', () => {
     );
   });
 
-  it('invariant 1: video/audio duration equals the source range; images are free', () => {
+  it('invariant 1: the duration of every clip equals its source range, images included', () => {
     assert.match(
       messages((_, clips) => (clips[1].sourceOut += 0.5)),
       /invariant 1/,
     );
     assert.deepEqual(
       paths((_, clips) => (clips[2].sourceOut = 99)),
-      [],
+      ['tracks[0].clips[2].sourceOut'],
     );
   });
 
@@ -171,11 +175,12 @@ describe('validateEdl — clips', () => {
     );
     assert.deepEqual(
       paths((_, clips) => Object.assign(clips[2], { timelineStart: 16 })),
-      ['tracks[0].clips[2].timelineEnd'],
+      ['tracks[0].clips[2].timelineEnd', 'tracks[0].clips[2].sourceOut'],
     );
     assert.deepEqual(
       paths((_, clips) => Object.assign(clips[0], { sourceIn: -1, sourceOut: 4 })),
       ['tracks[0].clips[0].sourceIn'],
+      'media cannot start before its source; the still in the fixture may (sourceIn -2)',
     );
     const sourceDurations = new Map([['/media/b.mp4', 4]]);
     assert.match(

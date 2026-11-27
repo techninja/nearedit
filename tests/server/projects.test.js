@@ -50,7 +50,7 @@ describe('creating projects', () => {
     assert.equal(main.edl, undefined, 'EDLs are not embedded in project responses');
     const onDisk = readFile(box.project);
     assert.equal(onDisk.id, created.id);
-    assert.equal(onDisk.adaptations[0].edl.version, 2);
+    assert.equal(onDisk.adaptations[0].edl.version, 3);
     assert.equal(onDisk.adaptations[0].edl.tracks.length, 2);
   });
 

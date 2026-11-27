@@ -4,14 +4,16 @@
  * The adaptation and its EDL both carry the frame size and rate. They are
  * kept equal: whichever one a client changes, the other follows.
  *
- * Documents are normalised to EDL v2 on the way out and on the way in
- * (`src/utils/edl/normalize.js`), so v1 files and LLM-written documents are
- * repaired once here rather than by every consumer. A document that still
- * breaks an invariant after normalising is refused.
+ * Documents are normalised to EDL v3 on the way out and on the way in
+ * (`src/utils/edl/normalize.js`), so v1 and v2 files and LLM-written
+ * documents are repaired and migrated once here rather than by every
+ * consumer. Everything a v3 document carries — generators, effect stacks,
+ * keyframes, blend modes, fade curves, text styling — is kept; the
+ * free-form parameters only as bounded JSON-safe data. A document that
+ * still breaks an invariant after normalising is refused.
  * @module api/projects/edl
  */
 
-import { EDL_VERSION } from '#utils/edl/factory.js';
 import { fromSavedDocument, toSavedDocument } from '#utils/edl/savedDocument.js';
 import { validateEdl } from '#utils/edl/validate.js';
 import { HttpError } from '../lib/httpErrors.js';
@@ -21,8 +23,12 @@ import { checkEdl } from './edlGuard.js';
 import { requireProject, saveProject } from './store.js';
 
 /**
- * Give a stored document the top-level shape of a v2 EDL.
- * @param {any} stored - What the project file holds (possibly a v1 document, or nothing)
+ * Fill in the frame size, rate and marker list a stored document lacks.
+ * Its `version` is left as it is: the normaliser reads it to decide what
+ * to migrate (a document older than v3 has no source windows on its
+ * titles, images and placeholders).
+ * @param {any} stored - What the project file holds (possibly a v1 or v2
+ *   document, or nothing)
  * @param {{ fps: number, resolution: string }} adaptation
  * @returns {any}
  */
@@ -32,7 +38,7 @@ function withDocumentFields(stored, adaptation) {
   return {
     ...base,
     ...stored,
-    version: EDL_VERSION,
+    version: stored.version,
     fps: Number.isFinite(stored.fps) && stored.fps > 0 ? stored.fps : base.fps,
     resolution: parseSize(stored.resolution) ? stored.resolution : base.resolution,
     markers: Array.isArray(stored.markers) ? stored.markers : [],
@@ -40,7 +46,7 @@ function withDocumentFields(stored, adaptation) {
 }
 
 /**
- * A stored or submitted document as a valid v2 saved document.
+ * A stored or submitted document as a valid v3 saved document.
  * @param {any} stored
  * @param {{ fps: number, resolution: string }} adaptation
  * @returns {any}

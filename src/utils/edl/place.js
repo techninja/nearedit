@@ -15,7 +15,8 @@ import { EPS } from './time.js';
 
 /**
  * @typedef {Object} PlaceContext
- * @property {(clip: Clip) => boolean} timed - Is the clip video/audio?
+ * @property {(clip: Clip) => boolean} [timed] - Unused since v3: every clip
+ *   has a source window, so every cut moves it
  * @property {(under: Clip, placed: Clip) => boolean} fade - May a new
  *   partial overlap of this pair become a cross-fade?
  * @property {(under: Clip, pieces: Clip[], placed: Clip) => void} [onCut] -
@@ -54,7 +55,7 @@ export function placeClip(placed, clip, ctx) {
       middle.push(under);
       continue;
     }
-    const pieces = cutAround(under, clip.timelineStart, clip.timelineEnd, ctx.timed(under));
+    const pieces = cutAround(under, clip.timelineStart, clip.timelineEnd);
     ctx.onCut?.(under, pieces, clip);
     middle.push(...pieces);
   }
@@ -83,7 +84,7 @@ export function enforce(clips, ctx, outranks = () => false) {
     }
     if (!pair) return list;
     const [winner, loser] = outranks(pair[0], pair[1]) ? pair : [pair[1], pair[0]];
-    const pieces = cutAround(loser, winner.timelineStart, winner.timelineEnd, ctx.timed(loser));
+    const pieces = cutAround(loser, winner.timelineStart, winner.timelineEnd);
     ctx.onCut?.(loser, pieces, winner);
     list = sortClips(list.flatMap((clip) => (clip === loser ? pieces : clip)));
   }
@@ -95,11 +96,10 @@ export function enforce(clips, ctx, outranks = () => false) {
  * partial overlaps become (or stay) cross-fades, and a clip that lands
  * inside or over another overwrites it — the later clip wins.
  * @param {Clip[]} clips
- * @param {(clip: Clip) => boolean} timed
  * @returns {Clip[]}
  */
-export function resolveAll(clips, timed) {
-  const ctx = { fade: () => true, timed };
+export function resolveAll(clips) {
+  const ctx = { fade: () => true };
   /** @type {Clip[]} */
   let placed = [];
   for (const clip of sortClips(clips)) placed = placeClip(placed, clip, ctx);

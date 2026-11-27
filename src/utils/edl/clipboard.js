@@ -1,6 +1,8 @@
 /**
  * Copy, paste and duplicate. The clipboard payload is plain JSON, so it can
- * also travel through the system clipboard or between adaptations.
+ * also travel through the system clipboard or between adaptations. A clip
+ * is copied whole — effects, keyframes, generator, text and its source
+ * window travel with it — and sanitised like any loaded clip when pasted.
  * Isomorphic and pure.
  * @module utils/edl/clipboard
  */

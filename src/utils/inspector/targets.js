@@ -14,7 +14,7 @@ import { findClip } from '#utils/edl/query.js';
  * @typedef {Object} SelectedClip
  * @property {any} clip
  * @property {any} track
- * @property {'video'|'audio'|'image'|'title'|'placeholder'} kind
+ * @property {'video'|'audio'|'image'|'title'|'generator'|'placeholder'} kind
  */
 
 /**

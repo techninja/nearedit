@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { rippleInsert } from './ripple.js';
 import { newClipIds } from './selection.js';
 import { splitClips } from './split.js';
 import { toggleTrackLock } from './trackOps.js';
@@ -138,5 +139,25 @@ describe('splitClips', () => {
     assert.deepEqual([clipOf(out, 'b').sourceIn, clipOf(out, 'b').sourceOut], [0.5, 4]);
     assert.deepEqual(layout(splitClips(start, 4, { cutFades: true })).v1, ['a 0-4', 'b 4-8']);
     assert.deepEqual(layout(splitClips(start, 5, { cutFades: true })).v1, ['a 0-5', 'b 5-8']);
+  });
+
+  it('cutFades removes a clip that only fades: in over one clip, out under the next', () => {
+    // b bridges a and c, which meet at 6: left of a cut there is a, right of it c.
+    const bridge = testClip('b', 4, 10, { fadeIn: 2, fadeOut: 4, linkedClipId: 'b_s' });
+    const lane = [testClip('a', 0, 6, { fadeOut: 2 }), bridge, testClip('c', 6, 12, { fadeIn: 4 })];
+    const sound = testClip('b_s', 4, 10, { linkedClipId: 'b' });
+    const start = deepFreeze(assertValid(testEdl({ v1: lane, a1: [sound] })));
+    assert.equal(splitClips(start, 6).tracks[0], start.tracks[0], 'a plain split leaves them be');
+    const out = assertValid(splitClips(start, 6, { cutFades: true }));
+    assert.deepEqual(layout(out).v1, ['a 0-6', 'c 6-12']);
+    assert.deepEqual([clipOf(out, 'a').fadeOut, clipOf(out, 'c').fadeIn], [0, 0]);
+    assert.ok(
+      out.tracks[1].clips.every((clip) => clip.linkedClipId === ''),
+      'no dangling link',
+    );
+    const opened = assertValid(rippleInsert(start, 6, 2));
+    assert.deepEqual(layout(opened).v1, ['a 0-6', 'c 8-14']);
+    const near = assertValid(splitClips(start, 7, { cutFades: true }));
+    assert.deepEqual(layout(near).v1, ['a 0-6', 'b 4-7', 'c 7-12'], 'off the junction: a hard cut');
   });
 });

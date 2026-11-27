@@ -1,13 +1,17 @@
 /**
- * Track operations: add, remove, reorder, rename, mute / solo / lock and
- * volume. Video tracks always stay above audio tracks. Isomorphic and pure.
+ * Track operations: add, remove and reorder tracks. Header settings (name,
+ * mute / solo / lock, volume, opacity, blend mode) are in trackSettings.js
+ * and re-exported here. Video tracks always stay above audio tracks.
+ * Isomorphic and pure.
  * @module utils/edl/trackOps
  */
 
 import { createTrack } from './factory.js';
-import { mapTracks, tracksOfType, withTracks } from './immutable.js';
+import { tracksOfType, withTracks } from './immutable.js';
 import { repairLinks } from './links.js';
 import { clamp } from './time.js';
+
+export * from './trackSettings.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Track} Track */
@@ -79,72 +83,3 @@ export function moveTrack(edl, trackId, toIndex) {
   const other = tracksOfType(edl, track.type === 'audio' ? 'video' : 'audio');
   return withTracks(edl, track.type === 'audio' ? [...other, ...lane] : [...lane, ...other]);
 }
-
-/**
- * Change track header fields: name, muted, solo, locked, volume (0..2).
- * Type, id and clips cannot be changed here.
- * @param {Edl} edl
- * @param {string} trackId
- * @param {{ name?: string, muted?: boolean, solo?: boolean, locked?: boolean, volume?: number }} patch
- * @returns {Edl}
- */
-export function updateTrack(edl, trackId, patch) {
-  return mapTracks(edl, (track) => {
-    if (track.trackId !== trackId || !patch) return track;
-    const next = { ...track };
-    if (typeof patch.name === 'string') next.name = patch.name;
-    for (const flag of ['muted', 'solo', 'locked']) {
-      if (typeof patch[flag] === 'boolean') next[flag] = patch[flag];
-    }
-    if (Number.isFinite(patch.volume)) next.volume = clamp(patch.volume, 0, 2);
-    return Object.keys(next).every((key) => next[key] === track[key]) ? track : next;
-  });
-}
-
-/**
- * @param {Edl} edl
- * @param {string} trackId
- * @param {'muted'|'solo'|'locked'} flag
- * @returns {Edl}
- */
-function toggle(edl, trackId, flag) {
-  const track = edl.tracks.find((t) => t.trackId === trackId);
-  return track ? updateTrack(edl, trackId, { [flag]: !track[flag] }) : edl;
-}
-
-/**
- * @param {Edl} edl
- * @param {string} trackId
- * @param {string} name
- * @returns {Edl}
- */
-export const renameTrack = (edl, trackId, name) => updateTrack(edl, trackId, { name });
-
-/**
- * @param {Edl} edl
- * @param {string} trackId
- * @param {number} volume - Linear gain, clamped to 0..2
- * @returns {Edl}
- */
-export const setTrackVolume = (edl, trackId, volume) => updateTrack(edl, trackId, { volume });
-
-/**
- * @param {Edl} edl
- * @param {string} trackId
- * @returns {Edl}
- */
-export const toggleTrackMute = (edl, trackId) => toggle(edl, trackId, 'muted');
-
-/**
- * @param {Edl} edl
- * @param {string} trackId
- * @returns {Edl}
- */
-export const toggleTrackSolo = (edl, trackId) => toggle(edl, trackId, 'solo');
-
-/**
- * @param {Edl} edl
- * @param {string} trackId
- * @returns {Edl}
- */
-export const toggleTrackLock = (edl, trackId) => toggle(edl, trackId, 'locked');

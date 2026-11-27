@@ -28,7 +28,7 @@ import { timelineDuration } from '#utils/edl/query.js';
 export function documentSummary(edl) {
   const tracks = edl?.tracks || [];
   /** @type {Record<string, number>} */
-  const kinds = { video: 0, audio: 0, image: 0, title: 0, placeholder: 0 };
+  const kinds = { video: 0, audio: 0, image: 0, title: 0, generator: 0, placeholder: 0 };
   let clips = 0;
   for (const track of tracks) {
     for (const clip of track.clips) {

@@ -5,9 +5,11 @@
  * @module utils/edl/validate
  */
 
-import { EDL_VERSION } from './defaults.js';
+import { BACKGROUND_COLOR, EDL_VERSION } from './defaults.js';
 import { isObject } from './sanitize.js';
-import { checkClip, checkOverlaps, isGain } from './validateClip.js';
+import { checkClip, checkOverlaps, checkShape, isGain } from './validateClip.js';
+import { checkEffects } from './validateExtras.js';
+import { checkMarkers, checkRegions } from './validateMarks.js';
 
 /**
  * @typedef {Object} Problem
@@ -32,30 +34,11 @@ function checkTrack(track, path, report) {
     if (typeof track[flag] !== 'boolean') report(`${path}.${flag}`, 'must be a boolean');
   }
   if (!isGain(track.volume)) report(`${path}.volume`, 'must be a number 0..2');
+  if (!(track.opacity >= 0 && track.opacity <= 1)) report(`${path}.opacity`, 'must be 0..1');
+  checkShape(track, { blendMode: '' }, path, report);
+  checkEffects(track.effects, `${path}.effects`, report);
   if (!Array.isArray(track.clips)) return (report(`${path}.clips`, 'must be an array'), false);
   return true;
-}
-
-/**
- * @param {any} markers
- * @param {Set<string>} ids
- * @param {import('./validateClip.js').Report} report
- */
-function checkMarkers(markers, ids, report) {
-  if (!Array.isArray(markers)) return report('markers', 'must be an array');
-  markers.forEach((marker, i) => {
-    const path = `markers[${i}]`;
-    if (!isObject(marker)) return report(path, 'must be an object');
-    if (typeof marker.markerId !== 'string' || !marker.markerId) report(path, 'needs a markerId');
-    else if (ids.has(marker.markerId)) report(`${path}.markerId`, 'is not unique');
-    else ids.add(marker.markerId);
-    if (!(marker.time >= 0) || !Number.isFinite(marker.time))
-      report(`${path}.time`, 'must be >= 0');
-    if (i && marker.time < markers[i - 1]?.time) report(path, 'markers must be sorted by time');
-    for (const key of ['label', 'color']) {
-      if (typeof marker[key] !== 'string') report(`${path}.${key}`, 'must be a string');
-    }
-  });
 }
 
 /**
@@ -76,7 +59,11 @@ export function validateEdl(edl, opts = {}) {
   if (typeof edl.resolution !== 'string' || !/^[1-9]\d*x[1-9]\d*$/.test(edl.resolution)) {
     report('resolution', 'must look like 1920x1080');
   }
-  checkMarkers(edl.markers, new Set(), report);
+  if (typeof edl.background !== 'string' || !BACKGROUND_COLOR.test(edl.background)) {
+    report('background', 'must be a colour like #000000');
+  }
+  checkMarkers(edl.markers, report);
+  checkRegions(edl.regions, report);
   if (!Array.isArray(edl.tracks)) return (report('tracks', 'must be an array'), done());
 
   const trackIds = new Set();

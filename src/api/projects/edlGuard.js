@@ -2,7 +2,10 @@
  * Structural guard for EDL documents arriving over HTTP. It refuses anything
  * that would break the timeline, the director or the renderer when read back:
  * a missing track list, tracks without an id or type, clips without finite
- * times (a NaN serialises to `null`, which is how most broken saves look).
+ * times (a NaN serialises to `null`, which is how most broken saves look),
+ * and v3 fields of the wrong shape — an effect stack that is not a list,
+ * keyframes without a finite time — which the normaliser would otherwise
+ * drop without a word.
  *
  * This is deliberately not a normaliser — it changes nothing and knows
  * nothing about cross-fades or defaults. See EDL.md for the full schema.
@@ -23,6 +26,34 @@ const isObject = (value) => !!value && typeof value === 'object' && !Array.isArr
 const isId = (value) => typeof value === 'string' && value.length > 0;
 
 /**
+ * The free-form v3 fields of a clip or a track: right container, and every
+ * keyframe with a finite time.
+ * @param {any} holder - A clip or a track
+ * @param {string} where
+ * @param {Record<string, string>} problems - Collected in place
+ */
+function checkAdditions(holder, where, problems) {
+  if (holder.effects !== undefined && !Array.isArray(holder.effects)) {
+    problems[`${where}.effects`] = 'must be an array';
+  }
+  if (holder.generator !== undefined && !isObject(holder.generator)) {
+    problems[`${where}.generator`] = 'must be an object';
+  }
+  if (holder.keyframes === undefined) return;
+  if (!isObject(holder.keyframes)) {
+    problems[`${where}.keyframes`] = 'must be an object';
+    return;
+  }
+  for (const [path, keys] of Object.entries(holder.keyframes)) {
+    const at = `${where}.keyframes[${path}]`;
+    if (!Array.isArray(keys)) problems[at] = 'must be an array of keys';
+    else if (keys.some((key) => !isObject(key) || !Number.isFinite(key.t))) {
+      problems[at] = 'every key needs a finite t';
+    }
+  }
+}
+
+/**
  * @param {any} clip
  * @param {string} where - e.g. "tracks[0].clips[3]"
  * @param {Record<string, string>} problems - Collected in place
@@ -41,6 +72,7 @@ function checkClip(clip, where, problems) {
       problems[`${where}.${key}`] = 'must be a finite number';
     }
   }
+  checkAdditions(clip, where, problems);
 }
 
 /**
@@ -55,6 +87,7 @@ function checkTrack(track, where, problems) {
   }
   if (!isId(track.trackId)) problems[`${where}.trackId`] = 'must be a non-empty string';
   if (!TRACK_TYPES.includes(track.type)) problems[`${where}.type`] = 'must be "video" or "audio"';
+  checkAdditions(track, where, problems);
   if (!Array.isArray(track.clips)) {
     problems[`${where}.clips`] = 'must be an array';
     return;

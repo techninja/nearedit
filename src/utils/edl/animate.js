@@ -80,20 +80,22 @@ export const clipLocalTime = (clip, time) => (clip.sourceIn || 0) + (time - clip
 
 /**
  * Read a property by path. `effects.<effectId>.<param>` addresses a
- * parameter of the effect with that id; every other path is dotted access.
+ * parameter of the effect with that id (a longer path reaches into a
+ * structured parameter: `effects.fx_1.center.x`); every other path is
+ * dotted access.
  * @param {any} clip
  * @param {string} path
  * @returns {any}
  */
 export function getPath(clip, path) {
   const parts = path.split('.');
-  if (parts[0] === 'effects' && parts.length === 3) {
-    return (clip.effects || []).find((fx) => fx.effectId === parts[1])?.params?.[parts[2]];
+  const walk = (node, keys) =>
+    keys.reduce((at, key) => (at === null || at === undefined ? at : at[key]), node);
+  if (parts[0] === 'effects' && parts.length >= 3) {
+    const effect = (clip.effects || []).find((fx) => fx.effectId === parts[1]);
+    return walk(effect?.params, parts.slice(2));
   }
-  return parts.reduce(
-    (node, key) => (node === null || node === undefined ? node : node[key]),
-    clip,
-  );
+  return walk(clip, parts);
 }
 
 /**
@@ -105,19 +107,18 @@ export function getPath(clip, path) {
  */
 export function setPath(clip, path, value) {
   const parts = path.split('.');
-  if (parts[0] === 'effects' && parts.length === 3) {
+  const assign = (node, keys) => {
+    const base = node && typeof node === 'object' ? node : {};
+    const next = keys.length === 1 ? value : assign(base[keys[0]], keys.slice(1));
+    return { ...base, [keys[0]]: next };
+  };
+  if (parts[0] === 'effects' && parts.length >= 3) {
     const effects = (clip.effects || []).map((fx) =>
-      fx.effectId === parts[1] ? { ...fx, params: { ...fx.params, [parts[2]]: value } } : fx,
+      fx.effectId === parts[1] ? { ...fx, params: assign(fx.params, parts.slice(2)) } : fx,
     );
     return { ...clip, effects };
   }
-  const assign = (node, depth) => {
-    const base = node && typeof node === 'object' ? node : {};
-    const key = parts[depth];
-    const next = depth === parts.length - 1 ? value : assign(base[key], depth + 1);
-    return { ...base, [key]: next };
-  };
-  return assign(clip, 0);
+  return assign(clip, parts);
 }
 
 /**

@@ -3,15 +3,22 @@
  * @module utils/edl/validateClip
  */
 
-import { defaultKenBurns, defaultText, defaultTransform } from './defaults.js';
+import {
+  defaultKenBurns,
+  defaultText,
+  defaultTextAnimation,
+  defaultTransform,
+} from './defaults.js';
 import { compareClips, isTimed } from './immutable.js';
-import { ENUMS, isObject } from './sanitize.js';
+import { ANIMATION_ENUMS, ENUMS, isObject } from './sanitize.js';
 import { EPS, sourceDurationOf } from './time.js';
+import { checkEffects, checkGenerator, checkKeyframes } from './validateExtras.js';
 
 /** @typedef {(path: string, message: string) => void} Report */
 
 const STRINGS = ['sourceFile', 'linkedClipId', 'groupId', 'label', 'prompt', 'intent', 'color'];
 const TIMES = ['sourceIn', 'sourceOut', 'timelineStart', 'timelineEnd', 'fadeIn', 'fadeOut'];
+const CHOICES = ['blendMode', 'fadeInCurve', 'fadeOutCurve'];
 
 /**
  * @param {any} value
@@ -28,18 +35,37 @@ export function isGain(value) {
  * @param {Record<string, any>} shape
  * @param {string} path
  * @param {Report} report
+ * @param {Record<string, string[]>} [enums]
  */
-function checkShape(block, shape, path, report) {
+export function checkShape(block, shape, path, report, enums = ENUMS) {
   if (!isObject(block)) return report(path, 'must be an object');
   for (const [key, sample] of Object.entries(shape)) {
     if (isObject(sample)) continue;
     const value = block[key];
     const ok = typeof sample === 'number' ? Number.isFinite(value) : typeof value === typeof sample;
     if (!ok) report(`${path}.${key}`, `must be a ${typeof sample}`);
-    else if (ENUMS[key] && !ENUMS[key].includes(value)) {
-      report(`${path}.${key}`, `must be one of ${ENUMS[key].join(', ')}`);
+    else if (enums[key] && !enums[key].includes(value)) {
+      report(`${path}.${key}`, `must be one of ${enums[key].join(', ')}`);
     }
   }
+}
+
+/**
+ * The v3 additions of one clip: blend mode, fade curves, text animation,
+ * generator, effects and keyframes.
+ * @param {any} clip
+ * @param {string} path
+ * @param {Report} report
+ */
+function checkAdditions(clip, path, report) {
+  checkShape(clip, Object.fromEntries(CHOICES.map((key) => [key, ''])), path, report);
+  for (const key of isObject(clip.text) ? ['animateIn', 'animateOut'] : []) {
+    const at = `${path}.text.${key}`;
+    checkShape(clip.text[key], defaultTextAnimation(), at, report, ANIMATION_ENUMS);
+  }
+  checkGenerator(clip.generator, `${path}.generator`, report);
+  checkEffects(clip.effects, `${path}.effects`, report);
+  checkKeyframes(clip, path, report);
 }
 
 /**
@@ -62,6 +88,7 @@ export function checkClip(clip, track, path, report, opts) {
   checkShape(clip.text, defaultText(), `${path}.text`, report);
   checkShape(clip.transform, defaultTransform(), `${path}.transform`, report);
   checkShape(clip.transform?.kenBurns, defaultKenBurns(), `${path}.transform.kenBurns`, report);
+  checkAdditions(clip, path, report);
 
   const broken = TIMES.filter((key) => !Number.isFinite(clip[key]));
   for (const key of broken) report(`${path}.${key}`, 'must be a finite number');
@@ -69,15 +96,16 @@ export function checkClip(clip, track, path, report, opts) {
   const duration = clip.timelineEnd - clip.timelineStart;
   if (clip.timelineStart < -EPS) report(`${path}.timelineStart`, 'must not be negative');
   if (!(duration > EPS)) report(`${path}.timelineEnd`, 'must be after timelineStart');
-  if (clip.sourceIn < -EPS) report(`${path}.sourceIn`, 'must not be negative');
   if (clip.fadeIn < 0 || clip.fadeOut < 0) report(`${path}.fadeIn`, 'fades must not be negative');
   if (duration > EPS && clip.fadeIn + clip.fadeOut > duration + EPS) {
     report(`${path}.fadeOut`, 'fadeIn + fadeOut exceeds the clip duration (invariant 3)');
   }
+  if (Math.abs(clip.sourceOut - clip.sourceIn - duration) > EPS) {
+    report(`${path}.sourceOut`, 'source range differs from the clip duration (invariant 1)');
+  }
+  // Only real media has a bounded source; every other clip may start before 0.
   if (typeof clip.sourceFile === 'string' && isTimed(clip, track)) {
-    if (Math.abs(clip.sourceOut - clip.sourceIn - duration) > EPS) {
-      report(`${path}.sourceOut`, 'source range differs from the clip duration (invariant 1)');
-    }
+    if (clip.sourceIn < -EPS) report(`${path}.sourceIn`, 'must not be negative (invariant 2)');
     const known = sourceDurationOf(opts.sourceDurations, clip.sourceFile);
     const slack = 0.5 / (opts.fps > 0 ? opts.fps : 30) + EPS;
     if (known !== undefined && clip.sourceOut > known + slack) {

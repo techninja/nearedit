@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { projectsRouter } from '../../src/api/projects.js';
 import { checkEdl } from '../../src/api/projects/edlGuard.js';
+import * as E from '../../src/utils/edl/index.js';
 import { call, createSandbox, serve } from './helpers.js';
 
 let box;
@@ -66,7 +67,7 @@ describe('adaptations', () => {
     }
     const stored = onDisk().adaptations.find((a) => a.aspectRatio === '9:16');
     assert.equal(stored.edl.resolution, '1080x1920');
-    assert.equal(stored.edl.version, 2);
+    assert.equal(stored.edl.version, 3);
   });
 
   it('accepts an explicit resolution and names its ratio', async () => {
@@ -165,14 +166,14 @@ describe('adaptations', () => {
 });
 
 describe('EDL documents', () => {
-  it('round-trips a document and stamps it as v2', async () => {
+  it('round-trips a v2 document and stamps it as v3', async () => {
     const doc = edlWith([clip(), clip({ clipId: 'c2', timelineStart: 2, timelineEnd: 4 })]);
     const saved = await call(api.url, 'PUT', `${base()}/edl/${main.id}`, { ...doc, zoom: 3 });
     assert.equal(saved.status, 200);
     assert.equal(saved.body.adaptationId, main.id);
     const loaded = (await call(api.url, 'GET', `${base()}/edl/${main.id}`)).body;
     // Documents come back normalised: the fields that were sent survive and
-    // every clip is filled out to the full v2 shape.
+    // every clip is filled out to the full v3 shape.
     const sent = doc.tracks.flatMap((t) => t.clips);
     const got = loaded.tracks.flatMap((t) => t.clips);
     assert.deepEqual(
@@ -181,7 +182,7 @@ describe('EDL documents', () => {
     );
     assert.ok(got.every((c) => c.transform.fit === 'cover' && c.text.content === ''));
     assert.deepEqual(loaded.markers, doc.markers);
-    assert.deepEqual([loaded.version, loaded.zoom, loaded.playheadPosition], [2, 3, 0]);
+    assert.deepEqual([loaded.version, loaded.zoom, loaded.playheadPosition], [3, 3, 0]);
     assert.deepEqual(readdirSync(join(box.project, '.nearedit')), ['project.json']);
   });
 
@@ -192,7 +193,7 @@ describe('EDL documents', () => {
     const loaded = (await call(api.url, 'GET', `${base()}/edl/${main.id}`)).body;
     assert.deepEqual(
       [loaded.version, loaded.resolution, loaded.markers, loaded.zoom],
-      [2, '1280x720', [], 2],
+      [3, '1280x720', [], 2],
     );
   });
 
@@ -204,6 +205,43 @@ describe('EDL documents', () => {
       [adaptation.fps, adaptation.resolution, adaptation.aspectRatio],
       [25, '1080x1920', '9:16'],
     );
+  });
+
+  it('saves and loads a v3 document with nothing lost', async () => {
+    let doc = E.createEdl({ fps: 25, resolution: '1080x1920', background: '#102030' });
+    doc = E.insertGenerator(doc, {
+      type: 'particles',
+      seed: 7,
+      params: { rate: 60, at: { x: 0.5 } },
+    });
+    const [id] = E.newClipIds(E.createEdl(), doc);
+    doc = E.addEffect(doc, { clipId: id }, 'glow', { effectId: 'fx', params: { radius: 9 } });
+    doc = E.setKeyframe(doc, id, 'effects.fx.radius', 1, 30, { ease: 'ease-out' });
+    doc = E.setKeyframe(E.trimClipStart(doc, id, 2), id, 'transform.x', 2, -400);
+    doc = E.updateClip(doc, id, { blendMode: 'add', fadeOutCurve: 'smooth' });
+    doc = E.insertTitle(doc, { text: { content: 'Hi', weight: 900, animateIn: { type: 'fade' } } });
+    doc = E.addEffect(E.setTrackOpacity(doc, 'v1', 0.5), { trackId: 'v1' }, 'vignette');
+    doc = { ...doc, regions: [{ regionId: 'r', start: 1, end: 2, label: 'Verse', color: '' }] };
+    const put = await call(api.url, 'PUT', `${base()}/edl/${main.id}`, E.toSavedDocument(doc));
+    assert.equal(put.status, 200);
+    const loaded = (await call(api.url, 'GET', `${base()}/edl/${main.id}`)).body;
+    assert.deepEqual(E.fromSavedDocument(loaded).edl, doc);
+    assert.deepEqual([loaded.tracks, loaded.background], [doc.tracks, '#102030'], 'as served');
+    assert.deepEqual(onDisk().adaptations[0].edl.tracks, doc.tracks, 'and as stored on disk');
+  });
+
+  it('cleans free-form parameters and migrates clips of older documents', async () => {
+    const params = JSON.parse('{"__proto__": {"x": 1}, "rate": 5, "deep": {"bad": null}}');
+    const gen = clip({ sourceFile: '', sourceIn: -3, generator: { type: 'noise', params } });
+    const title = clip({ clipId: 't', sourceFile: '', sourceIn: 7, text: { content: 'Old' } });
+    const put = (doc) => call(api.url, 'PUT', `${base()}/edl/${main.id}`, doc);
+    const got = async () => (await call(api.url, 'GET', `${base()}/edl/${main.id}`)).body;
+    assert.equal((await put({ ...edlWith([gen]), version: 3 })).status, 200);
+    const [kept] = (await got()).tracks[0].clips;
+    assert.deepEqual([kept.generator.params, kept.sourceIn], [{ rate: 5, deep: {} }, -3]);
+    assert.equal((await put(edlWith([title]))).status, 200, 'a v2 document');
+    const [old] = (await got()).tracks[0].clips;
+    assert.deepEqual([old.sourceIn, old.sourceOut, old.text.lineHeight], [0, 2, 1.2]);
   });
 
   it('refuses structurally broken documents (422) and leaves the saved one alone', async () => {
@@ -221,6 +259,9 @@ describe('EDL documents', () => {
       edlWith([clip({ sourceOut: '2' })]),
       edlWith([clip({ clipId: '' })]),
       edlWith([clip({ fadeIn: 'slow' })]),
+      edlWith([clip({ effects: 'blur' })]),
+      edlWith([clip({ keyframes: { 'transform.x': [{ t: null, v: 1 }] } })]),
+      edlWith([clip({ keyframes: ['transform.x'] }), clip({ generator: 'noise' })]),
       { ...edlWith([]), fps: -1 },
       { ...edlWith([]), resolution: 'wide' },
       { ...edlWith([]), markers: [{ label: 'no time' }] },

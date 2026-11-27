@@ -5,12 +5,17 @@
  * @module utils/edl/factory
  */
 
-import { EDL_VERSION, defaultKenBurns, defaultText, defaultTransform } from './defaults.js';
+import {
+  EDL_VERSION,
+  defaultGenerator,
+  defaultKenBurns,
+  defaultText,
+  defaultTextAnimation,
+  defaultTransform,
+} from './defaults.js';
 
-export { EDL_VERSION, defaultKenBurns, defaultText, defaultTransform };
-
-const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-const AUDIO_EXTS = ['mp3', 'wav', 'flac', 'ogg', 'aac', 'm4a'];
+export * from './defaults.js';
+export { clipKind } from './clipKind.js';
 
 let counter = 0;
 
@@ -26,14 +31,19 @@ export function newId(prefix = 'clip') {
 }
 
 /**
- * Create a fully populated clip. Nested text/transform overrides are merged.
+ * Create a fully populated clip. Nested text / transform / generator
+ * overrides are merged into their defaults. Without a `sourceOut` the clip
+ * gets the source window its timeline span asks for
+ * (`sourceIn + timelineEnd − timelineStart`, invariant 1).
  * @param {object} [overrides]
  * @returns {object}
  */
 export function createClip(overrides = {}) {
-  const { text, transform, ...rest } = overrides;
+  const { text, transform, generator, ...rest } = overrides;
   const kenBurns = { ...defaultKenBurns(), ...(transform?.kenBurns || {}) };
-  return {
+  const animateIn = { ...defaultTextAnimation(), ...(text?.animateIn || {}) };
+  const animateOut = { ...defaultTextAnimation(), ...(text?.animateOut || {}) };
+  const clip = {
     clipId: newId('clip'),
     sourceFile: '',
     sourceIn: 0,
@@ -50,10 +60,20 @@ export function createClip(overrides = {}) {
     prompt: '',
     intent: '',
     color: '',
+    blendMode: 'normal',
+    fadeInCurve: 'linear',
+    fadeOutCurve: 'linear',
+    effects: [],
+    keyframes: {},
     ...rest,
-    text: { ...defaultText(), ...(text || {}) },
+    generator: { ...defaultGenerator(), ...(generator || {}) },
+    text: { ...defaultText(), ...(text || {}), animateIn, animateOut },
     transform: { ...defaultTransform(), ...(transform || {}), kenBurns },
   };
+  if (rest.sourceOut === undefined) {
+    clip.sourceOut = clip.sourceIn + (clip.timelineEnd - clip.timelineStart);
+  }
+  return clip;
 }
 
 /**
@@ -71,6 +91,9 @@ export function createTrack(type, overrides = {}) {
     solo: false,
     locked: false,
     volume: 1,
+    opacity: 1,
+    blendMode: 'normal',
+    effects: [],
     clips: [],
     ...overrides,
   };
@@ -94,24 +117,12 @@ export function createEdl(overrides = {}) {
     version: EDL_VERSION,
     fps: 30,
     resolution: '1920x1080',
+    background: '#000000',
     tracks: DEFAULT_TRACKS(),
     markers: [],
+    regions: [],
     ...overrides,
   };
-}
-
-/**
- * Classify a clip.
- * @param {object} clip
- * @param {object} [track] - Owning track, used to tell audio from video
- * @returns {'title'|'placeholder'|'image'|'audio'|'video'}
- */
-export function clipKind(clip, track) {
-  if (!clip.sourceFile) return clip.text?.content ? 'title' : 'placeholder';
-  const ext = clip.sourceFile.split('.').pop().toLowerCase();
-  if (IMAGE_EXTS.includes(ext)) return 'image';
-  if (track?.type === 'audio' || AUDIO_EXTS.includes(ext)) return 'audio';
-  return 'video';
 }
 
 /**

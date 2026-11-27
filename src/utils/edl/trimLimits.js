@@ -14,7 +14,8 @@ import { clamp, floorToFrame, frameDuration, sourceDurationOf } from './time.js'
 /**
  * Allowed change of one clip's edge, in seconds.
  * - `sourceIn` never goes below 0, `sourceOut` never passes a known source
- *   duration (video/audio only — images, titles and placeholders are free).
+ *   duration (video/audio only — the source of a generator, title, image
+ *   or placeholder is unbounded).
  * - The clip keeps at least one frame, and stays longer than the cross-fade
  *   on its other edge so a trim can never tuck it inside its neighbour.
  * - A ripple trim keeps both cross-fades intact.

@@ -110,8 +110,26 @@ export function indexClips(edl) {
 }
 
 /**
- * Video and audio clips play their source at speed 1 (invariant 1); images,
- * titles and placeholders have a free duration.
+ * Rewrite one clip by id. Clips on locked tracks and unknown ids are left
+ * alone.
+ * @param {Edl} edl
+ * @param {string} clipId
+ * @param {(clip: Clip, track: Track) => Clip} change - Returns the clip
+ *   itself to change nothing
+ * @returns {Edl} The same document when nothing changed
+ */
+export function changeClip(edl, clipId, change) {
+  const ref = indexClips(edl).get(clipId);
+  if (!ref || ref.track.locked) return edl;
+  const next = change(ref.clip, ref.track);
+  return next === ref.clip ? edl : mapClips(edl, (clip) => (clip === ref.clip ? next : clip));
+}
+
+/**
+ * Whether a clip plays real media. Video and audio clips have a bounded
+ * source: `sourceIn` cannot go below 0 or `sourceOut` past the file's end.
+ * Generators, titles, images and placeholders keep a source window too
+ * (invariant 1) but theirs is unbounded.
  * @param {Clip} clip
  * @param {Track} [track]
  * @returns {boolean}

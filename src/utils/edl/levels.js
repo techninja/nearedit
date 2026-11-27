@@ -1,27 +1,61 @@
 /**
  * Clip levels — fades, opacity and gain at a moment in time. Shared by the
- * preview (compositor + audio mixer) and the FFmpeg renderer.
- * Rules: docs/app-spec/EDL.md § Rendering Semantics. Isomorphic and pure.
+ * preview (compositor + audio mixer) and the renderers.
+ * Rules: docs/app-spec/EDL.md § Rendering Semantics; the fade shapes are
+ * defined in fadeCurves.js. Isomorphic and pure.
+ *
+ * **Keyframes.** These functions read plain values. Pass clips that went
+ * through `resolveClip(clip, time)` (animate.js) and a keyframed `volume`
+ * (a volume envelope) or `transform.opacity` just works; fade lengths and
+ * curves cannot be keyframed. `gainEnvelope.js` does the resolving for you
+ * when you need a clip's gain over its whole length.
  * @module utils/edl/levels
+ */
+
+import { fadeInLevel, fadeOutRemaining } from './fadeCurves.js';
+
+/**
+ * A clip as the level functions read it.
+ * @typedef {{ timelineStart: number, timelineEnd: number, fadeIn?: number, fadeOut?: number,
+ *   fadeInCurve?: string, fadeOutCurve?: string }} Fading
  */
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
 /**
- * Fade multiplier of a clip at a moment: ramps 0→1 over fadeIn and 1→0 over
- * fadeOut.
- * @param {{ timelineStart: number, timelineEnd: number, fadeIn?: number, fadeOut?: number }} clip
+ * Level of the fade-in alone: 1 once it is over.
+ * @param {Fading} clip
+ * @param {number} time - Timeline seconds
+ * @returns {number} 0..1
+ */
+function risen(clip, time) {
+  const sinceStart = time - clip.timelineStart;
+  if (!(clip.fadeIn > 0) || sinceStart >= clip.fadeIn) return 1;
+  return fadeInLevel(clip.fadeInCurve, sinceStart / clip.fadeIn);
+}
+
+/**
+ * Level of the fade-out alone: 1 until it begins.
+ * @param {Fading} clip
+ * @param {number} time - Timeline seconds
+ * @returns {number} 0..1
+ */
+function fallen(clip, time) {
+  const untilEnd = clip.timelineEnd - time;
+  if (!(clip.fadeOut > 0) || untilEnd >= clip.fadeOut) return 1;
+  return fadeOutRemaining(clip.fadeOutCurve, untilEnd / clip.fadeOut);
+}
+
+/**
+ * Fade multiplier of a clip at a moment: rises 0→1 over `fadeIn` along
+ * `fadeInCurve` and falls 1→0 over `fadeOut` along `fadeOutCurve` (linear
+ * when a curve is missing). Outside the clip's fades it is 1.
+ * @param {Fading} clip - Resolved with `resolveClip` if it has keyframes
  * @param {number} time - Timeline seconds
  * @returns {number} 0..1
  */
 export function fadeFactor(clip, time) {
-  const sinceStart = time - clip.timelineStart;
-  const untilEnd = clip.timelineEnd - time;
-  let factor = 1;
-  if (clip.fadeIn > 0 && sinceStart < clip.fadeIn) factor = sinceStart / clip.fadeIn;
-  if (clip.fadeOut > 0 && untilEnd < clip.fadeOut)
-    factor = Math.min(factor, untilEnd / clip.fadeOut);
-  return clamp01(factor);
+  return clamp01(Math.min(risen(clip, time), fallen(clip, time)));
 }
 
 /**
@@ -59,29 +93,32 @@ export function videoFadeOutWindow(track, clip) {
 }
 
 /**
- * Opacity of a video-track clip at a moment (transform opacity excluded).
+ * Opacity a video-track clip gets from its fades at a moment. The fade-in
+ * follows `fadeInCurve`; the fade-out follows `fadeOutCurve` but only where
+ * nothing dissolves in over it (`videoFadeOutWindow`). The clip's own
+ * `transform.opacity` and its track's `opacity` are not included — the
+ * compositor multiplies them in.
  * @param {{ clips: any[] }} track
- * @param {any} clip
+ * @param {any} clip - Resolved with `resolveClip` if it has keyframes
  * @param {number} time - Timeline seconds
  * @returns {number} 0..1
  */
 export function videoOpacity(track, clip, time) {
-  const sinceStart = time - clip.timelineStart;
-  let factor = 1;
-  if (clip.fadeIn > 0 && sinceStart < clip.fadeIn) factor = sinceStart / clip.fadeIn;
-  const out = videoFadeOutWindow(track, clip);
-  if (out && time > out.start) factor = Math.min(factor, (out.end - time) / clip.fadeOut);
-  return clamp01(factor);
+  const shown = videoFadeOutWindow(track, clip) ? fallen(clip, time) : 1;
+  return clamp01(Math.min(risen(clip, time), shown));
 }
 
 /**
- * Linear audio gain of a clip at a moment. Audio cross-fades are plain
- * equal-gain: both clips ramp, unlike video.
+ * Linear audio gain of a clip at a moment:
+ * `track.volume × clip.volume × fadeFactor`. Audio cross-fades are plain
+ * equal-gain: both clips ramp, unlike video, and with the same curve on
+ * both sides the two gains sum to 1.
  * @param {{ volume?: number }} track
- * @param {{ volume?: number, timelineStart: number, timelineEnd: number }} clip
+ * @param {Fading & { volume?: number }} clip - Resolved with `resolveClip`
+ *   if it has keyframes: a keyframed `volume` is then a volume envelope
  * @param {number} time - Timeline seconds
- * @returns {number}
+ * @returns {number} Never negative
  */
 export function clipGain(track, clip, time) {
-  return (track.volume ?? 1) * (clip.volume ?? 1) * fadeFactor(clip, time);
+  return Math.max(0, (track.volume ?? 1) * (clip.volume ?? 1) * fadeFactor(clip, time));
 }

@@ -1,60 +1,43 @@
 /**
  * Document normalisation: accept anything loaded from disk or produced by
- * an LLM and return a valid EDL v2 document (one that passes `validateEdl`).
+ * an LLM and return a valid EDL v3 document (one that passes `validateEdl`).
  * Isomorphic and pure.
  * @module utils/edl/normalize
  */
 
 import { settleFades } from './fades.js';
-import { EDL_VERSION, createTrack, newId } from './factory.js';
-import { isTimed } from './immutable.js';
+import { BACKGROUND_COLOR, EDL_VERSION, createTrack, newId } from './factory.js';
 import { repairLinks } from './links.js';
 import { normalizeClip } from './normalizeClip.js';
+import { normalizeMarkers, normalizeRegions } from './normalizeMarks.js';
 import { resolveAll } from './place.js';
-import { snapToFrame, sortedTracks } from './query.js';
-import { coerce, isObject, mergeShape, toNumber } from './sanitize.js';
+import { sortedTracks } from './query.js';
+import { isObject, mergeShape, toNumber } from './sanitize.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Track} Track */
-/** @typedef {(id: any, prefix: string) => string} Unique */
+/** @typedef {import('./normalizeMarks.js').Unique} Unique */
 
 /**
  * @param {any} raw
  * @param {number} fps
  * @param {Unique} unique
+ * @param {boolean} legacy - The document is older than v3
  * @returns {Track}
  */
-function normalizeTrack(raw, fps, unique) {
+function normalizeTrack(raw, fps, unique, legacy) {
   const type = raw.type === 'audio' ? 'audio' : 'video';
   const base = createTrack(type, { trackId: '', name: '' });
   /** @type {any} */
   const track = { ...mergeShape(base, { ...raw, type, clips: undefined }) };
   track.trackId = unique(raw.trackId ?? raw.id, type === 'audio' ? 'a' : 'v');
   const clips = (Array.isArray(raw.clips) ? raw.clips : [])
-    .map((clip) => normalizeClip(clip, fps, type))
+    .map((clip) => normalizeClip(clip, fps, type, { legacy }))
     .filter(Boolean)
     .map((clip) => ({ ...clip, clipId: unique(clip.clipId, 'clip') }));
   // Overlaps become cross-fades where they can; otherwise the later clip wins.
-  track.clips = settleFades(resolveAll(clips, (clip) => isTimed(clip, track)));
+  track.clips = settleFades(resolveAll(clips));
   return track;
-}
-
-/**
- * @param {any} raw
- * @param {number} fps
- * @param {Unique} unique
- * @returns {import('./types.js').Marker[]}
- */
-function normalizeMarkers(raw, fps, unique) {
-  return (Array.isArray(raw) ? raw : [])
-    .filter((marker) => isObject(marker) && Number.isFinite(toNumber(marker.time, NaN)))
-    .map((marker) => ({
-      markerId: unique(marker.markerId ?? marker.id, 'm'),
-      time: Math.max(0, snapToFrame(toNumber(marker.time, 0), fps)),
-      label: coerce('label', marker.label, ''),
-      color: coerce('color', marker.color, ''),
-    }))
-    .sort((a, b) => a.time - b.time);
 }
 
 /**
@@ -77,17 +60,25 @@ function nameTracks(tracks) {
 /**
  * Normalise a document. What it guarantees:
  *
- * - v1 → v2 migration (no `version`, `id` instead of `trackId`/`clipId`,
+ * - v1 → v3 migration (no `version`, `id` instead of `trackId`/`clipId`,
  *   `fps`/`resolution` under `project`, a bare track array, missing `text`,
  *   `volume`, `groupId`, `locked`, `fit`, `kenBurns.enabled`…);
- * - every field present with a valid value, unknown fields dropped;
+ * - v2 → v3 migration: a document whose `version` is not 3 or more gets the
+ *   v3 defaults, and its generator, title, image and placeholder clips —
+ *   which had no source window — get `sourceIn: 0`, `sourceOut: duration`.
+ *   Nothing moves: the same clips at the same times;
+ * - every field present with a valid value, unknown fields dropped. The
+ *   free-form fields survive as bounded JSON-safe data: `generator.params`,
+ *   effect `params`, and `keyframes` (sorted, unusable keys and paths that
+ *   address nothing dropped); effect ids are unique within their stack;
  * - clips on the frame grid, sorted, with unusable ones dropped;
  * - invariants 1–5: overlaps repaired into cross-fades or overwrites,
  *   fades clamped, asymmetric and dangling links repaired;
- * - unique track, clip and marker ids (the first holder keeps a duplicate);
+ * - unique track, clip, marker and region ids (the first holder keeps a
+ *   duplicate); markers and regions on the frame grid, sorted;
  * - at least one video and one audio track, video tracks first.
  *
- * A valid v2 document comes back deep-equal to itself.
+ * A valid v3 document comes back deep-equal to itself.
  * @param {any} raw
  * @returns {Edl}
  */
@@ -97,6 +88,8 @@ export function normalizeEdl(raw) {
   const rate = toNumber(head.fps, 30);
   const fps = rate >= 1 && rate <= 240 ? rate : 30;
   const sized = typeof head.resolution === 'string' && /^[1-9]\d*x[1-9]\d*$/.test(head.resolution);
+  const legacy = !(toNumber(head.version, 0) >= EDL_VERSION);
+  const colored = typeof head.background === 'string' && BACKGROUND_COLOR.test(head.background);
   const seen = new Set();
   /** @type {Unique} */
   const unique = (id, prefix) => {
@@ -106,7 +99,7 @@ export function normalizeEdl(raw) {
   };
   const tracks = (Array.isArray(doc.tracks) ? doc.tracks : [])
     .filter(isObject)
-    .map((track) => normalizeTrack(track, fps, unique));
+    .map((track) => normalizeTrack(track, fps, unique, legacy));
   for (const type of /** @type {('video'|'audio')[]} */ (['video', 'audio'])) {
     if (tracks.some((track) => track.type === type)) continue;
     const trackId = unique(type === 'audio' ? 'a1' : 'v1', type === 'audio' ? 'a' : 'v');
@@ -116,7 +109,9 @@ export function normalizeEdl(raw) {
     version: EDL_VERSION,
     fps,
     resolution: sized ? head.resolution : '1920x1080',
+    background: colored ? head.background : '#000000',
     tracks: nameTracks(/** @type {Track[]} */ (sortedTracks(tracks))),
     markers: normalizeMarkers(doc.markers, fps, unique),
+    regions: normalizeRegions(doc.regions, fps, unique),
   });
 }
