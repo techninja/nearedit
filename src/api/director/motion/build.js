@@ -15,7 +15,7 @@ import { sceneClips } from './scene.js';
 import { schedule } from './shots.js';
 
 /** The rows of a motion fragment, front to back (video track 0 is in front). */
-export const ROWS = ['Titles', 'Text', 'Accents', 'Particles', 'Background A', 'Background B'];
+export const ROWS = ['Titles', 'Text', 'Particles', 'Accents', 'Background A', 'Background B'];
 
 /**
  * @typedef {Object} BuildOptions

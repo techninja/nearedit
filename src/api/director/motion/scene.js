@@ -36,13 +36,11 @@ export function sceneClips(shot, next, piece) {
   const text = composeScene(scene, theme, piece.format, plan.align, piece.measure, ruled);
   const grade = look(scene.look);
   const onTitle = grade.on === 'title';
-  const shown = words(
-    shot,
-    piece,
-    text,
-    theme.shadow ? colors[0] : '',
-    onTitle ? grade.effects : [],
-  );
+  const shade = {
+    shadow: theme.halo || (theme.shadow ? colors[0] : ''),
+    halo: Boolean(theme.halo),
+  };
+  const shown = words(shot, piece, text, shade, onTitle ? grade.effects : []);
   /** @type {Record<string, any>} */
   const rows = { Titles: shown.title };
   rows[shot.front ? 'Background A' : 'Background B'] = backdrop(

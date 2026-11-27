@@ -37,6 +37,8 @@ import { NIGHT_THEMES } from './themesNight.js';
  *   backgrounds, each from the colour of the edges to the colour of the light.
  *   `ink` and `sub` are readable on every one of them
  * @property {boolean} shadow - Give the text a soft shadow in the deepest colour
+ * @property {string} [halo] - Instead of a shadow: a soft light of this
+ *   colour around the text (a text shadow, far cheaper than a glow effect)
  * @property {ThemeFont} title
  * @property {ThemeFont} subtitle
  * @property {string[]} backgrounds - Background recipes, the default first

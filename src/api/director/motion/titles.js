@@ -69,8 +69,10 @@ export function entranceSpan(anim, count) {
  * The `text` block and `transform` of a title clip.
  * @param {string} content
  * @param {Placed} placed
- * @param {{ color: string, shadow: string, animateIn: object, outSeconds: number }} look -
- *   `shadow` is a colour, or '' for none; `outSeconds` 0 leaves the text up to the cut
+ * @param {{ color: string, shadow: string, halo?: boolean, animateIn: object,
+ *   outSeconds: number }} look - `shadow` is a colour, or '' for none; as a
+ *   `halo` it is a light around the text instead of a shadow under it;
+ *   `outSeconds` 0 leaves the text up to the cut
  * @returns {{ text: object, transform: object, label: string, intent: string }}
  */
 export function titleFields(content, placed, look) {
@@ -78,8 +80,8 @@ export function titleFields(content, placed, look) {
   const shadow = look.shadow
     ? {
         shadowColor: look.shadow,
-        shadowBlur: Math.round(size * 0.16),
-        shadowY: Math.round(size * 0.03),
+        shadowBlur: Math.round(size * (look.halo ? 0.3 : 0.16)),
+        shadowY: look.halo ? 0 : Math.round(size * 0.03),
       }
     : {};
   return {

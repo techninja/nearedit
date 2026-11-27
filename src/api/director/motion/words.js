@@ -21,18 +21,19 @@ import { entrance, entranceSpan, pieceCount, titleFields } from './titles.js';
  * @param {Shot} shot
  * @param {Piece} piece
  * @param {import('./layout.js').Composition} text
- * @param {string} shadow - Shadow colour, '' for none
+ * @param {{ shadow: string, halo: boolean }} shade - Shadow colour ('' for
+ *   none), and whether it is a halo around the text rather than a shadow
  * @param {object[]} glow - Effects of the scene's look, when it belongs on the title
  * @returns {{ title: any, subtitle: any|null, arrivedF: number }} `arrivedF`:
  *   frames the title's entrance takes
  */
-export function words(shot, piece, text, shadow, glow) {
+export function words(shot, piece, text, shade, glow) {
   const { theme } = piece;
   const { fps } = piece.format;
   const { scene } = shot;
   const count = pieceCount(scene.title, scene.by, text.title.fitted.lines);
   const animateIn = entrance(scene.textAnimation, scene.by, count, shot.inSeconds);
-  const leaving = { shadow, outSeconds: shot.outSeconds };
+  const leaving = { ...shade, outSeconds: shot.outSeconds };
   const title = clipAt(shot.textF, shot.textEndF, fps, {
     ...titleFields(scene.title, text.title, { ...leaving, color: theme.ink, animateIn }),
     effects: glow,

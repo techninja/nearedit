@@ -45,6 +45,7 @@ export const NIGHT_THEMES = [
       ['#0a0114', '#2a0a3d', '#6b1570'],
     ],
     shadow: false,
+    halo: '#d946ef',
     title: { fontFamily: 'Inter', weight: 700, size: 0.16, lineHeight: 1.05, tracking: 0 },
     subtitle: { fontFamily: 'JetBrains Mono', weight: 700, size: 0.044, animation: 'typewriter' },
     backgrounds: ['grid', 'spotlight', 'dots'],
@@ -56,7 +57,7 @@ export const NIGHT_THEMES = [
     ],
     accents: ['frame', 'rule', 'ring'],
     transitions: ['iris', 'wipe', 'fade'],
-    look: 'neon',
+    look: 'none',
   },
   {
     id: 'forest',
