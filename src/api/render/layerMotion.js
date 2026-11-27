@@ -1,7 +1,8 @@
 /**
  * Ken-burns geometry: the layer is brought to its largest size once, then
- * resized and moved per frame along a straight line between its placement
- * at the clip's start and at its end. Pure.
+ * resized and moved per frame through the placements the shared maths
+ * gives along the clip — a straight line for pan and zoom, a piecewise
+ * path when the crop moves too. Pure.
  * @module api/render/layerMotion
  */
 
