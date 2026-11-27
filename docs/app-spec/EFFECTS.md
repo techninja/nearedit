@@ -244,8 +244,8 @@ keeping. A grey key colour has no chroma to key on.
 - `clock`: a hand sweeping clockwise from `angle` (0° is 12 o'clock); the
   feather is measured half-way out to the farthest corner.
 
-Keyframe `progress` from 0 to 1 and the clip wipes on. On the incoming clip
-of two that overlap (on tracks one above the other) it is a transition.
+Keyframe `progress` from 0 to 1 and the clip wipes on. On a clip that lies
+over another it is a transition between the two.
 
 ## Alpha
 
@@ -333,7 +333,8 @@ filter functions, every composite operation and blend mode, gradients
   `grain` first make an opaque copy of the layer's un-multiplied colours
   (the layer over black, divided by its alpha with `color-dodge`), blend on
   that, and paint the result back through the layer's own alpha with
-  `source-atop`. Exact for opaque layers, within a level elsewhere.
+  `source-atop`. Exact for opaque layers; within two levels (0.1 on
+  average) where the layer is translucent.
 - **Reduced copies** (`lib/reduce.js`) — see Performance.
 - **Averaging without drift** (`lib/average.js`). An 8-bit canvas rounds the
   same way every time it halves a picture, and a chain of halvings visibly
@@ -350,42 +351,98 @@ filter functions, every composite operation and blend mode, gradients
 
 ## Performance
 
-Measured on a 4-core machine that other jobs were loading at the time
-(the compositor's reference pair, blur 8 + glow 20, took 51 ms in the same
-session where its author measured 47): one 1920 × 1080 footage layer with
-the effect, a whole frame, median of 21. Server: `@napi-rs/canvas`.
-Chromium: 158, software-rasterised, frames presented per second (60 Hz cap).
+Measured on a quiet 4-core machine: one 1920 × 1080 footage layer with the
+effect, a whole frame, median of 21. Server: `@napi-rs/canvas`. Chromium:
+158, software-rasterised; frames presented per second through
+`requestAnimationFrame` (60 Hz cap). As a yardstick, the compositor's
+original blur 8 + glow 20 took 59 ms here (47 ms when its author measured
+it).
 
-| 1920 × 1080 footage with… | Server, ms | Chromium 1080p, fps | Chromium 960 × 540, fps |
-| --- | ---: | ---: | ---: |
-PERF_TABLE
+| 1920 × 1080 footage with… | Server, ms | Chromium 1080p, ms | Chromium 1080p, fps | Chromium 960 × 540, fps |
+| --- | ---: | ---: | ---: | ---: |
+| nothing (the layer alone) | 5 | 1 | 61 | 62 |
+| colorAdjust (contrast 1.2) | 23 | 16 | 61 | 62 |
+| colorAdjust (all four) | 31 | 25 | 42 | 61 |
+| colorBalance (temperature 0.5) | 24 | 15 | 62 | 62 |
+| levels (black .1, white .9, midtones .3) | 29 | 20 | 47 | 62 |
+| tint colorize | 23 | 14 | 61 | 62 |
+| tint duotone | 29 | 22 | 42 | 62 |
+| stylize (grayscale 1) | 17 | 12 | 62 | 61 |
+| stylize (sepia .8, invert .2) | 23 | 17 | 55 | 62 |
+| posterize 4 | 22 | 14 | 61 | 62 |
+| blur 4 (direct) | 32 | 24 | 42 | 62 |
+| blur 8 | 29 | 25 | 40 | 62 |
+| blur 24 | 20 | 14 | 61 | 61 |
+| blur 80 | 20 | 14 | 61 | 62 |
+| blur directional 8 | 31 | 21 | 46 | 61 |
+| blur directional 40 @30 | 46 | 36 | 28 | 62 |
+| glow 20 | 23 | 15 | 60 | 61 |
+| glow 6 threshold .5 | 35 | 29 | 33 | 62 |
+| glow 60 threshold .5 | 25 | 16 | 61 | 61 |
+| dropShadow | 37 | 29 | 34 | 62 |
+| vignette | 16 | 9 | 62 | 61 |
+| grain | 30 | 19 | 53 | 61 |
+| scanlines | 11 | 3 | 62 | 62 |
+| flicker | 23 | 17 | 58 | 62 |
+| pixelate 24 | 20 | 10 | 61 | 62 |
+| rgbSplit 8 | 37 | 26 | 40 | 61 |
+| mirror | 14 | 6 | 62 | 61 |
+| chromaKey | 31 | 22 | 46 | 61 |
+| mask ellipse feather 40 | 20 | 14 | 61 | 62 |
+| mask rectangle hard | 16 | 9 | 62 | 62 |
+| wipe linear | 20 | 13 | 61 | 62 |
+| wipe iris | 28 | 27 | 36 | 61 |
+| wipe clock | 24 | 18 | 55 | 62 |
+| blur 8 + glow 20 | 49 | 42 | 24 | 61 |
+| colorAdjust + stylize + dropShadow — one merged pass | 56 | 57 | 18 | 61 |
+| preset `cinematic` | 51 | 45 | 23 | 57 |
+| preset `dream` | 82 | 64 | 16 | 51 |
+| preset `vhs` | 88 | 75 | 14 | 40 |
+| preset `noir` | 51 | 42 | 25 | 62 |
+| preset `warm` | 36 | 29 | 35 | 62 |
+| preset `cool` | 36 | 37 | 32 | 62 |
+| preset `spotlight` | 16 | 9 | 62 | 62 |
+| preset `vintage` | 65 | 53 | 20 | 53 |
+| preset `neon` | 50 | 40 | 25 | 61 |
+| preset `glitch` | 57 | 51 | 21 | 61 |
 
-Presets are their effects added up: from `spotlight` (18 ms; 62 fps) to `vhs`
-(100 ms on the server; 13 fps at 1080p and 38 fps at 960 × 540 in Chromium).
+A preset costs what its effects cost together, less the surface they share.
 
 **The reduced path.** A wide blur holds no fine detail, so `blur` and `glow`
 make it on a copy halved a few times and enlarge the result. The rule:
 
 - `blur`: halve while the blur stays at least **6 pixels** wide on the copy
   — from 12 canvas pixels of radius up. Against the canvas's own full-size
-  blur the result is within 3 levels for 99.9 % of values, 0.3 on average
-  (measured at radius 12 to 96 on three pictures). Below 5.5 pixels on the
-  copy the two differ by 10 and more on sharp detail, hence the floor.
-- `glow`: always at least halved, then while the halo stays at least
-  **2 pixels** wide on the copy. A soft layer of added light hides the
-  coarser copy.
+  blur the result is within 5 levels for 99.9 % of values and 0.2 to 0.9
+  on average (radius 12 to 96, three pictures). With less than 5.5 pixels
+  of blur on the copy the two part by 8 and more on sharp detail, hence the
+  floor.
+- `glow`: from 2 canvas pixels of radius up, on a copy halved at least
+  once and then while the halo stays at least **2 pixels** wide on it. A
+  soft layer of added light hides the coarser copy.
 - `mask`: its feather is blurred on a mask reduced to 1.5 pixels of blur.
 
 The rule counts canvas pixels, so a small preview may blur directly where
 the render reduces; `tests/compose/resolution.test.js` holds both to the
 same picture.
 
-| | Server, ms: before → after | Chromium 1080p, fps: before → after | Chromium 960 × 540, ms: before → after |
-| --- | ---: | ---: | ---: |
-BEFORE_TABLE
+| | Server, ms | Chromium 1080p, ms | Chromium 1080p, fps | Chromium 960 × 540, ms |
+| --- | ---: | ---: | ---: | ---: |
+| blur 8 + glow 20 | 59 → 50 | – | – | – |
+| blur 8 | 27 → 28 | 34 → 35 | 27 → 28 | 7.1 → 6.3 |
+| blur 12 | 28 → 19 | 37 → 19 | 26 → 50 | 7.3 → 6.6 |
+| blur 24 | 35 → 19 | 28 → 14 | 33 → 56 | 7.7 → 4.6 |
+| blur 48 | 35 → 16 | 33 → 16 | 22 → 55 | 8.8 → 4.2 |
+| blur 80 | 39 → 17 | 52 → 16 | 19 → 57 | 9.5 → 4.1 |
+| blur 200 | 56 → 23 | 76 → 18 | 12 → 51 | 15.7 → 4.5 |
+| glow 6 / 0.8 | 28 → 27 | 37 → 25 | 31 → 38 | 7.3 → 6.0 |
+| glow 20 / 0.8 | 24 → 17 | 42 → 17 | 23 → 54 | 8.1 → 4.6 |
+| glow 60 / 2 | 30 → 19 | 47 → 18 | 21 → 56 | 9.0 → 4.3 |
 
-"Before" is the original one-pass filter blur and blurred-copy glow, run in
-the same frame loop, alternating with the new one.
+Each cell is before → after: "before" the original one-pass filter blur and
+blurred-copy glow, run in the same frame loop and alternating with the new
+one. Frames per second step with the display's refresh, so near 30 and
+60 fps the milliseconds say more.
 
 What costs what:
 
@@ -394,9 +451,10 @@ What costs what:
   one copy of the surface, not the functions.
 - The straight-colour effects pay about 10 ms at 1080p for the copy that
   protects alpha, even when the layer is opaque.
-- Pixel passes cost 5 to 20 ms per megapixel on a software canvas. On a
-  GPU-backed browser canvas reading pixels back is slower than that; a
-  preview at 960 pixels pays a quarter.
+- Pixel passes cost 7 to 16 ms per megapixel on a software canvas, 4 of
+  them for reading and writing the pixels (`chromaKey` on a green-screen
+  shot: 17 ms at 1080p, 3.4 ms at 960 × 540). On a GPU-backed browser
+  canvas reading pixels back is slower than that; it was not measured here.
 
 ## Exactness and limits
 

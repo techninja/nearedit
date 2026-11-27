@@ -2,7 +2,8 @@
  * Posterize — each colour channel reduced to a few evenly spaced levels.
  * Quantising is not something a canvas filter or blend can do, so this is a
  * pixel pass through a 256-entry table (`lib/pixels.js`): exact, the same
- * on both canvases, about 8 ms at 1920×1080.
+ * on both canvases, 14 ms at 1920×1080 (most of it reading and writing the
+ * pixels) and under 3 ms on a 960×540 preview.
  *
  * With `levels` n, a channel value v (0..1) becomes floor(v · n) / (n − 1),
  * the top level included: 2 levels leave eight colours.

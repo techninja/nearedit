@@ -5,11 +5,11 @@
  * work. The rule is `reduceLevel`: halve while the blur, measured in pixels
  * of the reduced copy, stays at least `floor` wide. For a Gaussian the
  * floor is 6: measured against the canvas's own full-size blur, a copy
- * blurred by 6 pixels or more is within 3 levels of it nearly everywhere
- * (99.9 % of values) and 0.3 on average, while below about 5.5 the two
- * drift apart by 10 and more on sharp detail. The rule depends on the blur
- * in canvas pixels, so a small preview may take the direct path where the
- * render takes the reduced one; both give the same picture.
+ * blurred by 6 pixels or more is within 5 levels of it for 99.9 % of
+ * values and under 1 on average, while below about 5.5 the two part by 8
+ * and more on sharp detail. The rule depends on the blur in canvas pixels,
+ * so a small preview may take the direct path where the render takes the
+ * reduced one; both give the same picture.
  * Isomorphic.
  * @module utils/compose/effects/lib/reduce
  */

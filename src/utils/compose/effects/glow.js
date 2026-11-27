@@ -7,11 +7,11 @@
  * (so a dark or transparent area gives off none), cut at the threshold and
  * blurred by one canvas filter, then given just enough alpha to carry its
  * colour — the one step that needs a pixel loop, since no canvas operation
- * turns brightness into alpha. That loop never sees the full frame: the
- * whole halo is made on a reduced copy, halved at least once and then on
- * until the blur is 2 to 4 of its pixels wide (`lib/reduce.js`) — coarser
- * than a blur on its own could be, which a soft layer of added light hides
- * completely.
+ * turns brightness into alpha. That loop rarely sees the full frame: from a
+ * blur of 2 canvas pixels up, the whole halo is made on a reduced copy,
+ * halved until the blur is 2 to 4 of its pixels wide (`lib/reduce.js`) —
+ * coarser than a blur on its own could be, which a soft layer of added
+ * light hides completely.
  * @module utils/compose/effects/glow
  */
 
@@ -91,7 +91,7 @@ export default {
   apply(surface, params, _time, frame, env) {
     const sigma = params.radius * frame.scale;
     if (!(sigma > 0 && params.intensity > 0)) return;
-    const levels = Math.max(1, reduceLevel(sigma, HALO_FLOOR));
+    const levels = sigma >= HALO_FLOOR ? Math.max(1, reduceLevel(sigma, HALO_FLOOR)) : 0;
     const { surface: small, factor } = reduce(surface, levels, env);
     const { width, height } = small;
     const light = env.scratch(width, height);
@@ -101,7 +101,10 @@ export default {
     // (x − t) / (1 − t), clamped: what is brighter than the threshold, rescaled.
     const t = params.threshold;
     const cut = t > 0 ? `brightness(${1 / (1 + t)}) contrast(${(1 + t) / (1 - t)}) ` : '';
-    const reduced = sigma / factor;
+    // Halving and enlarging blur a little themselves (a variance of about
+    // factor² / 4): the filter does the rest.
+    const spread = factor > 1 ? (factor * factor) / 4 : 0;
+    const reduced = Math.sqrt(Math.max(sigma * sigma - spread, 0.01)) / factor;
     const halo = env.scratch(width, height);
     drawFiltered(halo.ctx, light, `${cut}blur(${reduced}px)`, reduced * 3, env);
     lightToAlpha(halo.ctx, width, height, params.intensity);

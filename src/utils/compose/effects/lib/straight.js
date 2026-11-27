@@ -9,8 +9,9 @@
  * its un-multiplied ("straight") colours — its pixels over black, divided by
  * its alpha with a colour-dodge — the effect blends on that with no alpha in
  * play, and `putStraight` paints the result back through the layer's own
- * alpha. For an opaque layer the copy is exact; elsewhere it is within a
- * level. Seven cheap whole-frame operations, no pixel loop.
+ * alpha. For an opaque layer the round trip is exact; where the layer is
+ * translucent it stays within two levels (0.1 on average). Seven cheap
+ * whole-frame operations, no pixel loop.
  * Isomorphic.
  * @module utils/compose/effects/lib/straight
  */

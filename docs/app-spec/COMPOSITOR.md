@@ -181,15 +181,15 @@ export default {
 
 /** An effect: either a CSS-style filter string, or a drawing pass. */
 export default {
-  type: 'blur',
-  label: 'Blur',
-  category: 'blur', // color | blur | stylize | light | key | distort
-  params: { radius: { type: 'number', default: 8, min: 0, max: 200, unit: 'px', animatable: true } },
-  filter: (params, frame) => `blur(${params.radius * frame.scale}px)`,
+  type: 'dropShadow',
+  label: 'Drop shadow',
+  category: 'light', // color | blur | stylize | light | key | distort
+  params: { blur: { type: 'number', default: 8, min: 0, max: 200, unit: 'px', animatable: true } },
+  filter: (params, frame) => `drop-shadow(12px 12px ${params.blur * frame.scale}px #000)`,
   // How far the filter samples, so the frame's edge pixels can be extended
-  // outward and a full-frame blur does not darken the border:
-  reach: (params, frame) => params.radius * frame.scale * 3,
-  // …or, for effects that need more than a filter:
+  // outward and a filter at the frame's edge does not darken the border:
+  reach: (params, frame) => params.blur * frame.scale * 3,
+  // …or, for effects that need more than a filter (most of them):
   // apply(surface, params, time, frame, env) {}  — redraws surface.canvas in place
 };
 ```
@@ -253,10 +253,13 @@ reference: [PARTICLES.md](./PARTICLES.md).
 A generator module may export **presets** (`{ id, name, description,
 params, blendMode? }`); the catalog lists them with the generator.
 
-**Effects:** `colorAdjust` (brightness, contrast, saturation, hue), `blur`,
-`glow`, `dropShadow`, `vignette`, `tint`, `stylize` (grayscale, sepia,
-invert), `pixelate`, `chromaKey`, `wipe` (a soft-edged reveal for
-transitions), `rgbSplit`, `grain`.
+**Effects:** nineteen, on clips and on tracks — colour (`colorAdjust`,
+`colorBalance`, `levels`, `tint`, `stylize`, `posterize`), blur and light
+(`blur`, `glow`, `dropShadow`, `vignette`, `flicker`), texture (`grain`,
+`scanlines`, `pixelate`, `rgbSplit`, `mirror`) and keying (`chromaKey`,
+`mask`, `wipe` — a soft-edged reveal for transitions) — plus ten looks
+built from them (`EFFECT_PRESETS`). Parameters, order, alpha handling and
+cost: [EFFECTS.md](./EFFECTS.md).
 
 ## Text animation
 

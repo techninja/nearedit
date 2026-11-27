@@ -6,8 +6,9 @@
  *
  * Three channels cannot share one alpha through any canvas operation
  * without thickening every soft edge, so this is a pixel pass
- * (`lib/channels.js`): about 20 ms at 1920×1080, a quarter of that on a
- * 960-pixel preview.
+ * (`lib/channels.js`): 26 to 34 ms at 1920×1080 on the server canvas —
+ * the dearest effect of the library at full size — and 7 to 9 ms on a
+ * 960×540 preview.
  * @module utils/compose/effects/rgbSplit
  */
 

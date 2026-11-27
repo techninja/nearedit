@@ -2,9 +2,11 @@
  * Chroma key — make one colour transparent (a green or blue screen), with a
  * soft edge and spill suppression. The arithmetic is in `lib/chroma.js`.
  *
- * This is the one effect a canvas has no operation for, so it reads the
- * pixels: one pass over a typed array at the canvas's own size (about
- * 10 ms at 1920×1080, a quarter of that on a 960-pixel preview).
+ * A canvas has no operation that does this, so the effect reads the pixels:
+ * one pass over a typed array at the canvas's own size, nothing allocated
+ * beyond the read itself. Measured on the server canvas with a green-screen
+ * shot: 17 ms at 1920×1080 (half of it reading and writing the pixels),
+ * 3.4 ms on a 960×540 preview.
  * @module utils/compose/effects/chromaKey
  */
 
