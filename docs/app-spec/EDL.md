@@ -6,8 +6,11 @@ compositor, the AI director and the FFmpeg renderer — reads and writes this
 one JSON shape. Raw media is never modified.
 
 - Shape + defaults in code: `src/utils/edl/factory.js`, `src/utils/edl/defaults.js`
-- Browser store model: `src/store/TimelineState.js` (hybrids drops any field
-  that is not declared there — add new fields to the model first)
+- In the browser: a plain object held by the edit session
+  (`src/utils/editor/session.js`, read with `getDoc()`). The store carries
+  only a change signal (`src/store/TimelineState.js`), so no store model
+  declares the fields — a new field goes into the factories, the normaliser
+  (which drops keys it does not know) and this document
 - Pure operations: `src/utils/edl/*.js` (isomorphic, Node-tested), see
   [Operations](#operations)
 
@@ -28,9 +31,9 @@ one JSON shape. Raw media is never modified.
 ```
 
 `playheadPosition`, `cursorPosition`, `zoom` and `scrollX` are view state.
-In the browser they live in `ViewState`, not `TimelineState`; they are merged
-into the document when it is saved and split back out on load, so reopening
-an adaptation restores where the editor was.
+In the browser they live in `ViewState`, not in the session's document; they
+are merged into the document when it is saved and split back out on load, so
+reopening an adaptation restores where the editor was.
 
 All times are **seconds** (floats). Edits snap to frame boundaries
 (`Math.round(t * fps) / fps`).

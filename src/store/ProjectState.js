@@ -15,7 +15,7 @@ import { store } from 'hybrids';
  * @property {string} adaptationId
  * @property {string} adaptationName
  * @property {string} aspectRatio
- * @property {boolean} loaded - True once the EDL has been loaded into TimelineState
+ * @property {boolean} loaded - True once the EDL has been loaded into the edit session
  * @property {boolean} dirty - Unsaved document changes exist
  * @property {string} saveError - Last save failure, empty when fine
  */

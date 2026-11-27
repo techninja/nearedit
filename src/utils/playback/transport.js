@@ -7,13 +7,15 @@
  * shows, `cursorPosition` is the edit cursor. While stopped they move
  * together; while playing only the playhead runs. Stopping either returns
  * the playhead to the cursor (`stop`, Space) or brings the cursor to the
- * playhead (`pause`, Enter). The document (TimelineState) is never written.
+ * playhead (`pause`, Enter). The document is read from the edit session and
+ * never written.
  * @module utils/playback/transport
  */
 
 import { store } from 'hybrids';
 import ViewState from '#store/ViewState.js';
 import { snapToFrame, timelineDuration } from '#utils/edl/query.js';
+import { getDoc } from '#utils/editor/session.js';
 import { loopRange, playStart } from '#utils/playback/looping.js';
 import { frameAt } from '#utils/playback/timecode.js';
 import * as engine from '#utils/playback/transportEngine.js';
@@ -23,10 +25,10 @@ export { onFrame } from '#utils/playback/transportEngine.js';
 export { setLoop, setLoopRange } from '#utils/playback/transportLoop.js';
 
 /** @returns {number} Frame rate of the document */
-const fps = () => engine.timeline().fps || 30;
+const fps = () => getDoc().fps || 30;
 
 /** @returns {number} Timeline duration, seconds */
-export const getDuration = () => timelineDuration(engine.timeline().tracks);
+export const getDuration = () => timelineDuration(getDoc().tracks);
 
 /** @returns {boolean} */
 export const isPlaying = () => engine.isRunning();

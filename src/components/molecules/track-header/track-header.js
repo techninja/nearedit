@@ -6,8 +6,8 @@
  * @module components/molecules/track-header
  */
 
-import { html, define, dispatch, store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
+import { html, define, dispatch } from 'hybrids';
+import { liveDoc } from '#utils/editor/liveDoc.js';
 import { setView } from '#utils/editor/view.js';
 import { releasePointerFocus } from '#utils/keyboard/focus.js';
 import { renameTrackTo, toggleTrackFlag } from '#utils/timeline/trackActions.js';
@@ -18,7 +18,7 @@ import '#atoms/track-volume/track-volume.js';
  * @typedef {Object} TrackHeaderHost
  * @property {string} trackId
  * @property {boolean} active - The track paste and insert aim at
- * @property {any} timeline - The document (TimelineState)
+ * @property {any} doc - The current document
  */
 
 /** @typedef {TrackHeaderHost & HTMLElement} Host */
@@ -97,10 +97,10 @@ export default define({
   tag: 'track-header',
   trackId: '',
   active: false,
-  timeline: store(TimelineState),
+  doc: liveDoc(),
   render: {
-    value: ({ trackId, active, timeline }) => {
-      const track = timeline.tracks.find((candidate) => candidate.trackId === trackId);
+    value: ({ trackId, active, doc }) => {
+      const track = doc.tracks.find((candidate) => candidate.trackId === trackId);
       if (!track) return html``;
       const audio = track.type === 'audio';
       const { muted, solo, locked, volume } = track;

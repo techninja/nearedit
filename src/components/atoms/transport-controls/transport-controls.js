@@ -8,14 +8,14 @@
 import { html, define, store } from 'hybrids';
 import TimelineState from '#store/TimelineState.js';
 import ViewState from '#store/ViewState.js';
-import { timelineDuration } from '#utils/edl/query.js';
 import { formatTimecode } from '#utils/playback/timecode.js';
 import * as transport from '#utils/playback/transport.js';
 import '#atoms/app-icon/app-icon.js';
 
 /**
  * @typedef {Object} TransportControlsHost
- * @property {any} timeline - The document (TimelineState)
+ * @property {import('#store/TimelineState.js').TimelineStateShape} timeline - Summary of the
+ *   document, replaced whenever it changes
  * @property {import('#store/ViewState.js').ViewStateShape} view
  */
 
@@ -104,7 +104,7 @@ export default define({
             >${formatTimecode(view.playheadPosition, timeline.fps)}</span
           >
           <span class="transport-duration" aria-label="Duration"
-            >/ ${formatTimecode(timelineDuration(timeline.tracks), timeline.fps)}</span
+            >/ ${formatTimecode(timeline.duration, timeline.fps)}</span
           >
         </span>
       </div>

@@ -6,9 +6,9 @@
  */
 
 import { html, define, dispatch, store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
 import ViewState from '#store/ViewState.js';
 import { renameMarker } from '#utils/edl/index.js';
+import { liveDoc } from '#utils/editor/liveDoc.js';
 import { edit } from '#utils/editor/session.js';
 import { currentViewport } from '#utils/timeline/scroll.js';
 import { timeToX } from '#utils/timeline/viewport.js';
@@ -16,7 +16,7 @@ import { timeToX } from '#utils/timeline/viewport.js';
 /**
  * @typedef {Object} TimelineMarkerFieldHost
  * @property {string} markerId - Marker being renamed; '' hides the field
- * @property {any} timeline - The document (TimelineState)
+ * @property {any} doc - The current document
  * @property {import('#store/ViewState.js').ViewStateShape} view
  */
 
@@ -52,11 +52,11 @@ function focusField(host) {
 export default define({
   tag: 'timeline-marker-field',
   markerId: '',
-  timeline: store(TimelineState),
+  doc: liveDoc(),
   view: store(ViewState),
   render: {
-    value: ({ markerId, timeline, view }) => {
-      const marker = markerId && timeline.markers.find((m) => m.markerId === markerId);
+    value: ({ markerId, doc, view }) => {
+      const marker = markerId && (doc.markers || []).find((m) => m.markerId === markerId);
       if (!marker) return html``;
       const left = Math.max(0, timeToX(currentViewport(view), marker.time));
       return html`

@@ -3,6 +3,7 @@ import { sendMouse } from '@web/test-runner-commands';
 import { store } from 'hybrids';
 import ViewState from '#store/ViewState.js';
 import { createClip, createEdl, createTrack } from '#utils/edl/factory.js';
+import { addTrack, moveClips } from '#utils/edl/index.js';
 import * as session from '#utils/editor/session.js';
 import { LANE_H, RULER_H } from '#utils/timeline/layout.js';
 import { timelineStage } from '#utils/timeline/stageHost.js';
@@ -100,6 +101,23 @@ describe('timeline-panel', () => {
     expect(el.querySelector('.timeline-stage-empty').textContent).to.contain('Drag media here');
     session.loadDoc(sampleDoc());
     await waitUntil(() => !el.querySelector('.timeline-stage-empty'), 'the hint stayed');
+  });
+
+  it('sizes its scrollbars from the document as it changes', async () => {
+    const { el } = await mount();
+    const across = el.querySelector('.timeline-panel-hscroll');
+    const down = el.querySelector('.timeline-panel-vscroll');
+    const body = el.querySelector('.timeline-panel-body');
+    const before = { width: across.total, height: down.total };
+    expect(body.dataset.tracks).to.equal('3');
+    session.edit((doc) => moveClips(doc, ['two'], { delta: 60 }));
+    await waitUntil(() => across.total >= before.width + 6000, `width stayed ${across.total}`);
+    session.edit((doc) => addTrack(doc, 'audio'));
+    await waitUntil(() => body.dataset.tracks === '4', 'the track count did not follow');
+    expect(down.total).to.be.greaterThan(before.height);
+    session.undo();
+    session.undo();
+    await waitUntil(() => across.total === before.width && down.total === before.height);
   });
 
   it('redraws only when something changes', async () => {

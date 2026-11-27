@@ -230,7 +230,7 @@ describe('scripts/setup.js', () => {
     const clone = join(box.root, 'clone');
     mkdirSync(join(clone, 'scripts'), { recursive: true });
     copyFileSync(join(ROOT, 'scripts', 'setup.js'), join(clone, 'scripts', 'setup.js'));
-    for (const step of ['vendor-deps.js', 'build-icons.js']) {
+    for (const step of ['vendor-deps.js', 'vendor-fonts.js', 'build-icons.js']) {
       const marker = JSON.stringify(join(clone, `${step}.ran`));
       const body = `import { writeFileSync } from 'node:fs';\nwriteFileSync(${marker}, '');\n`;
       writeFileSync(join(clone, 'scripts', step), body);

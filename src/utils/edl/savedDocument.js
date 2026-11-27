@@ -48,8 +48,8 @@ export function toSavedDocument(edl, view = {}) {
 }
 
 /**
- * Split a loaded document into the normalised EDL (for `TimelineState`) and
- * the view fields (for `ViewState`). Accepts v1 files and garbage.
+ * Split a loaded document into the normalised EDL (for the edit session)
+ * and the view fields (for `ViewState`). Accepts v1 files and garbage.
  * @param {any} doc
  * @returns {{ edl: Edl, view: SavedView }}
  */

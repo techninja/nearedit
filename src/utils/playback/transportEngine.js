@@ -3,16 +3,17 @@
  * transport.js. Internal: UI code calls transport.js, never this module.
  *
  * Each animation frame while playing: read the master clock, apply loop
- * and end-of-timeline rules, bring the mixer in line with the *current*
- * document (so edits made during playback take effect on the next frame),
- * write the playhead to ViewState and hand the frame to the compositor.
+ * and end-of-timeline rules, bring the mixer in line with the session's
+ * *current* document (so edits made during playback, live drag previews
+ * included, take effect on the next frame), write the playhead to ViewState
+ * and hand the frame to the compositor.
  * @module utils/playback/transportEngine
  */
 
 import { store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
 import ViewState from '#store/ViewState.js';
 import { timelineDuration } from '#utils/edl/query.js';
+import { getDoc } from '#utils/editor/session.js';
 import { audioClockTime, resumeAudio, suspendAudio } from '#utils/playback/audioGraph.js';
 import { createMixer } from '#utils/playback/audioMixer.js';
 import { createClock } from '#utils/playback/clock.js';
@@ -42,9 +43,6 @@ let timerId = 0;
 let lastTick = 0;
 let parkTimer = 0;
 
-/** @returns {any} The current document */
-export const timeline = () => store.get(TimelineState);
-
 /** @returns {boolean} */
 export const isRunning = () => playing;
 
@@ -68,7 +66,7 @@ export function halt() {
 export function parkAudio(at) {
   clearTimeout(parkTimer);
   parkTimer = window.setTimeout(() => {
-    if (!playing) mixer.park(timeline().tracks, at);
+    if (!playing) mixer.park(getDoc().tracks, at);
   }, PARK_DELAY_MS);
 }
 
@@ -76,7 +74,7 @@ export function parkAudio(at) {
 function tick() {
   if (!playing) return;
   lastTick = performance.now();
-  const { tracks } = timeline();
+  const { tracks } = getDoc();
   const duration = timelineDuration(tracks);
   const step = advance(position, clock.now(), duration, loopRange(store.get(ViewState), duration));
   position = step.position;

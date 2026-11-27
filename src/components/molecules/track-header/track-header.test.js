@@ -1,5 +1,6 @@
 import { fixture, expect, waitUntil } from '@open-wc/testing';
 import { createEdl, createTrack } from '#utils/edl/factory.js';
+import { deepFreeze } from '#utils/edl/testkit.js';
 import * as session from '#utils/editor/session.js';
 import './track-header.js';
 
@@ -7,14 +8,13 @@ const track = (id) => session.getDoc().tracks.find((t) => t.trackId === id);
 const button = (el, label) => el.querySelector(`button[aria-label="${label}"]`);
 
 async function mount(trackId) {
-  session.loadDoc(
-    createEdl({
-      tracks: [
-        createTrack('video', { trackId: 'v1', name: 'Main' }),
-        createTrack('audio', { trackId: 'a1', name: 'Music', volume: 0.5 }),
-      ],
-    }),
-  );
+  const doc = createEdl({
+    tracks: [
+      createTrack('video', { trackId: 'v1', name: 'Main' }),
+      createTrack('audio', { trackId: 'a1', name: 'Music', volume: 0.5 }),
+    ],
+  });
+  session.loadDoc(deepFreeze(doc)); // the header renders the session's own document
   const el = await fixture(`<track-header track-id="${trackId}"></track-header>`);
   await waitUntil(() => el.querySelector('.track-header-name'), 'never rendered');
   return el;

@@ -1,11 +1,11 @@
 /**
- * Edit session — the one door every document change goes through.
+ * Edit session — the one holder of the document and the one door every
+ * change to it goes through.
  *
- * `store.set` lands a microtask later, and editing is faster than that (a
- * drag edits on every pointer move), so the session holds the authoritative
- * document as a plain object and mirrors it into `TimelineState` for
- * rendering. Read with `getDoc()`, write with `edit()` / `commit()`; never
- * `store.set(TimelineState, …)` directly.
+ * The document is a plain object, kept exactly as operations return it, so
+ * tracks and clips may carry any data. Read with `getDoc()`, write with
+ * `edit()` / `commit()`. The store never holds it: after a change the
+ * mirror writes a summary to `TimelineState`, which nothing else may write.
  *
  * Undo history holds document references: operations never mutate.
  * @module utils/editor/session

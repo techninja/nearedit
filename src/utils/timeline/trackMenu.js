@@ -11,7 +11,7 @@ import { edit } from '#utils/editor/session.js';
 
 /**
  * @param {{ tracks: { trackId: string, type: string, locked: boolean, solo: boolean }[] }} doc -
- *   The document as rendered (TimelineState)
+ *   The document the menu is opened on
  * @param {string} trackId
  * @returns {import('./menuModel.js').MenuItem[]}
  */

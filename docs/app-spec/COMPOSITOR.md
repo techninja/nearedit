@@ -31,6 +31,7 @@ All optional; a v2 document is a valid v3 document.
 | `effects` | `[{ effectId, type, enabled, params }]` | Applied in order after the clip is placed |
 | `keyframes` | `{ "<path>": [{ t, v, ease }] }` | Animates any numeric or colour property |
 | `blendMode` | enum | How the clip combines with what is under it. Default `normal` |
+| `fadeInCurve`, `fadeOutCurve` | enum | Shape of the fades: `linear` (default), `smooth`, `fast`, `slow`, `sharp` |
 | `text` | object | Title text, extended below |
 
 Generator, title, image and placeholder clips now keep a source window like
@@ -98,6 +99,10 @@ motion attached to the content through trims, slips and splits.
 `src/utils/edl/animate.js` `resolveClip(clip, time)` returns the clip with
 every keyframed property replaced by its value at that moment. Everything
 downstream sees plain values.
+
+`volume` is a property like any other, so a keyframed `volume` is a volume
+envelope. Fade curves and envelopes shape picture opacity and audio gain
+through `src/utils/edl/levels.js`, which preview and render share.
 
 ## Time and size
 

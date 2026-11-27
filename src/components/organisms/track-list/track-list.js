@@ -6,8 +6,8 @@
  */
 
 import { html, define, store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
 import ViewState from '#store/ViewState.js';
+import { liveDoc } from '#utils/editor/liveDoc.js';
 import { formatTimecode } from '#utils/playback/timecode.js';
 import { scrollBy } from '#utils/timeline/scroll.js';
 import { trackMenu } from '#utils/timeline/trackMenu.js';
@@ -16,7 +16,7 @@ import '#molecules/track-header/track-header.js';
 
 /**
  * @typedef {Object} TrackListHost
- * @property {any} timeline - The document (TimelineState)
+ * @property {any} doc - The current document
  * @property {import('#store/ViewState.js').ViewStateShape} view
  * @property {{ open: boolean, x: number, y: number, trackId: string }} menu - Options menu state
  */
@@ -52,20 +52,20 @@ function handleMenuClose(host) {
 /** @type {import('hybrids').Component<TrackListHost>} */
 export default define({
   tag: 'track-list',
-  timeline: store(TimelineState),
+  doc: liveDoc(),
   view: store(ViewState),
   menu: { value: MENU_CLOSED },
   render: {
-    value: ({ timeline, view, menu }) => html`
+    value: ({ doc, view, menu }) => html`
       <div class="track-list" onwheel="${handleWheel}" ontrackmenu="${handleTrackMenu}">
         <div class="track-list-corner">
           <span role="timer" aria-label="Playhead position"
-            >${formatTimecode(view.playheadPosition, timeline.fps)}</span
+            >${formatTimecode(view.playheadPosition, doc.fps)}</span
           >
         </div>
         <div class="track-list-headers">
           <div style="${{ transform: `translateY(${-view.scrollY}px)` }}">
-            ${timeline.tracks.map((track) =>
+            ${doc.tracks.map((track) =>
               html`<track-header
                 track-id="${track.trackId}"
                 active="${track.trackId === view.activeTrackId}"
@@ -77,7 +77,7 @@ export default define({
           open="${menu.open}"
           x="${menu.x}"
           y="${menu.y}"
-          items="${menu.open ? trackMenu(timeline, menu.trackId) : []}"
+          items="${menu.open ? trackMenu(doc, menu.trackId) : []}"
           onmenuclose="${handleMenuClose}"
         ></timeline-menu>
       </div>

@@ -17,7 +17,8 @@ import '#molecules/timeline-menu/timeline-menu.js';
 
 /**
  * @typedef {Object} TimelineStageHost
- * @property {any} timeline - The document (TimelineState)
+ * @property {import('#store/TimelineState.js').TimelineStateShape} timeline - Summary of the
+ *   document, replaced whenever it changes
  * @property {{ open: boolean, x: number, y: number, hit: any }} menu - Context menu state
  * @property {string} renaming - Id of the marker being renamed, or ''
  */
@@ -71,7 +72,7 @@ export default define({
   render: {
     value: (host) => {
       const { timeline, menu, renaming } = host;
-      const empty = !timeline.tracks.some((track) => track.clips.length > 0);
+      const empty = timeline.clipCount === 0;
       return html`
         <div class="timeline-stage">
           <canvas

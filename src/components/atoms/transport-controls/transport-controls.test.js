@@ -1,26 +1,22 @@
 import { fixture, expect, waitUntil } from '@open-wc/testing';
 import { store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
 import ViewState from '#store/ViewState.js';
-import { createClip, createTrack } from '#utils/edl/factory.js';
+import { createClip } from '#utils/edl/factory.js';
+import { trimClipEnd } from '#utils/edl/index.js';
+import { deepFreeze, testEdl } from '#utils/edl/testkit.js';
+import * as session from '#utils/editor/session.js';
 import * as transport from '#utils/playback/transport.js';
 import './transport-controls.js';
 
 const title = (timelineStart, timelineEnd) =>
-  createClip({ timelineStart, timelineEnd, text: { content: 'Title' } });
+  createClip({ clipId: 'title', timelineStart, timelineEnd, text: { content: 'Title' } });
 const view = () => store.get(ViewState);
 const button = (el, label) => el.querySelector(`button[aria-label="${label}"]`);
 const readout = (el) => el.querySelector('.transport-time').textContent.replace(/\s+/g, ' ').trim();
 
 async function mount(duration = 10) {
   transport.stop();
-  await store.set(TimelineState, {
-    version: 2,
-    fps: 30,
-    resolution: '1280x720',
-    tracks: [createTrack('video', { clips: [title(0, duration)] })],
-    markers: [],
-  });
+  session.loadDoc(deepFreeze(testEdl({ v1: [title(0, duration)] }, { resolution: '1280x720' })));
   await store.set(ViewState, {
     playheadPosition: 0,
     cursorPosition: 0,
@@ -67,6 +63,28 @@ describe('transport-controls', () => {
       `readout was ${readout(el)}`,
     );
     expect(el.querySelector('.transport-timecode').getAttribute('role')).to.equal('timer');
+  });
+
+  it('follows the duration and the frame rate of the document as it is edited', async () => {
+    const el = await mount(10);
+    expect(readout(el)).to.equal('00:00:00:00 / 00:00:10:00');
+    session.edit((doc) => trimClipEnd(doc, 'title', 4.5));
+    expect(transport.getDuration()).to.equal(4.5); // the transport reads the session, at once
+    await waitUntil(
+      () => readout(el) === '00:00:00:00 / 00:00:04:15',
+      `readout was ${readout(el)}`,
+    );
+    session.edit((doc) => ({ ...doc, fps: 24 }));
+    await waitUntil(
+      () => readout(el) === '00:00:00:00 / 00:00:04:12',
+      `readout was ${readout(el)}`,
+    );
+    session.undo();
+    session.undo();
+    await waitUntil(
+      () => readout(el) === '00:00:00:00 / 00:00:10:00',
+      `readout was ${readout(el)}`,
+    );
   });
 
   it('plays and pauses in place with the play button', async () => {

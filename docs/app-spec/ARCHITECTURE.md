@@ -28,8 +28,8 @@ Three rules hold the design together:
 | Timeline UI | `src/utils/timeline/`, `organisms/timeline-*` | browser | Canvas drawing + pointer/keyboard interaction |
 | Playback | `src/utils/playback/`, `organisms/video-preview` | browser | Compositor, Web Audio mixer, transport |
 | Panels | `src/components/`, `src/pages/` | browser | Media bin, inspector, transcript, director, export |
-| Edit session | `src/utils/editor/` | browser | The one door for document changes: commit, undo, gestures, autosave |
-| Stores | `src/store/` | browser | `TimelineState` (document), `ViewState` (transient), `ProjectState`, `AppState` |
+| Edit session | `src/utils/editor/` | browser | Holds the document; the one door for changes: commit, undo, gestures, autosave |
+| Stores | `src/store/` | browser | `TimelineState` (change signal), `ViewState` (transient), `ProjectState`, `AppState` |
 | Server lib | `src/api/lib/` | Node | Config, registry, sidecars, scanning, path safety, FFmpeg, jobs |
 | Render | `src/api/render/` | Node | EDL → `filter_complex` → FFmpeg job |
 | Intelligence | `src/api/intelligence/` | Node | Providers + analysis steps → sidecars |
@@ -42,19 +42,44 @@ browser through the import map (`#utils/…`) and by Node through the
 
 ## State
 
-- **`TimelineState`** — the document: `fps`, `resolution`, `tracks`,
-  `markers`. In memory; the editor page loads it from, and debounce-saves it
-  to, `PUT /api/projects/:id/edl/:aid`. Only document changes enter the undo
+- **The document** — `fps`, `resolution`, `tracks`, `markers` and whatever
+  tracks and clips carry — is a plain object held by the **edit session**
+  (`src/utils/editor/session.js`), in memory, and nowhere else. Read it with
+  `getDoc()`. The editor page loads it from, and debounce-saves it to,
+  `PUT /api/projects/:id/edl/:aid`. Only document changes enter the undo
   history.
+- **`TimelineState`** — a change signal, not the document: `revision`,
+  `fps`, `resolution`, `duration`, `trackCount`, `clipCount`. The session
+  writes this summary after every document change, raising `revision` by
+  one; nothing else writes it.
 - **`ViewState`** — playhead, cursor, zoom, scroll, selection, snapping,
   ripple, loop. Never undoable. Playback ticks touch only this small model.
 - **`AppState`** — theme and panel layout, persisted to `localStorage`.
 
-`store.set` is asynchronous (the new value is visible a microtask later),
-and editing is faster than that. So the **edit session**
-(`src/utils/editor/session.js`) holds the authoritative document as a plain
-object and mirrors it into `TimelineState` for rendering. Nothing else
-writes `TimelineState`.
+The document stays out of the store on purpose. A hybrids model silently
+drops every property it does not declare, and tracks and clips carry
+open-ended data (effect stacks, generator parameters, keyframe maps).
+Copying a large document into a model also costs milliseconds per edit, and
+`store.set` lands a microtask later while a drag edits on every pointer
+move.
+
+Whoever needs the document reads the session's. What differs is how each
+reader learns that it changed:
+
+- A component that draws tracks, clips or markers declares
+  `doc: liveDoc()` (`src/utils/editor/liveDoc.js`): the current document,
+  re-read and re-rendered whenever `TimelineState` is written. One that
+  shows only what the summary holds declares
+  `timeline: store(TimelineState)`.
+- Canvas code and controllers subscribe with `onDocChange()`, which is
+  called synchronously on every change, and schedule their own redraw.
+- Playback calls `getDoc()` on every frame, so an edit made while playing —
+  a drag still in progress included — is seen and heard on the next frame.
+- Event handlers call `getDoc()` at the moment they act. Nobody keeps a
+  document: operations never mutate, so every change is a new object.
+
+During a drag `TimelineState` is written once per animation frame, not once
+per pointer move; every other change is written at once.
 
 An edit is always `edit(doc => operation(doc, …))`: the session pushes the
 current document to undo history, stores the result of a pure operation

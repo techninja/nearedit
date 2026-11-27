@@ -1,8 +1,8 @@
 /**
  * Editor view state — transient, in-memory, never part of undo history.
  *
- * Kept apart from TimelineState so that playhead ticks, scrolling and
- * selection changes never copy or persist the whole EDL document.
+ * Kept apart from the document (held by the edit session) so that playhead
+ * ticks, scrolling and selection changes never touch, signal or persist it.
  * playheadPosition/cursorPosition/zoom/scrollX are merged into the saved EDL
  * on save and split back out on load (see docs/app-spec/EDL.md).
  *

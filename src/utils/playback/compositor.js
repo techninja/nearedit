@@ -95,10 +95,13 @@ export function createCompositor(canvas) {
   }
 
   return {
-    /** Paused: show the frame at `time`. Repeat calls with nothing new are free. */
+    /**
+     * Paused: show the frame at `time`. Repeat calls with nothing new are
+     * free — documents are never mutated, so the same object is the same
+     * picture and every edit arrives as a new one.
+     */
     scrub(/** @type {FrameDoc} */ doc, /** @type {number} */ time) {
-      const same = request && request.doc.tracks === doc.tracks && request.time === time;
-      if (same && request.doc.resolution === doc.resolution && !dirty) return;
+      if (request && request.doc === doc && request.time === time && !dirty) return;
       request = { doc, time };
       dirty = false;
       const wanted = new Set();

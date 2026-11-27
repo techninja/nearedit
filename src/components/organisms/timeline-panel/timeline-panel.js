@@ -21,7 +21,8 @@ import '#organisms/track-list/track-list.js';
 
 /**
  * @typedef {Object} TimelinePanelHost
- * @property {any} timeline - The document (TimelineState)
+ * @property {import('#store/TimelineState.js').TimelineStateShape} timeline - Summary of the
+ *   document, replaced whenever it changes
  * @property {import('#store/ViewState.js').ViewStateShape} view
  * @property {import('#utils/timeline/metrics.js').StageSize} size - Size of the canvas
  * @property {boolean} shortcutsOpen
@@ -67,7 +68,8 @@ export default define({
   },
   render: {
     // `timeline` and `size` are read so the scrollbars follow the document
-    // and the canvas size; the lane height reaches the headers through CSS.
+    // (`scrollExtent` measures the session's) and the canvas size; the lane
+    // height reaches the headers through CSS.
     value: ({ timeline, view, size, shortcutsOpen }) => {
       const extent = scrollExtent(view.zoom);
       return html`
@@ -76,7 +78,7 @@ export default define({
           <div
             class="timeline-panel-body"
             style="${{ '--timeline-lane-h': `${size.laneHeight}px` }}"
-            data-tracks="${timeline.tracks.length}"
+            data-tracks="${timeline.trackCount}"
           >
             <track-list></track-list>
             <timeline-stage></timeline-stage>

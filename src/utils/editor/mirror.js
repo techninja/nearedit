@@ -1,16 +1,21 @@
 /**
- * Mirroring the session's document into `TimelineState` for rendering.
+ * Telling the UI that the session's document changed, by writing its
+ * summary to `TimelineState`. The document itself never enters the store:
+ * whatever the write wakes reads it from the session (`getDoc()`).
  *
- * `store.set` rebuilds the store model for every clip, which is cheap once
- * but not at pointer-move rate on a large timeline. Live previews during a
- * drag are therefore coalesced to one mirror per animation frame; anything
- * that is not a preview is mirrored at once.
+ * Every write re-renders the components that follow the document, which is
+ * cheap once but not at pointer-move rate. Live previews during a drag are
+ * therefore coalesced to one write per animation frame; anything that is
+ * not a preview is written at once.
  * @module utils/editor/mirror
  */
 
 import { store } from 'hybrids';
 import TimelineState from '#store/TimelineState.js';
+import { summarize } from '#utils/editor/summary.js';
 
+/** Summaries written so far: the store's `revision` */
+let revision = 0;
 /** @type {any|null} Document waiting for the next frame */
 let pending = null;
 let handle = 0;
@@ -23,22 +28,24 @@ const schedule = (callback) =>
 const unschedule = (id) => (hasFrames ? globalThis.cancelAnimationFrame(id) : clearTimeout(id));
 
 /**
- * Write a document to the store now, dropping any queued preview.
+ * Write a document's summary to the store now, as the next revision,
+ * dropping any queued preview.
  * @param {any} doc
  */
 export function mirrorNow(doc) {
   if (handle) unschedule(handle);
   handle = 0;
   pending = null;
-  const { version, fps, resolution, tracks, markers } = doc;
+  revision += 1;
   store
-    .set(TimelineState, { version, fps, resolution, tracks, markers })
+    .set(TimelineState, summarize(doc, revision))
     .catch((err) => console.error('[session] could not update the timeline store:', err));
 }
 
 /**
- * Write a document to the store on the next animation frame. Calls made
- * before that frame replace one another, so only the latest is written.
+ * Write a document's summary on the next animation frame. Calls made before
+ * that frame replace one another, so only the latest is written and the
+ * revision moves on once.
  * @param {any} doc
  */
 export function mirrorSoon(doc) {

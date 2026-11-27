@@ -1,8 +1,10 @@
 import { fixture, expect, waitUntil } from '@open-wc/testing';
 import { store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
 import ViewState from '#store/ViewState.js';
-import { createClip, createTrack } from '#utils/edl/factory.js';
+import { createClip, createEdl, createTrack } from '#utils/edl/factory.js';
+import { addMarker, moveClips, toggleTrackMute, updateClip } from '#utils/edl/index.js';
+import { deepFreeze } from '#utils/edl/testkit.js';
+import * as session from '#utils/editor/session.js';
 import * as transport from '#utils/playback/transport.js';
 import { previewSurface } from './video-preview.js';
 
@@ -18,14 +20,6 @@ const block = (clipId, color, timelineStart, timelineEnd, extra = {}) =>
     text: { content: 'MMMM', fontSize: 300, color, background: color },
     ...extra,
   });
-
-const doc = (tracks, resolution = '1280x720') => ({
-  version: 2,
-  fps: 30,
-  resolution,
-  tracks,
-  markers: [],
-});
 
 /** Centre pixel of the preview canvas as [r, g, b]. */
 function centre(el) {
@@ -51,9 +45,11 @@ function loadStyles() {
   });
 }
 
-async function mount(tracks, resolution) {
+async function mount(tracks, resolution = '1280x720') {
   transport.stop();
-  await store.set(TimelineState, doc(tracks, resolution));
+  // Frozen: the preview and the mixer now read the session's own document,
+  // which undo history shares, so they must never write to it.
+  session.loadDoc(deepFreeze(createEdl({ tracks, resolution })));
   await store.set(ViewState, {
     playheadPosition: 0,
     cursorPosition: 0,
@@ -90,7 +86,7 @@ describe('video-preview', () => {
     await waitUntil(() => canvas.style.width === '320px', 'canvas never fitted the container');
     expect(canvas.style.height).to.equal('180px');
     expect(canvas.width / canvas.height).to.be.closeTo(16 / 9, 0.02);
-    await store.set(TimelineState, { resolution: '1080x1920' });
+    session.edit((doc) => ({ ...doc, resolution: '1080x1920' }));
     await waitUntil(
       () => canvas.style.height === '180px' && canvas.style.width === '101px',
       'not refitted to 9:16',
@@ -116,7 +112,7 @@ describe('video-preview', () => {
     ];
     const el = await mount(tracks);
     await waitUntil(() => isColor(el, [0, 255, 0]), 'front track is not on top');
-    await store.set(TimelineState, { tracks: [{ ...tracks[0], muted: true }, tracks[1]] });
+    session.edit((doc) => toggleTrackMute(doc, 'v1'));
     await waitUntil(
       () => isColor(el, [255, 0, 0]),
       'muting the front track did not reveal the back',
@@ -128,10 +124,52 @@ describe('video-preview', () => {
       createTrack('video', { trackId: 'v1', clips: [block('a', GREEN, 0, 4)] }),
     ]);
     await waitUntil(() => isColor(el, [0, 255, 0]));
-    await store.set(TimelineState, {
-      tracks: [createTrack('video', { trackId: 'v1', clips: [block('a', RED, 0, 4)] })],
-    });
+    session.edit((doc) => updateClip(doc, 'a', { text: { color: RED, background: RED } }));
     await waitUntil(() => isColor(el, [255, 0, 0]), 'edit was not repainted');
+    session.undo();
+    await waitUntil(() => isColor(el, [0, 255, 0]), 'undo was not repainted');
+  });
+
+  it('repaints for a new document object and not for a view change', async () => {
+    const el = await mount([
+      createTrack('video', { trackId: 'v1', clips: [block('a', GREEN, 0, 4)] }),
+    ]);
+    await waitUntil(() => isColor(el, [0, 255, 0]));
+    const paints = () => previewSurface(el).compositor.stats().paints;
+    const before = paints();
+    session.edit((doc) => addMarker(doc, 1)); // no track changed, the document did
+    await waitUntil(() => paints() === before + 1, `painted ${paints() - before} times`);
+    await store.set(ViewState, { scrollX: 40, selection: ['a'] });
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(paints()).to.equal(before + 1);
+  });
+
+  it('repaints a drag preview while the gesture is still in progress', async () => {
+    const el = await mount([
+      createTrack('video', { trackId: 'v1', clips: [block('a', GREEN, 0, 2)] }),
+    ]);
+    await waitUntil(() => isColor(el, [0, 255, 0]));
+    session.commit(moveClips(session.beginGesture(), ['a'], { delta: 5 }));
+    await waitUntil(() => isColor(el, [0, 0, 0]), 'the picture did not follow the drag');
+    expect(session.inGesture()).to.equal(true);
+    session.cancelGesture();
+    await waitUntil(() => isColor(el, [0, 255, 0]), 'cancelling did not bring the clip back');
+  });
+
+  it('plays the document as it is edited, drag previews included', async () => {
+    const el = await mount([
+      createTrack('video', { trackId: 'v1', clips: [block('front', GREEN, 0, 30)] }),
+      createTrack('video', { trackId: 'v2', clips: [block('back', RED, 0, 30)] }),
+    ]);
+    expect(transport.play()).to.equal(true);
+    await waitUntil(() => isColor(el, [0, 255, 0]), 'front track not shown while playing');
+    session.commit(toggleTrackMute(session.beginGesture(), 'v1'));
+    await waitUntil(() => isColor(el, [255, 0, 0]), 'a preview made while playing was not shown');
+    session.cancelGesture();
+    await waitUntil(() => isColor(el, [0, 255, 0]), 'the cancelled preview stayed on screen');
+    session.edit((doc) => toggleTrackMute(doc, 'v1'));
+    await waitUntil(() => isColor(el, [255, 0, 0]), 'an edit made while playing was not shown');
+    expect(transport.isPlaying()).to.equal(true);
   });
 
   it('halves a fading clip at the midpoint of its fade', async () => {

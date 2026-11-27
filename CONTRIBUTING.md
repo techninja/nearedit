@@ -62,8 +62,8 @@ conventions, enforced by `npm run spec`:
 And a few that are specific to NearEdit:
 
 - **The EDL is the only truth.** Preview, render and director all read the
-  same document. If you add a field, add it to `src/store/TimelineState.js`,
-  the factories in `src/utils/edl/`, the normaliser, and EDL.md.
+  same document. If you add a field, add it to the factories in
+  `src/utils/edl/`, the normaliser, and EDL.md.
 - **Edits are pure functions.** Operations in `src/utils/edl/` take a
   document and return a new one. In the browser, every change goes through
   the edit session (`src/utils/editor/session.js`) so it is undoable.
