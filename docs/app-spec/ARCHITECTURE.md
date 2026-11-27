@@ -5,7 +5,7 @@ assistant editor. A Node server next to your media does the heavy lifting
 (FFmpeg, transcription, LLM calls); the browser is a fast canvas timeline.
 
 ```text
-State (JSON EDL)  →  UI (canvas timeline + preview)  →  FFmpeg (headless render)
+State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (canvas + FFmpeg)
         ↑
   AI director / base edit  (only ever mutates the EDL)
 ```
@@ -25,18 +25,22 @@ Three rules hold the design together:
 | ----- | -------- | ------- | ----- |
 | EDL core | `src/utils/edl/` | browser + Node | Pure functions, no DOM, Node-tested |
 | Director core | `src/utils/director/` | browser + Node | Action schemas, plan schema, shared helpers |
+| Compositor | `src/utils/compose/` | browser + Node | Draws one frame of a document on a Canvas 2D context: footage, text, generators, effects, keyframes. Deterministic; the preview and the render both call it |
 | Timeline UI | `src/utils/timeline/`, `organisms/timeline-*` | browser | Canvas drawing + pointer/keyboard interaction |
-| Playback | `src/utils/playback/`, `organisms/video-preview` | browser | Compositor, Web Audio mixer, transport |
+| Commands | `src/utils/commands/`, `src/utils/keyboard/` | browser | Every action as a named command; two keymap presets (NearEdit, Vegas) |
+| Playback | `src/utils/playback/`, `organisms/video-preview` | browser | Hosts the compositor for the preview; Web Audio mixer; transport |
 | Panels | `src/components/`, `src/pages/` | browser | Media bin, inspector, transcript, director, export |
 | Edit session | `src/utils/editor/` | browser | Holds the document; the one door for changes: commit, undo, gestures, autosave |
 | Stores | `src/store/` | browser | `TimelineState` (change signal), `ViewState` (transient), `ProjectState`, `AppState` |
 | Server lib | `src/api/lib/` | Node | Config, registry, sidecars, scanning, path safety, FFmpeg, jobs |
-| Render | `src/api/render/` | Node | EDL → `filter_complex` → FFmpeg job |
+| Compositor host | `src/api/compose/` | Node | The same compositor on `@napi-rs/canvas`, with the bundled fonts |
+| Render | `src/api/render/` | Node | EDL → segments → FFmpeg filter graph (plain footage) or canvas frames piped to FFmpeg (everything else) |
+| CLI | `bin/` | Node | `nearedit render / frame / validate / catalog` — the renderer without the server |
 | Intelligence | `src/api/intelligence/` | Node | Providers + analysis steps → sidecars |
 | Director | `src/api/director/` | Node | LLM client, prompts, plan → fragment, base edit |
 | Routers | `src/api/*.js` | Node | Thin Express routers, one per domain |
 
-Isomorphic code (`src/utils/edl`, `src/utils/director`) is imported by the
+Isomorphic code (`src/utils/edl`, `src/utils/compose`, `src/utils/director`) is imported by the
 browser through the import map (`#utils/…`) and by Node through the
 `imports` field of `package.json` — the same specifier works in both.
 
@@ -97,8 +101,9 @@ within a frame of it. All audible audio clips are mixed through gain nodes
 (`track.volume × clip.volume × fade`). When paused, moving the playhead
 seeks ("scrub") and composites exact frames.
 
-Preview and render must agree on geometry — both implement the placement
-algorithm in [EDL.md](./EDL.md#transform).
+Preview and render agree because they are the same code: both call
+`drawFrame` of the compositor ([COMPOSITOR.md](./COMPOSITOR.md)), which
+implements the placement algorithm in [EDL.md](./EDL.md#transform).
 
 ## Server pipelines
 
@@ -117,10 +122,13 @@ heuristic plan) → validate → align to word / scene / beat boundaries →
 DirectorResult fragment`. The LLM only ever chooses *what* to use; all
 timing maths is deterministic code. See [DIRECTOR.md](./DIRECTOR.md).
 
-**Render.** `EDL → normalise → filter graph (per-clip trim, scale, crop,
-fade, overlay; audio delay, gain, mix) → FFmpeg with -progress → file in
-data/renders/`. Long timelines are cut into segments at clip boundaries and
-joined without re-encoding. See [RENDER.md](./RENDER.md).
+**Render.** `EDL → normalise → segments at clip boundaries → file in
+data/renders/`. A segment of plain footage becomes an FFmpeg filter graph
+(per-clip trim, scale, crop, fade, overlay). A segment with text,
+generators, effects, keyframes or blend modes is drawn frame by frame by
+the compositor in worker processes and piped into the same encoder. Audio
+is always an FFmpeg graph (delay, gain, fade curves, volume envelopes,
+mix). Segments are joined without re-encoding. See [RENDER.md](./RENDER.md).
 
 **Safety.** Every path from a request passes `lib/paths.js` (allowed media
 roots only; symlinks resolved). `lib/auth.js` optionally puts the whole

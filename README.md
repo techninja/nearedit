@@ -10,7 +10,7 @@ an optional AI director turn that data into a rough cut. The result is an
 ordinary timeline you can then fine-tune by hand — never a black box.
 
 ```text
-State (JSON EDL)  →  UI (canvas timeline + preview)  →  FFmpeg (headless render)
+State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (canvas + FFmpeg)
         ↑
   base edit / AI director  (only ever proposes timeline changes)
 ```
@@ -34,11 +34,30 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  FFmpeg (headless ren
   markers, the playhead and the beats of your music.
 - **Overlap means cross-fade.** Drag one clip over another for a dissolve;
   pull them apart and it is gone. Drag a clip's top corners for fades.
-- Titles, stills with ken-burns moves, per-clip position, scale, rotation,
-  opacity and crop; per-track mute, solo, lock and volume.
+- Stills with ken-burns moves, per-clip position, scale, rotation,
+  opacity and crop — on the preview itself, with handles and snapping;
+  per-track mute, solo, lock, volume, opacity and blend mode.
+- **Keyframes** on almost every number and colour: transforms, volume,
+  text, generator and effect parameters, with ten easings. Fade curves.
+- Time selection, regions, ripple modes, slip, slide and roll, paste
+  insert and paste repeat, and a **Vegas keymap** beside the default one.
 - Undo for everything, including whatever the director did. Autosave.
 - Real-time preview in the browser with every audio track playing.
 - Mouse, keyboard and touch. Remappable shortcuts.
+
+### Create
+
+- **Generators** — clips that need no media: solid, gradient, shape,
+  pattern, noise, and a **particle system** with thirteen presets (snow,
+  sparks, confetti, star field…) that can also throw your own images.
+- **Text** in five bundled font families with colour emoji, outline, box
+  and shadow, animated in and out by block, line, word or letter.
+- **Effects** on clips and on whole tracks, stacked and reordered: colour
+  correction, blur, glow, drop shadow, vignette, grain, scanlines,
+  pixelate, RGB split, mirror, chroma key, mask, wipe — and ready-made
+  looks built from them.
+- What you see is what renders: the preview and the server draw every
+  frame with the same code.
 
 ### Analyse (locally)
 
@@ -67,8 +86,11 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  FFmpeg (headless ren
 
 - **Adaptations**: one project, many timelines — a 16:9 long-form with 9:16
   and 1:1 versions nested under it.
-- Headless FFmpeg rendering as a background job, with progress, cancel and
-  a browser notification when it is done.
+- Headless rendering as a background job, with progress, cancel and a
+  browser notification when it is done.
+- **No editor needed:** `nearedit render timeline.json` draws frames,
+  checks and renders a timeline from a shell — see
+  [examples](examples/README.md) for a piece made of generators alone.
 
 ## Quick start
 
@@ -142,13 +164,17 @@ NearEdit is young. Things worth knowing before you rely on it:
   not sample-accurate at loop points; scrubbing is silent.
 - **Playback speed** is always 1× — there is no time-stretch.
 - **Rendering** is H.264 + AAC in MP4, 8-bit; HDR sources are converted
-  without tone-mapping. Long timelines render in segments.
-- **Titles** use one font each; emoji are not supported in renders.
+  without tone-mapping. Long timelines render in segments. Plain footage
+  goes through FFmpeg's filter graph; anything with text, generators,
+  effects or keyframes is drawn by the compositor, which is slower
+  (roughly 15–25 frames per second at 1080p on four cores).
+- **Text** uses the bundled fonts only; you cannot add your own yet.
 - **AI providers:** faster-whisper and all FFmpeg-based analysis are
   exercised for real in development; whisper.cpp, Ollama and
   OpenAI-compatible servers are tested against local fakes that speak
   their wire format. Reports from real setups are very welcome.
-- No effects or plugins beyond transforms, fades and titles.
+- Effects are built in; there is no plugin interface for third-party
+  ones, and no audio effects.
 
 ## Documentation
 
@@ -157,11 +183,14 @@ NearEdit is young. Things worth knowing before you rely on it:
 | [App specification](docs/app-spec/README.md) | Projects, adaptations, sidecars, shortcuts |
 | [Architecture](docs/app-spec/ARCHITECTURE.md) | Layers, state, pipelines, conventions |
 | [EDL](docs/app-spec/EDL.md) | The timeline document and the editing rules |
+| [Compositor](docs/app-spec/COMPOSITOR.md) | Generators, effects, keyframes and text; authoring from a shell |
+| [Effects](docs/app-spec/EFFECTS.md), [Particles](docs/app-spec/PARTICLES.md) | Every effect and the particle system |
+| [Vegas parity](docs/app-spec/VEGAS.md) | Commands, the two keymaps, selection and ripple behaviour |
 | [API](docs/app-spec/API.md) | HTTP + WebSocket API |
 | [Configuration](docs/app-spec/CONFIGURATION.md) | Environment variables, access and security |
 | [Intelligence](docs/app-spec/INTELLIGENCE.md) | Transcription, tagging, beats, scenes |
 | [Director](docs/app-spec/DIRECTOR.md) | Director actions, edit plans, base edit |
-| [Render](docs/app-spec/RENDER.md) | How a timeline becomes an FFmpeg render |
+| [Render](docs/app-spec/RENDER.md) | How a timeline becomes a file: filter graph, canvas path, segments |
 | [Clearstack](docs/clearstack/) | The no-build web-component conventions the code follows |
 
 ## Development
