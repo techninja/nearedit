@@ -67,14 +67,14 @@ export const EVENT_COMMANDS = [
   edit(
     'trim.selectStart',
     'Edge trim: take the start (again: the edge before)',
-    ['Num7'],
+    ['Num7', 'Alt+['],
     () => events.selectEdge('start'),
     { enabled: events.canSelectEdge, icon: 'brackets' },
   ),
   edit(
     'trim.selectEnd',
     'Edge trim: take the end (again: the edge after)',
-    ['Num9'],
+    ['Num9', 'Alt+]'],
     () => events.selectEdge('end'),
     { enabled: events.canSelectEdge, icon: 'brackets' },
   ),

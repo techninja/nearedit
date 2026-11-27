@@ -220,7 +220,7 @@ on macOS. Press `?` in the editor for the live list.
 | - / + / \ | Zoom out / in / to fit (Ctrl+↑ / ↓: large steps, \|: centre on the cursor) |
 | Ctrl+Shift+↑ / ↓, ` | Taller / shorter tracks, minimise / restore them |
 | Keypad 4 / 6, 8 / 2 | Nudge a pixel; move to the track above / below |
-| Keypad 7 / 9, 5 | Edge-trim mode on the start / end (nudge keys then trim it); leave |
+| Alt+[ / Alt+] (keypad 7 / 9) | Edge-trim mode on the start / end: the nudge keys then trim it. Escape or keypad 5 leaves |
 | ? | Show all shortcuts, switch layout and wheel mode |
 
 Mouse and touch: drag a clip to move it (onto another track of the same

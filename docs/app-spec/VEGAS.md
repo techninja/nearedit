@@ -153,7 +153,7 @@ split at the paste and its second half moves along, nothing is lost.
 | Keypad `4` / `6`, `Alt+,` / `Alt+.` | Nudge the selection a pixel | the same |
 | Keypad `1` / `3`, `,` / `.` | Nudge a frame | `,` / `.` |
 | Keypad `8` / `2`, `Ctrl+Alt+↑` / `↓` | Move to the track above / below (of the same kind) | the same |
-| `[` / `]`, keypad `7` / `9` | Enter edge-trim mode on the selected clip's start / end. Pressed again: the edge before / after along the track | Keypad `7` / `9` |
+| `[` / `]`, keypad `7` / `9` | Enter edge-trim mode on the selected clip's start / end. Pressed again: the edge before / after along the track | Keypad `7` / `9`, `Alt+[` / `Alt+]` |
 | Keypad `5`, `Esc` | Leave edge-trim mode | the same |
 
 In edge-trim mode the chosen edge wears a bracket, the cursor sits on it, and
@@ -189,9 +189,9 @@ them (so text on the page can still be copied).
 
 `Ctrl+Q` and `Ctrl+Shift+Q` are quit keys in other browsers and builds
 (Firefox on Linux; Chrome's old exit shortcut) — not measured here — which is
-why the track keys have `Alt+Q` / `Alt+Shift+Q` beside them. `Ctrl+T` is kept in the layout next to `Alt+T`: it works where the
-browser does not claim it (an installed app window, full screen with keyboard
-lock). Outside the browser's reach, the operating system may take `Alt+F8`
+why the track keys have `Alt+Q` / `Alt+Shift+Q` beside them. `Ctrl+T` is kept in the layout next to `Alt+T` for
+wherever a browser does not claim it (an app window without tabs, say — not
+measured here). Outside the browser's reach, the operating system may take `Alt+F8`
 (some Linux window managers), `Ctrl+Alt+←` / `→` (workspace switching) or, on
 macOS, `Ctrl+←` / `→`; remap those in `nearedit_keymap` if yours does.
 
