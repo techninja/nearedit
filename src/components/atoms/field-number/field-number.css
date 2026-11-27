@@ -48,8 +48,9 @@ field-number {
     width: 4.5rem;
   }
 
+  /* Room for the unit, however long it is (%, px, px/s). */
   & .field-input:has(+ .field-number-unit) {
-    padding-right: 1.5rem;
+    padding-right: calc(max(var(--unit-ch, 2), 2) * 0.45rem + 0.6rem);
   }
 
   & .field-number-unit {

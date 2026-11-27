@@ -45,7 +45,7 @@ export default define({
         onpointercancel="${handleScrubEnd}"
         >${label}</span
       >
-      <span class="field-number-box">
+      <span class="field-number-box" style="${{ '--unit-ch': String((spec.unit || '').length) }}">
         ${slider &&
         html`<input
           class="field-range"

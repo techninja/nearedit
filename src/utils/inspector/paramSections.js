@@ -81,7 +81,7 @@ function titleOf(controls) {
  * @param {ParamControl[]} controls - In schema order
  * @param {Record<string, any>} [stored] - The parameters the clip stores
  *   (what differs from the defaults)
- * @param {Record<string, { group?: string }>} [schema] - For `group` hints
+ * @param {Record<string, any>} [schema] - For `group` hints
  * @returns {ParamSection[]} One untitled section for a short list
  */
 export function paramSections(controls, stored = {}, schema = {}) {

@@ -22,6 +22,8 @@ import { isHex } from './color.js';
  * @property {string} [unit] - number: `px` (output pixels), `°`, `s`, `%`…
  * @property {string[]} [options] - select
  * @property {boolean} [animatable] - May be keyframed
+ * @property {string} [group] - Hint for editors: the section a long list of
+ *   parameters shows this one under
  * @property {Record<string, any>} [when] - Hint for editors: show this
  *   control only while another parameter has one of the listed values,
  *   `{ shape: ['star'] }`

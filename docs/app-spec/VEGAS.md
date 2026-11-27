@@ -166,6 +166,22 @@ NearEdit's own commands keep their keys in the Vegas layout where Vegas has
 nothing there: `T` adds a title, `Shift+L` / `Shift+U` link and unlink
 picture and sound, `<` / `>` nudge ten frames.
 
+### Keyframes, effects and generators
+
+The same keys in both layouts.
+
+| Key | Action |
+| --- | ------ |
+| `;` / `'` | Previous / next keyframe of the selected clips |
+| `Shift+K` / `Alt+K` | Add / remove keyframes at the playhead, on every property that is already animated |
+| `Alt+E` | Show the selected clip's effects in the inspector |
+| `Shift+E` | Bypass (or restore) all effects of the selected clips |
+| `Ctrl+Alt+V` | Paste attributes: transform, fades, effects and keyframes of the copied clip onto the selected ones |
+| `Alt+G` | Add the generator used last at the cursor |
+
+"Clear keyframes" has no key; it is in the clip's context menu and the
+shortcuts dialog.
+
 ## Keys the browser keeps
 
 A web page never sees some keys. Measured in Chromium (Linux, a real window,
@@ -212,6 +228,8 @@ macOS, `Ctrl+←` / `→`; remap those in `nearedit_keymap` if yours does.
 | Double-click the ruler | The stretch between the markers on either side becomes the time selection |
 | Shift-drag the ruler, or drag its top edge | Time selection |
 | Drag a region's tag / an end | Move / resize the region; double-click the tag to select it, right-click to rename or delete |
+| Click / drag a keyframe diamond | Move the playhead there / retime every key of the clip at that time |
+| Drag a tile from the Create tab | A generator or a text style: placed where it is dropped. An effect: added to the clip under the pointer |
 | Right-click | Context menu: clip, lane (with the auto-ripple scope), ruler, marker, region |
 
 The pointer shows what a drag would do, also when Ctrl or Alt goes down over

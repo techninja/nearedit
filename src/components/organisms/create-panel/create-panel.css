@@ -104,14 +104,6 @@ create-panel {
   }
 }
 
-/* With the Create tab the dock's strip holds five tabs: at the dock's
-   usual width their names only fit without the icons. */
-@container (width < 27rem) {
-  editor-view .editor-view-tabs app-icon {
-    display: none;
-  }
-}
-
 @media (pointer: coarse) {
   create-panel {
     --control-h: 2.25rem;

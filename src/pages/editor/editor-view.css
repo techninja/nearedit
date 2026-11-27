@@ -142,7 +142,7 @@ editor-view {
   }
 }
 
-@container (width < 22rem) {
+@container (width < 27rem) {
   editor-view .editor-view-tabs app-icon {
     display: none;
   }

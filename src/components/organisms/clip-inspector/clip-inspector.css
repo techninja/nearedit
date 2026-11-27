@@ -99,8 +99,20 @@ clip-inspector details.inspector-section[open] > summary::before {
   transform: rotate(45deg) translate(-1px, -1px);
 }
 
-clip-inspector details.inspector-section > summary > span {
+clip-inspector details.inspector-section > summary > span:first-of-type {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "3 set": how many parameters of a section differ from their defaults. */
+clip-inspector details.inspector-section > summary > .chip {
+  flex: none;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 clip-inspector details.inspector-section > summary:focus-visible {
