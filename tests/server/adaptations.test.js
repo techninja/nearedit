@@ -171,7 +171,15 @@ describe('EDL documents', () => {
     assert.equal(saved.status, 200);
     assert.equal(saved.body.adaptationId, main.id);
     const loaded = (await call(api.url, 'GET', `${base()}/edl/${main.id}`)).body;
-    assert.deepEqual(loaded.tracks, doc.tracks);
+    // Documents come back normalised: the fields that were sent survive and
+    // every clip is filled out to the full v2 shape.
+    const sent = doc.tracks.flatMap((t) => t.clips);
+    const got = loaded.tracks.flatMap((t) => t.clips);
+    assert.deepEqual(
+      got.map((c) => [c.clipId, c.sourceFile, c.timelineStart, c.timelineEnd]),
+      sent.map((c) => [c.clipId, c.sourceFile, c.timelineStart, c.timelineEnd]),
+    );
+    assert.ok(got.every((c) => c.transform.fit === 'cover' && c.text.content === ''));
     assert.deepEqual(loaded.markers, doc.markers);
     assert.deepEqual([loaded.version, loaded.zoom, loaded.playheadPosition], [2, 3, 0]);
     assert.deepEqual(readdirSync(join(box.project, '.nearedit')), ['project.json']);
