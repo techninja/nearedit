@@ -71,6 +71,16 @@ describe('edit session', () => {
     assert.equal(session.canUndo(), false);
   });
 
+  it('mirrors gesture previews once per frame and the final state at once', async () => {
+    const base = session.beginGesture();
+    for (const delta of [1, 2, 3]) session.commit(moveClips(base, ['v'], { delta }));
+    await tick();
+    assert.equal(store.get(TimelineState).tracks[0].clips[0].timelineStart, 0, 'not yet mirrored');
+    session.endGesture();
+    await tick();
+    assert.equal(store.get(TimelineState).tracks[0].clips[0].timelineStart, 3);
+  });
+
   it('restores the starting document when a gesture is cancelled', () => {
     const base = session.beginGesture();
     session.commit(moveClips(base, ['v'], { delta: 3 }));

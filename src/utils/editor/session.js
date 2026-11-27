@@ -12,10 +12,10 @@
  */
 
 import { store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
 import ViewState from '#store/ViewState.js';
 import { createEdl } from '#utils/edl/factory.js';
 import { createHistory } from '#utils/edl/history.js';
+import { flushMirror, mirrorNow, mirrorSoon } from '#utils/editor/mirror.js';
 
 /** @typedef {{ transient: boolean, reason: 'edit'|'undo'|'redo'|'load'|'gesture' }} ChangeInfo */
 
@@ -37,10 +37,8 @@ export const getDoc = () => doc;
  */
 function publish(next, info) {
   doc = next;
-  const { version, fps, resolution, tracks, markers } = next;
-  store
-    .set(TimelineState, { version, fps, resolution, tracks, markers })
-    .catch((err) => console.error('[session] could not update the timeline store:', err));
+  if (info.transient) mirrorSoon(next);
+  else mirrorNow(next);
   for (const listener of listeners) listener(doc, info);
 }
 
@@ -102,6 +100,7 @@ export function beginGesture() {
 export function endGesture() {
   const base = gestureBase;
   gestureBase = null;
+  flushMirror();
   if (base === null || base === doc) return false;
   history.push(base);
   for (const listener of listeners) listener(doc, { transient: false, reason: 'gesture' });

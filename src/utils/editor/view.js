@@ -10,7 +10,8 @@ import ViewState from '#store/ViewState.js';
 import { expandSelection } from '#utils/edl/selection.js';
 import { getDoc } from '#utils/editor/session.js';
 
-export const MIN_ZOOM = 0.02;
+/** 0.2 px per second: an hour fits in 720 px. */
+export const MIN_ZOOM = 0.002;
 export const MAX_ZOOM = 40;
 /** Pixels per second at zoom 1. */
 export const PX_PER_SECOND = 100;

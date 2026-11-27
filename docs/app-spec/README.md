@@ -181,17 +181,38 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 
 ## Keyboard Shortcuts (Configurable)
 
-| Key           | Action                                    |
-| ------------- | ----------------------------------------- |
-| Space         | Play/pause — return to cursor on stop     |
-| Enter         | Play/pause — cursor follows on stop       |
-| J             | Rewind 2s                                 |
-| K             | Stop (return to cursor)                   |
-| L             | Forward 2s                                |
-| Home          | Go to start                               |
-| End           | Go to end                                 |
-| ← / →        | Frame step                                |
-| Ctrl+Z        | Undo                                      |
-| Ctrl+Shift+Z  | Redo                                      |
+`Mod` is Ctrl, or Cmd on macOS. Press `?` in the editor for the live list.
 
-Custom keymaps stored in `localStorage.nearedit_keymap`.
+| Key | Action |
+| --- | ------ |
+| Space | Play / stop — return to the edit cursor on stop |
+| Enter | Play / pause in place — the cursor follows |
+| J / K / L | Rewind 2 s / stop (return to cursor) / forward 2 s |
+| Home / End | Go to start / end |
+| ← / → | Step one frame (Shift: ten frames) |
+| ↑ / ↓ | Previous / next edit point (Shift: marker) |
+| Q | Toggle loop playback |
+| Mod+Z / Mod+Shift+Z | Undo / redo |
+| S | Split at the cursor |
+| Delete, Backspace | Delete (Shift: ripple delete, closing the gap) |
+| [ / ] | Trim the selection's start / end to the cursor |
+| , / . | Nudge the selection one frame (< / >: ten frames) |
+| Mod+X / C / V / D | Cut / copy / paste / duplicate |
+| Mod+A / Escape | Select all / none |
+| G / U | Group / ungroup |
+| Shift+L / Shift+U | Link / unlink picture and sound |
+| M / T | Add a marker / a title at the cursor |
+| N / R / X | Toggle snapping / ripple / auto cross-fade |
+| - / + / \ | Zoom out / in / to fit |
+| ? | Show all shortcuts |
+
+Mouse and touch: drag a clip to move it (onto another track of the same
+type too), drag an edge to trim, Alt-drag to slip, drag the top corners for
+fades, drag the ruler to scrub, Shift-drag the ruler for a loop region,
+Mod+wheel or pinch to zoom about the pointer. Hold Shift while dragging to
+bypass snapping. Overlapping two clips cross-fades them.
+
+Custom keymaps are stored in `localStorage.nearedit_keymap` as a JSON
+object. An entry either replaces a command's shortcuts
+(`{ "edit.split": "C", "marker.add": "" }` — an empty value unbinds) or
+binds a key to a command (`{ "Ctrl+B": "edit.split" }`).
