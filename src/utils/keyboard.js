@@ -9,7 +9,12 @@ import { store } from 'hybrids';
 import TimelineState from '#store/TimelineState.js';
 import { pushState, undo, redo } from '#utils/undoHistory.js';
 import { totalDuration } from '#utils/timelineMath.js';
-import { startAudioPlayback, stopAudioPlayback, getAudioTime, tickAudio } from '#utils/audioEngine.js';
+import {
+  startAudioPlayback,
+  stopAudioPlayback,
+  getAudioTime,
+  tickAudio,
+} from '#utils/audioEngine.js';
 import { splitAtPlayhead, deleteSelected } from '#utils/clipInteractions.js';
 
 /** @type {number} */
@@ -52,8 +57,13 @@ export function saveKeymap(map) {
 }
 
 /** @returns {Record<string, string>} */
-export function getKeymap() { return { ...keymap }; }
+export function getKeymap() {
+  return { ...keymap };
+}
 
+/**
+ *
+ */
 function startPlayback() {
   const state = store.get(TimelineState);
   if (!state) return;
@@ -67,7 +77,10 @@ function startPlayback() {
 
   const tick = (now) => {
     const s = store.get(TimelineState);
-    if (!s || !s.playing) { stopAudioPlayback(); return; }
+    if (!s || !s.playing) {
+      stopAudioPlayback();
+      return;
+    }
 
     // Use audio clock if available, otherwise advance with dt
     const audioTime = getAudioTime();
@@ -99,6 +112,9 @@ function startPlayback() {
   rafId = requestAnimationFrame(tick);
 }
 
+/**
+ *
+ */
 function stopPlayback() {
   cancelAnimationFrame(rafId);
   rafId = 0;
@@ -228,7 +244,8 @@ function keyString(e) {
 /** @param {KeyboardEvent} e */
 function handleKeydown(e) {
   // Don't capture when typing in inputs
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)
+    return;
 
   const key = keyString(e);
   const action = keymap[key];

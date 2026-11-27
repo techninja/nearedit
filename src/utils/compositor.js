@@ -13,9 +13,18 @@
 /** @returns {object} */
 export function defaultTransform() {
   return {
-    x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1,
-    cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0,
-    anchorX: 0.5, anchorY: 0.5,
+    x: 0,
+    y: 0,
+    scaleX: 1,
+    scaleY: 1,
+    rotation: 0,
+    opacity: 1,
+    cropTop: 0,
+    cropBottom: 0,
+    cropLeft: 0,
+    cropRight: 0,
+    anchorX: 0.5,
+    anchorY: 0.5,
   };
 }
 
@@ -118,19 +127,31 @@ export class Compositor {
 
       if (video.readyState < 2) {
         pending++;
-        video.addEventListener('loadeddata', () => {
-          video.currentTime = sourceTime;
-        }, { once: true });
-        video.addEventListener('seeked', () => {
-          pending--;
-          if (pending <= 0) this._compositeFrame(tracks, time);
-        }, { once: true });
+        video.addEventListener(
+          'loadeddata',
+          () => {
+            video.currentTime = sourceTime;
+          },
+          { once: true },
+        );
+        video.addEventListener(
+          'seeked',
+          () => {
+            pending--;
+            if (pending <= 0) this._compositeFrame(tracks, time);
+          },
+          { once: true },
+        );
       } else if (Math.abs(video.currentTime - sourceTime) > 0.04) {
         pending++;
-        video.addEventListener('seeked', () => {
-          pending--;
-          if (pending <= 0) this._compositeFrame(tracks, time);
-        }, { once: true });
+        video.addEventListener(
+          'seeked',
+          () => {
+            pending--;
+            if (pending <= 0) this._compositeFrame(tracks, time);
+          },
+          { once: true },
+        );
         video.currentTime = sourceTime;
       }
     }
@@ -296,7 +317,7 @@ export class Compositor {
     if (srcAspect > vpAspect) {
       // Source is wider than viewport — fill height, crop sides
       dh = vp.h * transform.scaleY;
-      dw = (vp.h * srcAspect) * transform.scaleX;
+      dw = vp.h * srcAspect * transform.scaleX;
     } else {
       // Source is taller than viewport — fill width, crop top/bottom
       dw = vp.w * transform.scaleX;
@@ -334,7 +355,9 @@ export class Compositor {
   }
 
   /** @returns {boolean} */
-  get isPlaying() { return this._playing; }
+  get isPlaying() {
+    return this._playing;
+  }
 
   /** Resize buffers. */
   resize(width, height, outputAspect) {
@@ -349,7 +372,10 @@ export class Compositor {
   destroy() {
     this.stopPlayback();
     for (const [key, el] of this._videoPool) {
-      if (el instanceof HTMLVideoElement) { el.src = ''; el.load(); }
+      if (el instanceof HTMLVideoElement) {
+        el.src = '';
+        el.load();
+      }
     }
     this._videoPool.clear();
   }

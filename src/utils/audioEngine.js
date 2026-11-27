@@ -116,8 +116,12 @@ export function tickAudio(tracks, currentTime) {
   }
 
   // Case 2: Same clip still playing
-  if (activeClipInfo && activeAudio && entry.clip.clipId === activeClipInfo.clip.clipId
-      && entry.clip.timelineStart === activeClipInfo.clip.timelineStart) {
+  if (
+    activeClipInfo &&
+    activeAudio &&
+    entry.clip.clipId === activeClipInfo.clip.clipId &&
+    entry.clip.timelineStart === activeClipInfo.clip.timelineStart
+  ) {
     // Apply audio fade via volume
     const clip = entry.clip;
     const duration = clip.timelineEnd - clip.timelineStart;
@@ -133,7 +137,7 @@ export function tickAudio(tracks, currentTime) {
     activeAudio.volume = Math.max(0, Math.min(1, vol));
 
     // Check if source has passed its out point
-    const sourceEnd = clip.sourceOut || (clip.sourceIn + duration);
+    const sourceEnd = clip.sourceOut || clip.sourceIn + duration;
     if (activeAudio.currentTime >= sourceEnd) {
       activeAudio.pause();
       activeClipInfo = null;

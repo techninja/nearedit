@@ -18,6 +18,7 @@ import { silenceRouter } from './api/silence.js';
 import { transcodeRouter } from './api/transcode.js';
 import { assembleRouter } from './api/assemble.js';
 import { jobsRouter } from './api/jobs.js';
+import { browseRouter } from './api/browse.js';
 import { attachWebSocket } from './api/ws.js';
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api', silenceRouter);
 app.use('/api', transcodeRouter);
 app.use('/api', assembleRouter);
 app.use('/api', jobsRouter);
+app.use('/api', browseRouter);
 app.use('/api', renderRouter);
 app.use('/api', mediaRouter);
 app.use('/api', previewsRouter);

@@ -91,7 +91,8 @@ export function parseEdlResponse(rawContent) {
   if (!objMatch) {
     const arrMatch = jsonStr.match(/\[[\s\S]*\]/);
     if (arrMatch) jsonStr = `{"tracks":${arrMatch[0]}}`;
-    else return { edl: null, errors: ['No JSON object or array found in response'], repaired: false };
+    else
+      return { edl: null, errors: ['No JSON object or array found in response'], repaired: false };
   } else {
     jsonStr = objMatch[0];
   }
@@ -166,7 +167,20 @@ export function parseEdlResponse(rawContent) {
           clip.timelineEnd = clip.timelineStart + (clip.sourceOut - clip.sourceIn);
         }
         // Ensure transform is a proper object with all fields
-        const defaultXform = { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1, cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, anchorX: 0.5, anchorY: 0.5 };
+        const defaultXform = {
+          x: 0,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+          rotation: 0,
+          opacity: 1,
+          cropTop: 0,
+          cropBottom: 0,
+          cropLeft: 0,
+          cropRight: 0,
+          anchorX: 0.5,
+          anchorY: 0.5,
+        };
         if (!clip.transform || typeof clip.transform !== 'object') {
           clip.transform = { ...defaultXform };
         } else {
@@ -177,7 +191,23 @@ export function parseEdlResponse(rawContent) {
           delete clip.transform.kenBurns;
         }
         // Remove any unexpected fields that could confuse hybrids
-        const allowedKeys = ['clipId', 'sourceFile', 'sourceIn', 'sourceOut', 'timelineStart', 'timelineEnd', 'fadeIn', 'fadeOut', 'linkedClipId', 'placeholder', 'label', 'prompt', 'intent', 'color', 'transform'];
+        const allowedKeys = [
+          'clipId',
+          'sourceFile',
+          'sourceIn',
+          'sourceOut',
+          'timelineStart',
+          'timelineEnd',
+          'fadeIn',
+          'fadeOut',
+          'linkedClipId',
+          'placeholder',
+          'label',
+          'prompt',
+          'intent',
+          'color',
+          'transform',
+        ];
         for (const key of Object.keys(clip)) {
           if (!allowedKeys.includes(key)) delete clip[key];
         }

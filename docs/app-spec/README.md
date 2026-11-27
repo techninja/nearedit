@@ -171,6 +171,7 @@ end over the clip's duration:
 ```
 
 The AI director uses ken burns automatically for images:
+
 - Landscape image in 16:9 → slow zoom toward subject
 - Landscape image in 9:16 → crop to subject, pan across
 - Portrait image in 16:9 → zoom out to reveal, or pan vertically

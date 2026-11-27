@@ -67,13 +67,13 @@ const ICON_MAP = {
   download: 'export',
   upload: 'import',
   wand: 'wand',
-  'sparkles': 'ai',
+  sparkles: 'ai',
   'message-square': 'prompt',
   // Layout
   'panel-left': 'panel-left',
   'panel-bottom': 'panel-bottom',
   monitor: 'monitor',
-  'smartphone': 'mobile',
+  smartphone: 'mobile',
 };
 
 /**

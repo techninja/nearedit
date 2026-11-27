@@ -69,7 +69,15 @@ schemas.set('adaptations', {
       aspectRatio: {
         type: 'string',
         enum: ['16:9', '9:16', '1:1', '4:5', '4:3', '21:9', 'custom'],
-        enumTitles: ['Landscape 16:9', 'Portrait 9:16', 'Square 1:1', 'Social 4:5', 'Classic 4:3', 'Ultrawide 21:9', 'Custom'],
+        enumTitles: [
+          'Landscape 16:9',
+          'Portrait 9:16',
+          'Square 1:1',
+          'Social 4:5',
+          'Classic 4:3',
+          'Ultrawide 21:9',
+          'Custom',
+        ],
         default: '16:9',
         title: 'Aspect Ratio',
       },

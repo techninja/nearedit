@@ -6,7 +6,7 @@
 import { Router } from 'express';
 import { execFile } from 'node:child_process';
 import { resolve } from 'node:path';
-import { existsSync, mkdirSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 
 export const renderRouter = Router();
 
@@ -29,9 +29,10 @@ function buildFfmpegArgs(edl) {
       const filePath = resolve(MEDIA_DIR, clip.sourceFile);
       inputs.push('-i', filePath);
 
-      const trimFilter = track.type === 'audio'
-        ? `[${idx}:a]atrim=start=${clip.sourceIn}:end=${clip.sourceOut},asetpts=PTS-STARTPTS[a${idx}]`
-        : `[${idx}:v]trim=start=${clip.sourceIn}:end=${clip.sourceOut},setpts=PTS-STARTPTS[v${idx}]`;
+      const trimFilter =
+        track.type === 'audio'
+          ? `[${idx}:a]atrim=start=${clip.sourceIn}:end=${clip.sourceOut},asetpts=PTS-STARTPTS[a${idx}]`
+          : `[${idx}:v]trim=start=${clip.sourceIn}:end=${clip.sourceOut},setpts=PTS-STARTPTS[v${idx}]`;
       filters.push(trimFilter);
       concatParts.push(track.type === 'audio' ? `[a${idx}]` : `[v${idx}]`);
       idx++;

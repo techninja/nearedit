@@ -28,13 +28,23 @@ function gatherMediaContext(projectId) {
   if (!entry?.path) return [];
 
   const media = [];
+  /**
+   *
+   */
   function scan(dir) {
     let entries;
-    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
     for (const e of entries) {
       if (e.name.startsWith('.') || e.name === 'node_modules') continue;
       const full = join(dir, e.name);
-      if (e.isDirectory()) { scan(full); continue; }
+      if (e.isDirectory()) {
+        scan(full);
+        continue;
+      }
       if (e.name.endsWith('.nearedit.json')) {
         try {
           const sidecar = JSON.parse(readFileSync(full, 'utf-8'));
@@ -54,25 +64,37 @@ function gatherMediaContext(projectId) {
 function buildPrompt(media, directive, adaptation) {
   const { action, params, context } = directive;
 
-  const mediaSummary = media.map((m) => {
-    const parts = [`- ${m.filePath} (${m.type}, ${m.duration ? m.duration.toFixed(1) + 's' : 'no duration'})`];
-    if (m.tags?.length) parts.push(`  tags: ${m.tags.slice(0, 15).join(', ')}`);
-    if (m.segments?.length) {
-      const total = m.segments.length;
-      const sampleCount = Math.min(40, total);
-      const step = Math.max(1, Math.floor(total / sampleCount));
-      const sampled = [];
-      for (let i = 0; i < total; i += step) sampled.push(m.segments[i]);
-      const preview = sampled.map((s) => `[${s.start.toFixed(1)}s-${s.end.toFixed(1)}s] "${s.text}"`).join('\n    ');
-      parts.push(`  transcript (${total} segments, ${m.transcript?.length || 0} words, ${(m.duration / 60).toFixed(0)} min total):`);
-      parts.push(`  IMPORTANT: The first ~30s is audience noise/intro. Meaningful content starts around segment [30s+].`);
-      parts.push(`  Sampled segments across full duration:\n    ${preview}`);
-    }
-    if (m.content) parts.push(`  content: ${m.content.slice(0, 500)}`);
-    return parts.join('\n');
-  }).join('\n');
+  const mediaSummary = media
+    .map((m) => {
+      const parts = [
+        `- ${m.filePath} (${m.type}, ${m.duration ? m.duration.toFixed(1) + 's' : 'no duration'})`,
+      ];
+      if (m.tags?.length) parts.push(`  tags: ${m.tags.slice(0, 15).join(', ')}`);
+      if (m.segments?.length) {
+        const total = m.segments.length;
+        const sampleCount = Math.min(40, total);
+        const step = Math.max(1, Math.floor(total / sampleCount));
+        const sampled = [];
+        for (let i = 0; i < total; i += step) sampled.push(m.segments[i]);
+        const preview = sampled
+          .map((s) => `[${s.start.toFixed(1)}s-${s.end.toFixed(1)}s] "${s.text}"`)
+          .join('\n    ');
+        parts.push(
+          `  transcript (${total} segments, ${m.transcript?.length || 0} words, ${(m.duration / 60).toFixed(0)} min total):`,
+        );
+        parts.push(
+          `  IMPORTANT: The first ~30s is audience noise/intro. Meaningful content starts around segment [30s+].`,
+        );
+        parts.push(`  Sampled segments across full duration:\n    ${preview}`);
+      }
+      if (m.content) parts.push(`  content: ${m.content.slice(0, 500)}`);
+      return parts.join('\n');
+    })
+    .join('\n');
 
-  const adaptationContext = adaptation ? `\nAdaptation: "${adaptation.name}"\n- Aspect Ratio: ${adaptation.aspectRatio}\n- Resolution: ${adaptation.resolution}\n- FPS: ${adaptation.fps}\n- Status: ${adaptation.status}` : '';
+  const adaptationContext = adaptation
+    ? `\nAdaptation: "${adaptation.name}"\n- Aspect Ratio: ${adaptation.aspectRatio}\n- Resolution: ${adaptation.resolution}\n- FPS: ${adaptation.fps}\n- Status: ${adaptation.status}`
+    : '';
 
   const systemPrompt = `You are an AI video editor assistant. You output ONLY valid JSON — no markdown, no explanation, no code fences.
 
@@ -208,21 +230,34 @@ function resolvePaths(result, media) {
     if (!track.clips) continue;
     for (const clip of track.clips) {
       if (clip.placeholder) continue;
-      if (!clip.sourceFile) { clip.placeholder = true; clip.label = clip.label || 'empty'; continue; }
+      if (!clip.sourceFile) {
+        clip.placeholder = true;
+        clip.label = clip.label || 'empty';
+        continue;
+      }
       if (existsSync(clip.sourceFile)) continue;
       const basename = clip.sourceFile.split('/').pop();
       let resolved = mediaMap.get(basename);
       if (!resolved && basename === 'undefined') {
         const videoFiles = media.filter((m) => m.type === 'video');
-        if (videoFiles.length) resolved = videoFiles[Math.floor(Math.random() * videoFiles.length)].filePath;
+        if (videoFiles.length)
+          resolved = videoFiles[Math.floor(Math.random() * videoFiles.length)].filePath;
       }
       if (!resolved) {
         for (const [key, val] of mediaMap) {
-          if (basename.includes(key) || key.includes(basename)) { resolved = val; break; }
+          if (basename.includes(key) || key.includes(basename)) {
+            resolved = val;
+            break;
+          }
         }
       }
-      if (resolved) { clip.sourceFile = resolved; }
-      else { clip.placeholder = true; clip.label = clip.label || basename || 'unresolved'; clip.sourceFile = ''; }
+      if (resolved) {
+        clip.sourceFile = resolved;
+      } else {
+        clip.placeholder = true;
+        clip.label = clip.label || basename || 'unresolved';
+        clip.sourceFile = '';
+      }
     }
   }
 }
@@ -232,33 +267,49 @@ function resolvePaths(result, media) {
  */
 function buildScriptPrompt(media, directive, adaptation) {
   const { params } = directive;
-  const mediaSummary = media.map((m) => {
-    const parts = [`- ${m.filePath.split('/').pop()} (${m.type}, ${m.duration ? m.duration.toFixed(1) + 's' : '?'})`];
-    if (m.tags?.length) parts.push(`  tags: ${m.tags.slice(0, 10).join(', ')}`);
-    if (m.segments?.length) {
-      const validSegs = m.segments.filter((s) => s.start >= 30);
-      const targetDur = (params.duration || 60) * 1.5;
-      const numBlocks = 5;
-      const blockStep = Math.max(1, Math.floor(validSegs.length / numBlocks));
-      const blocks = [];
-      for (let b = 0; b < numBlocks; b++) {
-        const startIdx = b * blockStep;
-        let endIdx = startIdx;
-        while (endIdx < validSegs.length && validSegs[endIdx].end - validSegs[startIdx].start < targetDur) endIdx++;
-        const slice = validSegs.slice(startIdx, endIdx);
-        if (!slice.length) continue;
-        const text = slice.map((s) => s.text).join(' ');
-        blocks.push(`  --- BLOCK ${b + 1} [${slice[0].start.toFixed(0)}s - ${slice[slice.length - 1].end.toFixed(0)}s] ---\n  ${text}`);
+  const mediaSummary = media
+    .map((m) => {
+      const parts = [
+        `- ${m.filePath.split('/').pop()} (${m.type}, ${m.duration ? m.duration.toFixed(1) + 's' : '?'})`,
+      ];
+      if (m.tags?.length) parts.push(`  tags: ${m.tags.slice(0, 10).join(', ')}`);
+      if (m.segments?.length) {
+        const validSegs = m.segments.filter((s) => s.start >= 30);
+        const targetDur = (params.duration || 60) * 1.5;
+        const numBlocks = 5;
+        const blockStep = Math.max(1, Math.floor(validSegs.length / numBlocks));
+        const blocks = [];
+        for (let b = 0; b < numBlocks; b++) {
+          const startIdx = b * blockStep;
+          let endIdx = startIdx;
+          while (
+            endIdx < validSegs.length &&
+            validSegs[endIdx].end - validSegs[startIdx].start < targetDur
+          )
+            endIdx++;
+          const slice = validSegs.slice(startIdx, endIdx);
+          if (!slice.length) continue;
+          const text = slice.map((s) => s.text).join(' ');
+          blocks.push(
+            `  --- BLOCK ${b + 1} [${slice[0].start.toFixed(0)}s - ${slice[slice.length - 1].end.toFixed(0)}s] ---\n  ${text}`,
+          );
+        }
+        parts.push(
+          `  transcript (${m.segments.length} segments, ${(m.duration / 60).toFixed(0)} min):`,
+        );
+        parts.push(
+          `  Below are ${numBlocks} CANDIDATE BLOCKS. Pick ONE and use it IN ORDER (start to end).`,
+        );
+        parts.push(blocks.join('\n'));
       }
-      parts.push(`  transcript (${m.segments.length} segments, ${(m.duration / 60).toFixed(0)} min):`);
-      parts.push(`  Below are ${numBlocks} CANDIDATE BLOCKS. Pick ONE and use it IN ORDER (start to end).`);
-      parts.push(blocks.join('\n'));
-    }
-    if (m.content) parts.push(`  content: ${m.content.slice(0, 500)}`);
-    return parts.join('\n');
-  }).join('\n');
+      if (m.content) parts.push(`  content: ${m.content.slice(0, 500)}`);
+      return parts.join('\n');
+    })
+    .join('\n');
 
-  const adaptCtx = adaptation ? `Format: ${adaptation.name} (${adaptation.aspectRatio}, ${adaptation.resolution})` : '';
+  const adaptCtx = adaptation
+    ? `Format: ${adaptation.name} (${adaptation.aspectRatio}, ${adaptation.resolution})`
+    : '';
 
   const systemPrompt = `You are an AI video editor writing an edit script. Output ONLY markdown.
 
@@ -297,7 +348,6 @@ Format:
   return { systemPrompt, userPrompt };
 }
 
-
 /**
  * Call LLM and return raw text (not parsed as JSON).
  */
@@ -307,7 +357,10 @@ async function callLLMRaw(systemPrompt, userPrompt, onProgress) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: OLLAMA_MODEL,
-      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
       stream: true,
       options: { temperature: 0.4, num_predict: 4096, num_ctx: 16384 },
     }),
@@ -322,7 +375,11 @@ async function callLLMRaw(systemPrompt, userPrompt, onProgress) {
     for (const line of decoder.decode(value, { stream: true }).split('\n').filter(Boolean)) {
       try {
         const msg = JSON.parse(line);
-        if (msg.message?.content) { content += msg.message.content; tokenCount++; if (tokenCount % 20 === 0) onProgress(tokenCount); }
+        if (msg.message?.content) {
+          content += msg.message.content;
+          tokenCount++;
+          if (tokenCount % 20 === 0) onProgress(tokenCount);
+        }
       } catch {}
     }
   }
@@ -366,13 +423,19 @@ directorRouter.post('/director/script', (req, res) => {
       const scripts = [];
       const reg = JSON.parse(readFileSync(regPath, 'utf-8'));
       const projectDir = reg[projectId]?.path;
-      const adaptName = (adaptation?.name || 'main').replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').toLowerCase();
+      const adaptName = (adaptation?.name || 'main')
+        .replace(/[^a-zA-Z0-9-_ ]/g, '')
+        .replace(/\s+/g, '-')
+        .toLowerCase();
       const scriptsDir = resolve(projectDir, 'scripts', adaptName);
       const { mkdirSync } = await import('node:fs');
       mkdirSync(scriptsDir, { recursive: true });
 
       for (let i = 0; i < variants; i++) {
-        updateJob(job.id, { log: [`Generating option ${i + 1}/${variants}...`], progress: 10 + Math.floor((i / variants) * 80) });
+        updateJob(job.id, {
+          log: [`Generating option ${i + 1}/${variants}...`],
+          progress: 10 + Math.floor((i / variants) * 80),
+        });
         const variantAngles = [
           'Focus on the most poetic and philosophical moments. Choose segments that build a single coherent argument.',
           'Focus on surprising or provocative statements. Choose segments that challenge conventional thinking.',
@@ -380,9 +443,14 @@ directorRouter.post('/director/script', (req, res) => {
           'Focus on the most accessible, quotable moments. Choose segments a general audience would connect with.',
           'Focus on the emotional arc. Choose segments that build from question to insight to resolution.',
         ];
-        const variantPrompt = userPrompt + `\n\nVariant angle: ${variantAngles[i % variantAngles.length]}\n\nIMPORTANT: After the sequence, add a "## Full Narration (as spoken)" section that concatenates ALL the narration quotes in order as one continuous paragraph, so the editor can verify it reads coherently as a single piece.`;
+        const variantPrompt =
+          userPrompt +
+          `\n\nVariant angle: ${variantAngles[i % variantAngles.length]}\n\nIMPORTANT: After the sequence, add a "## Full Narration (as spoken)" section that concatenates ALL the narration quotes in order as one continuous paragraph, so the editor can verify it reads coherently as a single piece.`;
         const script = await callLLMRaw(systemPrompt, variantPrompt, (tokens) => {
-          updateJob(job.id, { log: [`Option ${i + 1}: ${tokens} tokens...`], progress: 10 + Math.floor(((i + tokens / 2000) / variants) * 80) });
+          updateJob(job.id, {
+            log: [`Option ${i + 1}: ${tokens} tokens...`],
+            progress: 10 + Math.floor(((i + tokens / 2000) / variants) * 80),
+          });
         });
         const filename = `script-${i + 1}.md`;
         const scriptPath = resolve(scriptsDir, filename);
@@ -391,7 +459,12 @@ directorRouter.post('/director/script', (req, res) => {
         scripts.push({ script, filePath: scriptPath, filename, variant: i + 1 });
       }
 
-      updateJob(job.id, { status: 'complete', result: { scripts, count: variants }, progress: 100, log: [`${variants} scripts saved`] });
+      updateJob(job.id, {
+        status: 'complete',
+        result: { scripts, count: variants },
+        progress: 100,
+        log: [`${variants} scripts saved`],
+      });
     } catch (err) {
       updateJob(job.id, { status: 'error', error: err.message });
     }
@@ -409,7 +482,8 @@ directorRouter.post('/director', (req, res) => {
   if (!directive) return res.status(422).json({ error: 'directive required' });
 
   const media = gatherMediaContext(projectId);
-  if (!media.length) return res.status(422).json({ error: 'No indexed media found. Run Scan & Index first.' });
+  if (!media.length)
+    return res.status(422).json({ error: 'No indexed media found. Run Scan & Index first.' });
 
   // Create job and return immediately
   const job = createJob('director', { directive, projectId });
@@ -438,7 +512,10 @@ directorRouter.post('/director', (req, res) => {
       updateJob(job.id, { log: ['Calling LLM...'], progress: 20 });
 
       const result = await callLLM(systemPrompt, userPrompt, (tokens) => {
-        updateJob(job.id, { log: [`Generating... (${tokens} tokens)`], progress: Math.min(90, 20 + Math.floor(tokens / 5)) });
+        updateJob(job.id, {
+          log: [`Generating... (${tokens} tokens)`],
+          progress: Math.min(90, 20 + Math.floor(tokens / 5)),
+        });
       });
 
       updateJob(job.id, { log: ['Resolving paths...'], progress: 92 });

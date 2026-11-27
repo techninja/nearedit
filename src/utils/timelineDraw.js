@@ -23,13 +23,24 @@ function formatTimecode(s) {
 }
 
 const CLIP_COLORS = { video: '#3b82f6', audio: '#22c55e', image: '#f59e0b' };
-const INTENT_COLORS = { narration: '#8b5cf6', broll: '#06b6d4', sfx: '#f97316', music: '#ec4899', title: '#eab308', transition: '#6b7280', '': '#64748b' };
+const INTENT_COLORS = {
+  narration: '#8b5cf6',
+  broll: '#06b6d4',
+  sfx: '#f97316',
+  music: '#ec4899',
+  title: '#eab308',
+  transition: '#6b7280',
+  '': '#64748b',
+};
 
 /** @type {Map<string, { peaks: number[], duration: number }>} */
 const waveformCache = new Map();
 /** @type {Map<string, HTMLImageElement>} */
 const thumbCache = new Map();
 
+/**
+ *
+ */
 export function loadWaveform(filePath, cb) {
   if (waveformCache.has(filePath)) return;
   waveformCache.set(filePath, { peaks: [], duration: 0 });
@@ -49,13 +60,18 @@ export function loadWaveform(filePath, cb) {
         });
         return;
       }
-      if (r.ok) r.json().then((d) => {
-        waveformCache.set(filePath, { peaks: d.peaks || [], duration: d.duration || 0 });
-        forceTimelineRedraw();
-      });
-    }).catch(() => {});
+      if (r.ok)
+        r.json().then((d) => {
+          waveformCache.set(filePath, { peaks: d.peaks || [], duration: d.duration || 0 });
+          forceTimelineRedraw();
+        });
+    })
+    .catch(() => {});
 }
 
+/**
+ *
+ */
 export function loadThumb(filePath, cb) {
   if (thumbCache.has(filePath)) return;
   const img = new Image();
@@ -77,17 +93,33 @@ let _drawH = 0;
 
 /** Set the draw context for loading animations (called by timeline-canvas connect) */
 export function setDrawContext(ctx, w, h) {
-  _drawCtx = ctx; _drawW = w; _drawH = h;
+  _drawCtx = ctx;
+  _drawW = w;
+  _drawH = h;
 }
 
 /** Animation frame for loading states — redraws canvas directly, no store touch */
 let loadingAnimFrame = 0;
+/**
+ *
+ */
 function startLoadingAnim() {
   if (loadingAnimFrame) return;
   const tick = () => {
     let anyLoading = false;
-    for (const [, v] of waveformCache) { if (!v.peaks?.length) { anyLoading = true; break; } }
-    if (!anyLoading) for (const [, img] of thumbCache) { if (!img.complete) { anyLoading = true; break; } }
+    for (const [, v] of waveformCache) {
+      if (!v.peaks?.length) {
+        anyLoading = true;
+        break;
+      }
+    }
+    if (!anyLoading)
+      for (const [, img] of thumbCache) {
+        if (!img.complete) {
+          anyLoading = true;
+          break;
+        }
+      }
     if (anyLoading && _drawCtx) {
       const state = store.get(TimelineState);
       if (state) draw(_drawCtx, state, _drawW, _drawH, () => {});
@@ -99,6 +131,9 @@ function startLoadingAnim() {
   loadingAnimFrame = requestAnimationFrame(tick);
 }
 
+/**
+ *
+ */
 export function sortTracks(tracks) {
   return [...tracks].sort((a, b) => {
     if (a.type === 'audio' && b.type !== 'audio') return 1;
@@ -131,7 +166,10 @@ export function draw(ctx, state, w, h, redraw) {
   for (let s = 0; s < pxToTime(w + scrollX, zoom) + step; s += step) {
     const x = TRACK_LABEL_W + timeToPx(s, zoom) - scrollX;
     if (x < TRACK_LABEL_W) continue;
-    ctx.beginPath(); ctx.moveTo(x, HEADER_HEIGHT - 6); ctx.lineTo(x, HEADER_HEIGHT); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x, HEADER_HEIGHT - 6);
+    ctx.lineTo(x, HEADER_HEIGHT);
+    ctx.stroke();
     ctx.fillText(`${s}s`, x + 2, HEADER_HEIGHT - 8);
   }
 
@@ -149,8 +187,10 @@ export function draw(ctx, state, w, h, redraw) {
     ctx.font = 'bold 10px system-ui';
     ctx.fillText(track.name || `${track.type} ${ti + 1}`, 6, y + 13, TRACK_LABEL_W - 12);
     ctx.font = '9px system-ui';
-    ctx.fillStyle = track.muted ? '#ef4444' : '#475569'; ctx.fillText('M', 8, y + TRACK_HEIGHT - 6);
-    ctx.fillStyle = track.solo ? '#f59e0b' : '#475569'; ctx.fillText('S', 24, y + TRACK_HEIGHT - 6);
+    ctx.fillStyle = track.muted ? '#ef4444' : '#475569';
+    ctx.fillText('M', 8, y + TRACK_HEIGHT - 6);
+    ctx.fillStyle = track.solo ? '#f59e0b' : '#475569';
+    ctx.fillText('S', 24, y + TRACK_HEIGHT - 6);
     ctx.globalAlpha = 1;
 
     ctx.globalAlpha = alpha;
@@ -187,7 +227,17 @@ export function draw(ctx, state, w, h, redraw) {
       // Label
       ctx.fillStyle = '#fff';
       ctx.font = '10px system-ui';
-      ctx.fillText(clip.label || clip.sourceFile.split('/').pop().replace(/\.[^.]+$/, '').slice(0, 22), cx + 4, cy + 12, cw - 8);
+      ctx.fillText(
+        clip.label ||
+          clip.sourceFile
+            .split('/')
+            .pop()
+            .replace(/\.[^.]+$/, '')
+            .slice(0, 22),
+        cx + 4,
+        cy + 12,
+        cw - 8,
+      );
 
       // Source in/out labels at bottom
       ctx.fillStyle = '#ffffffaa';
@@ -206,8 +256,20 @@ export function draw(ctx, state, w, h, redraw) {
       }
 
       // Fades
-      if (clip.fadeIn > 0) { ctx.strokeStyle = '#ffffffaa'; ctx.beginPath(); ctx.moveTo(cx, cy + ch); ctx.lineTo(cx + timeToPx(clip.fadeIn, zoom), cy); ctx.stroke(); }
-      if (clip.fadeOut > 0) { ctx.strokeStyle = '#ffffffaa'; ctx.beginPath(); ctx.moveTo(cx + cw - timeToPx(clip.fadeOut, zoom), cy); ctx.lineTo(cx + cw, cy + ch); ctx.stroke(); }
+      if (clip.fadeIn > 0) {
+        ctx.strokeStyle = '#ffffffaa';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + ch);
+        ctx.lineTo(cx + timeToPx(clip.fadeIn, zoom), cy);
+        ctx.stroke();
+      }
+      if (clip.fadeOut > 0) {
+        ctx.strokeStyle = '#ffffffaa';
+        ctx.beginPath();
+        ctx.moveTo(cx + cw - timeToPx(clip.fadeOut, zoom), cy);
+        ctx.lineTo(cx + cw, cy + ch);
+        ctx.stroke();
+      }
     }
     ctx.globalAlpha = 1;
   });
@@ -215,25 +277,70 @@ export function draw(ctx, state, w, h, redraw) {
   // Separator
   if (videoCount > 0 && sorted.length > videoCount) {
     const sepY = HEADER_HEIGHT + videoCount * (TRACK_HEIGHT + TRACK_GAP);
-    ctx.strokeStyle = '#475569'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(0, sepY); ctx.lineTo(w, sepY); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = '#475569';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, sepY);
+    ctx.lineTo(w, sepY);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   // Playhead
   const px = TRACK_LABEL_W + timeToPx(playheadPosition, zoom) - scrollX;
-  ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, h); ctx.stroke(); ctx.lineWidth = 1;
-  ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(px - 5, 0); ctx.lineTo(px + 5, 0); ctx.lineTo(px, 7); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px, 0);
+  ctx.lineTo(px, h);
+  ctx.stroke();
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.moveTo(px - 5, 0);
+  ctx.lineTo(px + 5, 0);
+  ctx.lineTo(px, 7);
+  ctx.closePath();
+  ctx.fill();
 }
 
+/**
+ *
+ */
 function drawPlaceholder(ctx, clip, cx, cy, cw, ch, alpha, zoom) {
   const color = clip.color || INTENT_COLORS[clip.intent] || INTENT_COLORS[''];
-  ctx.fillStyle = color; ctx.globalAlpha = alpha * 0.4; ctx.fillRect(cx, cy, cw, ch);
-  ctx.globalAlpha = alpha * 0.3; ctx.strokeStyle = color; ctx.lineWidth = 1;
-  for (let hx = cx - ch; hx < cx + cw; hx += 8) { ctx.beginPath(); ctx.moveTo(hx, cy + ch); ctx.lineTo(hx + ch, cy); ctx.stroke(); }
-  ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]); ctx.strokeRect(cx, cy, cw, ch); ctx.setLineDash([]); ctx.lineWidth = 1;
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 10px system-ui'; ctx.fillText(clip.label || clip.intent || 'placeholder', cx + 4, cy + 13, cw - 8);
-  if (clip.prompt) { ctx.font = '9px system-ui'; ctx.fillStyle = '#ffffffaa'; ctx.fillText(clip.prompt.slice(0, 30), cx + 4, cy + 25, cw - 8); }
+  ctx.fillStyle = color;
+  ctx.globalAlpha = alpha * 0.4;
+  ctx.fillRect(cx, cy, cw, ch);
+  ctx.globalAlpha = alpha * 0.3;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  for (let hx = cx - ch; hx < cx + cw; hx += 8) {
+    ctx.beginPath();
+    ctx.moveTo(hx, cy + ch);
+    ctx.lineTo(hx + ch, cy);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.strokeRect(cx, cy, cw, ch);
+  ctx.setLineDash([]);
+  ctx.lineWidth = 1;
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 10px system-ui';
+  ctx.fillText(clip.label || clip.intent || 'placeholder', cx + 4, cy + 13, cw - 8);
+  if (clip.prompt) {
+    ctx.font = '9px system-ui';
+    ctx.fillStyle = '#ffffffaa';
+    ctx.fillText(clip.prompt.slice(0, 30), cx + 4, cy + 25, cw - 8);
+  }
 }
 
+/**
+ *
+ */
 function drawWaveform(ctx, clip, cx, cy, cw, ch, redraw) {
   const cached = waveformCache.get(clip.sourceFile);
   if (cached?.peaks?.length) {
@@ -245,12 +352,14 @@ function drawWaveform(ctx, clip, cx, cy, cw, ch, redraw) {
     const visiblePeaks = peaks.slice(startIdx, Math.min(endIdx, peaks.length));
     if (!visiblePeaks.length) return;
     let maxPeak = 0;
-    for (const p of visiblePeaks) { if (p > maxPeak) maxPeak = p; }
+    for (const p of visiblePeaks) {
+      if (p > maxPeak) maxPeak = p;
+    }
     const scale = maxPeak > 0 ? 1 / maxPeak : 1;
     ctx.fillStyle = '#ffffff55';
     for (let i = 0; i < visiblePeaks.length; i++) {
       const bx = cx + (i / visiblePeaks.length) * cw;
-      const bh = (visiblePeaks[i] * scale) * (ch / 2 - 2);
+      const bh = visiblePeaks[i] * scale * (ch / 2 - 2);
       ctx.fillRect(bx, mid - bh, Math.max(1, cw / visiblePeaks.length) - 0.5, bh * 2);
     }
   } else {
@@ -267,6 +376,9 @@ function drawWaveform(ctx, clip, cx, cy, cw, ch, redraw) {
   }
 }
 
+/**
+ *
+ */
 function drawThumbnails(ctx, clip, cx, cy, cw, ch, alpha, redraw) {
   const img = thumbCache.get(clip.sourceFile);
   if (img?.complete && img.naturalWidth) {
@@ -277,7 +389,7 @@ function drawThumbnails(ctx, clip, cx, cy, cw, ch, alpha, redraw) {
     const repeats = sourceDur > 0 ? Math.ceil(clipDur / sourceDur) : 1;
     ctx.globalAlpha = alpha * 0.4;
     for (let r = 0; r < repeats; r++) {
-      const repeatOffset = (r * sourceDur / clipDur) * cw;
+      const repeatOffset = ((r * sourceDur) / clipDur) * cw;
       const repeatWidth = Math.min(cw - repeatOffset, (sourceDur / clipDur) * cw);
       const tw = repeatWidth / cols;
       for (let i = 0; i < cols; i++) {

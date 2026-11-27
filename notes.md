@@ -2,9 +2,7 @@ I've always loved video editing, since the very first time I got my hands on Veg
 
 That nostalgia for Vegas Video 4.0 is well-placed. Before it became Sony Vegas (and later Magix), it was the king of the "audio-first" workflow—the way it handled crossfades just by overlapping clips is still a benchmark for UX efficiency.Building a "Programmatic Vegas" that runs in a browser and leverages local AI to skip the tedious "rough cut" phase is an ambitious but highly feasible project with modern stacks. Given your preference for no-build stacks and native browser performance, this can be built as a specialized PWA with a heavy-duty Linux backend.Here is a phased buildout for your project, which we can call "Vegas-Flow" or "ClearCut."Phase 1: The "Vegas" Core (The Engine)The goal here is a functional, high-performance timeline in the browser that mimics the Vegas "fast clip handling."Tech Stack: Node 20+, Express (or Fastify), and FFmpeg on the backend.Frontend Strategy: Use native ESM (no Webpack/Vite if possible) and a high-performance Canvas-based timeline. Since you've worked with PixiJS before, it is perfect for the timeline's "zoomable layered interface."Core Mechanics:The "Vegas Fade": Implement the automatic crossfade logic when two clips on the same layer overlap.Tweenable Keyframes: Use GSAP (GreenSock) for the UI-side interpolation of layer effects.Backend Rendering: Use a "headless" version of your timeline logic. Send a JSON "Edit Decision List" (EDL) to the Node server, which then spawns an FFmpeg process to stitch the final video.Phase 2: Local Intelligence (The "Brain")This phase turns raw files into searchable data using local models you are already familiar with (like Qwen or Ollama-hosted models).Transcription: Use Whisper.cpp or a local Python microservice running Faster-Whisper. It generates VTT/SRT files and a word-level timestamped JSON.Visual Description: Pipe keyframes from your clips through Moondream2 or Llava (via Ollama) to generate searchable tags (e.g., "Willow playing with blocks," "Dorian at the park").Beat Detection: Use Essentia.js or a simple Node wrapper for Aubio. This identifies BPM and "onset" timestamps so clips can snap to the beat.Storage: Store this metadata in a simple SQLite database. Now, every clip in your library is indexed by what was said, what was seen, and the rhythm of the audio.Phase 3: The AI Conductor (Programmatic Editing)This is the "Prompt to Timeline" layer. Instead of dragging clips, you give the system a directive.Logic Layer: Create a "Director" agent (using a local LLM like Qwen 2.5) that translates a prompt into an EDL.Prompt: "Make a 60-second highlight reel of the kids at the park, sync the cuts to the beat of 'SummerTrack.mp3', and add titles when someone mentions 'ice cream'."Action: The LLM queries your SQLite metadata, finds the "park" clips, identifies the "ice cream" transcript timestamp, aligns the clip start/ends with the beat locations, and generates the JSON EDL.Manual Tweak: The UI populates with the AI's "suggestion." You can then manually drag, split, or add transitions just like in Vegas 4.0.Phase 4: Expansion & DeploymentFinalizing the professional-grade features and the multi-platform workflow.Sub-Projects (Multi-Format): Implement a "Canvas Mapping" logic. A 16:9 project can be duplicated into a 9:16 project. Use OpenCV (local bindings) for Face Detection to ensure that when you crop to vertical, the kids stay in the center of the frame automatically.Offline Rendering: Use Redis or a simple folder-based queue. The Node server processes the FFmpeg render in the background.Browser Notifications: Use the Web Notifications API to alert your mobile device or desktop when the render is complete.Deployment: Since this is a Linux server build, containerize the ML models (Whisper, Ollama) separately from the Node web server to manage GPU/CPU resources effectively.Recommended "Local-First" LibrariesTaskLibraryWhy?Video Processingfluent-ffmpegStandard Node wrapper for FFmpeg.Timeline UIPixiJSYou already have experience here; it handles thousands of sprites/clips smoothly.Beat/AudioWeb Audio APIFor real-time browser analysis and snapping.Background JobsBullMQRobust queue management for those long renders.Object DetectionTensorFlow.js (Node version)For identifying items in clips for labeling.
 
-
 User: I think building an initial edit, adding new edits to the end/start, or modifying an edit within a timeline start/end range or generating an edit at the playback position are going to be the primary "automated" actions, that then generate a definition of the edit and its sources that can then be manually tweaked by the user if need be. The idea being that we should be giving enough data of clips to be timed well (and likely even be able to edit out words or silences), and then adjusted for exact frame level cut positions and clip timing offsets per clip.
-
 
 You have perfectly articulated the ideal hybrid workflow. The fatal flaw of most modern "AI video editors" is that they are black boxes—you type a prompt, wait, and get a baked video. If the AI cut one second too early, you have to reroll the whole thing.
 
@@ -37,7 +35,7 @@ JSON
           "timelineStart": 0.0, // Place at the very beginning of the timeline
           "timelineEnd": 5.5,   // (sourceOut - sourceIn)
           "fadeIn": 0.0,        // Vegas-style overlap transitions
-          "fadeOut": 0.5 
+          "fadeOut": 0.5
         }
       ]
     }
@@ -64,7 +62,7 @@ This doesn't even need an LLM. Since you ran Whisper locally in Phase 2, you hav
 
 The system scans the transcript JSON. If the gap between the end of Word 1 and the start of Word 2 is > 0.8s, it automatically splits the clip, removes the gap, and shifts the timeline left. You can add a global padding variable (e.g., +0.1s before and after words) so the cuts don't feel completely breathless.
 
-3. The Manual Tweak (The Vegas UI)
+1. The Manual Tweak (The Vegas UI)
 Once the JSON is updated by the automation, your browser UI (using a Canvas API or PixiJS for performance without the DOM overhead) re-renders the visual blocks.
 
 This is where the magic of the Vegas interaction model comes in:
@@ -84,8 +82,7 @@ Headless Rendering: When you click "Export," your Node 20 server takes this fina
 
 By defining the editor as a strict "State -> UI -> FFmpeg" pipeline, you ensure that the AI is only responsible for updating state, leaving you with full, granular, and lightning-fast manual control over the actual cut.
 
-
-2. The Hybrid Workflow
+1. The Hybrid Workflow
 The system splits editing into two distinct phases, maximizing both automation and precise manual control.
 
 The Assistant Editor (AI Macro-Assembly)
@@ -106,7 +103,7 @@ Slip Editing: Holding a modifier key and dragging the inside of a clip shifts so
 
 Edge Trimming: Fast, responsive bounding box adjustments for frame-accurate cuts.
 
-3. Technology Stack
+1. Technology Stack
 Frontend: The Interface
 Framework: Clearstack (Native ESM, no Webpack/Vite overhead).
 
@@ -136,7 +133,7 @@ Visual Indexing: Llava or Moondream2 to scan keyframes and generate searchable t
 
 Beat Detection: Essentia.js / Aubio to map music onsets for beat-snapping.
 
-4. Phased Buildout Strategy
+1. Phased Buildout Strategy
 Phase 1: The Engine (Core UI & Headless Render)
 Define the JSON EDL schema.
 
@@ -177,6 +174,6 @@ print("[file-tag: NearEdit_Architecture_and_Roadmap.md]")
 Your markdown file is ready
 [file-tag: code-generated-file-0-1778702938200613633]
 
-"NearEdit" perfectly captures the essence of the tool—processing that stays right next to the data. I've compiled the entire architecture, philosophy, tech stack, and phased buildout into the markdown file above. 
+"NearEdit" perfectly captures the essence of the tool—processing that stays right next to the data. I've compiled the entire architecture, philosophy, tech stack, and phased buildout into the markdown file above.
 
 The summary is organized to serve as a solid `README.md` or a primary architecture document for the repo, outlining how the Clearstack frontend, the Node 20 backend, and the local AI models coordinate around that central JSON EDL.

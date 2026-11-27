@@ -51,7 +51,11 @@ export function connectWS() {
  */
 export function disconnectWS() {
   clearTimeout(reconnectTimer);
-  if (ws) { ws.onclose = null; ws.close(); ws = null; }
+  if (ws) {
+    ws.onclose = null;
+    ws.close();
+    ws = null;
+  }
   connected = false;
 }
 
@@ -78,4 +82,6 @@ function emit(type, data) {
 }
 
 /** @returns {boolean} */
-export function isConnected() { return connected; }
+export function isConnected() {
+  return connected;
+}

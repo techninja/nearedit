@@ -141,7 +141,7 @@
 }
 
 /* Mobile: stack vertically, preview on top */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .editor-view {
     grid-template-rows: auto auto 1fr;
   }

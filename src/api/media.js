@@ -33,7 +33,9 @@ function getProjectDir(projectId) {
     if (!existsSync(regPath)) return DEV_MEDIA_DIR;
     const reg = JSON.parse(readFileSync(regPath, 'utf-8'));
     return reg[projectId]?.path || DEV_MEDIA_DIR;
-  } catch { return DEV_MEDIA_DIR; }
+  } catch {
+    return DEV_MEDIA_DIR;
+  }
 }
 
 /**
@@ -44,7 +46,11 @@ function getProjectDir(projectId) {
  */
 function scanRecursive(dir, rootDir, results) {
   let entries;
-  try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
 
   for (const entry of entries) {
     if (entry.name.startsWith('.') || SKIP_DIRS.includes(entry.name)) continue;
@@ -73,10 +79,18 @@ function scanRecursive(dir, rootDir, results) {
 async function probe(filePath) {
   try {
     const { stdout } = await exec('ffprobe', [
-      '-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', filePath,
+      '-v',
+      'quiet',
+      '-print_format',
+      'json',
+      '-show_format',
+      '-show_streams',
+      filePath,
     ]);
     return JSON.parse(stdout);
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 /** GET /api/media?projectId=xxx — recursively scan project folder + additional media folders */
@@ -110,32 +124,42 @@ mediaRouter.get('/media', async (req, res) => {
     scanRecursive(root, root, entries);
   }
 
-  const items = await Promise.all(entries.map(async (entry) => {
-    const stat = statSync(entry.filePath);
-    const ext = extname(entry.filename).toLowerCase();
-    const type = VIDEO_EXTS.includes(ext) ? 'video' : AUDIO_EXTS.includes(ext) ? 'audio' : TEXT_EXTS.includes(ext) ? 'text' : 'image';
-    const probeData = await probe(entry.filePath);
-    const duration = probeData?.format?.duration ? parseFloat(probeData.format.duration) : null;
+  const items = await Promise.all(
+    entries.map(async (entry) => {
+      const stat = statSync(entry.filePath);
+      const ext = extname(entry.filename).toLowerCase();
+      const type = VIDEO_EXTS.includes(ext)
+        ? 'video'
+        : AUDIO_EXTS.includes(ext)
+          ? 'audio'
+          : TEXT_EXTS.includes(ext)
+            ? 'text'
+            : 'image';
+      const probeData = await probe(entry.filePath);
+      const duration = probeData?.format?.duration ? parseFloat(probeData.format.duration) : null;
 
-    // Check for existing sidecar metadata
-    const sidecarFile = `${entry.filePath}.nearedit.json`;
-    let sidecar = null;
-    if (existsSync(sidecarFile)) {
-      try { sidecar = JSON.parse(readFileSync(sidecarFile, 'utf-8')); } catch {}
-    }
+      // Check for existing sidecar metadata
+      const sidecarFile = `${entry.filePath}.nearedit.json`;
+      let sidecar = null;
+      if (existsSync(sidecarFile)) {
+        try {
+          sidecar = JSON.parse(readFileSync(sidecarFile, 'utf-8'));
+        } catch {}
+      }
 
-    return {
-      filename: entry.filename,
-      filePath: entry.filePath,
-      relativePath: entry.relativePath,
-      type,
-      size: stat.size,
-      duration,
-      indexed: !!sidecar,
-      tags: sidecar?.tags || [],
-      transcript: sidecar?.transcript ? true : false,
-    };
-  }));
+      return {
+        filename: entry.filename,
+        filePath: entry.filePath,
+        relativePath: entry.relativePath,
+        type,
+        size: stat.size,
+        duration,
+        indexed: !!sidecar,
+        tags: sidecar?.tags || [],
+        transcript: sidecar?.transcript ? true : false,
+      };
+    }),
+  );
 
   res.json({ data: items, total: items.length });
 });

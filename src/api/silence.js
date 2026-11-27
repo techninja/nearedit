@@ -19,7 +19,8 @@ silenceRouter.post('/silence/analyze', (req, res) => {
   if (!filePath) return res.status(400).json({ error: 'filePath required' });
 
   const sidecarPath = `${filePath}.nearedit.json`;
-  if (!existsSync(sidecarPath)) return res.status(404).json({ error: 'No sidecar/transcript found. Run transcription first.' });
+  if (!existsSync(sidecarPath))
+    return res.status(404).json({ error: 'No sidecar/transcript found. Run transcription first.' });
 
   const sidecar = JSON.parse(readFileSync(sidecarPath, 'utf-8'));
   const words = sidecar.transcript;
@@ -82,7 +83,14 @@ silenceRouter.post('/silence/remove', (req, res) => {
   if (sourceOut > sourceIn) {
     words = words.filter((w) => w.start >= sourceIn && w.end <= sourceOut);
   }
-  if (!words.length) return res.json({ clips: [], clipCount: 0, originalDuration: 0, outputDuration: 0, removedDuration: 0 });
+  if (!words.length)
+    return res.json({
+      clips: [],
+      clipCount: 0,
+      originalDuration: 0,
+      outputDuration: 0,
+      removedDuration: 0,
+    });
 
   // Generate tight clips
   const clips = [];
@@ -111,11 +119,27 @@ silenceRouter.post('/silence/remove', (req, res) => {
           fadeOut: 0,
           linkedClipId: '',
           placeholder: false,
-          label: clipWords.map((w) => w.word).join(' ').slice(0, 50),
+          label: clipWords
+            .map((w) => w.word)
+            .join(' ')
+            .slice(0, 50),
           prompt: '',
           intent: 'narration',
           color: '',
-          transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1, cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, anchorX: 0.5, anchorY: 0.5 },
+          transform: {
+            x: 0,
+            y: 0,
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            opacity: 1,
+            cropTop: 0,
+            cropBottom: 0,
+            cropLeft: 0,
+            cropRight: 0,
+            anchorX: 0.5,
+            anchorY: 0.5,
+          },
         });
         timelinePos += duration;
         totalOutputDuration += duration;
@@ -131,7 +155,10 @@ silenceRouter.post('/silence/remove', (req, res) => {
   // Final clip
   const clipEnd = words[words.length - 1].end + padding;
   const duration = clipEnd - clipStart;
-  if (duration >= minClipDuration && (maxDuration === 0 || totalOutputDuration + duration <= maxDuration)) {
+  if (
+    duration >= minClipDuration &&
+    (maxDuration === 0 || totalOutputDuration + duration <= maxDuration)
+  ) {
     clips.push({
       clipId: `silence_rm_${clips.length}`,
       sourceFile: filePath,
@@ -143,11 +170,27 @@ silenceRouter.post('/silence/remove', (req, res) => {
       fadeOut: 0,
       linkedClipId: '',
       placeholder: false,
-      label: clipWords.map((w) => w.word).join(' ').slice(0, 50),
+      label: clipWords
+        .map((w) => w.word)
+        .join(' ')
+        .slice(0, 50),
       prompt: '',
       intent: 'narration',
       color: '',
-      transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1, cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, anchorX: 0.5, anchorY: 0.5 },
+      transform: {
+        x: 0,
+        y: 0,
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        opacity: 1,
+        cropTop: 0,
+        cropBottom: 0,
+        cropLeft: 0,
+        cropRight: 0,
+        anchorX: 0.5,
+        anchorY: 0.5,
+      },
     });
     totalOutputDuration += duration;
   }
@@ -180,11 +223,13 @@ silenceRouter.post('/silence/select', (req, res) => {
   const keywords = query.toLowerCase().split(/\s+/).filter(Boolean);
 
   // Score and select
-  const scored = segments.map((seg) => {
-    const text = seg.text.toLowerCase();
-    const score = keywords.reduce((s, kw) => s + (text.includes(kw) ? 1 : 0), 0);
-    return { ...seg, score };
-  }).filter((s) => s.score > 0)
+  const scored = segments
+    .map((seg) => {
+      const text = seg.text.toLowerCase();
+      const score = keywords.reduce((s, kw) => s + (text.includes(kw) ? 1 : 0), 0);
+      return { ...seg, score };
+    })
+    .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
   const selected = [];
@@ -197,5 +242,9 @@ silenceRouter.post('/silence/select', (req, res) => {
   }
 
   selected.sort((a, b) => a.start - b.start);
-  res.json({ segments: selected, totalDuration: Math.round(totalDuration * 10) / 10, totalMatches: scored.length });
+  res.json({
+    segments: selected,
+    totalDuration: Math.round(totalDuration * 10) / 10,
+    totalMatches: scored.length,
+  });
 });

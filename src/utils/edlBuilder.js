@@ -26,7 +26,20 @@
  */
 export function buildEdlFromSegments(segments, words, segmentIndices, opts) {
   const { audioFile, videoFiles = [], padding = 0.05, gapBetween = 0.15 } = opts;
-  const xform = { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1, cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, anchorX: 0.5, anchorY: 0.5 };
+  const xform = {
+    x: 0,
+    y: 0,
+    scaleX: 1,
+    scaleY: 1,
+    rotation: 0,
+    opacity: 1,
+    cropTop: 0,
+    cropBottom: 0,
+    cropLeft: 0,
+    cropRight: 0,
+    anchorX: 0.5,
+    anchorY: 0.5,
+  };
 
   const audioClips = [];
   const videoClips = [];
@@ -96,8 +109,22 @@ export function buildEdlFromSegments(segments, words, segmentIndices, opts) {
 
   return {
     tracks: [
-      { trackId: 'v1', type: 'video', name: 'Video 1', muted: false, solo: false, clips: videoClips },
-      { trackId: 'a1', type: 'audio', name: 'Audio 1', muted: false, solo: false, clips: audioClips },
+      {
+        trackId: 'v1',
+        type: 'video',
+        name: 'Video 1',
+        muted: false,
+        solo: false,
+        clips: videoClips,
+      },
+      {
+        trackId: 'a1',
+        type: 'audio',
+        name: 'Audio 1',
+        muted: false,
+        solo: false,
+        clips: audioClips,
+      },
     ],
   };
 }

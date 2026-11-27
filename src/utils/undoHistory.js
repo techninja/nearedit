@@ -44,7 +44,11 @@ export function redo(current) {
 }
 
 /** @returns {boolean} */
-export function canUndo() { return past.length > 0; }
+export function canUndo() {
+  return past.length > 0;
+}
 
 /** @returns {boolean} */
-export function canRedo() { return future.length > 0; }
+export function canRedo() {
+  return future.length > 0;
+}

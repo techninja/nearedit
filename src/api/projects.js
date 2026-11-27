@@ -14,7 +14,7 @@
 
 import { Router } from 'express';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
-import { resolve, dirname, basename } from 'node:path';
+import { resolve, basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 export const projectsRouter = Router();
@@ -24,12 +24,18 @@ const REGISTRY_PATH = resolve(DATA_DIR, 'registry.json');
 
 // --- Registry: index of known project paths ---
 
+/**
+ *
+ */
 function loadRegistry() {
   mkdirSync(DATA_DIR, { recursive: true });
   if (!existsSync(REGISTRY_PATH)) writeFileSync(REGISTRY_PATH, '{}');
   return JSON.parse(readFileSync(REGISTRY_PATH, 'utf-8'));
 }
 
+/**
+ *
+ */
 function saveRegistry(reg) {
   writeFileSync(REGISTRY_PATH, JSON.stringify(reg, null, 2));
 }
@@ -46,26 +52,28 @@ function createProjectData(name) {
     id: randomUUID(),
     name,
     description: '',
-    mediaFolders: [],  // additional scan paths (external drives, NAS, etc.)
-    adaptations: [{
-      id: randomUUID(),
-      name: 'Main Edit',
-      parentAdaptationId: '',
-      aspectRatio: '16:9',
-      resolution: '1920x1080',
-      fps: 30,
-      status: 'draft',
-      edl: {
-        playheadPosition: 0,
-        cursorPosition: 0,
-        zoom: 1,
-        scrollX: 0,
-        tracks: [
-          { trackId: 'v1', type: 'video', name: 'Video 1', muted: false, solo: false, clips: [] },
-          { trackId: 'a1', type: 'audio', name: 'Audio 1', muted: false, solo: false, clips: [] },
-        ],
+    mediaFolders: [], // additional scan paths (external drives, NAS, etc.)
+    adaptations: [
+      {
+        id: randomUUID(),
+        name: 'Main Edit',
+        parentAdaptationId: '',
+        aspectRatio: '16:9',
+        resolution: '1920x1080',
+        fps: 30,
+        status: 'draft',
+        edl: {
+          playheadPosition: 0,
+          cursorPosition: 0,
+          zoom: 1,
+          scrollX: 0,
+          tracks: [
+            { trackId: 'v1', type: 'video', name: 'Video 1', muted: false, solo: false, clips: [] },
+            { trackId: 'a1', type: 'audio', name: 'Audio 1', muted: false, solo: false, clips: [] },
+          ],
+        },
       },
-    }],
+    ],
     createdAt: new Date().toISOString(),
   };
 }

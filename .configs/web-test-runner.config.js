@@ -14,6 +14,12 @@ const aliases = {
   '#pages/': '/src/pages/',
 };
 
+// CHROMIUM_PATH points the runner at a system Chromium when the Playwright
+// download is unavailable (offline CI, sandboxes).
+const launchOptions = process.env.CHROMIUM_PATH
+  ? { executablePath: process.env.CHROMIUM_PATH }
+  : {};
+
 /** Resolve #prefix/ imports for @web/test-runner. */
 function importMapPlugin() {
   return {
@@ -30,6 +36,6 @@ export default {
   files: 'src/components/**/*.test.js',
   nodeResolve: true,
   rootDir: ROOT,
-  browsers: [playwrightLauncher({ product: 'chromium' })],
+  browsers: [playwrightLauncher({ product: 'chromium', launchOptions })],
   plugins: [importMapPlugin()],
 };

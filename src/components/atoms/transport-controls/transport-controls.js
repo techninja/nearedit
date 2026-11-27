@@ -24,18 +24,38 @@ export default define({
       const dur = totalDuration(timeline.tracks || []);
       return html`
         <div class="transport-controls">
-          <button class="btn btn-ghost" title="Go to start (Home)" onclick="${() => {
-            store.set(TimelineState, { ...timeline, playheadPosition: 0, cursorPosition: 0 });
-          }}"><app-icon name="skip-back" size="sm"></app-icon></button>
-          <button class="btn btn-primary" title="Play/Pause (Space)" onclick="${() => {
-            // Simulate SPACE behavior: play/pause with return
-            document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
-          }}"><app-icon name="${timeline.playing ? 'pause' : 'play'}" size="sm"></app-icon></button>
-          <button class="btn btn-ghost" title="Go to end (End)" onclick="${() => {
-            store.set(TimelineState, { ...timeline, playheadPosition: dur, cursorPosition: dur });
-          }}"><app-icon name="skip-forward" size="sm"></app-icon></button>
+          <button
+            class="btn btn-ghost"
+            title="Go to start (Home)"
+            onclick="${() => {
+              store.set(TimelineState, { ...timeline, playheadPosition: 0, cursorPosition: 0 });
+            }}"
+          >
+            <app-icon name="skip-back" size="sm"></app-icon>
+          </button>
+          <button
+            class="btn btn-primary"
+            title="Play/Pause (Space)"
+            onclick="${() => {
+              // Simulate SPACE behavior: play/pause with return
+              document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+            }}"
+          >
+            <app-icon name="${timeline.playing ? 'pause' : 'play'}" size="sm"></app-icon>
+          </button>
+          <button
+            class="btn btn-ghost"
+            title="Go to end (End)"
+            onclick="${() => {
+              store.set(TimelineState, { ...timeline, playheadPosition: dur, cursorPosition: dur });
+            }}"
+          >
+            <app-icon name="skip-forward" size="sm"></app-icon>
+          </button>
           <span class="transport-time">${fmt(timeline.playheadPosition || 0)} / ${fmt(dur)}</span>
-          <button class="btn btn-ghost" title="Split at playhead (S)"><app-icon name="split" size="sm"></app-icon></button>
+          <button class="btn btn-ghost" title="Split at playhead (S)">
+            <app-icon name="split" size="sm"></app-icon>
+          </button>
         </div>
       `;
     },

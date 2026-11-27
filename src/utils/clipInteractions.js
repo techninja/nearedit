@@ -4,10 +4,7 @@
  * @module utils/clipInteractions
  */
 
-import { store } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
-import { pushState } from '#utils/undoHistory.js';
-import { timeToPx, pxToTime, snapToFrame } from '#utils/timelineMath.js';
+import { timeToPx } from '#utils/timelineMath.js';
 
 const TRACK_HEIGHT = 56;
 const TRACK_GAP = 2;
@@ -19,10 +16,14 @@ const EDGE_THRESHOLD = 8; // px from edge to trigger trim
 let selectedClip = null;
 
 /** @returns {{ trackId: string, clipId: string }|null} */
-export function getSelection() { return selectedClip; }
+export function getSelection() {
+  return selectedClip;
+}
 
 /** @param {{ trackId: string, clipId: string }|null} sel */
-export function setSelection(sel) { selectedClip = sel; }
+export function setSelection(sel) {
+  selectedClip = sel;
+}
 
 /**
  * Sort tracks same as the canvas renderer.
@@ -88,16 +89,20 @@ export function moveClip(state, trackId, clipId, timeDelta) {
   });
   // Move linked clip too
   if (linkedId) {
-    return { ...state, tracks: tracks.map((t) => ({
-      ...t, clips: t.clips.map((c) => {
-        if (c.clipId === linkedId) {
-          const start = Math.max(0, c.timelineStart + timeDelta);
-          const dur = c.timelineEnd - c.timelineStart;
-          return { ...c, timelineStart: start, timelineEnd: start + dur };
-        }
-        return c;
-      }),
-    })) };
+    return {
+      ...state,
+      tracks: tracks.map((t) => ({
+        ...t,
+        clips: t.clips.map((c) => {
+          if (c.clipId === linkedId) {
+            const start = Math.max(0, c.timelineStart + timeDelta);
+            const dur = c.timelineEnd - c.timelineStart;
+            return { ...c, timelineStart: start, timelineEnd: start + dur };
+          }
+          return c;
+        }),
+      })),
+    };
   }
   return { ...state, tracks };
 }
@@ -112,7 +117,8 @@ export function moveClip(state, trackId, clipId, timeDelta) {
  */
 export function trimClip(state, clipId, edge, timeDelta) {
   const tracks = state.tracks.map((t) => ({
-    ...t, clips: t.clips.map((c) => {
+    ...t,
+    clips: t.clips.map((c) => {
       if (c.clipId !== clipId) return c;
       if (edge === 'left') {
         const newStart = Math.max(0, c.timelineStart + timeDelta);
@@ -138,7 +144,8 @@ export function trimClip(state, clipId, edge, timeDelta) {
  */
 export function slipClip(state, clipId, timeDelta) {
   const tracks = state.tracks.map((t) => ({
-    ...t, clips: t.clips.map((c) => {
+    ...t,
+    clips: t.clips.map((c) => {
       if (c.clipId !== clipId) return c;
       const newIn = Math.max(0, c.sourceIn + timeDelta);
       const duration = c.sourceOut - c.sourceIn;
@@ -160,8 +167,20 @@ export function splitAtPlayhead(state) {
     for (const c of t.clips) {
       if (time > c.timelineStart && time < c.timelineEnd) {
         const offset = time - c.timelineStart;
-        const left = { ...c, clipId: c.clipId + '_L', timelineEnd: time, sourceOut: c.sourceIn + offset, fadeOut: 0 };
-        const right = { ...c, clipId: c.clipId + '_R', timelineStart: time, sourceIn: c.sourceIn + offset, fadeIn: 0 };
+        const left = {
+          ...c,
+          clipId: c.clipId + '_L',
+          timelineEnd: time,
+          sourceOut: c.sourceIn + offset,
+          fadeOut: 0,
+        };
+        const right = {
+          ...c,
+          clipId: c.clipId + '_R',
+          timelineStart: time,
+          sourceIn: c.sourceIn + offset,
+          fadeIn: 0,
+        };
         newClips.push(left, right);
       } else {
         newClips.push(c);
@@ -184,10 +203,14 @@ export function deleteSelected(state) {
   // Find linked
   for (const t of state.tracks) {
     const c = t.clips.find((cl) => cl.clipId === clipId);
-    if (c) { linkedId = c.linkedClipId; break; }
+    if (c) {
+      linkedId = c.linkedClipId;
+      break;
+    }
   }
   const tracks = state.tracks.map((t) => ({
-    ...t, clips: t.clips.filter((c) => c.clipId !== clipId && c.clipId !== linkedId),
+    ...t,
+    clips: t.clips.filter((c) => c.clipId !== clipId && c.clipId !== linkedId),
   }));
   selectedClip = null;
   return { ...state, tracks };

@@ -21,28 +21,38 @@ async function nativeFolderPicker() {
 
   if (os === 'darwin') {
     try {
-      const { stdout } = await exec('osascript', [
-        '-e', 'set theFolder to POSIX path of (choose folder with prompt "Select media folder")',
-      ], { timeout: 60_000 });
+      const { stdout } = await exec(
+        'osascript',
+        ['-e', 'set theFolder to POSIX path of (choose folder with prompt "Select media folder")'],
+        { timeout: 60_000 },
+      );
       const path = stdout.trim().replace(/\/$/, '');
       return path || null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   if (os === 'linux') {
     // Try zenity first, then kdialog
     try {
-      const { stdout } = await exec('zenity', [
-        '--file-selection', '--directory', '--title=Select media folder',
-      ], { timeout: 60_000 });
+      const { stdout } = await exec(
+        'zenity',
+        ['--file-selection', '--directory', '--title=Select media folder'],
+        { timeout: 60_000 },
+      );
       return stdout.trim() || null;
     } catch {
       try {
-        const { stdout } = await exec('kdialog', [
-          '--getexistingdirectory', '.', '--title', 'Select media folder',
-        ], { timeout: 60_000 });
+        const { stdout } = await exec(
+          'kdialog',
+          ['--getexistingdirectory', '.', '--title', 'Select media folder'],
+          { timeout: 60_000 },
+        );
         return stdout.trim() || null;
-      } catch { return null; }
+      } catch {
+        return null;
+      }
     }
   }
 
@@ -51,7 +61,9 @@ async function nativeFolderPicker() {
       const script = `Add-Type -AssemblyName System.Windows.Forms; $f = New-Object System.Windows.Forms.FolderBrowserDialog; $f.Description = 'Select media folder'; if($f.ShowDialog() -eq 'OK'){$f.SelectedPath}`;
       const { stdout } = await exec('powershell', ['-Command', script], { timeout: 60_000 });
       return stdout.trim() || null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   return null;

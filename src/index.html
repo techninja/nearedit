@@ -31,8 +31,13 @@
       // Apply theme before render to prevent flash
       try {
         const s = JSON.parse(localStorage.getItem('nearedit_appState'));
-        document.documentElement.setAttribute('data-theme', s?.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-      } catch { document.documentElement.setAttribute('data-theme', 'dark'); }
+        document.documentElement.setAttribute(
+          'data-theme',
+          s?.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
     </script>
     <app-router></app-router>
     <script type="module" src="/router/index.js"></script>

@@ -45,9 +45,8 @@ export function analyzeGaps(words, opts = {}) {
     }
   }
 
-  const totalSpeech = words.length > 0
-    ? words[words.length - 1].end - words[0].start - totalSilence
-    : 0;
+  const totalSpeech =
+    words.length > 0 ? words[words.length - 1].end - words[0].start - totalSilence : 0;
 
   return { gaps, totalSilence, totalSpeech };
 }
@@ -171,11 +170,13 @@ export function selectSegmentsByTopic(segments, query, maxDuration = 60) {
   if (!keywords.length) return { segments: [], totalDuration: 0 };
 
   // Score each segment by keyword matches
-  const scored = segments.map((seg) => {
-    const text = seg.text.toLowerCase();
-    const score = keywords.reduce((s, kw) => s + (text.includes(kw) ? 1 : 0), 0);
-    return { ...seg, score };
-  }).filter((s) => s.score > 0)
+  const scored = segments
+    .map((seg) => {
+      const text = seg.text.toLowerCase();
+      const score = keywords.reduce((s, kw) => s + (text.includes(kw) ? 1 : 0), 0);
+      return { ...seg, score };
+    })
+    .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
   // Select top segments up to maxDuration

@@ -144,7 +144,7 @@
   color: var(--color-text-muted);
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .project-grid {
     grid-template-columns: 1fr;
   }

@@ -8,8 +8,16 @@ import { html, define, store } from 'hybrids';
 import TimelineState from '#store/TimelineState.js';
 import { pxToTime, snapToFrame } from '#utils/timelineMath.js';
 import { pushState } from '#utils/undoHistory.js';
-import { draw, sortTracks, setDrawContext, TRACK_HEIGHT, TRACK_GAP, HEADER_HEIGHT, TRACK_LABEL_W } from '#utils/timelineDraw.js';
-import { hitTest, getSelection, setSelection, moveClip, trimClip, slipClip, splitAtPlayhead, deleteSelected } from '#utils/clipInteractions.js';
+import {
+  draw,
+  sortTracks,
+  setDrawContext,
+  TRACK_HEIGHT,
+  TRACK_GAP,
+  HEADER_HEIGHT,
+  TRACK_LABEL_W,
+} from '#utils/timelineDraw.js';
+import { hitTest, setSelection, moveClip, trimClip, slipClip } from '#utils/clipInteractions.js';
 
 export default define({
   tag: 'timeline-canvas',
@@ -28,18 +36,27 @@ export default define({
   _ctx: { value: null, connect: () => {} },
   render: {
     value: ({ timeline }) => html`
-      <div class="timeline-canvas-wrap"
+      <div
+        class="timeline-canvas-wrap"
         onmousemove="${(host, e) => {
           const canvas = host.querySelector('canvas');
           const rect = canvas.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
-          if (x < TRACK_LABEL_W) { canvas.style.cursor = 'default'; return; }
+          if (x < TRACK_LABEL_W) {
+            canvas.style.cursor = 'default';
+            return;
+          }
           const hit = hitTest(x, y, timeline);
-          if (!hit) { canvas.style.cursor = 'crosshair'; }
-          else if (hit.edge === 'left' || hit.edge === 'right') { canvas.style.cursor = 'col-resize'; }
-          else if (e.altKey) { canvas.style.cursor = 'ew-resize'; }
-          else { canvas.style.cursor = 'grab'; }
+          if (!hit) {
+            canvas.style.cursor = 'crosshair';
+          } else if (hit.edge === 'left' || hit.edge === 'right') {
+            canvas.style.cursor = 'col-resize';
+          } else if (e.altKey) {
+            canvas.style.cursor = 'ew-resize';
+          } else {
+            canvas.style.cursor = 'grab';
+          }
         }}"
         onmousedown="${(host, e) => {
           const canvas = host.querySelector('canvas');
@@ -105,16 +122,25 @@ export default define({
 
           // No clip hit — set playhead, clear selection
           setSelection(null);
-          const time = snapToFrame(pxToTime(x - TRACK_LABEL_W + timeline.scrollX, timeline.zoom), timeline.fps);
+          const time = snapToFrame(
+            pxToTime(x - TRACK_LABEL_W + timeline.scrollX, timeline.zoom),
+            timeline.fps,
+          );
           store.set(TimelineState, { ...timeline, playheadPosition: time });
         }}"
         onwheel="${(host, e) => {
           e.preventDefault();
           if (e.ctrlKey || e.metaKey) {
             const delta = e.deltaY > 0 ? 0.8 : 1.25;
-            store.set(TimelineState, { ...timeline, zoom: Math.max(0.1, Math.min(10, timeline.zoom * delta)) });
+            store.set(TimelineState, {
+              ...timeline,
+              zoom: Math.max(0.1, Math.min(10, timeline.zoom * delta)),
+            });
           } else {
-            store.set(TimelineState, { ...timeline, scrollX: Math.max(0, timeline.scrollX + e.deltaX + e.deltaY) });
+            store.set(TimelineState, {
+              ...timeline,
+              scrollX: Math.max(0, timeline.scrollX + e.deltaX + e.deltaY),
+            });
           }
         }}"
       >
@@ -135,7 +161,8 @@ export default define({
         if (s) draw(host._ctx, s, canvas.width, canvas.height, () => {});
         const obs = new ResizeObserver(() => {
           const r = canvas.parentElement.getBoundingClientRect();
-          canvas.width = r.width; canvas.height = r.height;
+          canvas.width = r.width;
+          canvas.height = r.height;
           setDrawContext(host._ctx, canvas.width, canvas.height);
           const st = store.get(TimelineState);
           if (st && host._ctx) draw(host._ctx, st, canvas.width, canvas.height, () => {});
@@ -144,6 +171,9 @@ export default define({
         host._resizeObs = obs;
       });
     },
-    disconnect(host) { host._resizeObs?.disconnect(); host._ctx = null; },
+    disconnect(host) {
+      host._resizeObs?.disconnect();
+      host._ctx = null;
+    },
   },
 });

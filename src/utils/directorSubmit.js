@@ -18,9 +18,12 @@ import { onMessage } from '#utils/wsClient.js';
 export async function executeSilenceRemoval(timeline, params, onStatus) {
   onStatus('Analyzing audio...');
   const audioTrack = timeline.tracks.find((t) => t.type === 'audio');
-  if (!audioTrack?.clips?.length) { onStatus('No audio clips to process'); return false; }
+  if (!audioTrack?.clips?.length) {
+    onStatus('No audio clips to process');
+    return false;
+  }
 
-  let allNewClips = [];
+  const allNewClips = [];
   let totalRemoved = 0;
   let timelinePos = 0;
 
@@ -46,15 +49,22 @@ export async function executeSilenceRemoval(timeline, params, onStatus) {
       }),
     });
     const result = await res.json();
-    if (result.error) { onStatus(`Error: ${result.error}`); return false; }
+    if (result.error) {
+      onStatus(`Error: ${result.error}`);
+      return false;
+    }
 
     allNewClips.push(...result.clips);
     totalRemoved += result.removedDuration;
-    timelinePos = result.clips.length ? result.clips[result.clips.length - 1].timelineEnd : timelinePos;
+    timelinePos = result.clips.length
+      ? result.clips[result.clips.length - 1].timelineEnd
+      : timelinePos;
   }
 
   onStatus(`Removed ${totalRemoved.toFixed(1)}s silence, ${allNewClips.length} segments`);
-  const tracks = timeline.tracks.map((t) => t.type !== 'audio' ? t : { ...t, clips: allNewClips });
+  const tracks = timeline.tracks.map((t) =>
+    t.type !== 'audio' ? t : { ...t, clips: allNewClips },
+  );
   store.set(TimelineState, { ...timeline, tracks });
   return true;
 }
@@ -69,9 +79,18 @@ export async function executeSilenceRemoval(timeline, params, onStatus) {
  * @param {() => void} onComplete
  * @param {(err: string) => void} onError
  */
-export async function submitDirectorJob(directive, projectId, timeline, replace, onStatus, onComplete, onError) {
+export async function submitDirectorJob(
+  directive,
+  projectId,
+  timeline,
+  replace,
+  onStatus,
+  onComplete,
+  onError,
+) {
   // For generate_script, use a different endpoint that returns markdown
-  const endpoint = directive.action === 'generate_script' ? '/api/director/script' : '/api/director';
+  const endpoint =
+    directive.action === 'generate_script' ? '/api/director/script' : '/api/director';
 
   const submitRes = await fetch(endpoint, {
     method: 'POST',
@@ -79,24 +98,93 @@ export async function submitDirectorJob(directive, projectId, timeline, replace,
     body: JSON.stringify({ directive, projectId }),
   });
   const { jobId, error } = await submitRes.json();
-  if (error) { onError(error); return; }
+  if (error) {
+    onError(error);
+    return;
+  }
 
   // Immediately show a placeholder on the timeline
   const targetDuration = directive.params.duration || 60;
   if (replace) {
     const placeholderTracks = [
-      { trackId: 'v1', type: 'video', name: 'Video 1', muted: false, solo: false, clips: [{
-        clipId: `pending_${jobId.slice(0, 8)}`, sourceFile: '', sourceIn: 0, sourceOut: targetDuration,
-        timelineStart: 0, timelineEnd: targetDuration, fadeIn: 0, fadeOut: 0, linkedClipId: '',
-        placeholder: true, label: 'Generating edit...', prompt: '', intent: 'broll', color: '#6366f1',
-        transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1, cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, anchorX: 0.5, anchorY: 0.5 },
-      }] },
-      { trackId: 'a1', type: 'audio', name: 'Audio 1', muted: false, solo: false, clips: [{
-        clipId: `pending_a_${jobId.slice(0, 8)}`, sourceFile: '', sourceIn: 0, sourceOut: targetDuration,
-        timelineStart: 0, timelineEnd: targetDuration, fadeIn: 0, fadeOut: 0, linkedClipId: '',
-        placeholder: true, label: 'Generating narration...', prompt: '', intent: 'narration', color: '#8b5cf6',
-        transform: { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0, opacity: 1, cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0, anchorX: 0.5, anchorY: 0.5 },
-      }] },
+      {
+        trackId: 'v1',
+        type: 'video',
+        name: 'Video 1',
+        muted: false,
+        solo: false,
+        clips: [
+          {
+            clipId: `pending_${jobId.slice(0, 8)}`,
+            sourceFile: '',
+            sourceIn: 0,
+            sourceOut: targetDuration,
+            timelineStart: 0,
+            timelineEnd: targetDuration,
+            fadeIn: 0,
+            fadeOut: 0,
+            linkedClipId: '',
+            placeholder: true,
+            label: 'Generating edit...',
+            prompt: '',
+            intent: 'broll',
+            color: '#6366f1',
+            transform: {
+              x: 0,
+              y: 0,
+              scaleX: 1,
+              scaleY: 1,
+              rotation: 0,
+              opacity: 1,
+              cropTop: 0,
+              cropBottom: 0,
+              cropLeft: 0,
+              cropRight: 0,
+              anchorX: 0.5,
+              anchorY: 0.5,
+            },
+          },
+        ],
+      },
+      {
+        trackId: 'a1',
+        type: 'audio',
+        name: 'Audio 1',
+        muted: false,
+        solo: false,
+        clips: [
+          {
+            clipId: `pending_a_${jobId.slice(0, 8)}`,
+            sourceFile: '',
+            sourceIn: 0,
+            sourceOut: targetDuration,
+            timelineStart: 0,
+            timelineEnd: targetDuration,
+            fadeIn: 0,
+            fadeOut: 0,
+            linkedClipId: '',
+            placeholder: true,
+            label: 'Generating narration...',
+            prompt: '',
+            intent: 'narration',
+            color: '#8b5cf6',
+            transform: {
+              x: 0,
+              y: 0,
+              scaleX: 1,
+              scaleY: 1,
+              rotation: 0,
+              opacity: 1,
+              cropTop: 0,
+              cropBottom: 0,
+              cropLeft: 0,
+              cropRight: 0,
+              anchorX: 0.5,
+              anchorY: 0.5,
+            },
+          },
+        ],
+      },
     ];
     store.set(TimelineState, { ...timeline, tracks: placeholderTracks });
   }
@@ -114,7 +202,12 @@ export async function submitDirectorJob(directive, projectId, timeline, replace,
       unsub();
       const resultRes = await fetch(`/api/jobs/${jobId}/result`);
       const result = await resultRes.json();
-      console.log('[Director] Job result:', result.tracks?.length, 'tracks', result.scripts ? 'scripts' : 'edl');
+      console.log(
+        '[Director] Job result:',
+        result.tracks?.length,
+        'tracks',
+        result.scripts ? 'scripts' : 'edl',
+      );
       // Script jobs return { scripts: [...] } — show selection UI
       if (result.scripts) {
         onStatus(`${result.count} scripts ready — load one via "Execute Script"`);
@@ -123,7 +216,11 @@ export async function submitDirectorJob(directive, projectId, timeline, replace,
         if (panel) {
           const editor = document.querySelector('editor-view');
           const pid = editor?.projectId || '';
-          fetch(`/api/media?projectId=${pid}`).then((r) => r.json()).then((d) => { panel.textFiles = (d.data || []).filter((f) => f.type === 'text'); });
+          fetch(`/api/media?projectId=${pid}`)
+            .then((r) => r.json())
+            .then((d) => {
+              panel.textFiles = (d.data || []).filter((f) => f.type === 'text');
+            });
           // Switch to Execute Script action so user sees the dropdown
           panel.action = 'execute_script';
           panel.collapsed = false;
@@ -150,8 +247,14 @@ function applyEdl(timeline, edl, replace) {
   if (replace) {
     store.set(TimelineState, { ...timeline, ...edl });
   } else {
-    const existingEnd = timeline.tracks.reduce((max, t) =>
-      Math.max(max, t.clips.reduce((m, c) => Math.max(m, c.timelineEnd), 0)), 0);
+    const existingEnd = timeline.tracks.reduce(
+      (max, t) =>
+        Math.max(
+          max,
+          t.clips.reduce((m, c) => Math.max(m, c.timelineEnd), 0),
+        ),
+      0,
+    );
     const merged = edl.tracks.map((newTrack) => {
       const existing = timeline.tracks.find((t) => t.type === newTrack.type);
       if (!existing) return newTrack;

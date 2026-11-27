@@ -98,7 +98,8 @@ export default define({
           canvas.height = nh;
           if (compositor) {
             compositor.resize(nw, nh, aspect);
-            if (st && !compositor.isPlaying) compositor.scrub(st.tracks || [], st.playheadPosition || 0);
+            if (st && !compositor.isPlaying)
+              compositor.scrub(st.tracks || [], st.playheadPosition || 0);
           }
         });
         obs.observe(canvas.parentElement);
@@ -107,7 +108,10 @@ export default define({
     },
     disconnect(host) {
       host._resizeObs?.disconnect();
-      if (compositor) { compositor.destroy(); compositor = null; }
+      if (compositor) {
+        compositor.destroy();
+        compositor = null;
+      }
       lastScrubTime = -1;
     },
   },

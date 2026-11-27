@@ -8,7 +8,7 @@ import { Router } from 'express';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync, mkdirSync, statSync } from 'node:fs';
-import { resolve, basename, extname } from 'node:path';
+import { resolve, extname } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const exec = promisify(execFile);
@@ -49,13 +49,11 @@ async function transcodeToWav(sourcePath) {
   const key = hashPath(sourcePath);
   const wavPath = resolve(CACHE_DIR, `${key}.wav`);
 
-  await exec('ffmpeg', [
-    '-i', sourcePath,
-    '-acodec', 'pcm_s16le',
-    '-ar', '44100',
-    '-ac', '2',
-    '-y', wavPath,
-  ], { timeout: 300_000 });
+  await exec(
+    'ffmpeg',
+    ['-i', sourcePath, '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2', '-y', wavPath],
+    { timeout: 300_000 },
+  );
 
   return wavPath;
 }
