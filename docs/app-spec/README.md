@@ -175,6 +175,7 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 | [EDL.md](./EDL.md) | Timeline document schema and invariants |
 | [EDL-OPERATIONS.md](./EDL-OPERATIONS.md) | The editing operations and their rules |
 | [COMPOSITOR.md](./COMPOSITOR.md) | The shared frame compositor: generators, effects, keyframes |
+| [PARTICLES.md](./PARTICLES.md) | The particle generator: parameters, sprites, presets |
 | [VEGAS.md](./VEGAS.md) | The Vegas keymap preset and what differs from Vegas |
 | [API.md](./API.md) | HTTP + WebSocket API |
 | [CONFIGURATION.md](./CONFIGURATION.md) | Environment variables, access and security |

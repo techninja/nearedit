@@ -33,8 +33,19 @@ import { TEXT_ANIMATIONS, TEXT_UNITS } from './text/animation.js';
  * @property {'background'|'shape'|'text'|'particles'|'pattern'} category
  * @property {string} [description]
  * @property {ParamSchema} params
+ * @property {Preset[]} [presets] - Ready-made parameter sets to offer
  * @property {(ctx: any, params: Record<string, any>, time: Time, frame: Frame,
  *   env: ComposeEnv) => void} draw
+ */
+
+/**
+ * A named starting point for a generator.
+ * @typedef {Object} Preset
+ * @property {string} id
+ * @property {string} name
+ * @property {string} [description]
+ * @property {Record<string, any>} params - Only what differs from the defaults
+ * @property {string} [blendMode] - Blend mode to give the clip
  */
 
 /**
@@ -84,8 +95,11 @@ const describe = ({ type, label, category, description = '', params }) => ({
   params,
 });
 
-/** Generators as data: `{ type, label, category, description, params }`. */
-export const GENERATORS = generators.map(describe);
+/** Generators as data: `{ type, label, category, description, params, presets }`. */
+export const GENERATORS = generators.map((module) => ({
+  ...describe(module),
+  presets: module.presets || [],
+}));
 
 /** Effects as data, with `kind`: `filter` or `apply`. */
 export const EFFECTS = effects.map((module) => ({

@@ -240,11 +240,17 @@ and titles through `clip.text`.
 **Particles** are stateless: particle *n* is born at a time fixed by the
 rate and seed, and its position, size, colour and opacity are closed-form
 functions of its age. Parameters cover the emitter (point, line, box,
-circle; position and size), flow (rate, burst, lifetime, speed, direction,
-spread, gravity, turbulence), look (size and its change over life, spin,
-colour from → to, opacity with fade in / out, blend) and the **sprite**: a
-built-in shape (dot, circle, square, star, spark, ring) or any image from
-the project (`sprite: "image"`, `image: "/abs/path.png"`).
+circle, ring, edge), flow (rate, bursts, lifetime, speed, direction, spread,
+gravity, drag, swirl, turbulence), look (size and its change over life,
+spin, tumble, colour over life, opacity with fade in / out, blend) and the
+**sprite**: a built-in shape (dot, circle, square, star, spark, ring,
+snowflake, heart, confetti) or any image from the project
+(`sprite: "image"`, `image: "/abs/path.png"`). Thirteen presets — snow,
+rain, sparks, confetti, falling images and more — come with it. Full
+reference: [PARTICLES.md](./PARTICLES.md).
+
+A generator module may export **presets** (`{ id, name, description,
+params, blendMode? }`); the catalog lists them with the generator.
 
 **Effects:** `colorAdjust` (brightness, contrast, saturation, hue), `blur`,
 `glow`, `dropShadow`, `vignette`, `tint`, `stylize` (grayscale, sepia,
@@ -271,23 +277,89 @@ bundled, so neither side synthesises one.
 
 ## Rendering on the server
 
-`src/api/render/canvas/` drives the compositor headlessly: FFmpeg decodes
-each active footage clip to raw frames, the compositor draws, and the raw
-result is piped into the same encoder settings the filter-graph path uses, so
-segments from either path join without re-encoding. A segment takes the
-canvas path when anything in it needs the compositor — a generator, a title,
-an effect, a blend mode, a keyframe, track opacity or effects, a non-black
-background — and the filter-graph path otherwise. `RENDER_ENGINE` (`auto`,
-`canvas`, `ffmpeg`) overrides the choice. Audio is mixed by FFmpeg as before.
+`src/api/render/canvas/` drives the compositor headlessly
+([RENDER.md](./RENDER.md#the-canvas-path)): one FFmpeg per footage clip on
+screen decodes exactly the frames the output shows, as raw RGBA at the size
+the clip is shown at; a host environment hands each to `frameOf`; `drawFrame`
+draws the document — its clips snapped to the frame grid — at `frame / fps`;
+and the canvas pixels are piped into an FFmpeg encoder with the settings the
+filter-graph path uses, so segments from either path join without
+re-encoding.
+
+- **Routing.** A segment takes the canvas path when anything in it needs the
+  compositor — a generator, a title, an enabled effect, a blend mode,
+  keyframes on a visual property, a curved fade, track opacity below 1, a
+  non-black background — and the filter-graph path otherwise.
+  `POST /render/plan` says which, and why. `RENDER_ENGINE` (`auto`, `canvas`,
+  `ffmpeg`) overrides the choice; `ffmpeg` refuses a timeline that needs the
+  compositor instead of drawing it wrong.
+- **Workers.** Drawing happens in worker processes, one environment (and
+  scratch pool) each, `RENDER_WORKERS` at a time, never on the server's
+  event loop. Long canvas stretches are cut into 4 s chunks for them.
+- **What you preview is what renders.** `canvas/compare.test.js` renders
+  documents — generators, an animated title over footage, effects, blend
+  modes, a keyframed transform, a cross-fade, track opacity — decodes the
+  video and compares it with `renderFrame` of the same document and time:
+  identical in every byte when encoded without loss; through H.264 the mean
+  luma error stays under 3 of 255 (`standard`) and every frame is at least
+  1.4 times closer to its own picture than to a neighbouring frame's.
+- **Sound** is mixed by FFmpeg and follows `levels.js`: fade curves as the
+  matching `afade` curves, a keyframed `volume` as a sampled envelope.
+
+Footage larger than it is shown is reduced by FFmpeg before it reaches the
+canvas (the preview reduces it on the canvas), and where a title appears
+over a running shot the footage changes renderer for that stretch; both are
+described under [Limits](./RENDER.md#limits-and-what-is-not-honoured).
 
 ## Authoring without the UI
 
+`bin/nearedit.js` is the editor without the editor: a document, a text
+editor and four commands are enough to build an edit — from generators
+alone, or with footage. It runs the server's own renderer in-process; no
+server needs to be running, and it works from any directory.
+
 ```bash
-node bin/nearedit.js frame  edit.json --time 3.5 -o frame.png   # one frame
-node bin/nearedit.js render edit.json -o out.mp4 --preset draft # the whole edit
-node bin/nearedit.js validate edit.json
-node bin/nearedit.js catalog                                    # generators + effects as JSON
+nearedit validate edit.json                    # what is wrong, and where
+nearedit catalog                               # generators, effects, blend modes, easings, fonts
+nearedit frame  edit.json --time 3.5           # one frame as PNG → edit-3.5s.png
+nearedit render edit.json --preset draft       # the whole edit → edit.mp4
 ```
 
-A document, a text editor and these commands are enough to build an edit
-from generators alone: write the EDL, look at frames, render.
+| Command | Does | Output |
+| ------- | ---- | ------ |
+| `render <edl.json> [-o out.mp4] [--preset draft\|standard\|high] [--range start:end] [--workers n]` | Encodes the document with the passes of the render job | Progress on stderr, the file's path on stdout |
+| `frame <edl.json> --time <seconds> [-o frame.png] [--width n]` | Draws the frame the render shows at that moment, footage included | The PNG's path on stdout |
+| `validate <edl.json> [--json]` | Normalises and checks the document | One line per problem with its path (`tracks[0].clips[2].generator.type: unknown generator …`); exit 1 when it cannot be rendered |
+| `catalog [--json]` | Lists generators and effects with every parameter (type, range, default), blend modes, easings, text animations, fonts — read from `catalog()` | Text, or one JSON object |
+| `help [command]` | Explains | |
+
+- **A document** is one JSON file in the [EDL](./EDL.md) shape. Only what
+  differs from the defaults has to be written: `fps`, `resolution`,
+  `tracks`, and per clip its times and its `generator`, `text` or
+  `sourceFile`.
+- **Media paths** are relative to the document's folder (a bare name is also
+  looked up in the `--media` folders). Only files under that folder and
+  under any `--media <dir>` are read — symbolic links are followed first —
+  and that includes sprite and mask images named in parameters.
+- **`validate`** reports errors (a missing or forbidden file, an unknown
+  generator or effect, a clip that could not be read at all — one without
+  `timelineStart`, say — a broken invariant, an empty timeline) and warnings
+  (a value that was repaired on the way in — `"glow" was read as "normal"` —
+  an unknown field or parameter, a clip longer than its file). With `--json`
+  it also lists the segments and the renderer each will take.
+- **Exit codes:** 0 done, 1 the document or the render failed, 2 the command
+  line was not understood (the message says what was expected), 130
+  interrupted. An interrupted render leaves no file behind.
+
+```json
+{ "fps": 30, "resolution": "1280x720", "tracks": [
+  { "type": "video", "clips": [ { "timelineStart": 0, "timelineEnd": 4,
+    "text": { "content": "Hello", "fontSize": 120,
+              "animateIn": { "type": "slide-up", "by": "char" } } } ] },
+  { "type": "video", "clips": [ { "timelineStart": 0, "timelineEnd": 4,
+    "generator": { "type": "gradient", "params": { "angle": 120 } },
+    "keyframes": { "generator.params.angle": [ { "t": 0, "v": 60 }, { "t": 4, "v": 200 } ] } } ] } ] }
+```
+
+The operations in `#utils/edl/index.js` (`insertGenerator`, `insertTitle`,
+`addEffect`, `setKeyframe`…) build the same documents from code.

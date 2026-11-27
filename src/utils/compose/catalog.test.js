@@ -17,18 +17,19 @@ import { coerceParam, imageParams, resolveParams } from './params.js';
 const TYPES = ['number', 'color', 'boolean', 'select', 'text', 'image', 'point'];
 
 describe('catalog', () => {
-  it('lists the starting generators and the two reference effects', () => {
-    assert.deepEqual(
-      GENERATORS.map((g) => g.type),
-      ['solid', 'gradient', 'shape', 'pattern', 'noise'],
-    );
-    assert.deepEqual(
-      EFFECTS.map((e) => [e.type, e.kind]),
-      [
-        ['blur', 'filter'],
-        ['glow', 'apply'],
-      ],
-    );
+  it('lists the registered generators and effects, whatever has been added since', () => {
+    const generatorTypes = GENERATORS.map((g) => g.type);
+    for (const type of ['solid', 'gradient', 'shape', 'pattern', 'noise', 'particles']) {
+      assert.ok(generatorTypes.includes(type), `generator ${type} is registered`);
+    }
+    assert.equal(new Set(generatorTypes).size, generatorTypes.length, 'no type twice');
+    const effectKinds = Object.fromEntries(EFFECTS.map((e) => [e.type, e.kind]));
+    assert.ok(effectKinds.blur && effectKinds.glow, 'blur and glow are registered');
+    assert.ok(Object.values(effectKinds).every((kind) => kind === 'filter' || kind === 'apply'));
+    assert.equal(Object.keys(effectKinds).length, EFFECTS.length, 'no type twice');
+    const presets = GENERATORS.find((g) => g.type === 'particles').presets;
+    assert.ok(presets.length > 5 && presets.every((p) => p.id && p.name && p.params));
+    assert.deepEqual(GENERATORS.find((g) => g.type === 'solid').presets, []);
     assert.equal(generatorModule('gradient').type, 'gradient');
     assert.equal(typeof effectModule('glow').apply, 'function');
     assert.equal(generatorModule('nope'), undefined);
