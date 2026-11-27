@@ -90,7 +90,7 @@ export function moveTrack(edl, trackId, toIndex) {
  */
 export function updateTrack(edl, trackId, patch) {
   return mapTracks(edl, (track) => {
-    if (track.trackId !== trackId) return track;
+    if (track.trackId !== trackId || !patch) return track;
     const next = { ...track };
     if (typeof patch.name === 'string') next.name = patch.name;
     for (const flag of ['muted', 'solo', 'locked']) {

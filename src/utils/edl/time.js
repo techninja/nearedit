@@ -59,6 +59,15 @@ export function clamp(value, min, max) {
 }
 
 /**
+ * @param {any} value
+ * @param {number} fallback
+ * @returns {number} `value` when it is a finite number, otherwise `fallback`
+ */
+export function finite(value, fallback) {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+/**
  * Look up the known duration of a source file.
  * @param {SourceDurations} [durations]
  * @param {string} [file]

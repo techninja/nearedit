@@ -106,8 +106,10 @@ an audio track, joined to its picture by `linkedClipId`.
 
 `validateEdl(edl, { sourceDurations? })` checks all of the above plus field
 types and enums and returns `{ valid, problems: [{ path, message }] }`.
-Times are compared with a 1 µs tolerance (`EPS`). `normalizeEdl(raw)` turns
-anything — a v1 file, LLM output, garbage — into a document that passes.
+Times are compared with a 1 µs tolerance (`EPS`); the source-duration check
+allows half a frame, because the frame grid rarely lands exactly on the end
+of a source. `normalizeEdl(raw)` turns anything — a v1 file, LLM output,
+garbage — into a document that passes.
 
 Operations keep `timelineStart`/`timelineEnd` on the frame grid; source
 times are not snapped. Being on the grid is not an invariant (changing an
@@ -213,15 +215,17 @@ then hand-tune.
 Internal building blocks: `time.js`, `immutable.js`, `clipMath.js`,
 `fades.js`, `place.js`, `session.js`, `partners.js`, `links.js`,
 `shift.js`, `trimLimits.js`, `placement.js`, `sanitize.js`,
-`normalizeClip.js`, `fragment.js`, `validateClip.js`. `testkit.js` holds
-fixtures for tests.
+`normalizeClip.js`, `fragment.js`, `validateClip.js`. `types.js` holds the
+shared JSDoc types (`Edl`, `Track`, `Clip`, `Marker`) and `testkit.js` the
+fixtures for tests (`testEdl`, `testClip`, `deepFreeze`, `assertValid`).
 
 ### Editing rules
 
 **Locked tracks.** A clip on a locked track is never moved, trimmed, split,
 deleted, overwritten or rippled, and nothing is placed on a locked track.
-The one field that may change on such a clip is `linkedClipId`, which is
-cleared when its partner is deleted or cut away (invariant 5).
+The one field that may change on such a clip is `linkedClipId`: it is
+cleared, or re-pointed at the surviving half, when its partner is deleted,
+split or cut away (invariant 5).
 
 **Linked and grouped clips.** Linked partners move, trim, slip, split and
 delete together; grouped clips move together. Every such operation takes

@@ -34,6 +34,13 @@ describe('expandSelection', () => {
     assert.deepEqual(expandSelection(doc(), ['c']).sort(), ['c', 'c_s', 'm']);
   });
 
+  it('accepts a single id, an array or a Set', () => {
+    const expected = expandSelection(doc(), ['a'], { grouped: false });
+    assert.deepEqual(expandSelection(doc(), 'a', { grouped: false }), expected);
+    assert.deepEqual(expandSelection(doc(), new Set(['a']), { grouped: false }), expected);
+    assert.deepEqual(expandSelection(doc(), null), []);
+  });
+
   it('can leave links or groups out', () => {
     assert.deepEqual(expandSelection(doc(), ['a'], { grouped: false }), ['a', 'a_s']);
     assert.deepEqual(expandSelection(doc(), ['a'], { linked: false }), ['a', 'b']);

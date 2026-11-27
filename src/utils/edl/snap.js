@@ -6,7 +6,7 @@
  * @module utils/edl/snap
  */
 
-import { indexClips } from './immutable.js';
+import { idList, indexClips } from './immutable.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 
@@ -39,7 +39,7 @@ import { indexClips } from './immutable.js';
  */
 export function snapCandidates(edl, opts = {}) {
   if (opts.candidates) return opts.candidates;
-  const skip = new Set(opts.exclude || []);
+  const skip = new Set(idList(opts.exclude));
   /** @type {SnapTarget[]} */
   const out = [];
   if (Number.isFinite(opts.playhead)) out.push({ time: opts.playhead, type: 'playhead' });
@@ -74,8 +74,9 @@ export function snapTimes(edl, times, opts = {}) {
   for (const target of snapCandidates(edl, opts)) {
     for (let index = 0; index < times.length; index++) {
       const delta = target.time - times[index];
-      if (Math.abs(delta) > distance || (best.snapped && Math.abs(delta) === distance)) continue;
-      distance = Math.abs(delta);
+      const gap = Math.abs(delta);
+      if (!(gap <= distance) || (best.snapped && gap === distance)) continue;
+      distance = gap;
       best = { delta, snapped: true, target, index };
     }
   }
@@ -113,7 +114,7 @@ export function snapEdges(edl, start, end, opts = {}) {
  * Snap a drag of clips: the anchor clip's edges, shifted by the drag delta,
  * snap to everything that is not moving.
  * @param {Edl} edl
- * @param {string[]} clipIds - All moving clips (see `expandSelection`)
+ * @param {Iterable<string>|string} clipIds - All moving clips (see `expandSelection`)
  * @param {number} delta - Unsnapped drag distance in seconds
  * @param {SnapOptions & { anchorId?: string }} [opts] - `anchorId` is the
  *   clip under the pointer, the first id by default
@@ -122,9 +123,10 @@ export function snapEdges(edl, start, end, opts = {}) {
  */
 export function snapMove(edl, clipIds, delta, opts = {}) {
   const index = indexClips(edl);
-  const anchor = (index.get(opts.anchorId) || index.get(clipIds[0]))?.clip;
+  const moving = idList(clipIds);
+  const anchor = (index.get(opts.anchorId) || index.get(moving[0]))?.clip;
   if (!anchor) return { delta, snapped: false, target: null, edge: null };
-  const exclude = [...clipIds, ...(opts.exclude || [])];
+  const exclude = [...moving, ...idList(opts.exclude)];
   const span = [anchor.timelineStart + delta, anchor.timelineEnd + delta];
   const hit = snapEdges(edl, span[0], span[1], { ...opts, exclude });
   return { delta: delta + hit.delta, snapped: hit.snapped, target: hit.target, edge: hit.edge };

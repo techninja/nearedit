@@ -5,7 +5,7 @@
  */
 
 import { settle } from './crossfade.js';
-import { indexClips, mapClips } from './immutable.js';
+import { idList, indexClips, mapClips } from './immutable.js';
 import { repairLinks } from './links.js';
 import { retimeMarkers } from './markers.js';
 import { expandSelection } from './selection.js';
@@ -31,7 +31,7 @@ import { EPS, snap } from './time.js';
  * @returns {{ ids: string[], inScope: (track: Track) => boolean, markers: boolean }}
  */
 function scopeOf(edl, opts) {
-  const only = opts.trackIds ? new Set(opts.trackIds) : null;
+  const only = opts.trackIds ? new Set(idList(opts.trackIds)) : null;
   const inScope = (track) => !track.locked && (!only || only.has(track.trackId));
   const ids = edl.tracks.filter(inScope).map((track) => track.trackId);
   return { ids, inScope, markers: opts.markers ?? !only };
@@ -118,7 +118,7 @@ export function rippleDeleteRange(edl, start, end, opts = {}) {
 export function rippleInsert(edl, time, duration, opts = {}) {
   const at = Math.max(0, snap(edl, time));
   const length = snap(edl, duration);
-  if (!(length > EPS)) return edl;
+  if (!(length > EPS) || !Number.isFinite(at + length)) return edl;
   const scope = scopeOf(edl, opts);
   const cut = splitClips(edl, at, { trackIds: scope.ids, linked: false, cutFades: true });
   const shifted = shiftClips(cut, (clip, track) =>

@@ -73,6 +73,13 @@ describe('cross-fades (invariant 4)', () => {
     assert.equal(clipOf(out, 'a').fadeOut, 1.5);
   });
 
+  it('a cross-fading pair that moves together keeps its fade, whatever the setting', () => {
+    const out = assertValid(moveClips(faded(), ['a', 'b'], { delta: 10, autoCrossfade: false }));
+    assert.deepEqual(layout(out).v1, ['a 10-15', 'b 14-18']);
+    assert.deepEqual([clipOf(out, 'a').fadeOut, clipOf(out, 'b').fadeIn], [1, 1]);
+    assert.deepEqual([clipOf(out, 'a').fadeIn, clipOf(out, 'b').fadeOut], [1, 0.5]);
+  });
+
   it('containment: the moved clip splits the clip it lands inside', () => {
     const out = assertValid(moveClips(abc(), ['c'], { delta: -11 }));
     const [left, c, right] = out.tracks[0].clips;

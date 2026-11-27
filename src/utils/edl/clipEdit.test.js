@@ -30,6 +30,10 @@ describe('deleteClips', () => {
     assert.equal(clipOf(out, 'b').fadeIn, 0);
   });
 
+  it('takes one id as well as a list', () => {
+    assert.deepEqual(layout(deleteClips(doc(), 'still')).v1, ['a 0-5', 'b 4-9']);
+  });
+
   it('linked: false keeps the partner and clears its link', () => {
     const out = assertValid(deleteClips(doc(), ['a'], { linked: false }));
     assert.equal(clipOf(out, 'a_s').linkedClipId, '');

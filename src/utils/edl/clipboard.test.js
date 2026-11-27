@@ -116,6 +116,30 @@ describe('pasteClips', () => {
     assert.equal(copy.linkedClipId, '');
   });
 
+  it('survives a payload that came back from the system clipboard damaged', () => {
+    const start = doc();
+    const clip = (timelineStart, extra) => ({
+      clipId: 'dup',
+      sourceFile: '/m/x.mp4',
+      sourceIn: 0,
+      sourceOut: 2,
+      timelineStart,
+      timelineEnd: timelineStart + 2,
+      ...extra,
+    });
+    const items = [
+      { type: 'video', row: 0, clip: clip(0, { linkedClipId: 'nobody' }) },
+      { type: 'video', row: 0, clip: clip(3, { fadeIn: 'long' }) },
+      { type: 'audio', row: 999, clip: 'junk' },
+      null,
+    ];
+    const out = assertValid(pasteClips(start, { items }, { time: 20 }));
+    assert.deepEqual(spans(out, 'v2'), ['3-5', '20-22', '23-25']);
+    assert.equal(out.tracks.length, start.tracks.length, 'junk does not create tracks');
+    assert.equal(pasteClips(start, { items: 'x' }), start);
+    assert.equal(pasteClips(start, 'garbage'), start);
+  });
+
   it('ignores an empty clipboard and clamps the time at 0', () => {
     const start = doc();
     assert.equal(pasteClips(start, null), start);

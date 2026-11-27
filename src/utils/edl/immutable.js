@@ -87,6 +87,16 @@ export function mapClips(edl, fn, includeLocked = false) {
 }
 
 /**
+ * Accept one id or any collection of ids.
+ * @param {Iterable<string>|string|null|undefined} ids
+ * @returns {string[]}
+ */
+export function idList(ids) {
+  if (typeof ids === 'string') return [ids];
+  return ids ? [...ids] : [];
+}
+
+/**
  * @param {Edl} edl
  * @returns {Map<string, ClipRef>} Every clip with its track, by clipId
  */

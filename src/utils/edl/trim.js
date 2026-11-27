@@ -62,7 +62,7 @@ function retime(edl, { clip, track }, edge, delta, ripple) {
 function trimEdge(edl, clipId, edge, time, opts) {
   const index = indexClips(edl);
   const found = index.get(clipId);
-  if (!found || found.track.locked) return edl;
+  if (!found || found.track.locked || !Number.isFinite(time)) return edl;
   const linked = opts.linked !== false;
   const ids = expandSelection(edl, [clipId], { linked, grouped: false });
   const targets = ids.map((id) => index.get(id));

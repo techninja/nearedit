@@ -11,7 +11,7 @@ import { settle } from './crossfade.js';
 import { indexClips, mapTracks, tracksOfType, withClips } from './immutable.js';
 import { expandSelection } from './selection.js';
 import { snapMove } from './snap.js';
-import { EPS, clamp, fpsOf, snap } from './time.js';
+import { EPS, clamp, finite, fpsOf, snap } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Track} Track */
@@ -66,7 +66,7 @@ export function moveClips(edl, clipIds, opts = {}) {
   const anchor = moving.find((ref) => ref.clip.clipId === opts.anchorId) || moving[0];
   const anchorId = anchor.clip.clipId;
 
-  let delta = opts.delta || 0;
+  let delta = finite(opts.delta, 0);
   if (opts.snap) delta = snapMove(edl, ids, delta, { ...opts.snap, anchorId }).delta;
   const earliest = Math.min(...moving.map((ref) => ref.clip.timelineStart));
   delta = Math.max(snap(edl, delta), -earliest);

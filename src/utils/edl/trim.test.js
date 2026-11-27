@@ -136,6 +136,15 @@ describe('trims and cross-fades', () => {
     assert.equal(clipOf(out, 'c').fadeIn, 0);
   });
 
+  it('an existing cross-fade can be resized by trimming even with auto-crossfade off', () => {
+    const out = assertValid(trimClipEnd(faded(), 'a', 6.5, { autoCrossfade: false }));
+    assert.deepEqual(layout(out).v1, ['a 0-6.5', 'b 4-9', 'c 8-12']);
+    assert.deepEqual([clipOf(out, 'a').fadeOut, clipOf(out, 'b').fadeIn], [2.5, 2.5]);
+    // b has no earlier source material, so its left edge cannot grow at all.
+    const start = faded();
+    assert.equal(trimClipStart(start, 'b', 2.5), start);
+  });
+
   it('a far-edge trim keeps an existing cross-fade even with auto-crossfade off', () => {
     const out = assertValid(trimClipEnd(faded(), 'c', 10, { autoCrossfade: false }));
     assert.deepEqual(layout(out).v1, ['a 0-5', 'b 4-9', 'c 8-10']);

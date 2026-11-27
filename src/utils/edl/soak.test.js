@@ -188,39 +188,46 @@ function assertLockedUntouched(before, after, label) {
   }
 }
 
+/**
+ * Apply `steps` random operations, checking after each one that the input
+ * was not mutated and the result is valid. `onGrid` adds the guarantees that
+ * only hold for a document that started on the frame grid.
+ */
+function soak(seed, steps, start, onGrid) {
+  const rand = mulberry(seed);
+  let doc = deepFreeze(assertValid(start));
+  for (let step = 0; step < steps; step++) {
+    const frozen = JSON.stringify(doc);
+    const { index, next } = randomOp(doc, rand);
+    const label = `seed ${seed} step ${step} op ${index}`;
+    assert.equal(JSON.stringify(doc), frozen, `${label}: input was mutated`);
+    try {
+      assertValid(next, { sourceDurations });
+      assertValid(E.normalizeEdl(next));
+    } catch (error) {
+      throw new Error(`${label}: ${error.message}`);
+    }
+    assertLockedUntouched(doc, next, label);
+    if (onGrid) {
+      assert.ok(onFrameGrid(next), `${label}: a clip left the frame grid`);
+      const normal = E.normalizeEdl(next);
+      assert.deepEqual(normal, next, `${label}: normalizeEdl changed a valid document`);
+    }
+    doc = deepFreeze(next);
+    // Keep the timeline from growing without bound.
+    const ids = E.allClips(doc).map((ref) => ref.clip.clipId);
+    if (ids.length > 60) doc = deepFreeze(E.deleteClips(doc, ids.slice(20)));
+  }
+}
+
 describe('soak: random operations keep the document valid', () => {
-  for (const seed of [1, 2, 3, 4, 5, 6]) {
-    it(`seed ${seed}: 400 operations`, () => {
-      const rand = mulberry(seed);
-      let doc = deepFreeze(assertValid(startDocument()));
-      for (let step = 0; step < 400; step++) {
-        const frozen = JSON.stringify(doc);
-        const { index, next } = randomOp(doc, rand);
-        const label = `seed ${seed} step ${step} op ${index}`;
-        assert.equal(JSON.stringify(doc), frozen, `${label}: input was mutated`);
-        try {
-          assertValid(next, { sourceDurations });
-        } catch (error) {
-          throw new Error(`${label}: ${error.message}`);
-        }
-        assert.ok(onFrameGrid(next), `${label}: a clip left the frame grid`);
-        assertLockedUntouched(doc, next, label);
-        assert.deepEqual(
-          E.normalizeEdl(next),
-          next,
-          `${label}: normalizeEdl changed a valid document`,
-        );
-        doc = deepFreeze(next);
-        if (E.allClips(doc).length > 60)
-          doc = deepFreeze(
-            E.deleteClips(
-              doc,
-              E.allClips(doc)
-                .slice(20)
-                .map((r) => r.clip.clipId),
-            ),
-          );
-      }
+  for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+    it(`seed ${seed}: 400 operations, input frozen`, () => {
+      soak(seed, 400, startDocument(), true);
     });
   }
+
+  it('also from a document that is off the frame grid (fps was changed)', () => {
+    for (const seed of [11, 12]) soak(seed, 300, { ...startDocument(), fps: 23.976 }, false);
+  });
 });

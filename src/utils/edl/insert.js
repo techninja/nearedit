@@ -11,7 +11,7 @@ import { addClips, pairedAudioTracks, pickTrack } from './placement.js';
 import { rippleInsert } from './ripple.js';
 import { mergeShape } from './sanitize.js';
 import { addTrack } from './trackOps.js';
-import { EPS, clamp, floorToFrame, frameDuration, snap } from './time.js';
+import { EPS, clamp, finite, floorToFrame, frameDuration, snap } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 
@@ -63,12 +63,12 @@ export function insertMedia(edl, item, opts = {}) {
   }
 
   const known = item.duration > 0 ? item.duration : Infinity;
-  const fallback = opts.duration > 0 ? opts.duration : 5;
+  const fallback = finite(opts.duration, 0) > 0 ? opts.duration : 5;
   let sourceIn = 0;
   let length = snap(doc, fallback);
   if (item.type !== 'image') {
-    sourceIn = clamp(opts.sourceIn ?? 0, 0, known);
-    const sourceOut = Math.min(opts.sourceOut ?? known, known);
+    sourceIn = clamp(finite(opts.sourceIn, 0), 0, known);
+    const sourceOut = Math.min(finite(opts.sourceOut, known), known);
     length = floorToFrame(doc, Number.isFinite(sourceOut) ? sourceOut - sourceIn : fallback);
   }
   if (length < frameDuration(doc) - EPS) return edl;
@@ -110,8 +110,9 @@ export function insertTitle(edl, title) {
   const patch = typeof title?.text === 'string' ? { content: title.text } : title?.text;
   const text = mergeShape(defaultText(), patch);
   if (!text.content) return edl;
-  const start = Math.max(0, snap(edl, title.time ?? 0));
-  const length = Math.max(frameDuration(edl), snap(edl, title.duration > 0 ? title.duration : 5));
+  const start = Math.max(0, snap(edl, finite(title.time, 0)));
+  const wanted = finite(title.duration, 0) > 0 ? title.duration : 5;
+  const length = Math.max(frameDuration(edl), snap(edl, wanted));
   const span = { timelineStart: start, timelineEnd: snap(edl, start + length) };
 
   const lane = tracksOfType(edl, 'video');

@@ -26,6 +26,9 @@ import { EPS } from './time.js';
 /** Fades closer than this to the wanted value are left alone (float noise). */
 const SAME = 1e-9;
 
+/** @type {(seconds: number) => number} Rounds away float noise (0.0999…964 → 0.1). */
+const tidy = (seconds) => Math.round(seconds * 1e9) / 1e9;
+
 /** @type {EdgeOverlap} */
 export const NO_OVERLAP = Object.freeze({ in: 0, out: 0, prev: '', next: '' });
 
@@ -42,7 +45,7 @@ export function neighbourOverlaps(clips) {
   for (let i = 1; i < sorted.length; i++) {
     const a = sorted[i - 1];
     const b = sorted[i];
-    const length = Math.min(a.timelineEnd, b.timelineEnd) - b.timelineStart;
+    const length = tidy(Math.min(a.timelineEnd, b.timelineEnd) - b.timelineStart);
     if (length <= EPS) continue;
     Object.assign(entry(a.clipId), { out: length, next: b.clipId });
     Object.assign(entry(b.clipId), { in: length, prev: a.clipId });

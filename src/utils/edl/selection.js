@@ -7,7 +7,7 @@
 
 import { newId } from './factory.js';
 import { allClips } from './query.js';
-import { indexClips, mapClips } from './immutable.js';
+import { idList, indexClips, mapClips } from './immutable.js';
 import { applyLinks } from './links.js';
 import { EPS } from './time.js';
 
@@ -31,7 +31,7 @@ export function expandSelection(edl, clipIds, opts = {}) {
   }
   /** @type {Set<string>} */
   const out = new Set();
-  const queue = [...clipIds];
+  const queue = idList(clipIds);
   while (queue.length) {
     const ref = index.get(queue.shift());
     if (!ref || ref.track.locked || out.has(ref.clip.clipId)) continue;
@@ -62,7 +62,7 @@ export function groupClips(edl, clipIds) {
  * @returns {Edl}
  */
 export function ungroupClips(edl, clipIds) {
-  const ids = new Set(clipIds);
+  const ids = new Set(idList(clipIds));
   const groups = new Set(
     allClips(edl)
       .filter(({ clip }) => clip.groupId && ids.has(clip.clipId))
@@ -99,7 +99,7 @@ export function unlinkClips(edl, clipIds) {
   const index = indexClips(edl);
   /** @type {Map<string, string>} */
   const links = new Map();
-  for (const id of clipIds) {
+  for (const id of idList(clipIds)) {
     const ref = index.get(id);
     if (!ref || ref.track.locked || !ref.clip.linkedClipId) continue;
     links.set(id, '').set(ref.clip.linkedClipId, '');
@@ -117,7 +117,7 @@ export function unlinkClips(edl, clipIds) {
  * @returns {string[]} clipIds in track then time order (locked tracks skipped)
  */
 export function clipsInRange(edl, start, end, trackIds) {
-  const only = trackIds ? new Set(trackIds) : null;
+  const only = trackIds ? new Set(idList(trackIds)) : null;
   const from = Math.min(start, end);
   const to = Math.max(start, end, from + 2 * EPS);
   return allClips(edl)

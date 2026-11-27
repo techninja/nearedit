@@ -37,6 +37,7 @@ import { createSession, load, noteCut, rootId } from './session.js';
 /** @typedef {import('./session.js').Session} Session */
 /** @typedef {import('./session.js').Work} Work */
 
+/** @type {(a: object, b: object, skip: string) => boolean} Equal in every field but one. */
 const sameExcept = (a, b, skip) => Object.keys(b).every((k) => k === skip || a[k] === b[k]);
 
 /**

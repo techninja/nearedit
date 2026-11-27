@@ -10,7 +10,7 @@ import { indexClips, isTimed, mapClips } from './immutable.js';
 import { repairLinks } from './links.js';
 import { mergeShape } from './sanitize.js';
 import { expandSelection } from './selection.js';
-import { EPS, clamp, snap, sourceDurationOf } from './time.js';
+import { EPS, clamp, finite, snap, sourceDurationOf } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 
@@ -54,7 +54,7 @@ export function slipClip(edl, clipId, delta, opts = {}) {
     min = Math.max(min, -clip.sourceIn);
     if (known !== undefined) max = Math.min(max, known - clip.sourceOut);
   }
-  const by = clamp(snap(edl, delta), Math.min(min, 0), Math.max(max, 0));
+  const by = clamp(snap(edl, finite(delta, 0)), Math.min(min, 0), Math.max(max, 0));
   if (Math.abs(by) < EPS) return edl;
   const slipped = new Set(targets.map((ref) => ref.clip.clipId));
   const slip = (clip) => ({

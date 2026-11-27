@@ -9,7 +9,7 @@ import { sliceClip } from './clipMath.js';
 import { settle } from './crossfade.js';
 import { NO_OVERLAP, neighbourOverlaps } from './fades.js';
 import { newId } from './factory.js';
-import { indexClips, isTimed, mapTracks, withClips } from './immutable.js';
+import { idList, indexClips, isTimed, mapTracks, withClips } from './immutable.js';
 import { applyLinks } from './links.js';
 import { expandSelection } from './selection.js';
 import { EPS, snap } from './time.js';
@@ -68,9 +68,11 @@ export function splitClips(edl, time, opts = {}) {
   const at = snap(edl, time);
   const linked = opts.linked !== false;
   const only = opts.clipIds
-    ? new Set(linked ? expandSelection(edl, opts.clipIds, { grouped: false }) : opts.clipIds)
+    ? new Set(
+        linked ? expandSelection(edl, opts.clipIds, { grouped: false }) : idList(opts.clipIds),
+      )
     : null;
-  const lanes = opts.trackIds ? new Set(opts.trackIds) : null;
+  const lanes = opts.trackIds ? new Set(idList(opts.trackIds)) : null;
   /** @type {Map<string, string>} */
   const rights = new Map();
   const cut = mapTracks(edl, (track) => {

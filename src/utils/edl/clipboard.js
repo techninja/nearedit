@@ -6,11 +6,11 @@
  */
 
 import { shiftClip } from './clipMath.js';
-import { newId } from './factory.js';
-import { tracksOfType } from './immutable.js';
+import { prepareFragment } from './fragment.js';
+import { idList, tracksOfType } from './immutable.js';
 import { addClips, ensureTrack } from './placement.js';
 import { rippleInsert } from './ripple.js';
-import { fpsOf, snap } from './time.js';
+import { finite, fpsOf, snap } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Clip} Clip */
@@ -38,7 +38,7 @@ import { fpsOf, snap } from './time.js';
  * @returns {Clipboard|null} null when none of the ids exist
  */
 export function copyClips(edl, clipIds) {
-  const ids = new Set(clipIds);
+  const ids = new Set(idList(clipIds));
   const fps = fpsOf(edl);
   /** @type {ClipboardItem[]} */
   const found = [];
@@ -70,29 +70,28 @@ export function copyClips(edl, clipIds) {
  * @returns {Edl}
  */
 export function pasteClips(edl, clipboard, opts = {}) {
-  if (!clipboard?.items?.length) return edl;
-  const at = Math.max(0, snap(edl, opts.time ?? 0));
+  // The payload may have travelled through the system clipboard: treat it
+  // like a director fragment — sanitise the clips, re-identify them, and
+  // keep only the links and groups that live inside it.
+  const items = Array.isArray(clipboard?.items) ? clipboard.items : [];
+  const parts = items.map((item) => ({ type: item?.type, index: item?.row, clips: [item?.clip] }));
+  const fragment = prepareFragment({ tracks: parts }, fpsOf(edl));
+  if (!(fragment.duration > 0)) return edl;
+  const at = Math.max(0, snap(edl, finite(opts.time, 0)));
   const target = edl.tracks.find((track) => track.trackId === opts.trackId);
-  const rows = (type) => clipboard.items.filter((i) => i.type === type).map((i) => i.row);
-  const shift = target
-    ? tracksOfType(edl, target.type).indexOf(target) - Math.min(...rows(target.type))
+  const rows = fragment.tracks.filter((part) => part.type === target?.type).map((p) => p.row);
+  const shift = rows.length
+    ? tracksOfType(edl, target.type).indexOf(target) - Math.min(...rows)
     : 0;
-  let doc = opts.ripple ? rippleInsert(edl, at, clipboard.duration) : edl;
-  const ids = new Map(clipboard.items.map((item) => [item.clip.clipId, newId('clip')]));
-  /** @type {Map<string, string>} */
-  const groups = new Map();
+  let doc = opts.ripple ? rippleInsert(edl, at, fragment.duration) : edl;
   const placed = [];
-  for (const { type, row, clip } of clipboard.items) {
-    const picked = ensureTrack(doc, type, target?.type === type ? row + shift : row);
+  for (const part of fragment.tracks.filter((p) => p.clips.length)) {
+    const row = part.type === target?.type ? part.row + shift : part.row;
+    const picked = ensureTrack(doc, part.type, row);
     doc = picked.edl;
-    if (clip.groupId && !groups.has(clip.groupId)) groups.set(clip.groupId, newId('grp'));
-    const fresh = {
-      ...shiftClip(clip, at, fpsOf(edl)),
-      clipId: ids.get(clip.clipId),
-      linkedClipId: ids.get(clip.linkedClipId) || '',
-      groupId: groups.get(clip.groupId) || '',
-    };
-    placed.push({ trackId: picked.track.trackId, clip: fresh });
+    for (const clip of part.clips) {
+      placed.push({ trackId: picked.track.trackId, clip: shiftClip(clip, at, fpsOf(edl)) });
+    }
   }
   return addClips(doc, placed, { autoCrossfade: opts.autoCrossfade });
 }
@@ -108,6 +107,6 @@ export function pasteClips(edl, clipboard, opts = {}) {
 export function duplicateClips(edl, clipIds, opts = {}) {
   const clipboard = copyClips(edl, clipIds);
   if (!clipboard) return edl;
-  const time = opts.time ?? clipboard.start + clipboard.duration;
+  const time = finite(opts.time, clipboard.start + clipboard.duration);
   return pasteClips(edl, clipboard, { ...opts, time, trackId: undefined });
 }
