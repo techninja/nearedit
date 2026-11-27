@@ -25,3 +25,16 @@ export function averageInto(ctx, drawFirst, drawSecond) {
   ctx.globalAlpha = 128 / 255;
   drawSecond(ctx);
 }
+
+/**
+ * Empty a surface again and put its context back to plain drawing, ready
+ * for another `averageInto`.
+ * @param {import('#utils/compose/pool.js').Surface} surface
+ */
+export function blank(surface) {
+  const { ctx } = surface;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, surface.width, surface.height);
+}

@@ -7,10 +7,11 @@
  * (so a dark or transparent area gives off none), cut at the threshold and
  * blurred by one canvas filter, then given just enough alpha to carry its
  * colour — the one step that needs a pixel loop, since no canvas operation
- * turns brightness into alpha. That loop never sees the full frame at a
- * large radius: the whole halo is made on a copy halved until the blur is 2
- * to 4 of its pixels wide (`lib/reduce.js`), coarser than a blur on its own
- * could be, which a soft layer of added light hides completely.
+ * turns brightness into alpha. That loop never sees the full frame: the
+ * whole halo is made on a reduced copy, halved at least once and then on
+ * until the blur is 2 to 4 of its pixels wide (`lib/reduce.js`) — coarser
+ * than a blur on its own could be, which a soft layer of added light hides
+ * completely.
  * @module utils/compose/effects/glow
  */
 
@@ -90,7 +91,8 @@ export default {
   apply(surface, params, _time, frame, env) {
     const sigma = params.radius * frame.scale;
     if (!(sigma > 0 && params.intensity > 0)) return;
-    const { surface: small, factor } = reduce(surface, reduceLevel(sigma, HALO_FLOOR), env);
+    const levels = Math.max(1, reduceLevel(sigma, HALO_FLOOR));
+    const { surface: small, factor } = reduce(surface, levels, env);
     const { width, height } = small;
     const light = env.scratch(width, height);
     light.ctx.fillStyle = '#000000';

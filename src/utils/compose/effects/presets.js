@@ -36,7 +36,7 @@ export const EFFECT_PRESETS = [
     description: 'Soft focus with blooming highlights and lifted blacks',
     effects: [
       { type: 'blur', params: { radius: 2 } },
-      { type: 'glow', params: { radius: 36, intensity: 0.6, threshold: 0.35 } },
+      { type: 'glow', params: { radius: 36, intensity: 0.45, threshold: 0.5 } },
       { type: 'levels', params: { midtones: 0.2, outBlack: 0.06 } },
     ],
   },
@@ -105,8 +105,8 @@ export const EFFECT_PRESETS = [
     label: 'Neon',
     description: 'A tight bright glow inside a wide soft one — for titles and shapes',
     effects: [
-      { type: 'glow', params: { radius: 6, intensity: 1.2 } },
-      { type: 'glow', params: { radius: 40, intensity: 0.9 } },
+      { type: 'glow', params: { radius: 6, intensity: 1 } },
+      { type: 'glow', params: { radius: 40, intensity: 0.7 } },
     ],
   },
   {

@@ -1,0 +1,112 @@
+/**
+ * Motion themes on dark grounds: light type over deep colour.
+ * Pure data, see `themes.js`.
+ * @module utils/director/motion/themesNight
+ */
+
+/** @type {import('./themes.js').Theme[]} */
+export const NIGHT_THEMES = [
+  {
+    id: 'midnight',
+    label: 'Midnight',
+    description: 'Deep indigo light, tall condensed capitals, dust in the air',
+    ink: '#ffffff',
+    sub: '#c7d2fe',
+    accent: '#38bdf8',
+    backdrops: [
+      ['#020617', '#1e1b4b', '#4338ca'],
+      ['#020617', '#172554', '#1d4ed8'],
+      ['#0f172a', '#312e81', '#6d28d9'],
+    ],
+    shadow: true,
+    title: { fontFamily: 'Bebas Neue', weight: 400, size: 0.22, lineHeight: 0.95, tracking: 0.03 },
+    subtitle: { fontFamily: 'JetBrains Mono', weight: 400, size: 0.046, animation: 'typewriter' },
+    backgrounds: ['spotlight', 'gradient', 'noise'],
+    particles: ['dust', 'starfield'],
+    animations: [
+      ['slide-up', 'char'],
+      ['blur', 'char'],
+      ['fade', 'word'],
+    ],
+    accents: ['rule', 'ring', 'none'],
+    transitions: ['fade', 'radial', 'wipe'],
+    look: 'none',
+  },
+  {
+    id: 'neon',
+    label: 'Neon',
+    description: 'A black night, a glowing grid, electric colour',
+    ink: '#f5d0fe',
+    sub: '#67e8f9',
+    accent: '#e879f9',
+    backdrops: [
+      ['#05010f', '#12062e', '#3b0f73'],
+      ['#02030f', '#0a1238', '#1e2a8a'],
+      ['#0a0114', '#2a0a3d', '#6b1570'],
+    ],
+    shadow: false,
+    title: { fontFamily: 'Inter', weight: 700, size: 0.16, lineHeight: 1.05, tracking: 0 },
+    subtitle: { fontFamily: 'JetBrains Mono', weight: 700, size: 0.044, animation: 'typewriter' },
+    backgrounds: ['grid', 'spotlight', 'dots'],
+    particles: ['starfield', 'none'],
+    animations: [
+      ['blur', 'char'],
+      ['scale', 'char'],
+      ['slide-up', 'word'],
+    ],
+    accents: ['frame', 'rule', 'ring'],
+    transitions: ['iris', 'wipe', 'fade'],
+    look: 'neon',
+  },
+  {
+    id: 'forest',
+    label: 'Forest',
+    description: 'Soft green haze, a handwritten headline, fireflies',
+    ink: '#f7fee7',
+    sub: '#bbf7d0',
+    accent: '#a3e635',
+    backdrops: [
+      ['#03140f', '#064e3b', '#0f766e'],
+      ['#04130a', '#14532d', '#3f6212'],
+      ['#031a1a', '#134e4a', '#155e75'],
+    ],
+    shadow: true,
+    title: { fontFamily: 'Caveat', weight: 700, size: 0.21, lineHeight: 0.95, tracking: 0 },
+    subtitle: { fontFamily: 'Inter', weight: 400, size: 0.05, animation: 'fade' },
+    backgrounds: ['noise', 'spotlight', 'gradient'],
+    particles: ['fireflies', 'dust'],
+    animations: [
+      ['fade', 'word'],
+      ['blur', 'word'],
+      ['slide-up', 'word'],
+    ],
+    accents: ['none', 'rule', 'ring'],
+    transitions: ['fade', 'radial'],
+    look: 'none',
+  },
+  {
+    id: 'noir',
+    label: 'Noir',
+    description: 'Black and white film: a serif, a pool of light, grain',
+    ink: '#fafafa',
+    sub: '#d4d4d8',
+    accent: '#e4e4e7',
+    backdrops: [
+      ['#0b0b0c', '#2e2e33', '#5a5a62'],
+      ['#060607', '#26262a', '#4c4c54'],
+    ],
+    shadow: true,
+    title: { fontFamily: 'Playfair Display', weight: 900, size: 0.15, lineHeight: 1.08, tracking: 0 },
+    subtitle: { fontFamily: 'Inter', weight: 400, size: 0.042, tracking: 0.12, animation: 'fade' },
+    backgrounds: ['spotlight', 'noise', 'gradient'],
+    particles: ['dust', 'none'],
+    animations: [
+      ['blur', 'word'],
+      ['fade', 'char'],
+      ['fade', 'line'],
+    ],
+    accents: ['rule', 'frame', 'none'],
+    transitions: ['fade', 'iris', 'cut'],
+    look: 'cinematic',
+  },
+];

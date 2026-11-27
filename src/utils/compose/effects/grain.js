@@ -60,10 +60,10 @@ export function grainPixels(data, cells, amount, seed, colored) {
  * The noise tile at the size it is drawn. Between cells the noise blends
  * smoothly, and a pixel shows the average of what it covers — so the tile
  * is first drawn with at least OVERSAMPLE pixels per cell and then halved
- * down to size, exactly (`halve`). A preview whose pixels each hold several cells and a render
- * whose cells each span several pixels come out as the same picture. The
- * cells are drawn with their neighbours across the tile's seam around them,
- * so the tile repeats without one.
+ * down to size, exactly (`halve`). A preview whose pixels each hold several
+ * cells and a render whose cells each span several pixels come out as the
+ * same picture. The cells are drawn with their neighbours across the tile's
+ * seam around them, so the tile repeats without one.
  * @param {Record<string, any>} params
  * @param {number} cell - Canvas pixels per cell
  * @param {number} seed

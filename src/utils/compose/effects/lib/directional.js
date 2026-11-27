@@ -16,7 +16,7 @@
  */
 
 import { extendEdges, padFor } from '#utils/compose/filterPass.js';
-import { averageInto } from './average.js';
+import { averageInto, blank } from './average.js';
 
 /** Doubling steps are capped here: a streak of at most 2¹¹ pixels each way. */
 const MAX_STEPS = 10;
@@ -80,7 +80,7 @@ export function directionalBlur(surface, reach, angle, env) {
   pairs.forEach((pair, i) => {
     if (i > 0) {
       [from, to] = [to, from];
-      to.ctx.reset();
+      blank(to);
     }
     averageInto(
       to.ctx,

@@ -187,6 +187,24 @@ describe('the effect library', () => {
     assert.ok(lum(frame(moving, 2), 470) > 60 && lum(frame(moving, 2), 5) === 0);
   });
 
+  it('gives the same picture whether filter effects merge into one pass or not', () => {
+    const grade = fx('colorAdjust', { contrast: 1.3, saturation: 0.6, hue: 40 });
+    const look = { ...fx('stylize', { sepia: 0.5, invert: 0.1 }), effectId: 'fx_look' };
+    const shadow = fx('dropShadow', { x: 30, y: 20, blur: 6 });
+    // A glow of intensity 0 does nothing but is an apply effect: it keeps its neighbours apart.
+    const gap = (id) => ({ ...fx('glow', { intensity: 0 }), effectId: id });
+    for (const build of [footage, shape]) {
+      const merged = frame(build([grade, look, shadow]));
+      const apart = frame(build([grade, gap('a'), look, gap('b'), shadow]));
+      let worst = 0;
+      for (let i = 0; i < merged.data.length; i++) {
+        worst = Math.max(worst, Math.abs(merged.data[i] - apart.data[i]));
+      }
+      assert.ok(worst <= 1, `merged and separate passes differ by ${worst} levels`);
+      assert.ok(!Buffer.from(merged.data).equals(Buffer.from(frame(build([])).data)));
+    }
+  });
+
   it('gives a module every parameter of its schema, defaults filled in', () => {
     for (const { type, params } of EFFECTS) {
       const module = effectModule(type);
