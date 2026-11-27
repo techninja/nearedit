@@ -5,22 +5,10 @@
  * @module utils/timeline/draw/fades
  */
 
+import { fadeInLevel, fadeOutRemaining } from '#utils/edl/fadeCurves.js';
+
 /** @typedef {import('#utils/timeline/palette.js').Palette} Palette */
 
-/**
- * How a fade-in rises, by curve name — for drawing only (the levels that
- * are heard and rendered come from the EDL library). A fade-out is the
- * mirror image, so `fast` and `slow` trade places there.
- * @type {Record<string, (p: number) => number>}
- */
-const RISE = {
-  linear: (p) => p,
-  smooth: (p) => (1 - Math.cos(Math.PI * p)) / 2,
-  fast: (p) => 1 - (1 - p) * (1 - p),
-  slow: (p) => p * p,
-  sharp: (p) => Math.acos(1 - 2 * p) / Math.PI,
-};
-const MIRROR = { fast: 'slow', slow: 'fast' };
 /** Line segments a curved ramp is drawn with. */
 const STEPS = 12;
 
@@ -35,12 +23,14 @@ const STEPS = 12;
  * @returns {[number, number][]} From (edge, bottom) to (fade end, top)
  */
 export function fadeLine(edge, x, y, height, length, curve = 'linear') {
-  const rise = RISE[edge === 'in' ? curve : MIRROR[curve] || curve] || RISE.linear;
-  const steps = rise === RISE.linear ? 1 : STEPS;
+  // The same curve the levels use: at distance p into the fade from its
+  // clip edge, a fade-in has risen to, and a fade-out has left, this level.
+  const level = edge === 'in' ? fadeInLevel : fadeOutRemaining;
+  const steps = !curve || curve === 'linear' ? 1 : STEPS;
   const sign = edge === 'in' ? 1 : -1;
   return Array.from({ length: steps + 1 }, (_, i) => {
     const p = i / steps;
-    return [x + sign * p * length, y + height * (1 - rise(p))];
+    return [x + sign * p * length, y + height * (1 - level(curve, p))];
   });
 }
 

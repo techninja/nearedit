@@ -94,6 +94,27 @@ export {
   updateEffect,
 } from './effects.js';
 
+// Regions, and the Vegas-style edits: slip-trim, roll, slide, range edits
+export {
+  addRegion,
+  moveRegion,
+  regionsOf,
+  removeRegion,
+  renameRegion,
+  resizeRegion,
+  retimeRegions,
+  updateRegion,
+} from './regions.js';
+export { rollEdit, slideClip, slipTrim } from './slide.js';
+export {
+  MAX_REPEATS,
+  pasteInsert,
+  pasteRepeat,
+  replayRippled,
+  rippleMarks,
+  trimToRange,
+} from './selectionEdits.js';
+
 // Director results and undo
 export { applyDirectorResult } from './apply.js';
 export { createHistory } from './history.js';

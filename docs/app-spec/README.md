@@ -172,7 +172,10 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 | Document | Covers |
 | -------- | ------ |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Layers, state, pipelines, conventions |
-| [EDL.md](./EDL.md) | Timeline document schema and editing rules |
+| [EDL.md](./EDL.md) | Timeline document schema and invariants |
+| [EDL-OPERATIONS.md](./EDL-OPERATIONS.md) | The editing operations and their rules |
+| [COMPOSITOR.md](./COMPOSITOR.md) | The shared frame compositor: generators, effects, keyframes |
+| [VEGAS.md](./VEGAS.md) | The Vegas keymap preset and what differs from Vegas |
 | [API.md](./API.md) | HTTP + WebSocket API |
 | [CONFIGURATION.md](./CONFIGURATION.md) | Environment variables, access and security |
 | [INTELLIGENCE.md](./INTELLIGENCE.md) | Transcription, tagging, beats, scenes: setup and output |

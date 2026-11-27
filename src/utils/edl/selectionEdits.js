@@ -73,10 +73,7 @@ export function trimToRange(edl, clipIds, start, end, opts = {}) {
  * @returns {Edl}
  */
 export function pasteInsert(edl, clipboard, opts = {}) {
-  const pasted = pasteClips(edl, clipboard, { ...opts, ripple: true });
-  const at = Math.max(0, snap(edl, opts.time || 0));
-  const length = snap(edl, Number(clipboard?.duration) || 0);
-  return pasted === edl ? edl : retimeRegions(pasted, (t) => (t >= at - EPS ? t + length : t));
+  return pasteClips(edl, clipboard, { ...opts, ripple: true });
 }
 
 /**

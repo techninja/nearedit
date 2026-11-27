@@ -8,10 +8,24 @@ import { settle } from './crossfade.js';
 import { idList, indexClips, mapClips } from './immutable.js';
 import { repairLinks } from './links.js';
 import { retimeMarkers } from './markers.js';
+import { retimeRegions } from './regions.js';
 import { expandSelection } from './selection.js';
 import { closedBefore, shiftClips, subtractSpans } from './shift.js';
 import { splitClips } from './split.js';
 import { EPS, snap } from './time.js';
+
+/**
+ * Markers and regions follow a ripple together. A marker inside a removed
+ * stretch is dropped; a region is pulled back to where the stretch closed,
+ * and disappears only when nothing of it is left.
+ * @param {Edl} edl
+ * @param {(time: number) => number|null} retime - New time; null = removed
+ * @param {number} [closedAt] - Where removed time gathers, for region ends
+ * @returns {Edl}
+ */
+function retimeMarks(edl, retime, closedAt = 0) {
+  return retimeRegions(retimeMarkers(edl, retime), (time) => retime(time) ?? closedAt);
+}
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Track} Track */
@@ -20,7 +34,7 @@ import { EPS, snap } from './time.js';
  * @typedef {Object} RippleOptions
  * @property {Iterable<string>} [trackIds] - Tracks to ripple; every unlocked
  *   track by default
- * @property {boolean} [markers] - Markers follow the ripple. Default: true
+ * @property {boolean} [markers] - Markers and regions follow the ripple. Default: true
  *   when every track ripples, false when `trackIds` limits it
  * @property {boolean} [autoCrossfade=true] - See crossfade.js
  */
@@ -71,7 +85,7 @@ export function rippleDelete(edl, clipIds, opts = {}) {
   );
   const collapse = (time) =>
     time - holes.reduce((sum, [a, b]) => sum + Math.min(Math.max(time - a, 0), b - a), 0);
-  const raw = scope === 'all' ? retimeMarkers(shifted.edl, collapse) : shifted.edl;
+  const raw = scope === 'all' ? retimeMarks(shifted.edl, collapse) : shifted.edl;
   return settle(edl, raw, { incoming: shifted.moved, autoCrossfade, linked });
 }
 
@@ -101,7 +115,7 @@ export function rippleDeleteRange(edl, start, end, opts = {}) {
     scope.inScope(track) && clip.timelineStart >= to - EPS ? -length : 0,
   );
   const pull = (time) => (time >= to ? time - length : time > from ? null : time);
-  const raw = scope.markers ? retimeMarkers(shifted.edl, pull) : shifted.edl;
+  const raw = scope.markers ? retimeMarks(shifted.edl, pull, from) : shifted.edl;
   return settle(cut, raw, { incoming: shifted.moved, autoCrossfade: opts.autoCrossfade });
 }
 
@@ -125,6 +139,6 @@ export function rippleInsert(edl, time, duration, opts = {}) {
     scope.inScope(track) && clip.timelineStart >= at - EPS ? length : 0,
   );
   const push = (t) => (t >= at - EPS ? t + length : t);
-  const raw = scope.markers ? retimeMarkers(shifted.edl, push) : shifted.edl;
+  const raw = scope.markers ? retimeMarks(shifted.edl, push) : shifted.edl;
   return settle(cut, raw, { incoming: shifted.moved, autoCrossfade: opts.autoCrossfade });
 }
