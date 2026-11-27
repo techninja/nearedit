@@ -40,6 +40,39 @@
   /* Shadows */
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);
   --shadow-md: 0 4px 6px rgb(0 0 0 / 7%);
+
+  /* Editor surfaces */
+  --color-surface-2: #f1f5f9;
+  --color-surface-3: #e2e8f0;
+  --color-overlay: rgb(15 23 42 / 45%);
+  --color-focus: #2563eb;
+
+  /* Timeline */
+  --color-timeline-bg: #e9eef5;
+  --color-timeline-ruler: #dbe3ee;
+  --color-timeline-lane: #f4f7fb;
+  --color-timeline-lane-alt: #edf1f7;
+  --color-timeline-grid: #cbd5e1;
+  --color-clip-video: #3b82f6;
+  --color-clip-audio: #10b981;
+  --color-clip-image: #f59e0b;
+  --color-clip-title: #a855f7;
+  --color-clip-placeholder: #64748b;
+  --color-clip-text: #fff;
+  --color-playhead: #ef4444;
+  --color-cursor: #0f172a;
+  --color-selection: #f59e0b;
+  --color-snap: #06b6d4;
+  --color-marker: #f97316;
+  --color-loop: rgb(37 99 235 / 18%);
+
+  /* Editor metrics */
+  --text-xs: 0.75rem;
+  --control-h: 1.75rem;
+  --header-h: 2.75rem;
+  --z-menu: 50;
+  --z-dialog: 100;
+  --z-toast: 150;
 }
 
 /* Dark mode */
@@ -62,4 +95,20 @@
   --color-border: #334155;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 30%);
   --shadow-md: 0 4px 6px rgb(0 0 0 / 40%);
+  --color-surface-2: #172033;
+  --color-surface-3: #263349;
+  --color-overlay: rgb(2 6 23 / 65%);
+  --color-focus: #60a5fa;
+  --color-timeline-bg: #0b1220;
+  --color-timeline-ruler: #172033;
+  --color-timeline-lane: #111a2c;
+  --color-timeline-lane-alt: #0e1626;
+  --color-timeline-grid: #263349;
+  --color-clip-video: #2f6fdb;
+  --color-clip-audio: #0e9f75;
+  --color-clip-image: #d98a0b;
+  --color-clip-title: #9333ea;
+  --color-clip-placeholder: #56657d;
+  --color-cursor: #e2e8f0;
+  --color-loop: rgb(96 165 250 / 20%);
 }
