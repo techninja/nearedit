@@ -38,7 +38,10 @@ describe('AppState', () => {
   });
 
   it('reads back what a previous session stored, ignoring unknown fields', () => {
-    memory.set(APP_STATE_KEY, JSON.stringify({ theme: 'light', panelHeight: 300, dockTab: 'director' }));
+    memory.set(
+      APP_STATE_KEY,
+      JSON.stringify({ theme: 'light', panelHeight: 300, dockTab: 'director' }),
+    );
     const state = store.get(AppState);
     assert.equal(state.theme, 'light');
     assert.equal(state.dockTab, 'director');

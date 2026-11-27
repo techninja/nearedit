@@ -1,0 +1,11 @@
+not-found-view {
+  display: block;
+
+  & .not-found-view-path {
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    font-family: var(--font-mono);
+    overflow-wrap: anywhere;
+  }
+}

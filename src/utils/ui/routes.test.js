@@ -20,7 +20,14 @@ describe('routes', () => {
   });
 
   it('treats everything else as not found', () => {
-    for (const path of ['/nope', '/project', '/project/', '/editor/p1', '/editor/p1/a1/x', '/a/b']) {
+    for (const path of [
+      '/nope',
+      '/project',
+      '/project/',
+      '/editor/p1',
+      '/editor/p1/a1/x',
+      '/a/b',
+    ]) {
       assert.equal(isKnownPath(path), false, path);
     }
   });

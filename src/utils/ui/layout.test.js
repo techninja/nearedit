@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { KEY_STEP, LIMITS, SPLITTER, clampSize, draggedSize, isNarrow } from './layout.js';
-import { keyDelta, layoutVars, paneRange } from './layout.js';
+import { dockTabOf, keyDelta, layoutVars, paneRange, sheetAfterTap } from './layout.js';
 
 describe('paneRange', () => {
   it('leaves room for the neighbouring panes', () => {
@@ -87,5 +87,31 @@ describe('isNarrow', () => {
     assert.equal(isNarrow(759), true);
     assert.equal(isNarrow(760), false);
     assert.equal(isNarrow(1440), false);
+  });
+});
+
+describe('dock tabs', () => {
+  it('falls back to the media tab for an unknown stored value', () => {
+    assert.equal(dockTabOf('director'), 'director');
+    assert.equal(dockTabOf(''), 'media');
+    assert.equal(dockTabOf('settings'), 'media');
+  });
+
+  it('opens the sheet on a tapped tab', () => {
+    assert.deepEqual(sheetAfterTap({ dockTab: 'media', sheetOpen: false }, 'media'), {
+      dockTab: 'media',
+      sheetOpen: true,
+    });
+    assert.deepEqual(sheetAfterTap({ dockTab: 'media', sheetOpen: true }, 'director'), {
+      dockTab: 'director',
+      sheetOpen: true,
+    });
+  });
+
+  it('closes the sheet when the showing tab is tapped again', () => {
+    assert.deepEqual(sheetAfterTap({ dockTab: 'director', sheetOpen: true }, 'director'), {
+      dockTab: 'director',
+      sheetOpen: false,
+    });
   });
 });

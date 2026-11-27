@@ -26,7 +26,13 @@ export function dialogFrame({ title, body, footer, size = 'normal', onClose }) {
     <div class="dialog app-dialog-${size}" role="dialog" aria-modal="true" aria-label="${title}">
       <header class="dialog-header">
         <h2 class="app-dialog-title">${title}</h2>
-        <button type="button" class="icon-btn" aria-label="Close" title="Close" onclick="${onClose}">
+        <button
+          type="button"
+          class="icon-btn"
+          aria-label="Close"
+          title="Close"
+          onclick="${onClose}"
+        >
           <app-icon name="x" size="sm"></app-icon>
         </button>
       </header>

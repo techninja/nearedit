@@ -1,284 +1,115 @@
 /**
- * Project view — shows source folders, content stats, adaptation management.
+ * Project page — a project's adaptations (the way into the editor), its
+ * media and analysis, what the server has set up, finished renders, and
+ * the project's settings.
  * @module pages/project
  */
 
 import { html, define, router } from 'hybrids';
-import EditorView from '#pages/editor/editor-view.js';
-import { pickFolder } from '#utils/folderPicker.js';
+import EditorView from '#pages/editor/index.js';
+import { openProjectPage, projectPageState, reloadProject } from '#utils/projects/projectPage.js';
+import { watch } from '#utils/ui/observable.js';
+import { HOME_URL } from '#utils/ui/routes.js';
+import { setPageTitle } from '#utils/ui/title.js';
 import '#atoms/app-icon/index.js';
+import '#atoms/theme-toggle/index.js';
+import '#organisms/adaptation-dialog/index.js';
+import '#organisms/adaptation-tree/index.js';
+import '#organisms/job-tray/index.js';
+import '#organisms/project-media/index.js';
+import '#organisms/project-providers/index.js';
+import '#organisms/project-renders/index.js';
+import '#organisms/project-settings/index.js';
 
-const PRESETS = [
-  { name: 'YouTube 4K HDR', aspectRatio: '16:9', resolution: '3840x2160', fps: 60 },
-  { name: 'YouTube 1080p', aspectRatio: '16:9', resolution: '1920x1080', fps: 30 },
-  { name: 'Instagram Reel', aspectRatio: '9:16', resolution: '1080x1920', fps: 30 },
-  { name: 'TikTok', aspectRatio: '9:16', resolution: '1080x1920', fps: 30 },
-  { name: 'YouTube Short', aspectRatio: '9:16', resolution: '1080x1920', fps: 60 },
-  { name: 'Square (IG Post)', aspectRatio: '1:1', resolution: '1080x1080', fps: 30 },
-  { name: 'Social 4:5', aspectRatio: '4:5', resolution: '1080x1350', fps: 30 },
-  { name: 'Ultrawide', aspectRatio: '21:9', resolution: '2560x1080', fps: 30 },
-];
+/**
+ * @typedef {Object} ProjectViewHost
+ * @property {string} projectId - From the URL
+ * @property {import('#utils/projects/projectPage.js').ProjectPageState} state
+ */
 
+/** @type {WeakMap<object, () => void>} Leaving the page: host → close function */
+const closers = new WeakMap();
+
+/**
+ * Open the project named in the URL (again when the URL changes).
+ * @param {ProjectViewHost} host
+ * @param {string} projectId
+ */
+function openProject(host, projectId) {
+  closers.get(host)?.();
+  closers.delete(host);
+  if (projectId) closers.set(host, openProjectPage(projectId));
+}
+
+/** @param {ProjectViewHost} host @returns {any} */
+function content({ state }) {
+  if (state.notFound)
+    return html`
+      <div class="app-full-state">
+        <app-icon name="search" size="lg"></app-icon>
+        <h1>Project not found</h1>
+        <p>
+          This server has no project with that address. It may have been removed from the list — its
+          files are still in its folder and it can be added again from there.
+        </p>
+        <a class="btn btn-primary" href="${HOME_URL}">Go to your projects</a>
+      </div>
+    `;
+  if (state.error)
+    return html`
+      <div class="app-full-state" role="alert">
+        <app-icon name="alert" size="lg"></app-icon>
+        <h1>The project could not be loaded</h1>
+        <p>${state.error}</p>
+        <button type="button" class="btn btn-primary" onclick="${reloadProject}">Try again</button>
+        <a href="${HOME_URL}">Back to your projects</a>
+      </div>
+    `;
+  if (!state.project)
+    return html`<div class="app-full-state">
+      <span class="spinner"></span> Loading the project…
+    </div>`;
+  return html`
+    <div class="project-view-grid">
+      <div class="project-view-column">
+        <adaptation-tree></adaptation-tree>
+        <project-media></project-media>
+        <project-renders></project-renders>
+      </div>
+      <div class="project-view-column">
+        <project-settings></project-settings>
+        <project-providers></project-providers>
+      </div>
+    </div>
+    <adaptation-dialog></adaptation-dialog>
+  `;
+}
+
+/** @type {import('hybrids').Component<ProjectViewHost>} */
 export default define({
   tag: 'project-view',
   [router.connect]: { url: '/project/:projectId', stack: [EditorView] },
-  projectId: '',
-  project: { value: null, connect: () => {} },
-  media: { value: [], connect: () => {} },
-  _scanning: false,
-  _scanStatus: { value: null, connect: () => {} },
-  _init: {
-    value: false,
-    connect(host, _key, invalidate) {
-      const id = host.projectId;
-      if (!id) return;
-      fetch(`/api/projects/${id}`)
-        .then((r) => r.json())
-        .then((p) => {
-          host.project = p;
-          invalidate();
-          // Load media for this project
-          fetch(`/api/media?projectId=${id}`)
-            .then((r) => r.json())
-            .then((d) => {
-              host.media = d.data || [];
-              invalidate();
-            });
-        });
-    },
-  },
+  projectId: { value: '', observe: openProject },
+  state: watch(projectPageState),
   render: {
-    value: ({ project, media, projectId }) => {
-      if (!project) return html`<div class="project-view"><p>Loading...</p></div>`;
-
-      const videoCount = media.filter((m) => m.type === 'video').length;
-      const audioCount = media.filter((m) => m.type === 'audio').length;
-      const imageCount = media.filter((m) => m.type === 'image').length;
-      const totalDur = media.reduce((sum, m) => sum + (m.duration || 0), 0);
-      const adaptations = project.adaptations || [];
-
+    value: (host) => {
+      const name = host.state.project?.name || '';
       return html`
-        <div class="project-view">
-          <header class="project-header">
-            <a href="/" class="btn btn-ghost"
-              ><app-icon name="chevron" size="sm"></app-icon> Projects</a
-            >
-            <h1>${project.name}</h1>
-          </header>
-
-          <div class="project-grid">
-            <!-- Media Folders -->
-            <section class="project-section">
-              <h2><app-icon name="folder" size="sm"></app-icon> Media Folders</h2>
-              <p class="folder-note">
-                Project folder is always scanned. Add external drives or shared libraries below.
-              </p>
-              <ul class="folder-list">
-                ${(project.mediaFolders || []).map(
-                  (f) => html` <li class="folder-item">${f}</li> `,
-                )}
-                ${!project.mediaFolders?.length
-                  ? html`<li class="folder-empty">
-                      No additional folders — scanning project directory only
-                    </li>`
-                  : html``}
-              </ul>
-              <div class="folder-add">
-                <input type="text" placeholder="/Volumes/External/footage" id="newFolder" />
-                <button
-                  class="btn btn-ghost"
-                  onclick="${async (host) => {
-                    const path = await pickFolder();
-                    if (path) host.querySelector('#newFolder').value = path;
-                  }}"
-                >
-                  <app-icon name="folder" size="sm"></app-icon>
-                </button>
-                <button
-                  class="btn btn-secondary"
-                  onclick="${(host) => {
-                    const input = host.querySelector('#newFolder');
-                    const val = input.value.trim();
-                    if (!val) return;
-                    const folders = [...(host.project.mediaFolders || []), val];
-                    fetch(`/api/projects/${projectId}`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ mediaFolders: folders }),
-                    })
-                      .then((r) => r.json())
-                      .then((p) => {
-                        host.project = p;
-                        input.value = '';
-                      });
-                  }}"
-                >
-                  Add
-                </button>
-              </div>
-              <button
-                class="btn btn-primary"
-                style="margin-top: var(--space-sm); width: 100%;"
-                onclick="${(host) => {
-                  host._scanning = true;
-                  const evtSource = new EventSource(
-                    '/api/index?' + new URLSearchParams({ projectId }),
-                  );
-                  // POST to start, then listen
-                  fetch('/api/index', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ projectId }),
-                  }).then((r) => {
-                    const reader = r.body.getReader();
-                    const decoder = new TextDecoder();
-                    /**
-                     *
-                     */
-                    function read() {
-                      reader.read().then(({ done, value }) => {
-                        if (done) {
-                          host._scanning = false;
-                          return;
-                        }
-                        const text = decoder.decode(value);
-                        const lines = text.split('\n').filter((l) => l.startsWith('data: '));
-                        for (const line of lines) {
-                          const msg = JSON.parse(line.slice(6));
-                          host._scanStatus = msg;
-                          if (msg.status === 'complete') {
-                            host._scanning = false;
-                            // Refresh media
-                            fetch(`/api/media?projectId=${projectId}`)
-                              .then((r) => r.json())
-                              .then((d) => {
-                                host.media = d.data || [];
-                              });
-                          }
-                        }
-                        read();
-                      });
-                    }
-                    read();
-                  });
-                }}"
-              >
-                <app-icon name="ai" size="sm"></app-icon>
-                ${(host) => (host._scanning ? 'Scanning...' : 'Scan & Index Media')}
-              </button>
-            </section>
-
-            <!-- Content Stats -->
-            <section class="project-section">
-              <h2><app-icon name="film" size="sm"></app-icon> Content</h2>
-              <div class="stats-grid">
-                <div class="stat">
-                  <span class="stat-val">${videoCount}</span><span class="stat-label">Videos</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-val">${audioCount}</span><span class="stat-label">Audio</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-val">${imageCount}</span><span class="stat-label">Images</span>
-                </div>
-                <div class="stat">
-                  <span class="stat-val">${(totalDur / 60).toFixed(1)}m</span
-                  ><span class="stat-label">Total</span>
-                </div>
-              </div>
-            </section>
-
-            <!-- Adaptations -->
-            <section class="project-section project-section-wide">
-              <h2><app-icon name="layers" size="sm"></app-icon> Adaptations</h2>
-              <ul class="adaptation-list">
-                ${adaptations.map(
-                  (a) => html`
-                    <li class="adaptation-item">
-                      <div class="adaptation-info">
-                        <strong>${a.name}</strong>
-                        <span class="badge badge-info">${a.aspectRatio}</span>
-                        <span class="adaptation-meta">${a.resolution} @ ${a.fps}fps</span>
-                      </div>
-                      <a
-                        href="${router.url(EditorView, { projectId, adaptationId: a.id })}"
-                        class="btn btn-primary"
-                        >Edit</a
-                      >
-                    </li>
-                  `,
-                )}
-              </ul>
-
-              <h3>Add from Preset</h3>
-              <div class="preset-grid">
-                ${PRESETS.map(
-                  (p) => html`
-                    <button
-                      class="btn btn-secondary preset-btn"
-                      onclick="${(host) => {
-                        const newAdapt = {
-                          name: p.name,
-                          aspectRatio: p.aspectRatio,
-                          resolution: p.resolution,
-                          fps: p.fps,
-                        };
-                        fetch(`/api/projects/${projectId}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            adaptations: [
-                              ...adaptations,
-                              {
-                                ...newAdapt,
-                                id: crypto.randomUUID(),
-                                parentAdaptationId: '',
-                                status: 'draft',
-                                edl: {
-                                  playheadPosition: 0,
-                                  cursorPosition: 0,
-                                  zoom: 1,
-                                  scrollX: 0,
-                                  tracks: [
-                                    {
-                                      trackId: 'v1',
-                                      type: 'video',
-                                      name: 'Video 1',
-                                      muted: false,
-                                      solo: false,
-                                      clips: [],
-                                    },
-                                    {
-                                      trackId: 'a1',
-                                      type: 'audio',
-                                      name: 'Audio 1',
-                                      muted: false,
-                                      solo: false,
-                                      clips: [],
-                                    },
-                                  ],
-                                },
-                              },
-                            ],
-                          }),
-                        })
-                          .then((r) => r.json())
-                          .then((proj) => {
-                            host.project = proj;
-                          });
-                      }}"
-                    >
-                      <span>${p.name}</span>
-                      <small>${p.aspectRatio} ${p.resolution}</small>
-                    </button>
-                  `,
-                )}
-              </div>
-            </section>
-          </div>
-        </div>
+        <header class="app-bar">
+          <a class="app-bar-back" href="${HOME_URL}" aria-label="All projects">
+            <app-icon name="chevron-left" size="sm"></app-icon> Projects
+          </a>
+          <h1 class="app-bar-title">${name}</h1>
+          <job-tray project-id="${host.projectId}"></job-tray>
+          <theme-toggle></theme-toggle>
+        </header>
+        <main class="app-page">${content(host)}</main>
       `;
     },
     shadow: false,
+    connect: (host) => () => openProject(host, ''),
+    observe: ({ state }) => {
+      setPageTitle(state.project?.name || (state.notFound ? 'Project not found' : 'Project'));
+    },
   },
 });

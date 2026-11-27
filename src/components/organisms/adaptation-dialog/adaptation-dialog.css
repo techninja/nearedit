@@ -1,0 +1,21 @@
+adaptation-dialog {
+  & .adaptation-dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  & .adaptation-dialog-name {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & .adaptation-dialog-name .field-input {
+    height: auto;
+    padding: var(--space-sm);
+    font-weight: 400;
+  }
+}

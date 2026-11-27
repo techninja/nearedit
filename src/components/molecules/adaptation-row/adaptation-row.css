@@ -1,0 +1,70 @@
+adaptation-row {
+  display: block;
+
+  & .adaptation-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    padding-left: calc(var(--space-md) + var(--depth, 0) * 1.5rem);
+  }
+
+  & .adaptation-row-what {
+    display: flex;
+    flex: 1 1 14rem;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    min-width: 0;
+  }
+
+  & .adaptation-row-branch {
+    color: var(--color-text-muted);
+  }
+
+  & .adaptation-row-name {
+    color: var(--color-text);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  & .adaptation-row-aspect {
+    padding: 0 var(--space-sm);
+    background: color-mix(in srgb, var(--color-info) 15%, transparent);
+    color: var(--color-info);
+    font-weight: 600;
+  }
+
+  & .adaptation-row-meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  & .adaptation-row-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  & .adaptation-row-status {
+    width: auto;
+    background: var(--color-surface);
+    font-size: var(--text-xs);
+  }
+
+  & .adaptation-row-open {
+    margin-left: var(--space-xs);
+    padding: var(--space-xs) var(--space-md);
+    text-decoration: none;
+  }
+}
+
+@media (pointer: coarse) {
+  adaptation-row .icon-btn {
+    min-width: 2.5rem;
+    height: 2.5rem;
+  }
+}

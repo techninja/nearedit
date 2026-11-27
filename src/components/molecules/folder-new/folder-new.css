@@ -1,0 +1,15 @@
+folder-new {
+  display: block;
+  padding-top: var(--space-sm);
+
+  & .folder-new {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  & .field-input {
+    flex: 1;
+    height: auto;
+    padding: var(--space-xs) var(--space-sm);
+  }
+}

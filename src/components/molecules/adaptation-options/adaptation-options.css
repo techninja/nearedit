@@ -1,0 +1,35 @@
+adaptation-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  & .adaptation-options-pair {
+    display: flex;
+    gap: var(--space-md);
+  }
+
+  & .adaptation-options-field {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & .field-input {
+    height: auto;
+    padding: var(--space-sm);
+    font-weight: 400;
+  }
+
+  & .adaptation-options-copy {
+    align-items: flex-start;
+  }
+
+  & .adaptation-options-copy input {
+    flex: none;
+    margin-top: 3px;
+  }
+}

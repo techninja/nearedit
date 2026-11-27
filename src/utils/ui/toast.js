@@ -60,7 +60,11 @@ export function showToast(options) {
     timers.delete(old.id);
   }
   state.set({ toasts: toasts.slice(-MAX_VISIBLE) });
-  if (timeout > 0) timers.set(toast.id, setTimeout(() => dismissToast(toast.id), timeout));
+  if (timeout > 0)
+    timers.set(
+      toast.id,
+      setTimeout(() => dismissToast(toast.id), timeout),
+    );
   return toast.id;
 }
 

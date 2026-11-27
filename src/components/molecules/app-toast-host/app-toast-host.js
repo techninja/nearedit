@@ -23,12 +23,18 @@ const ICONS = { info: 'info', success: 'success', error: 'alert' };
  */
 function actionTemplate(toast, action) {
   const close = () => dismissToast(toast.id);
+  // `download` and `target` are element properties: a falsy value would be
+  // written as text, so each kind of link has its own template.
+  if (action.href && action.download) {
+    return html`<a class="app-toast-action" href="${action.href}" download onclick="${close}"
+      >${action.label}</a
+    >`;
+  }
   if (action.href) {
     return html`<a
       class="app-toast-action"
       href="${action.href}"
-      download="${action.download ? '' : false}"
-      target="${action.download ? false : '_blank'}"
+      target="_blank"
       rel="noopener"
       onclick="${close}"
       >${action.label}</a

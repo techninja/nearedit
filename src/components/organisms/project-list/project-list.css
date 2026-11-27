@@ -1,0 +1,93 @@
+project-list {
+  display: block;
+
+  & .project-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  & h2 {
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+
+  & .project-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+    gap: var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .project-list-grid project-card {
+    height: 100%;
+  }
+
+  & .empty-state {
+    padding: var(--space-xl) var(--space-md);
+  }
+
+  & .project-list-welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-lg);
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: var(--space-xl) 0;
+    text-align: center;
+  }
+
+  & .project-list-welcome h2 {
+    font-size: var(--text-xl);
+  }
+
+  & .project-list-lead {
+    max-width: 36rem;
+    color: var(--color-text-muted);
+  }
+
+  & .project-list-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    gap: var(--space-md);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+  }
+
+  & .project-list-steps li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  & .project-list-steps strong {
+    color: var(--color-text);
+    font-size: var(--text-base);
+  }
+
+  & .project-list-step-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin-bottom: var(--space-xs);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    color: var(--color-primary);
+  }
+}

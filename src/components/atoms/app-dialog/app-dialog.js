@@ -84,10 +84,31 @@ function connectModal(host) {
     pressedBackdrop = false;
   };
 
+  /**
+   * Focus can fall out of an open dialog (the focused button was
+   * re-rendered away, the page was clicked). Keys typed then still belong
+   * to the top dialog: Escape closes it, Tab goes back in, nothing reaches
+   * the editor behind.
+   * @param {KeyboardEvent} event
+   */
+  const onStrayKeydown = (event) => {
+    const open = host.ownerDocument.querySelectorAll('app-dialog[open]');
+    const inside = /** @type {Element} */ (event.target).closest?.('app-dialog[open]');
+    if (!host.open || inside || open[open.length - 1] !== host) return;
+    event.stopPropagation();
+    if (event.key === 'Escape') requestClose(host, 'escape');
+    else if (event.key === 'Tab') {
+      event.preventDefault();
+      focusInto(host);
+    }
+  };
+
   host.addEventListener('keydown', onKeydown);
   host.addEventListener('pointerdown', onPointerDown);
   host.addEventListener('click', onClick);
+  host.ownerDocument.addEventListener('keydown', onStrayKeydown, true);
   return () => {
+    host.ownerDocument.removeEventListener('keydown', onStrayKeydown, true);
     host.removeEventListener('keydown', onKeydown);
     host.removeEventListener('pointerdown', onPointerDown);
     host.removeEventListener('click', onClick);

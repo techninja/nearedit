@@ -1,0 +1,75 @@
+director-history {
+  display: block;
+
+  & h3 {
+    margin-bottom: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  & ol {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .director-history-run {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-success);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    font-size: var(--text-sm);
+  }
+
+  & .director-history-undone {
+    border-left-color: var(--color-border);
+    color: var(--color-text-muted);
+  }
+
+  & .director-history-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-sm);
+  }
+
+  & .director-history-when {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .director-history-summary {
+    overflow-wrap: anywhere;
+  }
+
+  & details {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & summary {
+    cursor: pointer;
+  }
+
+  & .director-history-notes {
+    margin: var(--space-xs) 0 0;
+    padding-left: var(--space-md);
+    overflow-wrap: anywhere;
+  }
+
+  & .director-history-undo {
+    align-self: flex-start;
+    padding: 2px var(--space-sm);
+    font-size: var(--text-xs);
+  }
+}

@@ -1,0 +1,84 @@
+project-settings {
+  display: block;
+
+  & .project-settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  & label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & .field-input {
+    height: auto;
+    padding: var(--space-sm);
+    font-weight: 400;
+  }
+
+  & .project-settings-form .btn {
+    align-self: flex-end;
+    padding: var(--space-xs) var(--space-md);
+  }
+
+  & .project-settings-folders {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  & h3 {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-height: var(--control-h);
+    color: var(--color-text-muted);
+  }
+
+  & li > app-icon {
+    flex: none;
+  }
+
+  & .project-settings-path {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text);
+    direction: rtl;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .chip {
+    flex: none;
+    padding: 0 var(--space-sm);
+  }
+
+  & .project-settings-folders .btn {
+    align-self: flex-start;
+  }
+}

@@ -1,0 +1,105 @@
+/* Blocks shared by the pages and panels: cards, callouts, muted text,
+   the full-page state (loading, not found). */
+
+.app-card {
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.app-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-card-title {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.app-card-title app-icon {
+  color: var(--color-text-muted);
+}
+
+.app-card-body {
+  padding: var(--space-md);
+}
+
+.app-card .btn {
+  padding: var(--space-xs) var(--space-sm);
+}
+
+/* A boxed note: information, a problem, a success. */
+.app-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-info) 12%, transparent);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.app-callout > app-icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--color-info);
+}
+
+.app-callout-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.app-callout-error {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+
+.app-callout-error > app-icon,
+.app-callout-error strong {
+  color: var(--color-danger);
+}
+
+.app-callout-success {
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+
+.app-callout-success > app-icon {
+  color: var(--color-success);
+}
+
+.app-muted {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.app-full-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  min-height: 60vh;
+  padding: var(--space-lg);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.app-full-state h1 {
+  color: var(--color-text);
+  font-size: var(--text-xl);
+}

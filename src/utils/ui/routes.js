@@ -33,19 +33,26 @@ export function isKnownPath(pathname) {
   return KNOWN_PATHS.some((pattern) => pattern.test(pathname));
 }
 
+/** Announced on `window` before every `navigate()`; cancel it to take the navigation over. */
+export const NAVIGATE_EVENT = 'app-navigate';
+
 /**
  * Go to a page of the app. The router follows clicks on links inside it, so
- * a link is clicked there; outside a browser, or before the router is on
- * the page, this falls back to a full page load.
+ * a link is clicked there; before the router is on the page this falls back
+ * to a full page load.
  * @param {string} path - One of the URLs built above
  */
 export function navigate(path) {
-  const routerHost = globalThis.document?.querySelector('app-routes');
+  const win = globalThis.window;
+  if (!win) return;
+  const event = new CustomEvent(NAVIGATE_EVENT, { detail: { path }, cancelable: true });
+  if (!win.dispatchEvent(event)) return;
+  const routerHost = win.document.querySelector('app-routes');
   if (!routerHost) {
-    globalThis.location?.assign(path);
+    win.location.assign(path);
     return;
   }
-  const link = globalThis.document.createElement('a');
+  const link = win.document.createElement('a');
   link.href = path;
   link.hidden = true;
   routerHost.append(link);

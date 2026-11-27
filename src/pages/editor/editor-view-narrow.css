@@ -1,0 +1,79 @@
+/* Narrow screens (phones, a narrow window): the editor stacks. Preview on
+   top, the timeline always in view under it, and the dock as a bottom
+   sheet that the tab bar opens and closes. Breakpoint: NARROW_BELOW in
+   utils/ui/layout.js. */
+@media (width < 760px) {
+  editor-view .editor-view {
+    grid-template:
+      'bar' var(--header-h)
+      'stage' minmax(6rem, 1fr)
+      'timeline' minmax(7rem, 1.15fr)
+      'dock' auto
+      'tabbar' auto
+      / minmax(0, 1fr);
+  }
+
+  editor-view .editor-view-split-dock,
+  editor-view .editor-view-split-timeline,
+  editor-view .editor-view-tabs {
+    display: none;
+  }
+
+  editor-view .editor-view-tabbar {
+    grid-area: tabbar;
+    display: block;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--color-surface);
+  }
+
+  editor-view .editor-view-timeline {
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* The sheet: as tall as the user made it, never so tall that preview and
+     timeline lose their minimum (6rem + 7rem). */
+  editor-view .editor-view-dock {
+    height: clamp(
+      8rem,
+      var(--editor-sheet, 18rem),
+      calc(100dvh - var(--header-h) - 3rem - 13rem - var(--split))
+    );
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -4px 12px rgb(0 0 0 / 12%);
+  }
+
+  editor-view .editor-view[data-sheet='closed'] .editor-view-dock {
+    display: none;
+  }
+
+  /* A handle along the sheet's top edge to drag it taller or shorter. */
+  editor-view .editor-view-grip {
+    display: block;
+    flex: none;
+    height: 14px;
+    background: var(--color-surface);
+  }
+
+  editor-view .editor-view-grip::before {
+    position: absolute;
+    top: 5px;
+    left: calc(50% - 1.25rem);
+    width: 2.5rem;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-border);
+    content: '';
+  }
+
+  editor-view .editor-view-grip .app-splitter-grip {
+    inset: -6px 0 0;
+  }
+
+  editor-view .editor-view-grip .app-splitter-grip::after {
+    display: none;
+  }
+
+  editor-view .editor-view-stage video-preview {
+    padding: var(--space-xs);
+  }
+}

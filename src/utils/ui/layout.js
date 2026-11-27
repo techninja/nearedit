@@ -93,3 +93,26 @@ export function layoutVars(layout) {
  * @returns {boolean} Whether the stacked (phone) layout applies
  */
 export const isNarrow = (viewportWidth) => viewportWidth < NARROW_BELOW;
+
+/** Ids of the dock's tabs, in order. */
+export const DOCK_TABS = ['media', 'inspector', 'transcript', 'director'];
+
+/**
+ * The dock tab to show for a stored value.
+ * @param {string} stored
+ * @returns {string}
+ */
+export const dockTabOf = (stored) => (DOCK_TABS.includes(stored) ? stored : DOCK_TABS[0]);
+
+/**
+ * Narrow layout: what a tap on the bottom tab bar does. A tab opens the
+ * sheet on its panel; tapping the tab that is showing closes the sheet,
+ * giving the screen back to the preview and the timeline.
+ * @param {{ dockTab: string, sheetOpen: boolean }} layout
+ * @param {string} tapped - Tab id
+ * @returns {{ dockTab: string, sheetOpen: boolean }}
+ */
+export function sheetAfterTap(layout, tapped) {
+  const showing = layout.sheetOpen && dockTabOf(layout.dockTab) === tapped;
+  return { dockTab: tapped, sheetOpen: !showing };
+}

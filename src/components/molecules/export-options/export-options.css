@@ -1,0 +1,89 @@
+export-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  & .export-options-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+    border: 0;
+  }
+
+  & legend,
+  & .export-options-legend {
+    margin-bottom: var(--space-xs);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & .export-options-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  & .export-options-choice:has(input:checked) {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+
+  & .export-options-choice:has(input:focus-visible) {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  & .export-options-choice input {
+    flex: none;
+    margin-top: 3px;
+    accent-color: var(--color-primary);
+  }
+
+  & .export-options-choice > span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  & .export-options-off {
+    cursor: default;
+    opacity: 0.65;
+  }
+
+  & .export-options-hint {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-weight: 400;
+  }
+
+  & .export-options-name {
+    display: flex;
+    flex-direction: column;
+  }
+
+  & .export-options-file {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xs);
+  }
+
+  & .export-options-file .field-input {
+    height: auto;
+    padding: var(--space-sm);
+  }
+
+  & .export-options-ext {
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+}

@@ -30,7 +30,11 @@ describe('toasts', () => {
   });
 
   it('gives toasts with actions twice the time', () => {
-    showToast({ title: 'Render finished', kind: 'success', actions: [{ label: 'Download', href: '/x' }] });
+    showToast({
+      title: 'Render finished',
+      kind: 'success',
+      actions: [{ label: 'Download', href: '/x' }],
+    });
     mock.timers.tick(11999);
     assert.deepEqual(titles(), ['Render finished']);
     mock.timers.tick(1);

@@ -1,0 +1,96 @@
+/* App-level layout shared by the pages: colour scheme of native controls,
+   the top bar, page width. Shared blocks (cards, callouts) are in
+   app-blocks.css; component styles live with their components. */
+
+:root {
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* The page behind an open dialog does not scroll. */
+:root:has(app-dialog[open]) {
+  overflow: hidden;
+}
+
+app-router,
+app-routes {
+  display: block;
+}
+
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: var(--header-h);
+  padding: 0 var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.app-bar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-text);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.app-bar-brand:hover {
+  text-decoration: none;
+}
+
+.app-bar-brand app-icon {
+  color: var(--color-primary);
+}
+
+.app-bar-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-bar-spacer {
+  flex: 1;
+}
+
+.app-bar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.app-bar-back:hover {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.app-page {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-md) var(--space-xl);
+}
+
+@media (width < 480px) {
+  .app-bar {
+    padding: 0 var(--space-sm);
+  }
+
+  .app-page {
+    padding: var(--space-md) var(--space-sm) var(--space-xl);
+  }
+}

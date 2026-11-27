@@ -1,0 +1,80 @@
+job-row {
+  display: block;
+
+  & .job-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  & .job-row-icon {
+    flex: none;
+    margin-top: 3px;
+    color: var(--color-text-muted);
+  }
+
+  & .job-row-complete .job-row-icon {
+    color: var(--color-success);
+  }
+
+  & .job-row-error .job-row-icon {
+    color: var(--color-danger);
+  }
+
+  & .job-row-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+
+  & .job-row-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  & .job-row-status {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .job-row-state {
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .job-row-error .job-row-state {
+    color: var(--color-danger);
+    font-weight: 600;
+  }
+
+  /* The whole error, however long: it wraps and can be selected and copied. */
+  & .job-row-message {
+    max-height: 12rem;
+    padding: var(--space-xs) var(--space-sm);
+    overflow: auto;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    user-select: text;
+  }
+
+  & .job-row-links {
+    display: flex;
+    gap: var(--space-md);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & .job-row-dismiss {
+    flex: none;
+  }
+}

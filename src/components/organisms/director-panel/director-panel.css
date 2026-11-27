@@ -1,185 +1,103 @@
 director-panel {
   display: block;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 10;
-}
-
-.director-panel {
-  position: relative;
-}
-
-.director-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
+  min-width: 0;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-xs) var(--space-sm);
-}
 
-.director-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  flex: 1;
-}
+  & .director-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    min-height: 100%;
+    padding: var(--space-sm);
+  }
 
-.director-actions .btn {
-  font-size: 10px;
-  padding: var(--space-xs) var(--space-sm);
-}
+  & .empty-state {
+    flex: 1;
+  }
 
-.director-toggle {
-  padding: var(--space-xs);
-  flex-shrink: 0;
-}
+  & .director-panel-llm {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+  }
 
-/* Dropdown — floats over the preview */
-.director-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 2px;
-  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-sm);
-  max-height: 60vh;
-  overflow-y: auto;
-  z-index: 20;
-  box-shadow: var(--shadow-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
+  & .director-panel-llm code {
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
 
-.director-panel.collapsed .director-dropdown {
-  display: none;
-}
+  & .director-panel-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-primary);
+    font-size: inherit;
+    text-decoration: underline;
+  }
 
-/* Loading overlay — covers the dropdown content, blocks input */
-.director-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
-  backdrop-filter: blur(4px);
-  border-radius: var(--radius-md);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  pointer-events: all;
-}
+  & .director-panel-review {
+    align-self: flex-start;
+    padding: var(--space-xs) var(--space-sm);
+  }
 
-.director-overlay .spinner {
-  width: 24px;
-  height: 24px;
-}
+  & .director-panel-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
 
-.director-overlay-status {
-  font-size: var(--text-sm);
-  font-family: var(--font-mono);
-  color: var(--color-primary);
-  text-align: center;
-}
+  & .director-panel-head h3 {
+    font-size: var(--text-base);
+    font-weight: 600;
+  }
 
-.director-desc {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-  font-style: italic;
-  grid-column: 1 / -1;
-}
+  & .director-panel-about {
+    margin-top: calc(var(--space-sm) * -1);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
 
-.director-form {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-xs) var(--space-sm);
-}
+  & .director-panel-prompt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
 
-.director-field {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+  & .director-panel-prompt textarea {
+    min-height: 4.5rem;
+    font-weight: 400;
+  }
 
-.director-field label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
+  & .director-panel-more summary {
+    margin-bottom: var(--space-md);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
 
-.director-field input,
-.director-field select,
-.director-field textarea {
-  font-size: var(--text-sm);
-  padding: var(--space-xs);
-}
+  & .director-panel-notes {
+    margin: var(--space-xs) 0 0;
+    padding-left: var(--space-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
 
-.director-field textarea {
-  resize: vertical;
-  min-height: 36px;
-}
+  /* The Run button stays in reach however long the form is. */
+  & .director-panel-run {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: auto calc(var(--space-sm) * -1) calc(var(--space-sm) * -1);
+    padding: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
 
-.director-field-range input[type='range'] {
-  width: 100%;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-}
-
-.range-val {
-  font-weight: 400;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--color-primary);
-}
-
-.director-field-prompt {
-  grid-column: 1 / -1;
-  gap: var(--space-xs);
-}
-
-.prompt-file-select {
-  font-size: 11px;
-  padding: 2px var(--space-xs);
-  color: var(--color-text-muted);
-}
-
-.director-field-toggle label {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  text-transform: none;
-  font-weight: 400;
-  color: var(--color-text);
-}
-
-.director-field-toggle input[type='checkbox'] {
-  width: 14px;
-  height: 14px;
-}
-
-.director-submit {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-sm);
-}
-
-.director-status {
-  font-size: 11px;
-  color: var(--color-primary);
-  font-family: var(--font-mono);
+  & .director-panel-run .btn {
+    justify-content: center;
+  }
 }

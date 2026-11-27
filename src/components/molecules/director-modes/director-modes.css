@@ -1,0 +1,63 @@
+director-modes {
+  display: block;
+
+  & .director-modes {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    border: 0;
+  }
+
+  & legend {
+    margin-bottom: var(--space-xs);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & .director-modes-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: 3px var(--space-xs);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  & .director-modes-choice:hover {
+    background: var(--color-surface-2);
+  }
+
+  & .director-modes-choice input {
+    flex: none;
+    margin-top: 3px;
+    accent-color: var(--color-primary);
+  }
+
+  & .director-modes-choice > span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  & .director-modes-off {
+    cursor: default;
+  }
+
+  & .director-modes-off .director-modes-label {
+    opacity: 0.55;
+  }
+
+  & .director-modes-hint {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (pointer: coarse) {
+  director-modes .director-modes-choice {
+    padding-block: var(--space-sm);
+  }
+}

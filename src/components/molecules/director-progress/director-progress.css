@@ -1,0 +1,52 @@
+director-progress {
+  display: block;
+
+  & .director-progress {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  & .director-progress-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .progress {
+    height: 6px;
+    border-radius: 3px;
+  }
+
+  & .director-progress-log {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 5.5rem;
+    margin: 0;
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    list-style: none;
+    overflow-wrap: anywhere;
+  }
+
+  & .director-progress-log li:last-child {
+    color: var(--color-text);
+  }
+
+  & .btn {
+    align-self: flex-start;
+    padding: var(--space-xs) var(--space-md);
+  }
+
+  & .director-progress-note {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+}

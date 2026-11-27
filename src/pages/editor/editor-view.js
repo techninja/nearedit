@@ -1,259 +1,143 @@
 /**
- * Editor page — main editing workspace.
- * Loads EDL from project file, auto-saves on changes.
+ * Editor page — lays the editor out: a slim header, a tabbed dock (media,
+ * inspector, transcript, director) beside the preview with the transport
+ * under it, and the timeline along the bottom, with draggable splitters.
+ * On a narrow screen the same parts stack: preview, timeline, and the dock
+ * as a bottom sheet behind a tab bar. Opens the adaptation named in the
+ * URL and closes it on leave (`#utils/ui/editorPage.js`).
  * @module pages/editor
  */
 
-import { html, define, store, router } from 'hybrids';
-import TimelineState from '#store/TimelineState.js';
-import AppState from '#store/AppState.js';
-import { undo, redo } from '#utils/undoHistory.js';
-import { initKeyboard, destroyKeyboard } from '#utils/keyboard.js';
-import { destroyAudio } from '#utils/audioEngine.js';
-import { connectWS, disconnectWS } from '#utils/wsClient.js';
-import '#organisms/timeline-canvas/index.js';
-import '#organisms/media-bin/index.js';
-import '#organisms/video-preview/index.js';
-import '#organisms/director-panel/index.js';
+import { html, define, router, store } from 'hybrids';
+import AppState, { setAppState } from '#store/AppState.js';
+import { TABS, dockPanels, failureTemplate } from '#pages/editor/editor-parts.js';
+import { handleSplitEvent } from '#utils/ui/editorLayout.js';
+import { editorPageState, enterEditor, leaveEditor, setExportOpen } from '#utils/ui/editorPage.js';
+import { dockTabOf, layoutVars, sheetAfterTap } from '#utils/ui/layout.js';
+import { watch } from '#utils/ui/observable.js';
+import '#atoms/app-splitter/index.js';
 import '#atoms/transport-controls/index.js';
+import '#molecules/app-tabs/index.js';
+import '#organisms/app-editor-bar/index.js';
+import '#organisms/export-dialog/index.js';
+import '#organisms/timeline-panel/index.js';
+import '#organisms/video-preview/index.js';
 
-/** Module-level project cache (not on the routed view to avoid router serialization) */
-let _projectCache = null;
-
-/** Debounced save to server */
-let saveTimer = 0;
 /**
- *
+ * @typedef {Object} EditorViewHost
+ * @property {string} projectId - From the URL
+ * @property {string} adaptationId - From the URL
+ * @property {import('#store/AppState.js').AppStateShape} layout
+ * @property {import('#utils/ui/editorPage.js').EditorPageState} page
  */
-function debouncedSave(projectId, adaptationId, edl) {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    fetch(`/api/projects/${projectId}/edl/${adaptationId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(edl),
-    }).catch(() => {});
-  }, 1000);
+
+/** @param {EditorViewHost & HTMLElement} host @param {CustomEvent} event */
+function handleSplit(host, event) {
+  handleSplitEvent(host.querySelector('.editor-view'), event);
 }
 
+/** Wide layout: a tab of the dock was chosen. @param {EditorViewHost} _host @param {CustomEvent} event */
+function handleTab(_host, event) {
+  setAppState({ dockTab: event.detail.id });
+}
+
+/** Narrow layout: the bottom bar opens and closes the sheet. @param {EditorViewHost} host @param {CustomEvent} event */
+function handleBarTab(host, event) {
+  setAppState(sheetAfterTap(host.layout, event.detail.id));
+}
+
+/** @param {EditorViewHost} host */
+function openFromUrl(host) {
+  if (host.projectId && host.adaptationId) enterEditor(host.projectId, host.adaptationId);
+}
+
+/** The export dialog was closed. */
+function handleExportClose() {
+  setExportOpen(false);
+}
+
+/** @param {EditorViewHost} host @returns {any} */
+function layoutTemplate({ layout, page }) {
+  const tab = dockTabOf(layout.dockTab);
+  return html`
+    <div
+      class="editor-view"
+      data-sheet="${layout.sheetOpen ? 'open' : 'closed'}"
+      style="${layoutVars(layout)}"
+      onsplitstart="${handleSplit}"
+      onsplitmove="${handleSplit}"
+      onsplitend="${handleSplit}"
+      onsplitkey="${handleSplit}"
+      onsplitreset="${handleSplit}"
+    >
+      <app-editor-bar class="editor-view-bar"></app-editor-bar>
+      <section class="editor-view-dock panel" aria-label="Panels">
+        <app-splitter class="editor-view-grip" data-pane="sheet" label="Resize the panel">
+        </app-splitter>
+        <app-tabs
+          class="editor-view-tabs"
+          tabs="${TABS}"
+          active="${tab}"
+          label="Panels"
+          panel-prefix="editor-dock-"
+          ontabchange="${handleTab}"
+        ></app-tabs>
+        ${dockPanels(tab)}
+      </section>
+      <app-splitter
+        class="editor-view-split-dock"
+        data-pane="dock"
+        orientation="vertical"
+        label="Resize the side panel"
+      ></app-splitter>
+      <section class="editor-view-stage" aria-label="Preview">
+        <video-preview></video-preview>
+        <transport-controls></transport-controls>
+      </section>
+      <app-splitter
+        class="editor-view-split-timeline"
+        data-pane="timeline"
+        label="Resize the timeline"
+      >
+      </app-splitter>
+      <section class="editor-view-timeline" aria-label="Timeline">
+        <timeline-panel></timeline-panel>
+      </section>
+      <app-tabs
+        class="editor-view-tabbar"
+        variant="bar"
+        tabs="${TABS}"
+        active="${layout.sheetOpen ? tab : ''}"
+        label="Panels"
+        panel-prefix="editor-dock-"
+        ontabchange="${handleBarTab}"
+      ></app-tabs>
+      ${page.status === 'ready'
+        ? html``
+        : html`<div class="editor-view-veil" role="status">
+            <span class="spinner"></span> Opening…
+          </div>`}
+    </div>
+    <export-dialog open="${page.exportOpen}" onclose="${handleExportClose}"></export-dialog>
+  `;
+}
+
+/** @type {import('hybrids').Component<EditorViewHost>} */
 export default define({
   tag: 'editor-view',
   [router.connect]: { url: '/editor/:projectId/:adaptationId' },
   projectId: '',
-  adaptationId: '',
-  timeline: {
-    ...store(TimelineState),
-    observe(host, val) {
-      if (val && host.projectId && host.adaptationId && !val.playing) {
-        debouncedSave(host.projectId, host.adaptationId, val);
-      }
-    },
-  },
-  appState: {
-    ...store(AppState),
-    observe(host, val) {
-      if (!val) return;
-      document.documentElement.setAttribute('data-theme', val.theme);
-    },
-  },
-  _init: {
-    value: false,
-    connect(host) {
-      initKeyboard();
-      connectWS();
-      const state = store.get(AppState);
-      if (state) {
-        document.documentElement.setAttribute('data-theme', state.theme);
-        // Apply persisted panel height after DOM is ready
-        if (state.panelHeight > 0) {
-          requestAnimationFrame(() => {
-            const panels = host.querySelector('.editor-panels');
-            if (panels) {
-              panels.style.height = state.panelHeight + 'px';
-              panels.style.flex = 'none';
-            }
-          });
-        }
-      }
-      // Load project info and EDL
-      if (host.projectId && host.adaptationId) {
-        fetch(`/api/projects/${host.projectId}`)
-          .then((r) => (r.ok ? r.json() : null))
-          .then((proj) => {
-            _projectCache = proj;
-            const adaptation = proj?.adaptations?.find((a) => a.id === host.adaptationId);
-            fetch(`/api/projects/${host.projectId}/edl/${host.adaptationId}`)
-              .then((r) => (r.ok ? r.json() : null))
-              .then((edl) => {
-                if (edl) {
-                  // Ensure minimum track structure
-                  const tracks = edl.tracks || [];
-                  if (!tracks.find((t) => t.type === 'video')) {
-                    tracks.unshift({
-                      trackId: 'v1',
-                      type: 'video',
-                      name: 'Video 1',
-                      muted: false,
-                      solo: false,
-                      clips: [],
-                    });
-                  }
-                  if (!tracks.find((t) => t.type === 'audio')) {
-                    tracks.push({
-                      trackId: 'a1',
-                      type: 'audio',
-                      name: 'Audio 1',
-                      muted: false,
-                      solo: false,
-                      clips: [],
-                    });
-                  }
-                  // Sanitize clips with invalid paths
-                  for (const track of tracks) {
-                    if (!track.clips) continue;
-                    track.clips = track.clips.filter((clip) => {
-                      if (!clip.sourceFile) return !!clip.placeholder;
-                      if (clip.sourceFile.includes('/undefined')) return false;
-                      // Valid absolute paths have at least 2 path segments
-                      if (clip.sourceFile.split('/').filter(Boolean).length < 2) return false;
-                      return true;
-                    });
-                  }
-                  store.set(TimelineState, {
-                    ...edl,
-                    tracks,
-                    resolution: adaptation?.resolution || edl.resolution || '1920x1080',
-                    fps: adaptation?.fps || edl.fps || 30,
-                    playing: false,
-                  });
-                }
-              });
-          });
-      }
-      return () => {
-        destroyKeyboard();
-        destroyAudio();
-        disconnectWS();
-        clearTimeout(saveTimer);
-        _projectCache = null;
-      };
-    },
-  },
+  adaptationId: { value: '', observe: openFromUrl },
+  layout: store(AppState),
+  page: watch(editorPageState),
   render: {
-    value: ({ timeline, appState, projectId }) => {
-      const adaptation = _projectCache?.adaptations?.find(
-        (a) => a.id === document.querySelector('editor-view')?.adaptationId,
-      );
-      return html`
-        <div class="editor-view">
-          <header class="editor-header">
-            <a href="${projectId ? `/project/${projectId}` : '/'}" class="btn btn-ghost"
-              ><app-icon name="chevron" size="sm"></app-icon
-            ></a>
-            <div class="editor-title">
-              <a href="/project/${projectId}" class="editor-project-name"
-                >${_projectCache?.name || 'NearEdit'}</a
-              >
-              ${adaptation
-                ? html`<span class="editor-adaptation-name"
-                    >${adaptation.name}
-                    <span class="badge badge-info">${adaptation.aspectRatio}</span></span
-                  >`
-                : html``}
-            </div>
-            <transport-controls></transport-controls>
-            <div class="editor-actions">
-              <button
-                class="btn btn-ghost"
-                title="Toggle theme"
-                onclick="${() => {
-                  const next = appState.theme === 'dark' ? 'light' : 'dark';
-                  store.set(AppState, { ...appState, theme: next });
-                }}"
-              >
-                <app-icon
-                  name="${appState.theme === 'dark' ? 'monitor' : 'monitor'}"
-                  size="sm"
-                ></app-icon>
-              </button>
-              <button
-                class="btn btn-secondary"
-                onclick="${() => {
-                  const prev = undo(timeline);
-                  if (prev) store.set(TimelineState, prev);
-                }}"
-              >
-                <app-icon name="undo" size="sm"></app-icon>
-              </button>
-              <button
-                class="btn btn-secondary"
-                onclick="${() => {
-                  const next = redo(timeline);
-                  if (next) store.set(TimelineState, next);
-                }}"
-              >
-                <app-icon name="redo" size="sm"></app-icon>
-              </button>
-              <button
-                class="btn btn-primary"
-                onclick="${() => {
-                  const edl = {
-                    project: { fps: timeline.fps, resolution: timeline.resolution },
-                    tracks: timeline.tracks,
-                  };
-                  fetch('/api/render', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(edl),
-                  })
-                    .then((r) => r.json())
-                    .then((d) => alert(d.output || d.error));
-                }}"
-              >
-                <app-icon name="export" size="sm"></app-icon> Export
-              </button>
-            </div>
-          </header>
-          <div class="editor-panels">
-            <aside class="editor-sidebar">
-              <media-bin></media-bin>
-            </aside>
-            <div class="editor-preview-area">
-              <director-panel></director-panel>
-              <video-preview></video-preview>
-            </div>
-          </div>
-          <div
-            class="editor-resize-handle"
-            onmousedown="${(host, e) => {
-              e.preventDefault();
-              const panels = host.querySelector('.editor-panels');
-              const startY = e.clientY;
-              const startHeight = panels.getBoundingClientRect().height;
-              const onMove = (ev) => {
-                const delta = ev.clientY - startY;
-                const newHeight = Math.max(100, startHeight + delta);
-                panels.style.height = newHeight + 'px';
-                panels.style.flex = 'none';
-              };
-              const onUp = () => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-                // Persist panel height
-                const h = panels.getBoundingClientRect().height;
-                store.set(AppState, { ...host.appState, panelHeight: Math.round(h) });
-                window.dispatchEvent(new Event('resize'));
-              };
-              document.addEventListener('mousemove', onMove);
-              document.addEventListener('mouseup', onUp);
-            }}"
-          ></div>
-          <div class="editor-timeline">
-            <timeline-canvas></timeline-canvas>
-          </div>
-        </div>
-      `;
-    },
+    value: (host) =>
+      host.page.status === 'failed'
+        ? failureTemplate(host.page, host.projectId, openFromUrl)
+        : layoutTemplate(host),
     shadow: false,
+    connect: () => () => {
+      leaveEditor();
+    },
   },
 });

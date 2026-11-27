@@ -1,0 +1,78 @@
+folder-list {
+  display: block;
+  transition: opacity 0.1s;
+
+  &[busy] {
+    opacity: 0.6;
+  }
+
+  & .folder-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .folder-list-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    min-height: 2.25rem;
+    padding: var(--space-xs) var(--space-sm);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    text-align: left;
+  }
+
+  & .folder-list-row:hover {
+    background: var(--color-surface-2);
+  }
+
+  & .folder-list-row:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+  }
+
+  & .folder-list-row > app-icon:first-child {
+    color: var(--color-text-muted);
+  }
+
+  & .folder-list-up {
+    color: var(--color-text-muted);
+  }
+
+  & .folder-list-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .folder-list-project {
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
+    background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+    color: var(--color-primary);
+  }
+
+  & .folder-list-enter {
+    color: var(--color-text-muted);
+    opacity: 0.5;
+  }
+
+  & .folder-list-empty {
+    padding: var(--space-md) var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+}
+
+@media (pointer: coarse) {
+  folder-list .folder-list-row {
+    min-height: 2.75rem;
+  }
+}

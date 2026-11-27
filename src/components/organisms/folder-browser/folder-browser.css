@@ -1,0 +1,61 @@
+folder-browser {
+  & .dialog {
+    height: min(80vh, 36rem);
+  }
+
+  & .dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  & .folder-browser-bar {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+
+  & folder-crumbs {
+    flex: 1;
+  }
+
+  & .folder-browser-native {
+    flex: none;
+    padding: var(--space-xs) var(--space-sm);
+    white-space: nowrap;
+  }
+
+  & .folder-browser-list {
+    flex: 1;
+    min-height: 8rem;
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  & .folder-browser-wait {
+    padding: var(--space-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  & .folder-browser-add {
+    margin-right: auto;
+    padding-inline: var(--space-sm);
+  }
+
+  & .app-dialog-note {
+    color: var(--color-primary);
+  }
+}
+
+@media (width < 480px) {
+  folder-browser .dialog {
+    height: 92dvh;
+  }
+
+  folder-browser .folder-browser-bar {
+    flex-direction: column;
+  }
+}

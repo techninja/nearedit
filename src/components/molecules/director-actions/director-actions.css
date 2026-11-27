@@ -1,0 +1,93 @@
+director-actions {
+  display: block;
+
+  & .director-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .director-actions-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text);
+    text-align: left;
+  }
+
+  & .director-actions-item:hover:not(:disabled) {
+    border-color: var(--color-primary);
+  }
+
+  & .director-actions-item:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 1px;
+  }
+
+  & .director-actions-item > app-icon:first-child {
+    flex: none;
+    margin-top: 2px;
+    color: var(--color-primary);
+  }
+
+  & .director-actions-item:disabled {
+    cursor: default;
+  }
+
+  & .director-actions-item:disabled > app-icon:first-child,
+  & .director-actions-item:disabled .director-actions-title,
+  & .director-actions-item:disabled .director-actions-about {
+    opacity: 0.55;
+  }
+
+  & .director-actions-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  & .director-actions-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  & .chip {
+    padding: 0 var(--space-sm);
+    background: color-mix(in srgb, var(--color-clip-title) 18%, transparent);
+    color: var(--color-clip-title);
+    font-weight: 600;
+  }
+
+  & .director-actions-about {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .director-actions-note {
+    color: var(--color-warning);
+    font-size: var(--text-xs);
+  }
+
+  & .director-actions-go {
+    flex: none;
+    align-self: center;
+    color: var(--color-text-muted);
+  }
+
+  & .director-actions-item:disabled .director-actions-go {
+    visibility: hidden;
+  }
+}

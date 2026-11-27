@@ -1,0 +1,99 @@
+export-dialog {
+  & .dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  & .export-dialog-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    font-size: var(--text-sm);
+  }
+
+  & .export-dialog-blocked {
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    overflow-wrap: anywhere;
+  }
+
+  & .export-dialog-blocked strong {
+    color: var(--color-danger);
+  }
+
+  & .export-dialog-facts {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .export-dialog-warnings {
+    margin: var(--space-xs) 0 0;
+    padding-left: var(--space-md);
+    color: var(--color-warning);
+    font-size: var(--text-xs);
+  }
+
+  & .export-dialog-warning {
+    color: var(--color-warning);
+    font-size: var(--text-sm);
+  }
+
+  & .export-dialog-running {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-md) 0;
+  }
+
+  & .export-dialog-running strong {
+    font-variant-numeric: tabular-nums;
+  }
+
+  & .export-dialog-running .progress {
+    height: 8px;
+    border-radius: 4px;
+  }
+
+  & .export-dialog-log {
+    min-height: 1.2em;
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .export-dialog-done {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) 0;
+    text-align: center;
+  }
+
+  & .export-dialog-done > app-icon {
+    color: var(--color-success);
+  }
+
+  & .export-dialog-file {
+    font-family: var(--font-mono);
+    overflow-wrap: anywhere;
+  }
+
+  & .export-dialog-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin: var(--space-sm) 0;
+  }
+
+  & .export-dialog-links a:hover {
+    text-decoration: none;
+  }
+}

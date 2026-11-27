@@ -1,5 +1,57 @@
-/* Component styles aggregator — pages, director, export, jobs. */
+/* Component styles aggregator — app shell: generic pieces, pages,
+   director, export, jobs, projects. */
+@import './app.css';
+@import './app-blocks.css';
+
+/* Generic building blocks */
+@import '../components/atoms/app-dialog/app-dialog.css';
+@import '../components/atoms/app-splitter/app-splitter.css';
+@import '../components/molecules/app-tabs/app-tabs.css';
+@import '../components/molecules/app-toast-host/app-toast-host.css';
+@import '../components/molecules/app-confirm-host/app-confirm-host.css';
+
+/* Folders */
+@import '../components/molecules/folder-crumbs/folder-crumbs.css';
+@import '../components/molecules/folder-list/folder-list.css';
+@import '../components/molecules/folder-new/folder-new.css';
+@import '../components/organisms/folder-browser/folder-browser.css';
+
+/* Jobs */
+@import '../components/molecules/job-row/job-row.css';
+@import '../components/organisms/job-tray/job-tray.css';
+
+/* Projects and adaptations */
+@import '../components/molecules/project-card/project-card.css';
+@import '../components/molecules/project-coverage/project-coverage.css';
+@import '../components/molecules/adaptation-row/adaptation-row.css';
+@import '../components/molecules/adaptation-shapes/adaptation-shapes.css';
+@import '../components/molecules/adaptation-options/adaptation-options.css';
+@import '../components/organisms/project-list/project-list.css';
+@import '../components/organisms/project-create/project-create.css';
+@import '../components/organisms/project-settings/project-settings.css';
+@import '../components/organisms/project-media/project-media.css';
+@import '../components/organisms/project-providers/project-providers.css';
+@import '../components/organisms/project-renders/project-renders.css';
+@import '../components/organisms/adaptation-tree/adaptation-tree.css';
+@import '../components/organisms/adaptation-dialog/adaptation-dialog.css';
+
+/* Director */
+@import '../components/molecules/director-actions/director-actions.css';
+@import '../components/molecules/director-form/director-form.css';
+@import '../components/molecules/director-modes/director-modes.css';
+@import '../components/molecules/director-progress/director-progress.css';
+@import '../components/molecules/director-history/director-history.css';
+@import '../components/molecules/director-scripts/director-scripts.css';
 @import '../components/organisms/director-panel/director-panel.css';
-@import '../pages/editor/editor-view.css';
-@import '../pages/project/project-view.css';
+
+/* Editor shell */
+@import '../components/organisms/app-editor-bar/app-editor-bar.css';
+@import '../components/molecules/export-options/export-options.css';
+@import '../components/organisms/export-dialog/export-dialog.css';
+
+/* Pages */
 @import '../pages/home/home-view.css';
+@import '../pages/project/project-view.css';
+@import '../pages/editor/editor-view.css';
+@import '../pages/editor/editor-view-narrow.css';
+@import '../pages/not-found/not-found-view.css';

@@ -1,0 +1,105 @@
+app-editor-bar {
+  display: block;
+  min-width: 0;
+
+  & .app-editor-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    height: var(--header-h);
+    padding: 0 var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  & .app-editor-bar-names {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+
+  & .app-editor-bar-project {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    text-overflow: ellipsis;
+  }
+
+  & .app-editor-bar-sep {
+    color: var(--color-text-muted);
+  }
+
+  & .app-editor-bar-adaptation {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  & .app-editor-bar-aspect {
+    flex: none;
+    padding: 0 var(--space-sm);
+    background: color-mix(in srgb, var(--color-info) 15%, transparent);
+    color: var(--color-info);
+    font-weight: 600;
+  }
+
+  & .app-editor-bar-save {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 2px var(--space-sm);
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  & .app-editor-bar-save-saved app-icon {
+    color: var(--color-success);
+  }
+
+  & .app-editor-bar-save-error {
+    background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+    color: var(--color-danger);
+    font-weight: 600;
+  }
+
+  & .app-editor-bar-retry {
+    text-decoration: underline;
+  }
+
+  & .app-editor-bar-export {
+    flex: none;
+    padding: var(--space-xs) var(--space-md);
+  }
+}
+
+/* Phones: the adaptation name and icons only. */
+@media (width < 760px) {
+  app-editor-bar .app-editor-bar {
+    gap: var(--space-xs);
+  }
+
+  app-editor-bar .app-editor-bar-project,
+  app-editor-bar .app-editor-bar-sep,
+  app-editor-bar .app-editor-bar-save > span:not(.spinner),
+  app-editor-bar .app-editor-bar-export > span {
+    display: none;
+  }
+
+  app-editor-bar .app-editor-bar-save-error > span.app-editor-bar-retry {
+    display: inline;
+  }
+
+  app-editor-bar .app-editor-bar-save {
+    padding: 2px;
+  }
+
+  app-editor-bar .app-editor-bar-export {
+    padding: var(--space-xs) var(--space-sm);
+  }
+}

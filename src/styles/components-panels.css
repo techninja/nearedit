@@ -1,2 +1,25 @@
 /* Component styles aggregator — media bin, inspector, transcript. */
+@import '../components/atoms/field-number/field-number.css';
+@import '../components/atoms/field-color/field-color.css';
+@import '../components/molecules/media-row/media-row.css';
+@import '../components/molecules/media-toolbar/media-toolbar.css';
+@import '../components/molecules/media-footer/media-footer.css';
+@import '../components/molecules/media-status/media-status.css';
+@import '../components/molecules/media-marks/media-marks.css';
+@import '../components/molecules/media-quicklook/media-quicklook.css';
+@import '../components/molecules/media-details/media-details.css';
 @import '../components/organisms/media-bin/media-bin.css';
+@import '../components/molecules/inspector-clip/inspector-clip.css';
+@import '../components/molecules/inspector-timing/inspector-timing.css';
+@import '../components/molecules/inspector-transform/inspector-transform.css';
+@import '../components/molecules/inspector-motion/inspector-motion.css';
+@import '../components/molecules/inspector-text/inspector-text.css';
+@import '../components/molecules/inspector-document/inspector-document.css';
+@import '../components/organisms/clip-inspector/clip-inspector.css';
+@import '../components/molecules/transcript-find/transcript-find.css';
+@import '../components/molecules/transcript-toolbar/transcript-toolbar.css';
+@import '../components/molecules/transcript-actions/transcript-actions.css';
+@import '../components/molecules/transcript-silence/transcript-silence.css';
+@import '../components/molecules/transcript-paragraph/transcript-paragraph.css';
+@import '../components/molecules/transcript-empty/transcript-empty.css';
+@import '../components/organisms/transcript-panel/transcript-panel.css';

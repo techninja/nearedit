@@ -57,13 +57,21 @@ export function trapTab(root, event) {
 }
 
 /**
- * Move focus into a container: the element marked `data-autofocus`, else
- * the first field or button, else the container itself.
+ * Move focus into a dialog. An element marked `data-autofocus` decides
+ * where: itself when it can take focus, else the first control inside it
+ * (a list that is still loading keeps focus on the dialog until it has
+ * rows). Without a mark, the first control of the body — not the close
+ * button in the title bar — gets it.
  * @param {HTMLElement} root
  */
 export function focusInto(root) {
   const marked = /** @type {HTMLElement|null} */ (root.querySelector('[data-autofocus]'));
-  const target = marked && marked.getClientRects().length ? marked : focusables(root)[0];
+  let target;
+  if (marked) target = marked.matches(FOCUSABLE) ? marked : focusables(marked)[0];
+  else {
+    const body = root.querySelector('.dialog-body');
+    target = (body && focusables(body)[0]) || focusables(root)[0];
+  }
   (target || root).focus({ preventScroll: true });
 }
 
@@ -88,4 +96,17 @@ export function arrowFocus(items, event, opts = {}) {
   event.preventDefault();
   items[index].focus();
   return items[index];
+}
+
+/**
+ * Put focus back inside `root` when it fell out of the page because the
+ * focused element was re-rendered away (a pressed list row replaced by a
+ * new list). Focus that sits on a real control is left alone.
+ * @param {HTMLElement} root
+ * @param {string} selector - What to focus, relative to `root`
+ */
+export function refocusIfLost(root, selector) {
+  const active = root.ownerDocument.activeElement;
+  const lost = !active || active === root.ownerDocument.body || active.tagName === 'APP-DIALOG';
+  if (lost) /** @type {HTMLElement|null} */ (root.querySelector(selector))?.focus();
 }

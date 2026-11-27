@@ -1,0 +1,17 @@
+adaptation-tree {
+  display: block;
+
+  & .adaptation-tree-intro {
+    padding: var(--space-sm) var(--space-md) 0;
+  }
+
+  & .adaptation-tree-list {
+    margin: 0;
+    padding: var(--space-sm) 0 0;
+    list-style: none;
+  }
+
+  & .adaptation-tree-list li + li {
+    border-top: 1px solid var(--color-border);
+  }
+}

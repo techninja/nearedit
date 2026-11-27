@@ -1,0 +1,71 @@
+adaptation-shapes {
+  display: block;
+
+  & .adaptation-shapes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr));
+    gap: var(--space-sm);
+    min-width: 0;
+    border: 0;
+  }
+
+  & legend {
+    margin-bottom: var(--space-xs);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  & .adaptation-shapes-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: var(--space-sm) var(--space-xs);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .adaptation-shapes-option strong {
+    color: var(--color-text);
+    font-size: var(--text-sm);
+  }
+
+  & .adaptation-shapes-option:hover {
+    border-color: var(--color-text-muted);
+  }
+
+  & .adaptation-shapes-option[aria-pressed='true'] {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+
+  & .adaptation-shapes-option:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  /* A little picture of the frame: a box of the preset's proportions. */
+  & .adaptation-shapes-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.25rem;
+  }
+
+  & .adaptation-shapes-frame span {
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border: 2px solid currentcolor;
+    border-radius: 2px;
+  }
+
+  & [aria-pressed='true'] .adaptation-shapes-frame {
+    color: var(--color-primary);
+  }
+}
