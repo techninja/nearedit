@@ -175,13 +175,14 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 | [EDL.md](./EDL.md) | Timeline document schema and invariants |
 | [EDL-OPERATIONS.md](./EDL-OPERATIONS.md) | The editing operations and their rules |
 | [COMPOSITOR.md](./COMPOSITOR.md) | The shared frame compositor: generators, effects, keyframes |
+| [EFFECTS.md](./EFFECTS.md) | Every effect, the looks built from them, order and cost |
 | [PARTICLES.md](./PARTICLES.md) | The particle generator: parameters, sprites, presets |
 | [VEGAS.md](./VEGAS.md) | The Vegas keymap preset and what differs from Vegas |
 | [API.md](./API.md) | HTTP + WebSocket API |
 | [CONFIGURATION.md](./CONFIGURATION.md) | Environment variables, access and security |
 | [INTELLIGENCE.md](./INTELLIGENCE.md) | Transcription, tagging, beats, scenes: setup and output |
 | [DIRECTOR.md](./DIRECTOR.md) | AI director actions, edit plans, base edit |
-| [RENDER.md](./RENDER.md) | How the EDL becomes an FFmpeg render |
+| [RENDER.md](./RENDER.md) | How the EDL becomes a file: filter graph, canvas path, the `nearedit` CLI |
 
 ## Keyboard Shortcuts (Configurable)
 

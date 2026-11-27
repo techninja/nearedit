@@ -38,11 +38,14 @@ The short version:
 | ------------------- | ------- | --------- |
 | What an edit does (move, trim, ripple, cross-fade) | `src/utils/edl/` | [EDL.md](docs/app-spec/EDL.md) |
 | The timeline, panels, pages | `src/components/`, `src/pages/`, `src/utils/timeline/` | Clearstack docs in `docs/clearstack/` |
+| What a frame looks like: text, generators, effects, keyframes | `src/utils/compose/` | [COMPOSITOR.md](docs/app-spec/COMPOSITOR.md) |
 | Preview and audio playback | `src/utils/playback/` | ARCHITECTURE.md § Playback |
+| A command or a shortcut | `src/utils/commands/`, `src/utils/keyboard/` | [VEGAS.md](docs/app-spec/VEGAS.md) |
 | A server route | `src/api/` | [API.md](docs/app-spec/API.md) |
 | Transcription, tagging, beats, scenes | `src/api/intelligence/` | [INTELLIGENCE.md](docs/app-spec/INTELLIGENCE.md) |
 | The AI director or base edit | `src/api/director/`, `src/utils/director/` | [DIRECTOR.md](docs/app-spec/DIRECTOR.md) |
 | Rendering | `src/api/render/` | [RENDER.md](docs/app-spec/RENDER.md) |
+| The `nearedit` command line tool | `bin/` | COMPOSITOR.md § Authoring without the UI |
 
 ## House rules
 
@@ -97,6 +100,15 @@ And a few that are specific to NearEdit:
   implementation in `src/api/director/actions/`, and describe it in
   DIRECTOR.md. It must return a DirectorResult that passes the invariant
   checks in the director tests.
+- **A generator or an effect:** one module in
+  `src/utils/compose/generators/` or `effects/` — a parameter schema and a
+  draw function — registered in that folder's `index.js`. The editor's
+  controls, the keyframe buttons, the catalog and the render all follow
+  from the schema. It must be deterministic: no `Math.random`, no clocks,
+  no state kept between frames; lengths in output pixels times
+  `frame.scale`. Add a case to `tests/compose/cases/` so the server canvas
+  and the browser are compared pixel by pixel, and describe it in
+  EFFECTS.md or COMPOSITOR.md.
 - **An icon:** add the lucide name to `scripts/icon-map.js` and run
   `node scripts/build-icons.js`.
 
