@@ -1,0 +1,57 @@
+timeline-panel {
+  --timeline-side-w: 11rem;
+  --timeline-ruler-h: 34px;
+
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+
+  & .timeline-panel {
+    height: 100%;
+    background: var(--color-timeline-bg);
+  }
+
+  & .timeline-panel-body {
+    display: grid;
+    flex: 1;
+    grid-template-columns: var(--timeline-side-w) minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 0;
+  }
+
+  & track-list {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+
+  & timeline-stage {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  & .timeline-panel-vscroll {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  & .timeline-panel-hscroll {
+    grid-column: 2 / 4;
+    grid-row: 2;
+  }
+}
+
+/* Touch screens: wider headers for finger-sized buttons. */
+@media (pointer: coarse) {
+  timeline-panel {
+    --timeline-side-w: 13rem;
+  }
+}
+
+/* Phones: give the lanes the room. */
+@media (width <= 600px) {
+  timeline-panel {
+    --timeline-side-w: 6.75rem;
+  }
+}

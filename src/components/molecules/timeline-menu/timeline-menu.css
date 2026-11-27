@@ -1,0 +1,40 @@
+timeline-menu {
+  display: contents;
+
+  & .timeline-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-menu);
+  }
+
+  & .timeline-menu {
+    max-height: calc(100vh - 8px);
+    overflow-y: auto;
+
+    & .menu-item {
+      min-height: var(--control-h);
+      gap: var(--space-xs);
+      padding-left: var(--space-sm);
+      cursor: default;
+    }
+
+    & .menu-item .kbd {
+      margin-left: auto;
+      color: var(--color-text-muted);
+    }
+  }
+
+  & .timeline-menu-check {
+    flex: none;
+    width: 1em;
+    color: var(--color-primary);
+    text-align: center;
+  }
+}
+
+/* Touch screens: rows tall enough for a finger. */
+@media (pointer: coarse) {
+  timeline-menu .timeline-menu .menu-item {
+    min-height: 2.5rem;
+  }
+}

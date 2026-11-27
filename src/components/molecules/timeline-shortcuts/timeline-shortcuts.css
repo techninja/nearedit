@@ -1,0 +1,42 @@
+timeline-shortcuts {
+  display: contents;
+
+  & .timeline-shortcuts {
+    width: min(38rem, 100%);
+
+    &:focus {
+      outline: none;
+    }
+
+    & .dialog-body {
+      columns: 2 16rem;
+      column-gap: var(--space-lg);
+      padding-top: 0;
+    }
+
+    & .field-group-title {
+      margin: 0;
+      padding-left: 0;
+      break-after: avoid;
+    }
+  }
+
+  & .timeline-shortcuts-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: 2px 0;
+    font-size: var(--text-sm);
+    break-inside: avoid;
+  }
+
+  & .timeline-shortcuts-keys {
+    display: flex;
+    flex: none;
+    gap: 3px;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    text-align: right;
+  }
+}

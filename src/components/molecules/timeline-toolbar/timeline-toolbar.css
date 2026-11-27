@@ -1,0 +1,27 @@
+timeline-toolbar {
+  display: block;
+  flex: none;
+  min-width: 0;
+
+  & .timeline-toolbar {
+    gap: var(--space-xs);
+    scrollbar-width: none;
+
+    & .icon-btn {
+      flex: none;
+      cursor: default;
+    }
+
+    & .toolbar-group {
+      flex: none;
+    }
+  }
+}
+
+/* Touch screens: finger-sized buttons. */
+@media (pointer: coarse) {
+  timeline-toolbar .timeline-toolbar .icon-btn {
+    min-width: 2.5rem;
+    height: 2.5rem;
+  }
+}

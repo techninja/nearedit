@@ -30,7 +30,12 @@ const lane = (n, into = LANE_H / 2) => RULER_H + n * (LANE_H + 1) + into;
 describe('hitTest', () => {
   it('describes the ruler: loop band, time band and markers', () => {
     const geo = geometry(doc);
-    assert.deepEqual(hitTest(geo, 250, 3), { zone: 'ruler', time: 2.5, band: 'loop', markerId: '' });
+    assert.deepEqual(hitTest(geo, 250, 3), {
+      zone: 'ruler',
+      time: 2.5,
+      band: 'loop',
+      markerId: '',
+    });
     assert.equal(hitTest(geo, 250, 20).band, 'time');
     assert.equal(hitTest(geo, 503, 20).markerId, 'm1');
     assert.equal(hitTest(geo, 520, 20).markerId, '');

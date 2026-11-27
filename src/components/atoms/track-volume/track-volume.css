@@ -1,0 +1,19 @@
+track-volume {
+  display: block;
+  min-width: 0;
+
+  & input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: 1rem;
+    margin: 0;
+  }
+}
+
+/* Phones: the slider has a row of its own in the header and can be slimmer. */
+@media (width <= 600px) {
+  track-volume input {
+    height: 0.875rem;
+  }
+}

@@ -1,0 +1,85 @@
+/**
+ * The command registry: one description per editor command — id, label,
+ * default shortcuts, what it runs, when it is available. The toolbar, the
+ * context menus, the keyboard handler and the shortcuts list are all
+ * generated from it, so a command added here shows up everywhere.
+ * @module utils/commands/registry
+ */
+
+import { CLIP_COMMANDS } from './catalogClips.js';
+import { EDIT_COMMANDS } from './catalogEdit.js';
+import { INSERT_COMMANDS } from './catalogInsert.js';
+import { TRANSPORT_COMMANDS } from './catalogTransport.js';
+import { VIEW_COMMANDS } from './catalogView.js';
+
+/**
+ * @typedef {Object} Command
+ * @property {string} id - Stable id, e.g. `edit.split`
+ * @property {string} label - Shown in tooltips, menus and the shortcuts list
+ * @property {string} group - Heading in the shortcuts list
+ * @property {string[]} keys - Default shortcuts (`Mod` = Ctrl, or Cmd on macOS)
+ * @property {() => unknown} run
+ * @property {() => boolean} [enabled] - Omitted = always available
+ * @property {() => boolean} [pressed] - Toggles: whether the mode is on
+ * @property {string} [icon] - Name of an `<app-icon>`
+ */
+
+/** @type {Command[]} Every command, in the order the shortcuts list shows them. */
+export const COMMANDS = [
+  ...TRANSPORT_COMMANDS,
+  ...EDIT_COMMANDS,
+  ...CLIP_COMMANDS,
+  ...INSERT_COMMANDS,
+  ...VIEW_COMMANDS,
+];
+
+/** @type {Map<string, Command>} */
+const byId = new Map(COMMANDS.map((command) => [command.id, command]));
+
+/**
+ * @param {string} id
+ * @returns {Command|undefined}
+ */
+export const getCommand = (id) => byId.get(id);
+
+/**
+ * @param {string} id
+ * @returns {boolean} True when the command exists and may run now
+ */
+export function isEnabled(id) {
+  const command = byId.get(id);
+  return !!command && (!command.enabled || command.enabled());
+}
+
+/**
+ * @param {string} id
+ * @returns {boolean} True when the command is a toggle that is on
+ */
+export function isPressed(id) {
+  return !!byId.get(id)?.pressed?.();
+}
+
+/**
+ * Run a command if it is available.
+ * @param {string} id
+ * @returns {boolean} false when the command is unknown or not available —
+ *   the caller should then leave the triggering event alone
+ */
+export function runCommand(id) {
+  if (!isEnabled(id)) return false;
+  byId.get(id).run();
+  return true;
+}
+
+/**
+ * Commands grouped under their headings, for the shortcuts list.
+ * @returns {{ group: string, commands: Command[] }[]}
+ */
+export function commandGroups() {
+  /** @type {Map<string, Command[]>} */
+  const groups = new Map();
+  for (const command of COMMANDS) {
+    groups.set(command.group, [...(groups.get(command.group) || []), command]);
+  }
+  return [...groups].map(([group, commands]) => ({ group, commands }));
+}

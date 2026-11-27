@@ -5,8 +5,11 @@
  * @module utils/timeline/layout
  */
 
-/** Height of the ruler, including the loop band on its top edge. */
-export const RULER_H = 30;
+/**
+ * Height of the ruler: the loop band on its top edge, a row for marker
+ * flags, then the tick labels.
+ */
+export const RULER_H = 34;
 /** Height of the loop band at the top of the ruler. */
 export const LOOP_BAND_H = 10;
 /** Lane height with a mouse, and with a finger. */

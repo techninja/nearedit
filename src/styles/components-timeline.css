@@ -1,2 +1,11 @@
 /* Component styles aggregator — timeline area. */
-@import '../components/organisms/timeline-canvas/timeline-canvas.css';
+@import '../components/atoms/timeline-scrollbar/timeline-scrollbar.css';
+@import '../components/atoms/track-volume/track-volume.css';
+@import '../components/molecules/timeline-marker-field/timeline-marker-field.css';
+@import '../components/molecules/timeline-menu/timeline-menu.css';
+@import '../components/molecules/timeline-shortcuts/timeline-shortcuts.css';
+@import '../components/molecules/timeline-toolbar/timeline-toolbar.css';
+@import '../components/molecules/track-header/track-header.css';
+@import '../components/organisms/track-list/track-list.css';
+@import '../components/organisms/timeline-stage/timeline-stage.css';
+@import '../components/organisms/timeline-panel/timeline-panel.css';

@@ -1,0 +1,43 @@
+track-list {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--color-timeline-grid);
+  background: var(--color-surface);
+
+  & .track-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  & .track-list-corner {
+    display: flex;
+    flex: none;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--timeline-ruler-h, 34px);
+    padding: 0 var(--space-sm);
+    border-bottom: 1px solid var(--color-timeline-grid);
+    background: var(--color-timeline-ruler);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  & .track-list-headers {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
+/* Phones: the column is narrow. */
+@media (width <= 600px) {
+  track-list .track-list-corner {
+    padding: 0 var(--space-xs);
+  }
+}

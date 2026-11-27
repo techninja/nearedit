@@ -67,6 +67,8 @@ export function edgeOverlaps(clips, index) {
   const next = clips[index + 1];
   return {
     in: prev ? Math.max(0, Math.min(prev.timelineEnd, clip.timelineEnd) - clip.timelineStart) : 0,
-    out: next ? Math.max(0, clip.timelineEnd - Math.max(next.timelineStart, clip.timelineStart)) : 0,
+    out: next
+      ? Math.max(0, clip.timelineEnd - Math.max(next.timelineStart, clip.timelineStart))
+      : 0,
   };
 }

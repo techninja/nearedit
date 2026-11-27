@@ -40,7 +40,12 @@ describe('movePreview', () => {
   it('snaps an edge to a neighbour and reports the guide time', () => {
     const base = sample();
     const snap = snapFor(base, movingClips(base, ['a'], false));
-    const { doc, guide } = movePreview(base, { clipIds: ['a'], anchorId: 'a', delta: 1.95 }, MODES, snap);
+    const { doc, guide } = movePreview(
+      base,
+      { clipIds: ['a'], anchorId: 'a', delta: 1.95 },
+      MODES,
+      snap,
+    );
     assert.equal(clipOf(doc, 'a').timelineEnd, 6, 'end snapped to the start of b');
     assert.equal(guide, 6);
     const off = movePreview(base, { clipIds: ['a'], anchorId: 'a', delta: 1.7 }, MODES, snap);
@@ -52,7 +57,12 @@ describe('movePreview', () => {
     const base = sample();
     const snap = snapFor(base, movingClips(base, ['a'], false));
     const modes = { ...MODES, snapping: false };
-    const { doc, guide } = movePreview(base, { clipIds: ['a'], anchorId: 'a', delta: 1.95 }, modes, snap);
+    const { doc, guide } = movePreview(
+      base,
+      { clipIds: ['a'], anchorId: 'a', delta: 1.95 },
+      modes,
+      snap,
+    );
     assert.equal(guide, null);
     assert.ok(Math.abs(clipOf(doc, 'a').timelineEnd - 5.9667) < 1e-3);
   });
@@ -60,7 +70,12 @@ describe('movePreview', () => {
   it('snaps to the playhead and to markers', () => {
     const base = deepFreeze(addMarker(sample(), 21, { markerId: 'mk' }));
     const snap = snapFor(base, movingClips(base, ['c'], false), 0.1, 16.5);
-    const toPlayhead = movePreview(base, { clipIds: ['c'], anchorId: 'c', delta: 4.45 }, MODES, snap);
+    const toPlayhead = movePreview(
+      base,
+      { clipIds: ['c'], anchorId: 'c', delta: 4.45 },
+      MODES,
+      snap,
+    );
     assert.equal(clipOf(toPlayhead.doc, 'c').timelineStart, 16.5);
     assert.equal(toPlayhead.guide, 16.5);
     const toMarker = movePreview(base, { clipIds: ['c'], anchorId: 'c', delta: 7.04 }, MODES, snap);
@@ -89,9 +104,17 @@ describe('movePreview', () => {
 
   it('moves to another track of the same type', () => {
     const base = sample();
-    const { doc } = movePreview(base, { clipIds: ['b'], anchorId: 'b', delta: 0, toTrackId: 'v2' }, MODES);
+    const { doc } = movePreview(
+      base,
+      { clipIds: ['b'], anchorId: 'b', delta: 0, toTrackId: 'v2' },
+      MODES,
+    );
     assert.deepEqual(layout(doc).v2, ['b 6-10']);
-    const audio = movePreview(base, { clipIds: ['b'], anchorId: 'b', delta: 0, toTrackId: 'a1' }, MODES);
+    const audio = movePreview(
+      base,
+      { clipIds: ['b'], anchorId: 'b', delta: 0, toTrackId: 'a1' },
+      MODES,
+    );
     assert.equal(audio.doc, base, 'a video clip never lands on an audio track');
   });
 
@@ -103,7 +126,11 @@ describe('movePreview', () => {
     const { doc } = movePreview(base, { clipIds: ['b'], anchorId: 'b', delta: 2 }, modes);
     assert.deepEqual(layout(doc).v1, ['a 0-4', 'b 8-12', 'c 14-16']);
     assert.deepEqual(layout(doc).a1, ['as 0-4', 'm 5-20'], 'other tracks stay');
-    const lifted = movePreview(base, { clipIds: ['b'], anchorId: 'b', delta: 2, toTrackId: 'v2' }, modes);
+    const lifted = movePreview(
+      base,
+      { clipIds: ['b'], anchorId: 'b', delta: 2, toTrackId: 'v2' },
+      modes,
+    );
     assert.deepEqual(layout(lifted.doc).v2, ['b 8-12']);
     assert.deepEqual(layout(lifted.doc).v1, ['a 0-4', 'c 14-16']);
     assertValid(lifted.doc);
@@ -116,10 +143,22 @@ describe('trimPreview', () => {
   it('trims an edge to the pointer, linked partner included', () => {
     const base = sample();
     const modes = { ...MODES, snapping: false };
-    const { doc } = trimPreview(base, { clipId: 'a', edge: 'end', time: 3 }, modes, undefined, durations);
+    const { doc } = trimPreview(
+      base,
+      { clipId: 'a', edge: 'end', time: 3 },
+      modes,
+      undefined,
+      durations,
+    );
     assert.equal(clipOf(doc, 'a').timelineEnd, 3);
     assert.equal(clipOf(doc, 'as').timelineEnd, 3);
-    const start = trimPreview(base, { clipId: 'b', edge: 'start', time: 7 }, modes, undefined, durations);
+    const start = trimPreview(
+      base,
+      { clipId: 'b', edge: 'start', time: 7 },
+      modes,
+      undefined,
+      durations,
+    );
     assert.equal(clipOf(start.doc, 'b').timelineStart, 7);
     assert.equal(clipOf(start.doc, 'b').sourceIn, 1);
   });
@@ -130,16 +169,28 @@ describe('trimPreview', () => {
     const out = trimPreview(base, { clipId: 'a', edge: 'end', time: 5.98 }, MODES, snap, durations);
     assert.equal(clipOf(out.doc, 'a').timelineEnd, 5, 'source is 5 s long');
     assert.equal(out.guide, null, 'the edge did not reach the snap target');
-    const before = trimPreview(base, { clipId: 'b', edge: 'start', time: 2 }, MODES, undefined, durations);
+    const before = trimPreview(
+      base,
+      { clipId: 'b', edge: 'start', time: 2 },
+      MODES,
+      undefined,
+      durations,
+    );
     assert.equal(clipOf(before.doc, 'b').timelineStart, 6, 'sourceIn is already 0');
   });
 
   it('snaps the edge and reports the guide', () => {
     const base = sample();
     const snap = snapFor(base, ['b']);
-    const { doc, guide } = trimPreview(base, { clipId: 'b', edge: 'start', time: 6.92 }, MODES, snap, {
-      '/media/b.mp4': 60,
-    });
+    const { doc, guide } = trimPreview(
+      base,
+      { clipId: 'b', edge: 'start', time: 6.92 },
+      MODES,
+      snap,
+      {
+        '/media/b.mp4': 60,
+      },
+    );
     assert.equal(guide, null, 'nothing within reach of 6.92');
     assert.ok(Math.abs(clipOf(doc, 'b').timelineStart - 6.9333) < 1e-3);
     const near = trimPreview(base, { clipId: 'b', edge: 'end', time: 11.95 }, MODES, snap, {});
@@ -150,7 +201,13 @@ describe('trimPreview', () => {
   it('ripples later clips when ripple mode is on', () => {
     const base = sample();
     const modes = { ...MODES, ripple: true, snapping: false };
-    const { doc } = trimPreview(base, { clipId: 'b', edge: 'end', time: 8 }, modes, undefined, durations);
+    const { doc } = trimPreview(
+      base,
+      { clipId: 'b', edge: 'end', time: 8 },
+      modes,
+      undefined,
+      durations,
+    );
     assert.deepEqual(layout(doc).v1, ['a 0-4', 'b 6-8', 'c 10-12']);
     assertValid(doc);
   });
@@ -194,7 +251,10 @@ describe('marqueeSelection', () => {
   it('selects the clips a box touches, with their linked partners', () => {
     const base = sample();
     assert.deepEqual(marqueeSelection(base, { t0: 5, t1: 13, trackIds: ['v1'] }), ['b', 'c']);
-    assert.deepEqual(marqueeSelection(base, { t0: 1, t1: 2, trackIds: ['v1'] }).sort(), ['a', 'as']);
+    assert.deepEqual(marqueeSelection(base, { t0: 1, t1: 2, trackIds: ['v1'] }).sort(), [
+      'a',
+      'as',
+    ]);
     assert.deepEqual(marqueeSelection(base, { t0: 4.2, t1: 4.8, trackIds: ['v1', 'a1'] }), []);
     assert.deepEqual(marqueeSelection(base, { t0: 0, t1: 99, trackIds: [] }), []);
   });

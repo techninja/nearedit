@@ -8,6 +8,8 @@
 
 /** Fine peaks folded into one coarse peak. */
 const BLOCK = 16;
+/** Tolerance, in peaks, when a column edge falls on a peak boundary. */
+const EDGE = 1e-6;
 
 /**
  * @typedef {Object} Wave
@@ -46,8 +48,10 @@ export function waveColumns(wave, fromTime, secondsPerColumn, count) {
   const data = useCoarse ? wave.coarse : wave.fine;
   const rate = useCoarse ? wave.rate / BLOCK : wave.rate;
   for (let column = 0; column < out.length; column++) {
-    const start = Math.floor((fromTime + column * secondsPerColumn) * rate);
-    const end = Math.max(start + 1, Math.ceil((fromTime + (column + 1) * secondsPerColumn) * rate));
+    // The small bias keeps float noise from pulling in a neighbouring peak.
+    const start = Math.floor((fromTime + column * secondsPerColumn) * rate + EDGE);
+    const upTo = Math.ceil((fromTime + (column + 1) * secondsPerColumn) * rate - EDGE);
+    const end = Math.max(start + 1, upTo);
     let max = 0;
     for (let i = Math.max(0, start); i < end && i < data.length; i++) {
       if (data[i] > max) max = data[i];
