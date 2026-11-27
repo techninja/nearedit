@@ -12,6 +12,7 @@ import { directorRouter } from './api/director.js';
 import { indexerRouter } from './api/indexer.js';
 import { intelligenceRouter } from './api/intelligence.js';
 import { jobsRouter } from './api/jobs.js';
+import { authEnabled, requireAuth } from './api/lib/auth.js';
 import { getConfig } from './api/lib/config.js';
 import { apiNotFound, errorHandler } from './api/lib/httpErrors.js';
 import { installProcessHandlers, stopServer } from './api/lib/shutdown.js';
@@ -36,6 +37,7 @@ app.use((_req, res, next) => {
   res.set('Cross-Origin-Resource-Policy', 'same-origin');
   next();
 });
+app.use(requireAuth);
 app.use(express.json({ limit: BODY_LIMIT }));
 
 const routers = [
@@ -73,12 +75,18 @@ const socketServers = new WeakMap();
  * @returns {import('node:http').Server}
  */
 export function start(port = getConfig().port) {
-  const server = app.listen(port, (/** @type {Error} */ err) => {
+  const { host } = getConfig();
+  const onListening = (/** @type {Error} */ err) => {
     if (err) return; // Express also hands listen failures here; the 'error' handler reports them
     const address = server.address();
     const bound = address && typeof address === 'object' ? address.port : port;
-    console.log(`NearEdit listening on http://localhost:${bound}`);
-  });
+    console.log(`NearEdit listening on http://${host || 'localhost'}:${bound}`);
+    const loopback = ['127.0.0.1', '::1', 'localhost'].includes(host);
+    if (!authEnabled() && !loopback) {
+      console.log('No NEAREDIT_PASSWORD set: anyone who can reach this port can use the editor.');
+    }
+  };
+  const server = host ? app.listen(port, host, onListening) : app.listen(port, onListening);
   socketServers.set(server, attachWebSocket(server));
   server.on('error', (/** @type {NodeJS.ErrnoException} */ err) => {
     if (err.syscall !== 'listen') return console.error('[server]', err);

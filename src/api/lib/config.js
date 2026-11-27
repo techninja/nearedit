@@ -32,7 +32,8 @@ function pathList(raw) {
 /**
  * Build the config object from the current environment.
  * @returns {{
- *   port: number, dataDir: string, rendersDir: string, previewsDir: string,
+ *   port: number, host: string, auth: { user: string, password: string },
+ *   dataDir: string, rendersDir: string, previewsDir: string,
  *   transcodeDir: string, devMediaDir: string, registryPath: string,
  *   globalMediaPaths: string[], browseRoots: string[],
  *   llm: ProviderConfig, vision: ProviderConfig,
@@ -49,6 +50,8 @@ export function getConfig() {
   const port = parseInt(env.PORT || '', 10) || 3000;
   return {
     port,
+    host: env.HOST || '', // empty = every interface, so phones on the LAN can connect
+    auth: { user: env.NEAREDIT_USER || 'nearedit', password: env.NEAREDIT_PASSWORD || '' },
     dataDir,
     rendersDir: resolve(dataDir, 'renders'),
     previewsDir: resolve(dataDir, 'previews'),

@@ -11,12 +11,33 @@ a few provider-specific ones (marked †) are read in
 | Variable | Default | Purpose |
 | -------- | ------- | ------- |
 | `PORT` | `3000` (`6556` in `.env`) | HTTP + WebSocket port |
+| `HOST` | every interface | Address to bind. Set `127.0.0.1` to accept connections from this machine only |
+| `NEAREDIT_PASSWORD` | empty (no login) | When set, every page, API route, media file and WebSocket requires it (HTTP Basic) |
+| `NEAREDIT_USER` | `nearedit` | User name that goes with the password |
 | `NEAREDIT_DATA_DIR` | `./data` | Registry, renders, preview and transcode caches |
 | `NEAREDIT_MEDIA_DIR` | `./media` | Fallback media folder when a project has none |
 | `GLOBAL_MEDIA_PATHS` | empty | Comma-separated folders shared by every project (logos, stings, music) |
 | `BROWSE_ROOTS` | home directory | Comma-separated folders the in-app folder browser may list |
 | `RENDER_CONCURRENCY` | `1` | Simultaneous FFmpeg renders |
 | `ANALYSIS_CONCURRENCY` | `1` | Simultaneous analysis jobs |
+
+### Access and security
+
+NearEdit is built to run on a machine you trust, next to your footage, and
+to be opened from other devices on your network. Out of the box it listens
+on every interface with no login, so anyone who can reach the port can
+browse the allowed media folders, start renders and edit projects.
+
+- On a shared or untrusted network, set `NEAREDIT_PASSWORD`. The browser
+  asks once; a session cookie then covers media requests and the WebSocket.
+- To keep it private to one machine, set `HOST=127.0.0.1`.
+- For access over the internet, put it behind a reverse proxy that
+  terminates HTTPS. Basic credentials are only as private as the connection.
+- The server only ever reads inside registered project folders, their extra
+  media folders, `GLOBAL_MEDIA_PATHS` and its own data directory, and the
+  folder browser only lists directories under `BROWSE_ROOTS`.
+- The `ssh` transcription provider has the remote machine fetch media back
+  over HTTP. With a password set, the remote command must send it too.
 
 ## Director LLM
 

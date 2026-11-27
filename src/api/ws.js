@@ -8,6 +8,7 @@
 // @ts-ignore -- the installed @types/ws (7.x) predates the named ESM exports of ws 8;
 // "ignore" rather than "expect-error" so a newer @types/ws does not break the type-check
 import { WebSocketServer } from 'ws';
+import { isAuthorized } from './lib/auth.js';
 import { subscribe } from './lib/jobs.js';
 
 const HEARTBEAT_MS = 30_000;
@@ -52,7 +53,7 @@ export function attachWebSocket(server, opts = {}) {
     server,
     path: '/ws',
     maxPayload: MAX_INBOUND_BYTES,
-    verifyClient: sameOrigin,
+    verifyClient: (info) => sameOrigin(info) && isAuthorized(info.req),
   });
   /** @type {WeakSet<object>} Sockets that answered the most recent ping */
   const alive = new WeakSet();
