@@ -11,6 +11,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ICON_MAP } from './icon-map.js';
+import { FX_ICON_MAP } from './icon-map-fx.js';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const ICONS_DIR = resolve(ROOT, 'node_modules/lucide-static/icons');
@@ -33,7 +34,7 @@ mkdirSync(dirname(OUT), { recursive: true });
 const icons = {};
 let count = 0;
 
-for (const [lucideName, appName] of Object.entries(ICON_MAP)) {
+for (const [lucideName, appName] of Object.entries({ ...ICON_MAP, ...FX_ICON_MAP })) {
   const file = resolve(ICONS_DIR, `${lucideName}.svg`);
   if (!existsSync(file)) {
     console.warn(`⚠ Icon not found: ${lucideName}`);
