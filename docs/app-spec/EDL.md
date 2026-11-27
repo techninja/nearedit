@@ -8,7 +8,8 @@ one JSON shape. Raw media is never modified.
 - Shape + defaults in code: `src/utils/edl/factory.js`, `src/utils/edl/defaults.js`
 - Browser store model: `src/store/TimelineState.js` (hybrids drops any field
   that is not declared there — add new fields to the model first)
-- Pure operations: `src/utils/edl/*.js` (isomorphic, Node-tested)
+- Pure operations: `src/utils/edl/*.js` (isomorphic, Node-tested), see
+  [Operations](#operations)
 
 ## Document
 
@@ -45,7 +46,7 @@ All times are **seconds** (floats). Edits snap to frame boundaries
 | solo    | boolean | When any track of a type is solo, only those play |
 | locked  | boolean | Clips cannot be edited or selected             |
 | volume  | number  | Audio tracks: linear gain 0..2                 |
-| clips   | Clip[]  | Kept sorted by `timelineStart`                 |
+| clips   | Clip[]  | Kept sorted by `timelineStart`, ties by `timelineEnd` |
 
 Track order is display order, top to bottom. Video tracks always sit above
 audio tracks. **The first video track is the front-most layer** (Vegas
@@ -83,17 +84,35 @@ an audio track, joined to its picture by `linkedClipId`.
 
 ### Invariants
 
-1. For video and audio clips `timelineEnd - timelineStart === sourceOut -
-   sourceIn` (playback speed is always 1). Images, titles and placeholders
-   have a free duration; their `sourceIn`/`sourceOut` are ignored.
-2. `timelineStart >= 0`, `timelineEnd > timelineStart`, `sourceIn >= 0`, and
-   `sourceOut` never exceeds the source duration when it is known.
-3. `fadeIn + fadeOut <= duration`.
+1. **Speed is 1.** For video and audio clips `timelineEnd - timelineStart ===
+   sourceOut - sourceIn`. Images, titles and placeholders have a free
+   duration; their `sourceIn`/`sourceOut` are ignored.
+2. **Bounds.** `timelineStart >= 0`, `timelineEnd > timelineStart`,
+   `sourceIn >= 0`, and `sourceOut` never exceeds the source duration when
+   it is known.
+3. **Fades fit.** `fadeIn >= 0`, `fadeOut >= 0`, `fadeIn + fadeOut <=
+   duration`.
 4. **Overlap means cross-fade.** Two clips on one track may overlap only as
-   a cross-fade pair: the earlier clip's `fadeOut` and the later clip's
-   `fadeIn` both equal the overlap length. No point on a track is covered by
-   more than two clips. This is the Vegas "drag one clip over another" fade.
-5. A `linkedClipId` is symmetric: if A links to B then B links to A.
+   a cross-fade pair: one of them starts first *and* ends first (a clip is
+   never inside another, and overlapping clips never share an edge), and the
+   earlier clip's `fadeOut` and the later clip's `fadeIn` both equal the
+   overlap length. No point on a track is covered by more than two clips.
+   This is the Vegas "drag one clip over another" fade.
+5. **Links are symmetric.** If A's `linkedClipId` is B then B's is A, and B
+   exists.
+6. **Structure.** Track, clip and marker ids are unique. Video tracks come
+   before audio tracks and there is at least one of each. Clips are sorted
+   by `timelineStart` (ties by `timelineEnd`), markers by `time`.
+
+`validateEdl(edl, { sourceDurations? })` checks all of the above plus field
+types and enums and returns `{ valid, problems: [{ path, message }] }`.
+Times are compared with a 1 µs tolerance (`EPS`). `normalizeEdl(raw)` turns
+anything — a v1 file, LLM output, garbage — into a document that passes.
+
+Operations keep `timelineStart`/`timelineEnd` on the frame grid; source
+times are not snapped. Being on the grid is not an invariant (changing an
+adaptation's `fps` must not invalidate its timeline): `normalizeEdl`
+re-snaps a document to its current `fps`.
 
 ### text
 
@@ -155,27 +174,122 @@ enabled.
 
 ## Operations
 
-Every edit is a pure function `(edl, ...args) => edl` in `src/utils/edl/`.
-The UI pushes the previous document onto the undo stack, calls the
-operation, and stores the result. The AI director never returns a whole
-document: it returns a **DirectorResult** (see API.md) that
-`applyDirectorResult(edl, result)` merges in, so every automated edit is one
-undoable step that the user can then hand-tune.
+Every edit is a pure function `(edl, ...args) => edl` in `src/utils/edl/`,
+exported from `src/utils/edl/index.js`. An operation never mutates its
+input and shares everything it did not change: untouched tracks and clips
+keep their identity, and an operation that changes nothing returns the very
+same document. Flags (snapping, ripple, auto-crossfade, linked) are passed
+in a trailing options object.
 
-| Module         | Responsibility                                               |
-| -------------- | ------------------------------------------------------------ |
-| `factory.js`   | Defaults, ids, `createClip`, `createTrack`, `clipKind`       |
-| `normalize.js` | Migrate v1 → v2, fill defaults, sort clips, drop invalid ones |
-| `query.js`     | Lookups: duration, clips at a time, clip by id, edges        |
-| `clipOps.js`   | Move (incl. between tracks), trim, slip, split, delete       |
-| `crossfade.js` | Resolve overlaps into cross-fade pairs (invariant 4)         |
-| `ripple.js`    | Ripple delete / insert / close gaps                          |
-| `snap.js`      | Snap candidates (clip edges, playhead, markers, beats)       |
-| `trackOps.js`  | Add, remove, reorder, rename tracks; mute / solo / lock      |
-| `selection.js` | Multi-select helpers, linked/grouped expansion, copy/paste   |
-| `markers.js`   | Add / move / remove markers                                  |
-| `apply.js`     | `applyDirectorResult` — replace, append, prepend, insert, range |
-| `validate.js`  | Check a document against the invariants above                |
+The UI pushes the previous document onto the undo stack (`createHistory`
+stores references, not copies), calls the operation, and stores the result.
+A drag calls the operation on every pointer move with the document the drag
+started from. The AI director never returns a whole document: it returns a
+**DirectorResult** (see API.md) that `applyDirectorResult(edl, result)`
+merges in, so every automated edit is one undoable step that the user can
+then hand-tune.
+
+| Module | Operations |
+| ------ | ---------- |
+| `factory.js`, `defaults.js` | Defaults, ids, `createClip`, `createTrack`, `createEdl`, `clipKind` |
+| `query.js` | Lookups: `findClip`, `clipsAt`, `allClips`, `timelineDuration`, `snapToFrame`… |
+| `normalize.js`, `savedDocument.js` | `normalizeEdl`; `toSavedDocument` / `fromSavedDocument` (document + view fields) |
+| `validate.js` | `validateEdl` |
+| `move.js` | `moveClips` — in time and between tracks of one type |
+| `trim.js` | `trimClipStart`, `trimClipEnd` (optional ripple) |
+| `split.js` | `splitClips` |
+| `clipEdit.js` | `deleteClips`, `slipClip`, `setClipFades`, `updateClip` |
+| `crossfade.js` | `settle` — overlap resolution used by every operation above and below |
+| `ripple.js`, `gaps.js` | `rippleDelete`, `rippleDeleteRange`, `rippleInsert`, `closeGaps` |
+| `snap.js` | `snapTime`, `snapEdges`, `snapMove`, `snapCandidates` |
+| `trackOps.js` | `addTrack`, `removeTrack`, `moveTrack`, `renameTrack`, `toggleTrackMute/Solo/Lock`, `setTrackVolume` |
+| `selection.js` | `expandSelection`, `groupClips`, `ungroupClips`, `linkClips`, `unlinkClips`, `clipsInRange`, `newClipIds` |
+| `clipboard.js` | `copyClips`, `pasteClips`, `duplicateClips` |
+| `insert.js` | `insertMedia`, `insertTitle` |
+| `markers.js` | `addMarker`, `moveMarker`, `renameMarker`, `updateMarker`, `removeMarker` |
+| `apply.js` | `applyDirectorResult` |
+| `history.js` | `createHistory` — undo / redo |
+
+Internal building blocks: `time.js`, `immutable.js`, `clipMath.js`,
+`fades.js`, `place.js`, `session.js`, `partners.js`, `links.js`,
+`shift.js`, `trimLimits.js`, `placement.js`, `sanitize.js`,
+`normalizeClip.js`, `fragment.js`, `validateClip.js`. `testkit.js` holds
+fixtures for tests.
+
+### Editing rules
+
+**Locked tracks.** A clip on a locked track is never moved, trimmed, split,
+deleted, overwritten or rippled, and nothing is placed on a locked track.
+The one field that may change on such a clip is `linkedClipId`, which is
+cleared when its partner is deleted or cut away (invariant 5).
+
+**Linked and grouped clips.** Linked partners move, trim, slip, split and
+delete together; grouped clips move together. Every such operation takes
+`linked: false` (and `moveClips` also `grouped: false`) to edit one clip
+alone — that is how J- and L-cuts are made.
+
+**Overlaps: cross-fade or overwrite.** The clips an operation moves, trims
+or adds are its *incoming* clips. After the edit, on each changed track:
+
+- An incoming clip that partially overlaps another clip (invariant 4's
+  shape) forms a cross-fade pair with it — when auto-crossfade is on, or
+  when the two were already cross-fading before the edit.
+- Otherwise the incoming clip wins and what is under it is trimmed, split
+  or removed (an overwrite edit). This happens when auto-crossfade is off,
+  when one clip would lie inside the other or share an edge with it, and
+  when a third clip already covers part of the overlap.
+- An overwrite cuts the linked partner of the overwritten clip over the
+  same time range, so a linked pair is always cut as one; the pieces on
+  each side are linked to each other again. `linked: false` leaves the
+  partner whole.
+
+**Automatic and deliberate fades.** A fade is *automatic* when it exists
+because of an overlap, *deliberate* when the user set it on a free edge.
+Nothing is stored to tell them apart; the rule is: **an edge that
+overlapped a neighbour in the document before the operation carried an
+automatic fade.** After the operation each edge gets:
+
+- the overlap length, if it overlaps a neighbour now;
+- `0`, if it overlapped before and no longer does (pulling two cross-faded
+  clips apart removes both fades);
+- its previous value otherwise (deliberate), shortened only if it no longer
+  fits beside the fade on the other edge (invariant 3).
+
+A deliberate fade that an overlap replaces is gone once that edit is
+committed; while a drag is in progress every pointer move starts from the
+original document, so backing out of the overlap restores it.
+`setClipFades` cannot change an edge that is cross-fading — move or trim
+the clip to change the cross-fade length.
+
+**Trim limits.** `sourceIn` never goes below 0 and `sourceOut` never passes
+the source duration when a `sourceDurations` map is supplied. A clip keeps
+at least one frame and stays longer than the cross-fade on its other edge.
+Images, titles and placeholders trim freely.
+
+**Splits and cross-fades.** While two clips cross-fade they are fused: a
+split at a time inside the cross-fade leaves those two clips alone (a half
+would end up inside the other clip). Ripple edits must open every track at
+one time, so there a cross-fade under the cut becomes a hard cut: the
+outgoing clip ends at that time and the incoming one starts at it.
+
+**Ripple.** `rippleDelete` closes the hole a deletion leaves — the time the
+deleted clips covered that no remaining clip on their tracks still covers —
+on the tracks that lost a clip (`scope: 'track'`) or on every unlocked track
+together with the markers (`scope: 'all'`). `rippleInsert` and
+`rippleDeleteRange` open or remove time on every unlocked track (or the
+given ones). Clips that ripple are incoming clips and follow the overlap
+rules above.
+
+**Director results.** `applyDirectorResult` normalises the fragment's
+clips, gives them fresh ids (links and groups inside the fragment are
+kept) and maps fragment tracks to the Nth track of their type, creating
+missing tracks below the existing ones. `replace` removes the clips on
+unlocked tracks and all markers first; `append` starts at the end of the
+timeline; `prepend` and `insert` ripple-insert the fragment's length at 0 /
+`at`; `range` cuts `range` out and ripples later clips by the difference in
+length. A locked target track is never written — its fragment clips go to a
+new track. An unknown mode, or a mode whose position is missing, falls
+back to `append`.
 
 ## Rendering Semantics
 

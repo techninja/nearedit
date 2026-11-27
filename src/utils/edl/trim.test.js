@@ -19,7 +19,12 @@ const doc = () =>
         testClip('still', 20, 25, { sourceFile: '/media/still.png' }),
       ],
       a1: [
-        testClip('a_s', 3, 8, { sourceFile: '/media/a.mp4', sourceIn: 2, sourceOut: 7, linkedClipId: 'a' }),
+        testClip('a_s', 3, 8, {
+          sourceFile: '/media/a.mp4',
+          sourceIn: 2,
+          sourceOut: 7,
+          linkedClipId: 'a',
+        }),
         testClip('c', 9, 12),
       ],
     }),
@@ -146,9 +151,7 @@ describe('ripple trims', () => {
   });
 
   it('end: scope "all" ripples every unlocked track and the markers', () => {
-    const start = deepFreeze(
-      toggleTrackLock(addMarker(addMarker(doc(), 5), 11), 'a1'),
-    );
+    const start = deepFreeze(toggleTrackLock(addMarker(addMarker(doc(), 5), 11), 'a1'));
     const out = assertValid(trimClipEnd(start, 'b', 16, { ripple: true, rippleScope: 'all' }));
     assert.deepEqual(layout(out).v1, ['a 3-8', 'b 10-16', 'still 22-27']);
     assert.deepEqual(layout(out).a1, ['a_s 3-8', 'c 9-12'], 'locked tracks never ripple');
@@ -173,7 +176,11 @@ describe('ripple trims', () => {
   it('keeps cross-fades intact while rippling', () => {
     const start = deepFreeze(
       testEdl({
-        v1: [testClip('a', 0, 5, { fadeOut: 1 }), testClip('b', 4, 9, { fadeIn: 1 }), testClip('c', 9, 12)],
+        v1: [
+          testClip('a', 0, 5, { fadeOut: 1 }),
+          testClip('b', 4, 9, { fadeIn: 1 }),
+          testClip('c', 9, 12),
+        ],
       }),
     );
     const out = assertValid(trimClipEnd(start, 'a', 3, { ripple: true }));

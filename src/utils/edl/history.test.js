@@ -49,7 +49,10 @@ describe('createHistory', () => {
     const history = createHistory({ limit: 3 });
     for (const state of [1, 2, 3, 4, 5]) history.push(state);
     assert.deepEqual(history.size(), { undo: 3, redo: 0 });
-    assert.deepEqual([history.undo(6), history.undo(5), history.undo(4), history.undo(3)], [5, 4, 3, null]);
+    assert.deepEqual(
+      [history.undo(6), history.undo(5), history.undo(4), history.undo(3)],
+      [5, 4, 3, null],
+    );
     // The limit also holds while redoing.
     assert.deepEqual([history.redo(3), history.redo(4), history.redo(5)], [4, 5, 6]);
     assert.deepEqual(history.size(), { undo: 3, redo: 0 });

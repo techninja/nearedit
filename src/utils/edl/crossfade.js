@@ -20,7 +20,14 @@
 
 import { reuseClip } from './clipMath.js';
 import { settleFades } from './fades.js';
-import { indexClips, isTimed, sameItems, sortClips, withTracks } from './immutable.js';
+import {
+  compareClips,
+  indexClips,
+  isTimed,
+  sameItems,
+  sortClips,
+  withTracks,
+} from './immutable.js';
 import { relinkCuts, spreadCuts } from './partners.js';
 import { enforce, placeClip } from './place.js';
 import { createSession, load, noteCut, rootId } from './session.js';
@@ -37,8 +44,8 @@ const sameExcept = (a, b, skip) => Object.keys(b).every((k) => k === skip || a[k
  *
  * - `fade`: a partial overlap may cross-fade when auto-crossfade is on,
  *   when the clip underneath is itself incoming, or when the two clips were
- *   cross-fading before the edit (so trimming or nudging one of them keeps
- *   the fade even with auto-crossfade off).
+ *   cross-fading in the same order before the edit (so trimming or nudging
+ *   one of them keeps the fade even with auto-crossfade off).
  * - `outranks`: in a conflict an incoming clip beats a clip that stayed
  *   put, which beats the remnant of an overwritten clip.
  * @param {Session} s
@@ -48,13 +55,15 @@ const sameExcept = (a, b, skip) => Object.keys(b).every((k) => k === skip || a[k
  */
 function rulesFor(s, work) {
   const root = (clip) => rootId(s, clip.clipId);
-  const fadedInto = (first, second) => s.was.get(root(first))?.next === root(second);
   const rank = (clip) => (s.incoming.has(root(clip)) ? 2 : s.cuts.has(root(clip)) ? 0 : 1);
+  const fadedBefore = (a, b) => {
+    const [first, second] = compareClips(a, b) <= 0 ? [a, b] : [b, a];
+    return s.was.get(root(first))?.next === root(second);
+  };
   /** @type {import('./place.js').PlaceContext} */
   const ctx = {
     timed: (clip) => isTimed(clip, work.track),
-    fade: (under, placed) =>
-      s.auto || rank(under) === 2 || fadedInto(under, placed) || fadedInto(placed, under),
+    fade: (under, placed) => s.auto || rank(under) === 2 || fadedBefore(under, placed),
     onCut: (under, pieces, by) => noteCut(s, under, pieces, [by.timelineStart, by.timelineEnd]),
   };
   return { ctx, outranks: (a, b) => rank(a) > rank(b) };

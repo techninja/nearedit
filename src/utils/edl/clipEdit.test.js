@@ -12,7 +12,14 @@ const doc = () =>
         testClip('b', 4, 9, { fadeIn: 1 }),
         testClip('still', 12, 16, { sourceFile: '/media/still.png' }),
       ],
-      a1: [testClip('a_s', 0, 5, { sourceFile: '/media/a.mp4', sourceIn: 2, sourceOut: 7, linkedClipId: 'a' })],
+      a1: [
+        testClip('a_s', 0, 5, {
+          sourceFile: '/media/a.mp4',
+          sourceIn: 2,
+          sourceOut: 7,
+          linkedClipId: 'a',
+        }),
+      ],
     }),
   );
 

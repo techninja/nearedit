@@ -25,17 +25,55 @@ const doc = () => {
 const fragment = (extra = {}) => ({
   tracks: [
     {
-      type: 'video', index: 0, name: 'Video 1',
+      type: 'video',
+      index: 0,
+      name: 'Video 1',
       clips: [
-        { clipId: 'x', linkedClipId: 'x_s', sourceFile: '/m/n.mp4', sourceIn: 10, sourceOut: 12, timelineStart: 0, timelineEnd: 2, groupId: 'g' },
-        { clipId: 'f2', linkedClipId: 'f2_s', sourceFile: '/m/n.mp4', sourceIn: 20, sourceOut: 22, timelineStart: 2, timelineEnd: 4, groupId: 'g' },
+        {
+          clipId: 'x',
+          linkedClipId: 'x_s',
+          sourceFile: '/m/n.mp4',
+          sourceIn: 10,
+          sourceOut: 12,
+          timelineStart: 0,
+          timelineEnd: 2,
+          groupId: 'g',
+        },
+        {
+          clipId: 'f2',
+          linkedClipId: 'f2_s',
+          sourceFile: '/m/n.mp4',
+          sourceIn: 20,
+          sourceOut: 22,
+          timelineStart: 2,
+          timelineEnd: 4,
+          groupId: 'g',
+        },
       ],
     },
     {
-      type: 'audio', index: 0, name: 'Audio 1',
+      type: 'audio',
+      index: 0,
+      name: 'Audio 1',
       clips: [
-        { clipId: 'x_s', linkedClipId: 'x', sourceFile: '/m/n.mp4', sourceIn: 10, sourceOut: 12, timelineStart: 0, timelineEnd: 2 },
-        { clipId: 'f2_s', linkedClipId: 'f2', sourceFile: '/m/n.mp4', sourceIn: 20, sourceOut: 22, timelineStart: 2, timelineEnd: 4 },
+        {
+          clipId: 'x_s',
+          linkedClipId: 'x',
+          sourceFile: '/m/n.mp4',
+          sourceIn: 10,
+          sourceOut: 12,
+          timelineStart: 0,
+          timelineEnd: 2,
+        },
+        {
+          clipId: 'f2_s',
+          linkedClipId: 'f2',
+          sourceFile: '/m/n.mp4',
+          sourceIn: 20,
+          sourceOut: 22,
+          timelineStart: 2,
+          timelineEnd: 4,
+        },
       ],
     },
   ],
@@ -68,7 +106,11 @@ describe('applyDirectorResult — modes', () => {
     const out = assertValid(applyDirectorResult(doc(), fragment({ mode: 'insert', at: 3 })));
     assert.deepEqual(spans(out, 'v1'), ['0-3', '3-5', '5-7', '7-10', '10-16']);
     assert.deepEqual(spans(out, 'a2'), ['0-3', '7-16']);
-    assert.deepEqual(times(out), [4, 7, 13], 'the marker at the insert point moves with what follows');
+    assert.deepEqual(
+      times(out),
+      [4, 7, 13],
+      'the marker at the insert point moves with what follows',
+    );
     const tail = out.tracks[0].clips[3];
     assert.deepEqual([tail.sourceIn, tail.sourceOut], [3, 6]);
     assert.equal(tail.linkedClipId, out.tracks[1].clips[3].clipId);
@@ -80,7 +122,9 @@ describe('applyDirectorResult — modes', () => {
     assert.deepEqual(spans(out, 'v1'), ['0-2', '2-4', '4-6', '6-8']);
     assert.deepEqual(spans(out, 'a2'), ['0-2', '6-8']);
     assert.deepEqual(times(out), [3], 'markers inside the range go, the fragment marker arrives');
-    const longer = assertValid(applyDirectorResult(doc(), fragment({ mode: 'range', range: { start: 5, end: 6 } })));
+    const longer = assertValid(
+      applyDirectorResult(doc(), fragment({ mode: 'range', range: { start: 5, end: 6 } })),
+    );
     assert.deepEqual(spans(longer, 'v1'), ['0-5', '5-7', '7-9', '9-15']);
     assert.deepEqual(times(longer), [3, 6, 12]);
   });
@@ -90,11 +134,19 @@ describe('applyDirectorResult — modes', () => {
     assert.deepEqual(layout(out).a2, []);
     assert.deepEqual(spans(out, 'v1'), ['0-2', '2-4']);
     assert.deepEqual(times(out), [1]);
-    assert.deepEqual(out.tracks.map((t) => t.trackId), ['v1', 'a1', 'a2']);
+    assert.deepEqual(
+      out.tracks.map((t) => t.trackId),
+      ['v1', 'a1', 'a2'],
+    );
   });
 
   it('falls back to append when the mode cannot be carried out', () => {
-    for (const bad of [{ mode: 'insert' }, { mode: 'range', range: { start: 5, end: 5 } }, { mode: 'explode' }, {}]) {
+    for (const bad of [
+      { mode: 'insert' },
+      { mode: 'range', range: { start: 5, end: 5 } },
+      { mode: 'explode' },
+      {},
+    ]) {
       const out = assertValid(applyDirectorResult(doc(), fragment(bad)));
       assert.deepEqual(spans(out, 'v1'), ['0-6', '6-12', '12-14', '14-16']);
     }
@@ -122,12 +174,34 @@ describe('applyDirectorResult — fragment handling', () => {
     const result = {
       mode: 'append',
       tracks: [
-        { type: 'video', index: 2, name: 'B-roll', clips: [{ sourceFile: '/m/b.mp4', sourceIn: 0, sourceOut: 2, timelineStart: 0, timelineEnd: 2 }] },
-        { type: 'audio', index: 1, clips: [{ sourceFile: '/m/sfx.wav', sourceIn: 0, sourceOut: 1, timelineStart: 0, timelineEnd: 1 }] },
+        {
+          type: 'video',
+          index: 2,
+          name: 'B-roll',
+          clips: [
+            { sourceFile: '/m/b.mp4', sourceIn: 0, sourceOut: 2, timelineStart: 0, timelineEnd: 2 },
+          ],
+        },
+        {
+          type: 'audio',
+          index: 1,
+          clips: [
+            {
+              sourceFile: '/m/sfx.wav',
+              sourceIn: 0,
+              sourceOut: 1,
+              timelineStart: 0,
+              timelineEnd: 1,
+            },
+          ],
+        },
       ],
     };
     const out = assertValid(applyDirectorResult(doc(), result));
-    assert.deepEqual(out.tracks.map((t) => t.name), ['V1', 'Video 2', 'B-roll', 'A1', 'A2']);
+    assert.deepEqual(
+      out.tracks.map((t) => t.name),
+      ['V1', 'Video 2', 'B-roll', 'A1', 'A2'],
+    );
     assert.deepEqual(spans(out, out.tracks[2].trackId), ['12-14']);
     assert.deepEqual(spans(out, 'a2'), ['0-12', '12-13']);
   });
@@ -148,26 +222,48 @@ describe('applyDirectorResult — fragment handling', () => {
   it('repairs a sloppy fragment: bad clips dropped, overlaps resolved, times snapped', () => {
     const result = {
       mode: 'replace',
-      tracks: [{
-        type: 'video',
-        clips: [
-          { clipId: 'a', sourceFile: '/m/a.mp4', sourceIn: 0, sourceOut: 3, timelineStart: 0, timelineEnd: 3.004 },
-          { clipId: 'b', sourceFile: '/m/b.mp4', sourceIn: 0, sourceOut: 3, timelineStart: 2.5, timelineEnd: 5.5, linkedClipId: 'nobody' },
-          { clipId: 'junk', timelineStart: 'x' },
-          null,
-        ],
-      }],
+      tracks: [
+        {
+          type: 'video',
+          clips: [
+            {
+              clipId: 'a',
+              sourceFile: '/m/a.mp4',
+              sourceIn: 0,
+              sourceOut: 3,
+              timelineStart: 0,
+              timelineEnd: 3.004,
+            },
+            {
+              clipId: 'b',
+              sourceFile: '/m/b.mp4',
+              sourceIn: 0,
+              sourceOut: 3,
+              timelineStart: 2.5,
+              timelineEnd: 5.5,
+              linkedClipId: 'nobody',
+            },
+            { clipId: 'junk', timelineStart: 'x' },
+            null,
+          ],
+        },
+      ],
       markers: [{ time: 'x' }, { time: 2.51, label: 'ok' }],
     };
     const out = assertValid(applyDirectorResult(createEdl(), result));
     assert.deepEqual(spans(out, 'v1'), ['0-3', '2.5-5.5']);
     const [a, b] = out.tracks[0].clips;
     assert.deepEqual([a.fadeOut, b.fadeIn, b.linkedClipId], [0.5, 0.5, '']);
-    assert.deepEqual(out.markers.map((m) => [m.time, m.label]), [[2.5, 'ok']]);
+    assert.deepEqual(
+      out.markers.map((m) => [m.time, m.label]),
+      [[2.5, 'ok']],
+    );
   });
 
   it('an empty fragment in range mode is a ripple delete', () => {
-    const out = assertValid(applyDirectorResult(doc(), { mode: 'range', range: { start: 2, end: 8 }, tracks: [] }));
+    const out = assertValid(
+      applyDirectorResult(doc(), { mode: 'range', range: { start: 2, end: 8 }, tracks: [] }),
+    );
     assert.deepEqual(spans(out, 'v1'), ['0-2', '2-6']);
     assert.deepEqual(times(out), [3]);
   });

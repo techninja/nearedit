@@ -25,12 +25,19 @@ describe('addTrack', () => {
     edl = deepFreeze(addTrack(edl, 'audio'));
     edl = assertValid(addTrack(edl, 'video'));
     assert.deepEqual(names(edl), ['Video 3', 'Video 2', 'Video 1', 'Audio 1', 'Audio 2']);
-    assert.deepEqual(edl.tracks.map((t) => t.type), ['video', 'video', 'video', 'audio', 'audio']);
+    assert.deepEqual(
+      edl.tracks.map((t) => t.type),
+      ['video', 'video', 'video', 'audio', 'audio'],
+    );
     assert.equal(new Set(ids(edl)).size, 5);
   });
 
   it('accepts a name, an id and a position', () => {
-    const edl = addTrack(createEdl(), 'video', { name: 'B-roll', trackId: 'broll', position: 'bottom' });
+    const edl = addTrack(createEdl(), 'video', {
+      name: 'B-roll',
+      trackId: 'broll',
+      position: 'bottom',
+    });
     assert.deepEqual(ids(edl), ['v1', 'broll', 'a1']);
     assert.equal(edl.tracks[1].name, 'B-roll');
     const top = addTrack(edl, 'audio', { position: 'top', trackId: 'v1' });

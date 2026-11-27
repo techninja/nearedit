@@ -26,11 +26,52 @@ const doc = () => {
 
 describe('span arithmetic', () => {
   it('merges, subtracts and sums spans', () => {
-    assert.deepEqual(mergeSpans([[5, 7], [0, 2], [2, 3], [6, 9]]), [[0, 3], [5, 9]]);
-    assert.deepEqual(subtractSpans([[0, 10]], [[2, 3], [8, 12]]), [[0, 2], [3, 8]]);
+    assert.deepEqual(
+      mergeSpans([
+        [5, 7],
+        [0, 2],
+        [2, 3],
+        [6, 9],
+      ]),
+      [
+        [0, 3],
+        [5, 9],
+      ],
+    );
+    assert.deepEqual(
+      subtractSpans(
+        [[0, 10]],
+        [
+          [2, 3],
+          [8, 12],
+        ],
+      ),
+      [
+        [0, 2],
+        [3, 8],
+      ],
+    );
     assert.deepEqual(subtractSpans([[0, 4]], [[0, 4]]), []);
-    assert.equal(closedBefore([[0, 2], [5, 6]], 5.5), 2);
-    assert.equal(closedBefore([[0, 2], [5, 6]], 6), 3);
+    assert.equal(
+      closedBefore(
+        [
+          [0, 2],
+          [5, 6],
+        ],
+        5.5,
+      ),
+      2,
+    );
+    assert.equal(
+      closedBefore(
+        [
+          [0, 2],
+          [5, 6],
+        ],
+        6,
+      ),
+      3,
+    );
   });
 });
 
@@ -40,13 +81,20 @@ describe('rippleDelete', () => {
     assert.deepEqual(layout(out).v1, ['a 0-4', 'c 4-9']);
     assert.deepEqual(layout(out).a1, ['a_s 0-4', 'c_s 4-9']);
     assert.deepEqual(layout(out).a2, ['music 0-6', 'sting 9-10'], 'other tracks stay');
-    assert.deepEqual(out.markers.map((m) => m.time), [2, 8], 'markers stay');
+    assert.deepEqual(
+      out.markers.map((m) => m.time),
+      [2, 8],
+      'markers stay',
+    );
   });
 
   it('scope "all": every unlocked track and the markers follow', () => {
     const out = assertValid(rippleDelete(doc(), ['b'], { scope: 'all' }));
     assert.deepEqual(layout(out).a2, ['music 0-6', 'sting 6-7']);
-    assert.deepEqual(out.markers.map((m) => m.time), [2, 5]);
+    assert.deepEqual(
+      out.markers.map((m) => m.time),
+      [2, 5],
+    );
     const locked = deepFreeze(toggleTrackLock(doc(), 'a2'));
     const kept = assertValid(rippleDelete(locked, ['b'], { scope: 'all' }));
     assert.equal(kept.tracks[2], locked.tracks[2], 'a locked track never ripples');
@@ -94,22 +142,37 @@ describe('rippleInsert', () => {
   it('opens a gap on every unlocked track, splitting clips that straddle it', () => {
     const start = doc();
     const out = assertValid(rippleInsert(start, 5, 2));
-    assert.deepEqual(layout(out).v1.map((s) => s.split(' ')[1]), ['0-4', '4-5', '7-9', '9-14']);
-    assert.deepEqual(layout(out).a2.map((s) => s.split(' ')[1]), ['0-5', '7-8', '11-12']);
+    assert.deepEqual(
+      layout(out).v1.map((s) => s.split(' ')[1]),
+      ['0-4', '4-5', '7-9', '9-14'],
+    );
+    assert.deepEqual(
+      layout(out).a2.map((s) => s.split(' ')[1]),
+      ['0-5', '7-8', '11-12'],
+    );
     const [, bLeft, bRight] = out.tracks[0].clips;
     const [, sLeft, sRight] = out.tracks[1].clips;
     assert.deepEqual([bLeft.clipId, bLeft.linkedClipId], ['b', 'b_s']);
     assert.equal(bRight.linkedClipId, sRight.clipId, 'right halves are linked to each other');
     assert.equal(sLeft.clipId, 'b_s');
     assert.equal(bRight.sourceIn, 1);
-    assert.deepEqual(out.markers.map((m) => m.time), [2, 10]);
+    assert.deepEqual(
+      out.markers.map((m) => m.time),
+      [2, 10],
+    );
   });
 
   it('can be limited to some tracks (markers then stay)', () => {
     const out = assertValid(rippleInsert(doc(), 4, 3, { trackIds: ['a2'] }));
     assert.deepEqual(layout(out).v1, layout(doc()).v1);
-    assert.deepEqual(layout(out).a2.map((s) => s.split(' ')[1]), ['0-4', '7-9', '12-13']);
-    assert.deepEqual(out.markers.map((m) => m.time), [2, 8]);
+    assert.deepEqual(
+      layout(out).a2.map((s) => s.split(' ')[1]),
+      ['0-4', '7-9', '12-13'],
+    );
+    assert.deepEqual(
+      out.markers.map((m) => m.time),
+      [2, 8],
+    );
   });
 
   it('ignores a zero or negative duration', () => {
@@ -122,12 +185,22 @@ describe('rippleInsert', () => {
 describe('rippleDeleteRange', () => {
   it('cuts the range out of every unlocked track and closes it', () => {
     const out = assertValid(rippleDeleteRange(doc(), 3, 8));
-    assert.deepEqual(layout(out).v1.map((s) => s.split(' ')[1]), ['0-3', '3-7']);
-    assert.deepEqual(layout(out).a2.map((s) => s.split(' ')[1]), ['0-3', '4-5']);
+    assert.deepEqual(
+      layout(out).v1.map((s) => s.split(' ')[1]),
+      ['0-3', '3-7'],
+    );
+    assert.deepEqual(
+      layout(out).a2.map((s) => s.split(' ')[1]),
+      ['0-3', '4-5'],
+    );
     const tail = out.tracks[0].clips[1];
     assert.deepEqual([tail.sourceIn, tail.sourceOut], [1, 5]);
     assert.equal(tail.linkedClipId, out.tracks[1].clips[1].clipId);
-    assert.deepEqual(out.markers.map((m) => m.time), [2, 3], 'markers inside vanish, later ones move');
+    assert.deepEqual(
+      out.markers.map((m) => m.time),
+      [2, 3],
+      'markers inside vanish, later ones move',
+    );
   });
 
   it('accepts the range in either order and ignores an empty one', () => {

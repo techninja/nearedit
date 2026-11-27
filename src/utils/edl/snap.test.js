@@ -18,9 +18,14 @@ describe('snapCandidates', () => {
     const list = snapCandidates(doc(), { playhead: 7.5, extra: [3.3, NaN] });
     assert.deepEqual(list[0], { time: 7.5, type: 'playhead' });
     assert.deepEqual(list[1], { time: 10, type: 'marker', id: 'mk' });
-    assert.ok(list.some((c) => c.type === 'clip' && c.id === 'b' && c.edge === 'end' && c.time === 9));
+    assert.ok(
+      list.some((c) => c.type === 'clip' && c.id === 'b' && c.edge === 'end' && c.time === 9),
+    );
     assert.ok(list.some((c) => c.type === 'origin' && c.time === 0));
-    assert.deepEqual(list.filter((c) => c.type === 'extra').map((c) => c.time), [3.3]);
+    assert.deepEqual(
+      list.filter((c) => c.type === 'extra').map((c) => c.time),
+      [3.3],
+    );
     assert.equal(list.length, 1 + 1 + 6 + 1 + 1);
   });
 
@@ -28,7 +33,10 @@ describe('snapCandidates', () => {
     const none = snapCandidates(doc(), { clips: false, markers: false });
     assert.deepEqual(none, [{ time: 0, type: 'origin' }]);
     const skipped = snapCandidates(doc(), { exclude: ['a', 's'] });
-    assert.deepEqual(skipped.filter((c) => c.type === 'clip').map((c) => c.id), ['b', 'b']);
+    assert.deepEqual(
+      skipped.filter((c) => c.type === 'clip').map((c) => c.id),
+      ['b', 'b'],
+    );
   });
 
   it('reuses a precomputed list', () => {
@@ -47,7 +55,11 @@ describe('snapTime', () => {
   });
 
   it('leaves the time alone outside the threshold', () => {
-    assert.deepEqual(snapTime(doc(), 5.5, { threshold: 0.1 }), { time: 5.5, snapped: false, target: null });
+    assert.deepEqual(snapTime(doc(), 5.5, { threshold: 0.1 }), {
+      time: 5.5,
+      snapped: false,
+      target: null,
+    });
   });
 
   it('prefers the closest candidate, and the playhead on a tie', () => {

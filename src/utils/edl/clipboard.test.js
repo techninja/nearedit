@@ -22,7 +22,13 @@ describe('copyClips', () => {
     assert.equal(clipboard.kind, 'nearedit/clips');
     assert.deepEqual([clipboard.start, clipboard.duration], [2, 4]);
     assert.deepEqual(
-      clipboard.items.map((i) => [i.type, i.row, i.clip.clipId, i.clip.timelineStart, i.clip.timelineEnd]),
+      clipboard.items.map((i) => [
+        i.type,
+        i.row,
+        i.clip.clipId,
+        i.clip.timelineStart,
+        i.clip.timelineEnd,
+      ]),
       [
         ['video', 0, 't', 1, 3],
         ['video', 1, 'a', 0, 4],
@@ -85,7 +91,11 @@ describe('pasteClips', () => {
     const hard = assertValid(pasteClips(start, clipboard, { time: 2, autoCrossfade: false }));
     assert.deepEqual(spans(hard, 'v1'), ['0-2', '2-6', '6-8', '8-12']);
     const exact = assertValid(pasteClips(start, clipboard, { time: 4 }));
-    assert.deepEqual(spans(exact, 'v1'), ['0-4', '4-8', '8-12'], 'the copy replaces what it covers');
+    assert.deepEqual(
+      spans(exact, 'v1'),
+      ['0-4', '4-8', '8-12'],
+      'the copy replaces what it covers',
+    );
     assert.equal(clipOf(exact, 'y'), undefined);
   });
 
@@ -109,7 +119,10 @@ describe('pasteClips', () => {
   it('ignores an empty clipboard and clamps the time at 0', () => {
     const start = doc();
     assert.equal(pasteClips(start, null), start);
-    assert.equal(pasteClips(start, { kind: 'nearedit/clips', start: 0, duration: 0, items: [] }), start);
+    assert.equal(
+      pasteClips(start, { kind: 'nearedit/clips', start: 0, duration: 0, items: [] }),
+      start,
+    );
     const out = pasteClips(start, copyClips(start, ['t']), { time: -4 });
     assert.deepEqual(spans(out, 'v2'), ['0-2', '3-5']);
   });

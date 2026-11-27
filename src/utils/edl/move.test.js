@@ -118,7 +118,11 @@ describe('moveClips — between tracks', () => {
     const down = moveClips(doc(), ['title', 'p'], { delta: 1, anchorId: 'title', toTrackId: 'v1' });
     assert.deepEqual(layout(down).v2, ['title 2-4']);
     assert.deepEqual(layout(down).v1, ['p 1-5', 'q 6-10']);
-    const up = moveClips(doc(), ['title', 'p'], { anchorId: 'title', toTrackId: 'v3', linked: false });
+    const up = moveClips(doc(), ['title', 'p'], {
+      anchorId: 'title',
+      toTrackId: 'v3',
+      linked: false,
+    });
     assert.deepEqual(layout(up).v3, ['title 1-3', 's1 2-4', 's2 6-8']);
     assert.deepEqual(layout(up).v2, ['p 0-4']);
     assertValid(up);

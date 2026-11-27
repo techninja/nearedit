@@ -52,8 +52,8 @@ test('search ranks by tags, description, keyframes and transcript', async () => 
   assert.deepEqual(rank('city traffic')[0], 'city.mp4');
   assert.deepEqual(rank('a clip of the park sign')[0], 'sign.png');
   // Material already on the timeline is handicapped, not excluded.
-  assert.deepEqual(rank('beach or city streets'), ['beach.mp4', 'city.mp4', 'interview.mp4']);
-  assert.deepEqual(rank('beach or city streets', new Set([P['broll/beach.mp4']])).slice(0, 2), [
+  assert.deepEqual(rank('beach and city'), ['beach.mp4', 'city.mp4', 'interview.mp4']);
+  assert.deepEqual(rank('beach and city', new Set([P['broll/beach.mp4']])).slice(0, 2), [
     'city.mp4',
     'beach.mp4',
   ]);
@@ -95,7 +95,7 @@ test('default: a ripple insert at the playhead on the track it interrupts', asyn
 test('count, length and sound follow the params', async () => {
   const params = { count: 2, duration: 2, naturalSound: 'off' };
   const result = await run(talkingHead(), {
-    prompt: 'beach or city streets',
+    prompt: 'beach and city',
     params,
     mode: 'append',
   });

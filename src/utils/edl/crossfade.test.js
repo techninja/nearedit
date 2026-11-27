@@ -116,7 +116,9 @@ describe('cross-fades (invariant 4)', () => {
   });
 
   it('cross-fades on both edges when a clip bridges a gap', () => {
-    const start = testEdl({ v1: [testClip('a', 0, 5), testClip('b', 8, 12), testClip('c', 20, 25)] });
+    const start = testEdl({
+      v1: [testClip('a', 0, 5), testClip('b', 8, 12), testClip('c', 20, 25)],
+    });
     const out = assertValid(moveClips(start, ['c'], { delta: -16 }));
     assert.deepEqual(layout(out).v1, ['a 0-5', 'c 4-9', 'b 8-12']);
     assert.deepEqual([clipOf(out, 'c').fadeIn, clipOf(out, 'c').fadeOut], [1, 1]);
@@ -143,8 +145,14 @@ describe('overwrites keep linked partners consistent', () => {
 
   it('cuts the partner over the same range and re-links each side', () => {
     const out = assertValid(moveClips(linked(), ['pic'], { delta: -16 }));
-    assert.deepEqual(layout(out).v1.map((s) => s.split(' ')[1]), ['0-4', '4-6', '6-10']);
-    assert.deepEqual(layout(out).a1.map((s) => s.split(' ')[1]), ['0-4', '6-10']);
+    assert.deepEqual(
+      layout(out).v1.map((s) => s.split(' ')[1]),
+      ['0-4', '4-6', '6-10'],
+    );
+    assert.deepEqual(
+      layout(out).a1.map((s) => s.split(' ')[1]),
+      ['0-4', '6-10'],
+    );
     const [vLeft, , vRight] = out.tracks[0].clips;
     const [aLeft, aRight] = out.tracks[1].clips;
     assert.deepEqual([vLeft.clipId, vLeft.linkedClipId], ['a', 'a_snd']);
@@ -172,6 +180,10 @@ describe('overwrites keep linked partners consistent', () => {
     assert.deepEqual(layout(cutaway).a1, ['a_snd 0-10']);
     const gone = assertValid(moveClips(toggleTrackLock(big, 'a1'), ['big'], { delta: -9 }));
     assert.deepEqual(layout(gone), { v1: ['big 1-11'], a1: ['a_snd 2-4'] });
-    assert.equal(clipOf(gone, 'a_snd').linkedClipId, '', 'only the link of a locked clip may change');
+    assert.equal(
+      clipOf(gone, 'a_snd').linkedClipId,
+      '',
+      'only the link of a locked clip may change',
+    );
   });
 });

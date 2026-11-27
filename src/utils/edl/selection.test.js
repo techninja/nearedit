@@ -20,7 +20,10 @@ const doc = () =>
         testClip('b', 5, 8, { groupId: 'g1' }),
         testClip('c', 9, 12, { linkedClipId: 'c_s' }),
       ],
-      a1: [testClip('a_s', 0, 4, { linkedClipId: 'a' }), testClip('c_s', 9, 12, { linkedClipId: 'c', groupId: 'g2' })],
+      a1: [
+        testClip('a_s', 0, 4, { linkedClipId: 'a' }),
+        testClip('c_s', 9, 12, { linkedClipId: 'c', groupId: 'g2' }),
+      ],
       a2: [testClip('m', 0, 30, { groupId: 'g2' })],
     }),
   );
@@ -73,7 +76,10 @@ describe('groupClips / ungroupClips', () => {
 describe('linkClips / unlinkClips', () => {
   it('links two clips and releases their previous partners (invariant 5)', () => {
     const out = assertValid(linkClips(doc(), 'a', 'c_s'));
-    assert.deepEqual([clipOf(out, 'a').linkedClipId, clipOf(out, 'c_s').linkedClipId], ['c_s', 'a']);
+    assert.deepEqual(
+      [clipOf(out, 'a').linkedClipId, clipOf(out, 'c_s').linkedClipId],
+      ['c_s', 'a'],
+    );
     assert.deepEqual([clipOf(out, 'a_s').linkedClipId, clipOf(out, 'c').linkedClipId], ['', '']);
   });
 
@@ -110,7 +116,10 @@ describe('clipsInRange (marquee) and newClipIds', () => {
 
   it('newClipIds lists what an operation created', () => {
     const before = doc();
-    const after = { ...before, tracks: [{ ...before.tracks[0], clips: [testClip('new', 20, 21)] }] };
+    const after = {
+      ...before,
+      tracks: [{ ...before.tracks[0], clips: [testClip('new', 20, 21)] }],
+    };
     assert.deepEqual(newClipIds(before, after), ['new']);
     assert.deepEqual(newClipIds(before, before), []);
   });
