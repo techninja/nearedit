@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+node_modules
+src/vendor
+src/icons.json
+data
+media
+.env.local
+**/*.test.js
+tests
+docs
+notes.md

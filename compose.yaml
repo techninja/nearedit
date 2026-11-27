@@ -1,0 +1,23 @@
+# Example deployment. Adjust the two host paths, then: docker compose up -d
+services:
+  nearedit:
+    build: .
+    ports:
+      - "6556:6556"
+    volumes:
+      - ./data:/data
+      - /path/to/your/footage:/media
+    environment:
+      # NEAREDIT_PASSWORD: change-me        # recommended on a shared network
+      LLM_PROVIDER: none                    # or: ollama / openai (see CONFIGURATION.md)
+      VISION_PROVIDER: none
+      TRANSCRIBE_PROVIDER: none
+      # OLLAMA_URL: http://ollama:11434
+    restart: unless-stopped
+
+  # Optional local LLM for the AI director and visual tagging:
+  # ollama:
+  #   image: ollama/ollama
+  #   volumes:
+  #     - ./ollama:/root/.ollama
+  #   restart: unless-stopped
