@@ -47,7 +47,7 @@ function liveJob(file) {
  */
 function startJob(sourcePath, sourceStat, entry, duration) {
   const label = `Waveform: ${basename(sourcePath)}`;
-  return runJob('waveform', { path: sourcePath }, { label }, async ({ signal, progress }) => {
+  return runJob('waveform', { path: sourcePath }, { label }, async ({ job, signal, progress }) => {
     try {
       const audio = needsWav(sourcePath) ? await ensureWav(sourcePath, sourceStat) : sourcePath;
       progress(10, 'Reading audio');
@@ -65,7 +65,8 @@ function startJob(sourcePath, sourceStat, entry, duration) {
       }
       throw err;
     } finally {
-      inFlight.delete(entry.file);
+      // A cancelled job may already have been replaced by a newer one for this file.
+      if (inFlight.get(entry.file) === job) inFlight.delete(entry.file);
     }
   });
 }

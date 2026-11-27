@@ -7,7 +7,7 @@
  * @module api/lib/registry
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, rmSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { getConfig } from './config.js';
 
@@ -19,8 +19,13 @@ import { getConfig } from './config.js';
 export function writeJsonAtomic(filePath, data) {
   mkdirSync(dirname(filePath), { recursive: true });
   const tmp = `${filePath}.${process.pid}.tmp`;
-  writeFileSync(tmp, JSON.stringify(data, null, 2));
-  renameSync(tmp, filePath);
+  try {
+    writeFileSync(tmp, JSON.stringify(data, null, 2));
+    renameSync(tmp, filePath);
+  } catch (err) {
+    rmSync(tmp, { force: true }); // a failed write (full disk, bad target) leaves no debris
+    throw err;
+  }
 }
 
 /**

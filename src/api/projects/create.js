@@ -10,7 +10,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
-import { HttpError, assertValid } from '../lib/httpErrors.js';
+import { HttpError, assertValid, isAccessDenied } from '../lib/httpErrors.js';
 import {
   loadRegistry,
   projectFilePath,
@@ -133,7 +133,7 @@ export function createProject(body) {
     mkdirSync(dir, { recursive: true });
     writeJsonAtomic(file, project);
   } catch (err) {
-    if (!['EACCES', 'EPERM', 'EROFS'].includes(err.code)) throw err;
+    if (!isAccessDenied(err)) throw err;
     throw new HttpError(403, 'The server is not allowed to write to this folder', { detail: dir });
   }
   register(project, dir);

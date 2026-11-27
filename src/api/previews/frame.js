@@ -20,6 +20,8 @@ import {
 export const FRAME_LIMITS = { height: [16, 2160], defaultHeight: 360 };
 const MAX_RECENT = 100;
 const TIMEOUT_MS = 30_000;
+/** How far back to look for the last frame when the requested time has none. */
+const TAIL_SECONDS = 2;
 
 /** @type {Map<string, Buffer>} ETag → JPEG, oldest first */
 const recent = new Map();
@@ -69,15 +71,27 @@ export async function frameJpeg(sourcePath, sourceStat, opts) {
 
   return pictureLimit(async () => {
     const picture = await describePicture(sourcePath, sourceStat);
-    // Asking for the very end would land after the last frame; step back one.
-    const lastFrame = Math.max(0, picture.duration - 1 / picture.fps);
-    const seek = picture.still ? [] : ['-ss', Math.min(opts.time, lastFrame).toFixed(3)];
-    const filter = scaleFilter(`min(${opts.height - (opts.height % 2)}\\,ih)`);
-    const output = ['-an', '-frames:v', '1', '-vf', filter, '-q:v', '3', '-f', 'mjpeg', 'pipe:1'];
+    const time = Math.min(opts.time, picture.duration);
+    const scale = scaleFilter(`min(${opts.height - (opts.height % 2)}\\,ih)`);
+    /**
+     * @param {string[]} seek - Input options placed before the source
+     * @param {string} filter
+     * @returns {Promise<Buffer>} Empty when ffmpeg found no frame
+     */
+    const grab = async (seek, filter) => {
+      const output = ['-an', '-frames:v', '1', '-vf', filter, '-q:v', '3', '-f', 'mjpeg', 'pipe:1'];
+      const args = [...FFMPEG_BASE, ...seek, '-i', sourcePath, ...output];
+      return (await run('ffmpeg', args, { binary: true, timeout: TIMEOUT_MS })).stdout;
+    };
     let jpeg;
     try {
-      const args = [...FFMPEG_BASE, ...seek, '-i', sourcePath, ...output];
-      jpeg = (await run('ffmpeg', args, { binary: true, timeout: TIMEOUT_MS })).stdout;
+      jpeg = await grab(picture.still ? [] : ['-ss', time.toFixed(3)], scale);
+      if (!jpeg.length && !picture.still) {
+        // Past the last frame: the picture often ends a little before the file
+        // does (longer audio). Use the last frame within reach instead.
+        const from = Math.max(0, time - TAIL_SECONDS).toFixed(3);
+        jpeg = await grab(['-ss', from], `${scale},reverse`);
+      }
     } catch (err) {
       throw pictureError(err, 'Could not read a frame from this file');
     }

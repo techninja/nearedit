@@ -1,5 +1,14 @@
 import assert from 'node:assert/strict';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { projectsRouter } from '../../src/api/projects.js';
@@ -15,8 +24,8 @@ before(async () => {
   api = await serve(projectsRouter);
 });
 after(async () => {
-  await api.close();
-  box.cleanup();
+  await api?.close();
+  box?.cleanup();
 });
 
 describe('creating projects', () => {
@@ -88,7 +97,10 @@ describe('creating projects', () => {
     assert.equal(res.status, 201);
     assert.notEqual(res.body.id, created.id);
     assert.equal(readFile(copy).id, res.body.id);
-    assert.equal((await call(api.url, 'GET', `/api/projects/${created.id}`)).body.path, box.project);
+    assert.equal(
+      (await call(api.url, 'GET', `/api/projects/${created.id}`)).body.path,
+      box.project,
+    );
   });
 
   it('refuses a project file it cannot read rather than replacing it', async () => {
@@ -119,6 +131,14 @@ describe('creating projects', () => {
     assert.ok(!existsSync(join(box.outside, '.nearedit')));
     assert.ok(!existsSync(join(box.outside, 'sub')));
   });
+
+  it('refuses a new folder reached through a symlink that leaves the roots', async () => {
+    symlinkSync(box.outside, join(box.home, 'escape'));
+    const path = join(box.home, 'escape', 'smuggled');
+    const res = await call(api.url, 'POST', '/api/projects', { name: 'Evil', path });
+    assert.equal(res.status, 403);
+    assert.ok(!existsSync(join(box.outside, 'smuggled')));
+  });
 });
 
 describe('reading and updating projects', () => {
@@ -140,8 +160,6 @@ describe('reading and updating projects', () => {
   it('keeps listing a project whose folder is unreachable', async () => {
     const dir = join(box.home, 'unplugged');
     const made = (await call(api.url, 'POST', '/api/projects', { name: 'Gone', path: dir })).body;
-    cpSync(dir, `${dir}-moved`, { recursive: true });
-    const { rmSync } = await import('node:fs');
     rmSync(dir, { recursive: true });
     const listed = (await call(api.url, 'GET', '/api/projects')).body.data;
     const entry = listed.find((p) => p.id === made.id);

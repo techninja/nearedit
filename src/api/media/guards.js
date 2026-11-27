@@ -7,17 +7,16 @@ import { statSync } from 'node:fs';
 import { checkMediaPath } from '../lib/paths.js';
 
 /**
- * Express middleware factory: the path in the query string (or JSON body)
- * must be inside the allowed roots (403 otherwise) and be an existing regular
- * file (404). On success the resolved path is on `res.locals.mediaPath` and
- * its `fs.Stats` on `res.locals.mediaStat`.
- * @param {string} [key='path'] - Query/body field holding the path
+ * Express middleware factory: the path in the query string must be inside
+ * the allowed roots (403 otherwise) and be an existing regular file (404).
+ * On success the resolved path is on `res.locals.mediaPath` and its
+ * `fs.Stats` on `res.locals.mediaStat`.
+ * @param {string} [key='path'] - Query field holding the path
  * @returns {import('express').RequestHandler}
  */
 export function requireMediaFile(key = 'path') {
   return (req, res, next) => {
-    const given = req.query?.[key] ?? req.body?.[key];
-    const result = checkMediaPath(given);
+    const result = checkMediaPath(req.query?.[key]);
     if (result.ok === false) return res.status(result.status).json({ error: result.error });
     let stat;
     try {

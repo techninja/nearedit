@@ -3,7 +3,6 @@ src/vendor/
 src/icons.json
 
 # Server state and caches
-data/db.json
 data/registry.json
 data/renders/
 data/previews/

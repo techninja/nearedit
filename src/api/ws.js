@@ -5,7 +5,9 @@
  * @module api/ws
  */
 
-import WebSocket from 'ws';
+// @ts-ignore -- the installed @types/ws (7.x) predates the named ESM exports of ws 8;
+// "ignore" rather than "expect-error" so a newer @types/ws does not break the type-check
+import { WebSocketServer } from 'ws';
 import { subscribe } from './lib/jobs.js';
 
 const HEARTBEAT_MS = 30_000;
@@ -24,8 +26,11 @@ const MAX_BUFFERED_BYTES = 8 * 1024 * 1024;
  */
 function sameOrigin({ origin, req }) {
   if (!origin) return true;
+  // Behind a reverse proxy the public host arrives in X-Forwarded-Host. A web
+  // page cannot set that header on a WebSocket handshake, so trusting it is safe.
+  const hosts = [req.headers.host, req.headers['x-forwarded-host']];
   try {
-    return new URL(origin).host === req.headers.host;
+    return hosts.includes(new URL(origin).host);
   } catch {
     return false; // an unparseable Origin is not ours
   }
@@ -43,7 +48,7 @@ function sameOrigin({ origin, req }) {
  */
 export function attachWebSocket(server, opts = {}) {
   const { heartbeatMs = HEARTBEAT_MS } = opts;
-  const wss = new WebSocket.Server({
+  const wss = new WebSocketServer({
     server,
     path: '/ws',
     maxPayload: MAX_INBOUND_BYTES,
@@ -57,7 +62,7 @@ export function attachWebSocket(server, opts = {}) {
     ws.on('pong', () => alive.add(ws));
 
     const unsubscribe = subscribe((message) => {
-      if (ws.readyState !== WebSocket.OPEN) return;
+      if (ws.readyState !== ws.OPEN) return;
       if (ws.bufferedAmount > MAX_BUFFERED_BYTES) return ws.terminate();
       ws.send(message);
     });

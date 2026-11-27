@@ -29,6 +29,16 @@ export function assertValid(fields) {
   if (Object.keys(fields).length) throw new HttpError(422, 'Validation failed', { fields });
 }
 
+/**
+ * True for file-system errors that mean the OS will not let the server read
+ * or write somewhere (permissions, a read-only mount) — a 403, not a 500.
+ * @param {any} err
+ * @returns {boolean}
+ */
+export function isAccessDenied(err) {
+  return ['EACCES', 'EPERM', 'EROFS'].includes(err?.code);
+}
+
 /** Problems raised by the body parser, by `err.type`. */
 const BODY_ERRORS = {
   'entity.parse.failed': 'Malformed JSON body',

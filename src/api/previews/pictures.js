@@ -32,8 +32,8 @@ export function scaleFilter(height) {
  * What kind of picture a file holds, and how long it runs.
  * @param {string} sourcePath
  * @param {{ mtimeMs: number, size: number }} sourceStat
- * @returns {Promise<{ still: boolean, duration: number, fps: number }>} `still` for images
- *   and for video files without a usable duration
+ * @returns {Promise<{ still: boolean, duration: number }>} `still` for images and for
+ *   video files without a usable duration
  * @throws {HttpError} 422 when the file has no picture
  */
 export async function describePicture(sourcePath, sourceStat) {
@@ -45,7 +45,7 @@ export async function describePicture(sourcePath, sourceStat) {
   if (!info) throw new HttpError(422, 'This file cannot be read as media');
   if (!info.hasVideo) throw new HttpError(422, 'This file has no picture to preview');
   const duration = type === 'video' && info.duration > 0 ? info.duration : 0;
-  return { still: duration === 0, duration, fps: info.fps > 0 ? info.fps : 30 };
+  return { still: duration === 0, duration };
 }
 
 /**

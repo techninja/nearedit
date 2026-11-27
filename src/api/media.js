@@ -7,7 +7,7 @@
 
 import { existsSync } from 'node:fs';
 import { Router } from 'express';
-import { HttpError, errorHandler } from './lib/httpErrors.js';
+import { HttpError, errorHandler, isAccessDenied } from './lib/httpErrors.js';
 import { mediaType } from './lib/mediaScan.js';
 import { stringParam } from './lib/params.js';
 import { sendFile } from './lib/sendFile.js';
@@ -43,7 +43,13 @@ mediaRouter.put('/sidecar', requireMediaFile(), (req, res) => {
   if (isSidecarFile(mediaPath) || !mediaType(mediaPath)) {
     throw new HttpError(400, 'Sidecars can only be written for media files');
   }
-  res.json(updateSidecar(mediaPath, cleanSidecarPatch(req.body)));
+  const patch = cleanSidecarPatch(req.body);
+  try {
+    res.json(updateSidecar(mediaPath, patch));
+  } catch (err) {
+    if (!isAccessDenied(err)) throw err;
+    throw new HttpError(403, 'The server is not allowed to write next to this file');
+  }
 });
 
 mediaRouter.use(errorHandler);

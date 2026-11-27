@@ -10,7 +10,7 @@ import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { Router } from 'express';
 import { getConfig } from './lib/config.js';
-import { HttpError, assertValid, errorHandler } from './lib/httpErrors.js';
+import { HttpError, assertValid, errorHandler, isAccessDenied } from './lib/httpErrors.js';
 import { stringParam } from './lib/params.js';
 import { isBrowsablePath } from './lib/paths.js';
 import { projectFilePath } from './lib/registry.js';
@@ -52,7 +52,7 @@ function listDirs(dir) {
   try {
     entries = readdirSync(dir, { withFileTypes: true });
   } catch (err) {
-    if (!['EACCES', 'EPERM'].includes(err.code)) throw err;
+    if (!isAccessDenied(err)) throw err;
     throw new HttpError(403, 'The server is not allowed to read this folder');
   }
   return entries
@@ -98,7 +98,7 @@ browseRouter.post('/browse/mkdir', (req, res) => {
   try {
     mkdirSync(target);
   } catch (err) {
-    if (!['EACCES', 'EPERM', 'EROFS'].includes(err.code)) throw err;
+    if (!isAccessDenied(err)) throw err;
     throw new HttpError(403, 'The server is not allowed to create a folder here');
   }
   res.status(201).json({ path: target });
