@@ -1,9 +1,24 @@
 node_modules/
 src/vendor/
 src/icons.json
+
+# Server state and caches
 data/db.json
 data/registry.json
 data/renders/
 data/previews/
+data/transcode/
+data/tmp/
+
+# Local configuration
 .env.local
+
+# Project files and analysis sidecars written next to media
 .nearedit/
+*.nearedit.json
+
+# Dev fallback media folder: keep the folder, not its contents
+media/*
+!media/.gitkeep
+
+.DS_Store
