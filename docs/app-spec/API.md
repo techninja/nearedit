@@ -30,7 +30,7 @@ project directory, one of its `mediaFolders`, a global media path, the dev
 | POST | `/projects/:id/adaptations` | `{ name, aspectRatio, resolution?, fps?, parentAdaptationId?, copyFrom? }` → `201 Adaptation`. Without `resolution` one is derived from the aspect ratio. `copyFrom` deep-copies that adaptation's EDL |
 | PUT | `/projects/:id/adaptations/:aid` | Update name, aspectRatio, resolution, fps, status |
 | DELETE | `/projects/:id/adaptations/:aid` | Children are re-parented to the deleted one's parent. The last adaptation cannot be deleted (409) |
-| GET | `/projects/:id/edl/:aid` | The adaptation's EDL (normalised to v2) |
+| GET | `/projects/:id/edl/:aid` | The adaptation's EDL (normalised to v3) |
 | PUT | `/projects/:id/edl/:aid` | Replace the EDL → `{ ok, adaptationId, updatedAt }`. The document is normalised, then validated (422 with `fields` when it still breaks an invariant). A changed `fps` or `resolution` is written through to the adaptation |
 
 A project is `{ id, name, description, status, path, available,
@@ -234,7 +234,7 @@ edit-plan format and the track layout it produces are described in
 
 Fragment clip times are **relative to the fragment start (0)**. `index` is
 the Nth track of that `type` in the document (0 = first); missing tracks are
-created. Clips are complete v2 clips (`createClip`). `range` is `null`
+created. Clips are complete v3 clips (`createClip`). `range` is `null`
 unless the mode is `range`; a result also carries its `duration`.
 
 Actions that rewrite existing clips in place — `remove_silence`,
@@ -254,7 +254,7 @@ unreachable; the other actions never depend on it.
 | ------ | ----- | ------- |
 | GET | `/render/presets` | `{ data: [{ id, label, description }] }` |
 | POST | `/render` | `{ projectId, adaptationId, edl?, preset?, range?, filename? }` → `202 { jobId }`. Without `edl` the saved one is rendered |
-| POST | `/render/plan` | Same body → `{ args, filterComplex, duration, width, height, fps, inputs, files, warnings, segments }` without running (inspection, tests) |
+| POST | `/render/plan` | Same body → `{ engine, args, filterComplex, duration, width, height, fps, inputs, files, warnings, segments }` without running (inspection, tests). Each segment has `engine` (`ffmpeg` or `canvas`) and `reasons` — why it needs the compositor |
 | GET | `/renders?projectId=` | `{ data: [{ file, url, size, createdAt, projectId, adaptationId, preset, duration, width, height, fps, range }], total }` |
 | GET | `/render/file/:name` | Stream a finished render (range supported); `?download` sends it as an attachment |
 | DELETE | `/render/file/:name` | Delete a finished render |
@@ -264,8 +264,11 @@ A `render` job's result is
 `{ output, file, url, duration, size, width, height, fps }`. Cancelling the
 job kills FFmpeg and removes the partial file.
 
-Every `sourceFile` in a posted EDL must pass the media allow-list (403). An
-empty timeline, or one with only placeholders or muted tracks, is a 422. An
+Every `sourceFile` in a posted EDL, and every image a generator or an
+effect names (a particle sprite, for one), must pass the media allow-list
+(403). An empty timeline, or one with only placeholders or muted tracks, is
+a 422; so is a timeline that needs the compositor while the server runs
+with `RENDER_ENGINE=ffmpeg`. An
 existing render is never overwritten: a second "My Cut" becomes
 `My Cut-2.mp4`. Long timelines are rendered in segments and joined without
 re-encoding. How the graph is built, the presets and the limits:

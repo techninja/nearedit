@@ -2,6 +2,9 @@
   "name": "nearedit",
   "version": "1.0.0",
   "main": "src/server.js",
+  "bin": {
+    "nearedit": "bin/nearedit.js"
+  },
   "scripts": {
     "test": "node scripts/test.js",
     "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/server.js",

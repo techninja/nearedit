@@ -9,6 +9,11 @@ import { catalog } from '#utils/compose/index.js';
 import { parseArgs, UsageError } from './args.js';
 
 const OPTIONS = { json: { type: /** @type {'flag'} */ ('flag') } };
+/** The parts of the catalog this command knows how to lay out. */
+const SECTIONS = [
+  ...['generators', 'effects', 'effectPresets', 'blendModes'],
+  ...['easings', 'textAnimations', 'textUnits', 'fonts'],
+];
 
 /**
  * One parameter as a line: name, type and range, default, whether it animates.
@@ -58,7 +63,18 @@ export async function catalogCommand(argv, io) {
     return 0;
   }
   const names = (/** @type {any[]} */ list) =>
-    list.map((entry) => (typeof entry === 'string' ? entry : entry.id)).join(', ');
+    list
+      .map((entry) => (typeof entry === 'string' ? entry : entry.id || entry.type || entry.name))
+      .join(', ');
+  // Ready-made effect stacks, when the catalog has them: what each is made of.
+  const presets = (all.effectPresets || []).map(
+    (/** @type {any} */ preset) =>
+      `  ${preset.name} — ${preset.description || preset.label} [${names(preset.effects)}]`,
+  );
+  // Whatever the catalog grows next is at least named here; --json has it in full.
+  const more = Object.keys(all)
+    .filter((key) => !SECTIONS.includes(key) && Array.isArray(all[key]))
+    .map((key) => `${key}\n  ${names(all[key])}\n`);
   const fonts = all.fonts.map(
     (/** @type {any} */ font) =>
       `  ${font.id}${font.generic ? ` (${font.generic})` : ''}: weights ${font.weights.join(', ')}`,
@@ -69,6 +85,9 @@ export async function catalogCommand(argv, io) {
       'Effects — clip.effects[] / track.effects[] = { effectId, type, enabled, params }',
       all.effects,
     ),
+    ...(presets.length ? ['Effect presets — stacks of effects to copy into "effects"'] : []),
+    ...presets,
+    ...(presets.length ? [''] : []),
     `Blend modes — clip.blendMode, track.blendMode\n  ${names(all.blendModes)}\n`,
     `Easings — keyframe "ease"\n  ${names(all.easings)}\n`,
     `Text animations — text.animateIn.type, text.animateOut.type\n  ${names(all.textAnimations)}`,
@@ -76,6 +95,7 @@ export async function catalogCommand(argv, io) {
     'Fonts — text.fontFamily',
     ...fonts,
     '',
+    ...more,
     'Every parameter is optional; a document stores only what differs from the default.',
     'The same as JSON: nearedit catalog --json',
   ];

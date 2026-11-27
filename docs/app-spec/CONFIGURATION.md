@@ -18,7 +18,9 @@ a few provider-specific ones (marked †) are read in
 | `NEAREDIT_MEDIA_DIR` | `./media` | Fallback media folder when a project has none |
 | `GLOBAL_MEDIA_PATHS` | empty | Comma-separated folders shared by every project (logos, stings, music) |
 | `BROWSE_ROOTS` | home directory | Comma-separated folders the in-app folder browser may list |
-| `RENDER_CONCURRENCY` | `1` | Simultaneous FFmpeg renders |
+| `RENDER_CONCURRENCY` | `1` | Simultaneous render jobs |
+| `RENDER_ENGINE` | `auto` | `auto` uses the FFmpeg filter graph for plain footage and the canvas compositor for titles, generators, effects, keyframes and blend modes; `canvas` draws everything with the compositor; `ffmpeg` refuses (422) a timeline the filter graph cannot draw. See [RENDER.md](./RENDER.md) |
+| `RENDER_WORKERS` | half the cores, 1–4 | Segments of one render drawn at once. Each worker at 1080p needs about 1 GB; set `1` on a small machine |
 | `ANALYSIS_CONCURRENCY` | `1` | Simultaneous analysis jobs |
 
 ### Access and security

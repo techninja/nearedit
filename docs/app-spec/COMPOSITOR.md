@@ -195,8 +195,9 @@ export default {
 ```
 
 `generator.seed` reaches a generator as `params.seed`. A schema entry may
-carry a `label` and a `when: { otherParam: [values] }` hint that tells an
-editor when to show it. A module that throws is skipped with one warning;
+carry a `label`, a `when: { otherParam: [values] }` hint that tells an
+editor when to show it, and a `group` naming the section a long list shows
+it under. A module that throws is skipped with one warning;
 the rest of the frame is still drawn.
 
 Parameter types: `number` (`min`, `max`, `step`, `unit`), `color`, `boolean`,
@@ -331,7 +332,7 @@ nearedit render edit.json --preset draft       # the whole edit → edit.mp4
 | `render <edl.json> [-o out.mp4] [--preset draft\|standard\|high] [--range start:end] [--workers n]` | Encodes the document with the passes of the render job | Progress on stderr, the file's path on stdout |
 | `frame <edl.json> --time <seconds> [-o frame.png] [--width n]` | Draws the frame the render shows at that moment, footage included | The PNG's path on stdout |
 | `validate <edl.json> [--json]` | Normalises and checks the document | One line per problem with its path (`tracks[0].clips[2].generator.type: unknown generator …`); exit 1 when it cannot be rendered |
-| `catalog [--json]` | Lists generators and effects with every parameter (type, range, default), blend modes, easings, text animations, fonts — read from `catalog()` | Text, or one JSON object |
+| `catalog [--json]` | Lists generators and effects with every parameter (type, range, default), effect presets, blend modes, easings, text animations, fonts — read from `catalog()` | Text, or one JSON object |
 | `help [command]` | Explains | |
 
 - **A document** is one JSON file in the [EDL](./EDL.md) shape. Only what

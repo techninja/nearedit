@@ -20,6 +20,6 @@
       "#pages/*": ["../src/pages/*"]
     }
   },
-  "include": ["../src/**/*.js", "../scripts/**/*.js"],
+  "include": ["../src/**/*.js", "../scripts/**/*.js", "../bin/**/*.js", "../examples/**/*.js"],
   "exclude": ["../node_modules", "../src/vendor", "../**/*.test.js"]
 }

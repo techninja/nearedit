@@ -331,24 +331,25 @@ against a real FFmpeg 7 build. The canvas path needs `@napi-rs/canvas`
 ## Speed and memory
 
 Measured on a 4-core machine that was busy with other work (FFmpeg 6.1.1,
-1920×1080, 30 fps, `standard`, 10 s scenes); read the figures as lower
-bounds.
+1920×1080, 30 fps, `standard`, 10 s scenes, two runs); read the figures as
+lower bounds.
 
 | Scene | Renderer | Frames per second |
 | ----- | -------- | ----------------- |
-| One footage layer | filter graph | 32 |
-| One footage layer | canvas, 1 / 2 workers | 20 / 26 |
-| Two footage layers and an animated title | canvas, 1 / 2 workers | 25 / 22 |
-| Generators only (gradient, blended pattern, animated title) | canvas, 1 / 2 workers | 22 / 21 |
-| Blurred footage under a glowing title | canvas, 1 / 2 workers | 17 / 18 |
+| One footage layer | filter graph | 32–38 |
+| One footage layer | canvas, 1 / 2 workers | 18–20 / 18–26 |
+| Two footage layers and an animated title | canvas, 1 / 2 workers | 16–25 / 14–22 |
+| Generators only (gradient, blended pattern, animated title) | canvas, 1 / 2 workers | 21–22 / 21–26 |
+| Blurred footage under a glowing title | canvas, 1 / 2 workers | 13–17 / 18–19 |
 
 The encoder is the limit: with x264 taken out, one footage layer runs
 through the canvas path at 50 frames per second (decode 5 ms, draw 5 ms,
 read back 3 ms, hand over 6 ms); `draft` encodes it at 125. Plain footage is
-therefore 1.2 to 1.6 times slower on the canvas path than on the filter
-graph, which is why routing keeps it there. x264 already uses every core,
-so a second worker gains little on four cores; it pays off on larger
-machines and for scenes whose drawing is the slow part.
+about 1.5 to 2 times slower on the canvas path than on the filter graph,
+which is why routing keeps it there. x264 already uses every core, so a
+second worker gains little on four cores for a short scene; it pays off for
+scenes whose drawing is the slow part, on long mixed timelines (below) and
+on larger machines.
 
 Peak memory is the tool, its workers and every FFmpeg together, sampled
 while a mixed 1080p timeline rendered (5 s cuts of two HD files, a title
