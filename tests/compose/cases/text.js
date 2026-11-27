@@ -89,9 +89,9 @@ export function textDocs() {
 }
 
 /**
- * Colour emoji, kept apart: the vendored WOFF2 emoji subsets draw nothing
- * in Chromium (see src/api/compose/fonts.js), so the two canvases cannot
- * agree on this one until `scripts/vendor-fonts.js` ships intact files.
+ * Colour emoji, kept apart because it depends on the vendored emoji files:
+ * the package's WOFF2 subsets draw nothing in either canvas, so
+ * `scripts/vendor-fonts.js` ships its WOFF files instead.
  * @returns {any} A document
  */
 export const emojiDoc = () => titled('Emoji 🎬🔥👍🏽 too', { fontSize: 170 });

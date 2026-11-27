@@ -6,9 +6,11 @@ canvas (`@napi-rs/canvas`, the same Skia rasteriser Chromium uses) and pipes
 the frames to FFmpeg for encoding. Generators, effects, text and particles
 are therefore written once, and what you preview is what renders.
 
-Measured when this design was chosen: gradients, shapes, shadows, hundreds
-of additively blended sprites and CSS-style filters differ between the two
-canvases by at most 1 level in 255; text differs only at sub-pixel edges.
+`tests/compose/parity.test.js` draws a set of reference documents — every
+generator, text in many styles and mid-animation, effects, blend modes,
+track surfaces — on the server canvas and in real Chromium and requires
+them to match. On Linux they are bit-identical, text and colour emoji
+included.
 
 ```text
 EDL ──► resolveClip (keyframes) ──► layers ──► drawFrame(ctx, …) ──► canvas
@@ -118,6 +120,7 @@ receives:
 | `time.frame` | Output frame number of this moment |
 | `frame.width`, `frame.height` | Size of the canvas being drawn, pixels |
 | `frame.scale` | Canvas pixels per output pixel (`frame.width / outputWidth`) |
+| `frame.outWidth`, `frame.outHeight` | Output resolution, pixels |
 | `frame.fps` | Output frame rate |
 
 **Every length in the document is in output pixels.** Code multiplies by
@@ -157,8 +160,10 @@ spill outside the clip's rectangle.
 ## Module contracts
 
 Generators and effects live in `src/utils/compose/generators/` and
-`src/utils/compose/effects/`, one module each, registered in a catalog
-(`src/utils/compose/catalog.js`) that the UI, the director and the docs read.
+`src/utils/compose/effects/`, one module each plus one line in that folder's
+`index.js`. The catalog (`catalog()` in `src/utils/compose/index.js`), which
+the UI, the director and the docs read, picks them up from there.
+`src/utils/compose/README.md` walks through adding one.
 
 ```js
 /** A generator. */
@@ -181,10 +186,18 @@ export default {
   category: 'blur', // color | blur | stylize | light | key | distort
   params: { radius: { type: 'number', default: 8, min: 0, max: 200, unit: 'px', animatable: true } },
   filter: (params, frame) => `blur(${params.radius * frame.scale}px)`,
+  // How far the filter samples, so the frame's edge pixels can be extended
+  // outward and a full-frame blur does not darken the border:
+  reach: (params, frame) => params.radius * frame.scale * 3,
   // …or, for effects that need more than a filter:
   // apply(surface, params, time, frame, env) {}  — redraws surface.canvas in place
 };
 ```
+
+`generator.seed` reaches a generator as `params.seed`. A schema entry may
+carry a `label` and a `when: { otherParam: [values] }` hint that tells an
+editor when to show it. A module that throws is skipped with one warning;
+the rest of the frame is still drawn.
 
 Parameter types: `number` (`min`, `max`, `step`, `unit`), `color`, `boolean`,
 `select` (`options`), `text`, `image` (a media path), `point` (`{ x, y }` as
@@ -199,7 +212,8 @@ The only door to the outside. Compositor modules never touch `document`,
 
 | Member | Purpose |
 | ------ | ------- |
-| `createCanvas(width, height)` | A scratch canvas with a 2D context |
+| `createCanvas(width, height)` | A canvas with a 2D context |
+| `scratch(width?, height?)` | A pooled, cleared surface, taken back when the module returns |
 | `image(path)` | A decoded still or sprite for a media path, or `null` while it loads |
 | `frameOf(clip, sourceTime)` | The footage frame for a clip, or `null` when not available |
 | `fontReady(font, text)` | Whether the font is loaded (the browser loads on demand) |
@@ -237,12 +251,23 @@ the project (`sprite: "image"`, `image: "/abs/path.png"`).
 invert), `pixelate`, `chromaKey`, `wipe` (a soft-edged reveal for
 transitions), `rgbSplit`, `grain`.
 
+## Text animation
+
+`animateIn` plays from the clip's start and `animateOut` ends at its end,
+whatever the clip's source window. With `by` set to `line`, `word` or
+`char`, piece *i* starts `i × stagger` after the first and takes `duration`.
+Slides travel one font size and fade; `blur` starts at a quarter of the font
+size; `typewriter` reveals one piece at a time and erases from the end. With
+`by: block` the background box moves with the text; otherwise it stays put.
+
 ## Fonts
 
 Five families and colour emoji are bundled (`src/utils/compose/fonts.js`),
 vendored from `@fontsource` packages into `src/vendor/fonts/` at install.
 The browser loads them through `fonts.css`; the server registers the same
-files. A document that names another family gets the sans-serif default.
+files with their weight and style. A document that names another family gets
+the sans-serif default, and `fontString` only ever names a face that is
+bundled, so neither side synthesises one.
 
 ## Rendering on the server
 
