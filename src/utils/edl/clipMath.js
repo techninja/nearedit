@@ -39,14 +39,14 @@ export function isCrossfadeShape(a, b) {
 }
 
 /**
- * Move a clip in time without touching what it shows.
+ * Move a clip in time without touching what it shows. Both edges land on
+ * the frame grid.
  * @param {Clip} clip
  * @param {number} delta - Seconds
  * @param {number} fps
  * @returns {Clip}
  */
 export function shiftClip(clip, delta, fps) {
-  if (!delta) return clip;
   const timelineStart = snapToFrame(clip.timelineStart + delta, fps);
   const timelineEnd = snapToFrame(clip.timelineEnd + delta, fps);
   const drift = timelineEnd - timelineStart - (clip.timelineEnd - clip.timelineStart);

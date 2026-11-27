@@ -5,7 +5,7 @@
  * @module utils/playback/videoPool
  */
 
-import { unloadElement } from '#utils/playback/mediaSync.js';
+import { freshSync, unloadElement } from '#utils/playback/mediaSync.js';
 import { createSlot } from '#utils/playback/videoSlot.js';
 
 /** Idle elements kept loaded for reuse; the rest are unloaded. */
@@ -39,7 +39,7 @@ export function createVideoPool(onFrame) {
       if (!slot) slots.push((slot = createSlot(onFrame)));
       slot.clipId = clipId;
       slot.stale = true;
-      slot.seekAt = 0;
+      slot.sync = freshSync();
       if (slot.url !== url) {
         slot.url = url;
         slot.failed = false;

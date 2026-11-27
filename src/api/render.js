@@ -1,71 +1,103 @@
 /**
- * Render route — accepts JSON EDL, produces FFmpeg command, executes render.
+ * Render routes — thin: validation in render/request.js, the graph in
+ * render/plan.js, the job in render/job.js. Contract: docs/app-spec/API.md.
  * @module api/render
  */
 
 import { Router } from 'express';
-import { execFile } from 'node:child_process';
-import { resolve } from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { runJob } from './lib/jobRunner.js';
+import { getCapabilities } from './render/capabilities.js';
+import { RenderError } from './render/errors.js';
+import { runRender } from './render/job.js';
+import { buildRenderPlan, checkRenderable, renderSources } from './render/plan.js';
+import { listPresets } from './render/presets.js';
+import { probeSources } from './render/probe.js';
+import { parseRenderRequest } from './render/request.js';
+import {
+  deleteRender,
+  isRenderName,
+  listRenders,
+  rendersDir,
+  resolveRender,
+} from './render/store.js';
 
 export const renderRouter = Router();
 
-const MEDIA_DIR = resolve(process.cwd(), 'media');
-const OUTPUT_DIR = resolve(process.cwd(), 'data/renders');
-
 /**
- * Build FFmpeg filter_complex args from an EDL timeline.
- * @param {object} edl - The JSON EDL object
- * @returns {{ inputs: string[], filterComplex: string, outputFile: string }}
+ * Answer a failed request: expected problems keep their status, the rest are 500.
+ * @param {import('express').Response} res
+ * @param {any} err
  */
-function buildFfmpegArgs(edl) {
-  const inputs = [];
-  const filters = [];
-  const concatParts = [];
-  let idx = 0;
-
-  for (const track of edl.tracks) {
-    for (const clip of track.clips) {
-      const filePath = resolve(MEDIA_DIR, clip.sourceFile);
-      inputs.push('-i', filePath);
-
-      const trimFilter =
-        track.type === 'audio'
-          ? `[${idx}:a]atrim=start=${clip.sourceIn}:end=${clip.sourceOut},asetpts=PTS-STARTPTS[a${idx}]`
-          : `[${idx}:v]trim=start=${clip.sourceIn}:end=${clip.sourceOut},setpts=PTS-STARTPTS[v${idx}]`;
-      filters.push(trimFilter);
-      concatParts.push(track.type === 'audio' ? `[a${idx}]` : `[v${idx}]`);
-      idx++;
-    }
-  }
-
-  const hasVideo = edl.tracks.some((t) => t.type === 'video');
-  const hasAudio = edl.tracks.some((t) => t.type === 'audio');
-  const concatN = concatParts.length;
-  const concatType = hasVideo && hasAudio ? 'v=1:a=1' : hasVideo ? 'v=1:a=0' : 'v=0:a=1';
-  filters.push(`${concatParts.join('')}concat=n=${concatN}:${concatType}[out]`);
-
-  const outputFile = resolve(OUTPUT_DIR, `render_${Date.now()}.mp4`);
-  return { inputs, filterComplex: filters.join(';'), outputFile };
+function fail(res, err) {
+  if (err instanceof RenderError) return res.status(err.status).json(err.toJSON());
+  console.error('[render]', err);
+  res.status(500).json({ error: 'Render failed', detail: err.message });
 }
 
-/** POST /api/render — kick off an FFmpeg render from EDL JSON */
-renderRouter.post('/render', (req, res) => {
-  const edl = req.body;
-  if (!edl?.tracks?.length) return res.status(422).json({ error: 'Invalid EDL: no tracks' });
-
-  mkdirSync(OUTPUT_DIR, { recursive: true });
-
-  const { inputs, filterComplex, outputFile } = buildFfmpegArgs(edl);
-  const args = [...inputs, '-filter_complex', filterComplex, '-map', '[out]', '-y', outputFile];
-
-  execFile('ffmpeg', args, { timeout: 300_000 }, (err, stdout, stderr) => {
-    if (err) return res.status(500).json({ error: 'Render failed', detail: stderr });
-    res.json({ output: outputFile, log: stderr.slice(-500) });
-  });
+/** GET /api/render/presets — the selectable quality presets */
+renderRouter.get('/render/presets', (_req, res) => {
+  res.json({ data: listPresets() });
 });
 
-/** GET /api/render/status — placeholder for future queue-based renders */
-renderRouter.get('/render/status', (_req, res) => {
-  res.json({ queue: [], message: 'No active renders' });
+/** POST /api/render — start a render job */
+renderRouter.post('/render', (req, res) => {
+  try {
+    const request = parseRenderRequest(req.body);
+    checkRenderable(request.edl, request);
+    const { projectId, adaptationId, preset, range, filename } = request;
+    const job = runJob(
+      'render',
+      { projectId, adaptationId, preset, range, filename },
+      { projectId, label: `Render: ${request.name || 'timeline'}`, lane: 'render' },
+      (ctx) => runRender(request, ctx),
+    );
+    res.status(202).json({ jobId: job.id });
+  } catch (err) {
+    fail(res, err);
+  }
+});
+
+/** POST /api/render/plan — the FFmpeg arguments and graph, without running */
+renderRouter.post('/render/plan', async (req, res) => {
+  try {
+    const request = parseRenderRequest(req.body);
+    checkRenderable(request.edl, request);
+    const [probes, capabilities] = await Promise.all([
+      probeSources(renderSources(request.edl)),
+      getCapabilities(),
+    ]);
+    const { preset, range } = request;
+    const plan = buildRenderPlan(request.edl, { probes, capabilities, preset, range });
+    const { args, filterComplex, duration, inputs, files, warnings, width, height, fps } = plan;
+    res.json({ args, filterComplex, duration, inputs, files, warnings, width, height, fps });
+  } catch (err) {
+    fail(res, err);
+  }
+});
+
+/** GET /api/renders?projectId= — finished renders, newest first */
+renderRouter.get('/renders', (req, res) => {
+  const projectId = typeof req.query.projectId === 'string' ? req.query.projectId : '';
+  const data = listRenders(projectId);
+  res.json({ data, total: data.length });
+});
+
+/** GET /api/render/file/:name — stream (HTTP range) or `?download` a render */
+renderRouter.get('/render/file/:name', (req, res) => {
+  const { name } = req.params;
+  if (!isRenderName(name)) return res.status(400).json({ error: 'Invalid render name' });
+  if (!resolveRender(name)) return res.status(404).json({ error: 'Render not found' });
+  const options = { root: rendersDir(), dotfiles: /** @type {'deny'} */ ('deny') };
+  const done = (err) => {
+    if (err && !res.headersSent) fail(res, err);
+  };
+  if (req.query.download !== undefined) return res.download(name, name, options, done);
+  res.sendFile(name, options, done);
+});
+
+/** DELETE /api/render/file/:name — delete a finished render and its record */
+renderRouter.delete('/render/file/:name', (req, res) => {
+  if (!isRenderName(req.params.name)) return res.status(400).json({ error: 'Invalid render name' });
+  if (!deleteRender(req.params.name)) return res.status(404).json({ error: 'Render not found' });
+  res.status(204).end();
 });

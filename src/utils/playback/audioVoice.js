@@ -5,7 +5,7 @@
  * @module utils/playback/audioVoice
  */
 
-import { unloadElement } from '#utils/playback/mediaSync.js';
+import { freshSync, unloadElement } from '#utils/playback/mediaSync.js';
 
 /**
  * @typedef {Object} Voice
@@ -16,7 +16,7 @@ import { unloadElement } from '#utils/playback/mediaSync.js';
  * @property {string} url - Media loaded in the element
  * @property {string} signature - audioSignature the gain was scheduled for
  * @property {number} epoch - Mixer epoch the gain was scheduled in
- * @property {number} seekAt - performance.now() of the last corrective seek
+ * @property {import('#utils/playback/mediaSync.js').SyncState} sync - Drift bookkeeping
  */
 
 /**
@@ -34,7 +34,7 @@ export function createVoice(graph) {
   gain.gain.value = 0;
   source.connect(gain);
   gain.connect(graph.master);
-  return { el, source, gain, clipId: '', url: '', signature: '', epoch: -1, seekAt: 0 };
+  return { el, source, gain, clipId: '', url: '', signature: '', epoch: -1, sync: freshSync() };
 }
 
 /**
@@ -46,7 +46,7 @@ export function createVoice(graph) {
 export function assignVoice(voice, clipId, url) {
   voice.clipId = clipId;
   voice.signature = '';
-  voice.seekAt = 0;
+  voice.sync = freshSync();
   if (voice.url === url) return;
   voice.url = url;
   voice.el.src = url;

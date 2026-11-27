@@ -88,7 +88,10 @@ export function moveClips(edl, clipIds, opts = {}) {
     const arriving = arrivals.get(track) || [];
     if (!arriving.length && !track.clips.some((clip) => leaving.has(clip.clipId))) return track;
     const staying = track.clips.filter((clip) => !leaving.has(clip.clipId));
-    return withClips(track, [...staying, ...arriving.map((ref) => shiftClip(ref.clip, delta, fps))]);
+    return withClips(track, [
+      ...staying,
+      ...arriving.map((ref) => shiftClip(ref.clip, delta, fps)),
+    ]);
   });
   return settle(edl, raw, { incoming: ids, autoCrossfade, linked });
 }

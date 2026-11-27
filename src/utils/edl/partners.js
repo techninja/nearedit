@@ -19,12 +19,16 @@ import { load, noteCut, rootId } from './session.js';
  * being moved are left alone.
  * @param {Session} s
  * @param {ClipIndex} index - Clips of the raw document
+ * @returns {import('./session.js').Work[]} The tracks a partner was cut on
  */
 export function spreadCuts(s, index) {
+  /** @type {Set<import('./session.js').Work>} */
+  const reached = new Set();
   for (const cut of [...s.cuts.values()]) {
     const track = index.get(cut.link)?.track;
     if (!track || track.locked || s.incoming.has(cut.link)) continue;
     const work = load(s, track);
+    reached.add(work);
     for (const [from, to] of cut.spans) {
       const span = { timelineStart: from, timelineEnd: to };
       work.clips = work.clips.flatMap((clip) => {
@@ -35,6 +39,7 @@ export function spreadCuts(s, index) {
       });
     }
   }
+  return [...reached];
 }
 
 /**

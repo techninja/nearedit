@@ -13,9 +13,24 @@ const CUE_EPSILON = 0.002;
 /** Minimum gap between corrective seeks, so a slow seek cannot loop. */
 const SEEK_COOLDOWN_MS = 400;
 
+/** A change of expected position this far off real time is a clock jump. */
+const JUMP_SECONDS = 0.25;
+
 /**
- * @typedef {{ seekAt: number }} SyncState - Per-element bookkeeping
+ * Per-element bookkeeping.
+ * @typedef {Object} SyncState
+ * @property {number} seekAt - performance.now() of the last corrective seek
+ * @property {number} expected - Source time asked for on the last call
+ * @property {number} expectedAt - performance.now() of the last call
  */
+
+/**
+ * Fresh bookkeeping for an element that has just been (re)assigned.
+ * @returns {SyncState}
+ */
+export function freshSync() {
+  return { seekAt: -Infinity, expected: NaN, expectedAt: 0 };
+}
 
 /**
  * Start an element, reporting real failures (an interrupted play() is not one).
@@ -49,6 +64,11 @@ export function cueElement(el, time) {
  * @param {number} nowMs - performance.now()
  */
 export function driveElement(el, state, expected, limits, nowMs) {
+  // The clock jumped (seek, loop wrap): follow at once, cooldown or not.
+  const predicted = state.expected + (nowMs - state.expectedAt) / 1000;
+  if (Math.abs(expected - predicted) > JUMP_SECONDS) state.seekAt = -Infinity;
+  state.expected = expected;
+  state.expectedAt = nowMs;
   if (Number.isFinite(el.duration) && expected >= el.duration) {
     // The clip asks for more than the file holds: nothing left to play.
     if (!el.paused) el.pause();
@@ -62,7 +82,7 @@ export function driveElement(el, state, expected, limits, nowMs) {
     return;
   }
   if (el.seeking || el.readyState < 3) return; // settling or buffering
-  const fix = correctDrift(el.currentTime - expected, limits);
+  const fix = correctDrift(el.currentTime - expected, limits, el.playbackRate !== 1);
   if (fix.seek) {
     if (nowMs - state.seekAt < SEEK_COOLDOWN_MS) return;
     el.currentTime = expected;

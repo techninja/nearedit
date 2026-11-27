@@ -29,12 +29,14 @@ import { run, probe } from '../../lib/ffmpeg.js';
  * @property {(message: string) => void} log
  * @property {ReturnType<typeof import('../settings.js').getSettings>} settings
  * @property {Deps} deps
+ * @property {Map<string, any>} cache - Per-job memo (resolved providers)
  */
 
 /**
  * @typedef {Object} Availability
  * @property {boolean} available
  * @property {string} detail - Human-readable: a version, a provider name, or why not
+ * @property {string} [reason] - The full explanation when `detail` is abbreviated
  */
 
 /**
@@ -45,7 +47,7 @@ import { run, probe } from '../../lib/ffmpeg.js';
  *   Empty string when the step applies to this file, otherwise the reason
  * @property {(sidecar: Sidecar|null, options: Record<string, any>) => boolean} done
  *   True when a fresh sidecar already holds this step's result for these options
- * @property {(ctx: Pick<StepContext, 'settings'|'deps'>) => Promise<Availability>} [available]
+ * @property {(ctx: Pick<StepContext, 'settings'|'deps'|'cache'>) => Promise<Availability>} [available]
  *   Only for steps that need an external provider
  * @property {(filePath: string, ctx: StepContext) => Promise<Record<string, any>>} run
  *   Resolves with the sidecar patch

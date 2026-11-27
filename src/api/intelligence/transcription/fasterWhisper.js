@@ -60,13 +60,17 @@ export function createFasterWhisper(settings, deps) {
     transcribe(filePath, options = {}) {
       return withTempDir(async (dir) => {
         const wav = await extractSpeechAudio(deps.run, filePath, join(dir, 'audio.wav'), options);
-        const { stdout } = await deps.run(cfg.python, fasterWhisperArgs(cfg, wav, options.language), {
-          signal: options.signal,
-          onStderr: (line) => {
-            const match = /^PROGRESS ([\d.]+)/.exec(line);
-            if (match) options.onProgress?.(Number(match[1]));
+        const { stdout } = await deps.run(
+          cfg.python,
+          fasterWhisperArgs(cfg, wav, options.language),
+          {
+            signal: options.signal,
+            onStderr: (line) => {
+              const match = /^PROGRESS ([\d.]+)/.exec(line);
+              if (match) options.onProgress?.(Number(match[1]));
+            },
           },
-        });
+        );
         return normalizeTranscript(parseJsonLoose(stdout, (text) => text));
       });
     },

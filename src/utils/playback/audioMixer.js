@@ -27,14 +27,14 @@
  */
 
 import { sourceTimeAt } from '#utils/edl/query.js';
-import { getAudioGraph } from '#utils/playback/audioGraph.js';
-import { assignVoice, createVoice, disposeVoice, idleVoice } from '#utils/playback/audioVoice.js';
+import { getAudioGraph, peekAudioGraph } from '#utils/playback/audioGraph.js';
 import { scheduleGain } from '#utils/playback/audioVoice.js';
 import { AUDIO_DRIFT } from '#utils/playback/drift.js';
 import { gainEvents, gainPoints } from '#utils/playback/envelope.js';
 import { cueElement, driveElement } from '#utils/playback/mediaSync.js';
 import { audioUrl } from '#utils/playback/mediaUrl.js';
 import { audioCues, audioSignature } from '#utils/playback/schedule.js';
+import { createVoicePool } from '#utils/playback/voicePool.js';
 
 /** Seconds before a clip is due that its voice is loaded and parked. */
 export const AUDIO_LOOKAHEAD = 1.5;
@@ -42,62 +42,35 @@ export const AUDIO_LOOKAHEAD = 1.5;
 /** Seconds a voice runs, silent, before its clip is due (when the source allows). */
 export const LEAD_IN = 0.15;
 
-/** Idle voices kept loaded for reuse; the rest are torn down. */
-const MAX_IDLE_VOICES = 4;
-
 /**
- * @typedef {import('#utils/playback/audioVoice.js').Voice} Voice
- */
-
-/**
- * Create a mixer. `update` is called every frame while playing.
+ * Create a mixer.
  * @returns {{
- *   update: (tracks: any[], position: number) => void,
+ *   update: (tracks: any[], position: number, nowMs?: number) => void,
+ *   park: (tracks: any[], position: number) => void,
  *   resync: () => void,
  *   pause: () => void,
  *   release: () => void,
- *   voices: () => Voice[],
+ *   voices: () => import('#utils/playback/audioVoice.js').Voice[],
  * }}
  */
 export function createMixer() {
-  /** @type {Voice[]} */
-  let voices = [];
+  const pool = createVoicePool();
   let epoch = 0;
   let wasRunning = false;
 
-  /**
-   * The voice playing a clip, taking an idle one (ideally already holding
-   * the same file) or creating one.
-   * @param {import('#utils/playback/audioGraph.js').AudioGraph} graph
-   * @param {string} clipId
-   * @param {string} url
-   * @returns {Voice}
-   */
-  function voiceFor(graph, clipId, url) {
-    let voice = voices.find((v) => v.clipId === clipId);
-    if (!voice) {
-      voice = voices.find((v) => !v.clipId && v.url === url) || voices.find((v) => !v.clipId);
-      if (!voice) voices.push((voice = createVoice(graph)));
-    }
-    if (voice.clipId !== clipId || voice.url !== url) assignVoice(voice, clipId, url);
-    return voice;
-  }
-
-  /** Tear down idle voices beyond the pool size. */
-  function trimIdle() {
-    const idle = voices.filter((v) => !v.clipId);
-    for (const voice of idle.slice(MAX_IDLE_VOICES)) {
-      disposeVoice(voice);
-      voices = voices.filter((v) => v !== voice);
-    }
+  /** Stop all sound, keeping voices assigned so Play resumes instantly. */
+  function pause() {
+    for (const voice of pool.all()) if (!voice.el.paused) voice.el.pause();
   }
 
   /**
-   * Bring every voice in line with the document at a timeline position.
+   * Playing: bring every voice in line with the document at a position.
+   * Call every frame; edits to the document are picked up as they happen.
    * @param {any[]} tracks
    * @param {number} position - Timeline seconds on the master clock
+   * @param {number} [nowMs] - Wall-clock milliseconds (injectable for tests)
    */
-  function update(tracks, position) {
+  function update(tracks, position, nowMs = performance.now()) {
     const graph = getAudioGraph();
     if (!graph) return;
     const running = graph.ctx.state === 'running';
@@ -105,42 +78,47 @@ export function createMixer() {
     wasRunning = running;
     if (!running) return pause(); // no audio clock: stay silent, picture runs on
     const cues = audioCues(tracks, position, AUDIO_LOOKAHEAD);
-    const wanted = new Set(cues.map((cue) => cue.clip.clipId));
-    for (const voice of voices) {
-      if (voice.clipId && !wanted.has(voice.clipId)) idleVoice(voice, graph.ctx);
-    }
-    const nowMs = performance.now();
+    pool.retain(new Set(cues.map((cue) => cue.clip.clipId)), graph.ctx);
     for (const { clip, track } of cues) {
-      const voice = voiceFor(graph, clip.clipId, audioUrl(clip.sourceFile));
+      const voice = pool.acquire(graph, clip.clipId, audioUrl(clip.sourceFile));
       const signature = audioSignature(track, clip);
       if (voice.signature !== signature || voice.epoch !== epoch) {
         scheduleGain(voice, gainEvents(gainPoints(track, clip), position), position, graph.ctx);
-        if (voice.epoch !== epoch) voice.seekAt = 0;
         voice.signature = signature;
         voice.epoch = epoch;
       }
       const lead = Math.min(LEAD_IN, clip.sourceIn);
       if (position < clip.timelineStart - lead) cueElement(voice.el, clip.sourceIn - lead);
-      else driveElement(voice.el, voice, sourceTimeAt(clip, position), AUDIO_DRIFT, nowMs);
+      else driveElement(voice.el, voice.sync, sourceTimeAt(clip, position), AUDIO_DRIFT, nowMs);
     }
-    trimIdle();
   }
 
-  /** Stop all sound, keeping voices assigned so Play resumes instantly. */
-  function pause() {
-    for (const voice of voices) if (!voice.el.paused) voice.el.pause();
+  /**
+   * Stopped: load and park the voices that Play would need at a position,
+   * so playback starts without waiting for a seek. Does nothing unless
+   * audio is up: no AudioContext before a user gesture, none after release.
+   * @param {any[]} tracks
+   * @param {number} position - Timeline seconds
+   */
+  function park(tracks, position) {
+    const graph = peekAudioGraph();
+    if (graph?.ctx.state !== 'running') return;
+    const cues = audioCues(tracks, position, AUDIO_LOOKAHEAD);
+    pool.retain(new Set(cues.map((cue) => cue.clip.clipId)), graph.ctx);
+    for (const { clip, active } of cues) {
+      const voice = pool.acquire(graph, clip.clipId, audioUrl(clip.sourceFile));
+      const lead = Math.min(LEAD_IN, clip.sourceIn);
+      cueElement(voice.el, active ? sourceTimeAt(clip, position) : clip.sourceIn - lead);
+    }
   }
 
   return {
     update,
+    park,
     pause,
     /** The clock jumped (play, seek, loop): re-schedule every gain. */
     resync: () => void epoch++,
-    /** Free every element and node. */
-    release() {
-      for (const voice of voices) disposeVoice(voice);
-      voices = [];
-    },
-    voices: () => voices,
+    release: pool.release,
+    voices: pool.all,
   };
 }

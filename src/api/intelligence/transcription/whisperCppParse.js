@@ -35,7 +35,12 @@ export function tokensToWords(tokens, unspaced = false) {
       last.end = Math.max(last.end, to);
       last.p.push(Number(token.p));
     } else {
-      groups.push({ text: text.trim(), start: from, end: Math.max(from, to), p: [Number(token.p)] });
+      groups.push({
+        text: text.trim(),
+        start: from,
+        end: Math.max(from, to),
+        p: [Number(token.p)],
+      });
     }
   }
   return groups.map((g) => {
@@ -43,7 +48,8 @@ export function tokensToWords(tokens, unspaced = false) {
     const word = { word: g.text, start: round3(g.start / 1000), end: round3(g.end / 1000) };
     const known = g.p.filter((p) => Number.isFinite(p));
     if (known.length) {
-      word.probability = Math.round((known.reduce((a, b) => a + b, 0) / known.length) * 1000) / 1000;
+      word.probability =
+        Math.round((known.reduce((a, b) => a + b, 0) / known.length) * 1000) / 1000;
     }
     return word;
   });

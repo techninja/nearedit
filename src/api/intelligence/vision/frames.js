@@ -30,9 +30,7 @@ export function pickFrameTimes({ duration, scenes, count = 5 }) {
     const time = (i + 0.5) * spacing;
     if (times.every((t) => Math.abs(t - time) >= spacing / 2)) times.push(time);
   }
-  return times
-    .map((t) => round3(Math.min(t, Math.max(0, duration - 0.05))))
-    .sort((a, b) => a - b);
+  return times.map((t) => round3(Math.min(t, Math.max(0, duration - 0.05)))).sort((a, b) => a - b);
 }
 
 /**

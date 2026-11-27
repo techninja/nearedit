@@ -22,6 +22,9 @@ import { commit } from '#utils/playback/transportView.js';
 /** A background tab gets no animation frames; keep audio moving anyway. */
 const WATCHDOG_MS = 250;
 
+/** Quiet time after the last seek before audio voices are parked. */
+const PARK_DELAY_MS = 120;
+
 /** @typedef {(position: number) => void} FrameListener */
 
 export const mixer = createMixer();
@@ -37,6 +40,7 @@ let position = 0;
 let rafId = 0;
 let timerId = 0;
 let lastTick = 0;
+let parkTimer = 0;
 
 /** @returns {any} The current document */
 export const timeline = () => store.get(TimelineState);
@@ -56,6 +60,18 @@ export function halt() {
   mixer.pause();
 }
 
+/**
+ * Stopped at a new position: once things settle, park the audio voices
+ * there so the next Play starts on the beat (debounced, scrubbing is fast).
+ * @param {number} at - Timeline seconds
+ */
+export function parkAudio(at) {
+  clearTimeout(parkTimer);
+  parkTimer = window.setTimeout(() => {
+    if (!playing) mixer.park(timeline().tracks, at);
+  }, PARK_DELAY_MS);
+}
+
 /** One step of playback. */
 function tick() {
   if (!playing) return;
@@ -69,12 +85,13 @@ function tick() {
     commit({ playing: false, playheadPosition: duration });
     return;
   }
+  // Book the next frame first: a failure below must not strand playback.
+  cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(tick);
   if (step.wrapped) jump(position);
   mixer.update(tracks, position);
   commit({ playheadPosition: position });
   for (const listener of listeners) listener(position);
-  cancelAnimationFrame(rafId);
-  rafId = requestAnimationFrame(tick);
 }
 
 /**
@@ -116,6 +133,7 @@ export function onFrame(listener) {
 
 /** Free every audio element and node, and let the audio device go. */
 export function releaseAudio() {
+  clearTimeout(parkTimer);
   mixer.release();
   suspendAudio();
 }

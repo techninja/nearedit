@@ -11,6 +11,7 @@ import ViewState from '#store/ViewState.js';
 import { createPreviewSurface } from '#utils/playback/previewSurface.js';
 import { formatTimecode } from '#utils/playback/timecode.js';
 import { isPlaying, onFrame, shutdown } from '#utils/playback/transport.js';
+import { warmAudio } from '#utils/playback/warmup.js';
 
 /**
  * @typedef {Object} VideoPreviewHost
@@ -29,8 +30,9 @@ const surfaces = new WeakMap();
 export const previewSurface = (host) => surfaces.get(host);
 
 /**
- * After every render: make sure the canvas has a surface and, while
- * paused, that it shows the playhead frame of the current document.
+ * After every render: make sure the canvas has a surface, that the audio
+ * of a new document is being prepared and, while paused, that the canvas
+ * shows the playhead frame of the current document.
  * @param {VideoPreviewHost & HTMLElement} host
  */
 function refresh(host) {
@@ -38,11 +40,12 @@ function refresh(host) {
   if (!surface) {
     const canvas = host.querySelector('canvas');
     if (!canvas) return;
-    surface = createPreviewSurface(canvas, canvas.parentElement);
+    surface = createPreviewSurface(canvas, canvas.closest('.video-preview'));
     surfaces.set(host, surface);
   }
-  if (!store.ready(host.timeline) || isPlaying()) return;
-  surface.show(host.timeline, host.view.playheadPosition);
+  if (!store.ready(host.timeline)) return;
+  warmAudio(host.timeline.tracks);
+  if (!isPlaying()) surface.show(host.timeline, host.view.playheadPosition);
 }
 
 /**
@@ -69,10 +72,12 @@ export default define({
   render: {
     value: ({ timeline, view }) => html`
       <div class="video-preview">
-        <canvas role="img" aria-label="Program preview"></canvas>
-        <span class="preview-timecode" aria-hidden="true"
-          >${formatTimecode(view.playheadPosition, timeline.fps)}</span
-        >
+        <div class="preview-frame">
+          <canvas role="img" aria-label="Program preview"></canvas>
+          <span class="preview-timecode" aria-hidden="true"
+            >${formatTimecode(view.playheadPosition, timeline.fps)}</span
+          >
+        </div>
       </div>
     `,
     shadow: false,

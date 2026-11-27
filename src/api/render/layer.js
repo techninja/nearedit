@@ -14,7 +14,7 @@ import { geometryFilters } from './layerFilters.js';
  * @property {string} [pad] - Input pad the chain reads, e.g. "[3:v:0]"
  * @property {string[]} [generate] - Source filters when there is no input pad
  * @property {boolean} still - One picture held for the whole layer (image, title)
- * @property {import('./layerFilters.js').LayerSource} source
+ * @property {import('./layerParts.js').LayerSource} source
  * @property {import('./placement.js').LayerGeometry} geometry
  * @property {{ count: number, offset: number, shift: number, length: number }} window
  * @property {number} fadeIn - Seconds from the clip's start
@@ -76,9 +76,11 @@ export function buildLayer(spec, ctx) {
     filter('trim', { end_frame: count }),
     ...(offset ? [`setpts=PTS+${offset}`] : []),
   ];
-  // A still that never changes is scaled once, then repeated.
-  const once = spec.still && !geometry.animated;
-  const body = once ? [...geometry.filters, ...hold] : [...hold, ...geometry.filters];
+  // A still is cropped, scaled and rotated once, then repeated; only what
+  // changes over time runs per frame. Video is conformed first, so frames
+  // the output rate drops are never scaled.
+  const { once, each } = geometry;
+  const body = spec.still ? [...once, ...hold, ...each] : [...hold, ...once, ...each];
   const onTimeline = shift ? [`setpts=PTS${shift < 0 ? '-' : '+'}${Math.abs(shift)}`] : [];
   const filters = [...(spec.generate || []), ...body, ...fadeFilters(spec, fps), ...onTimeline];
 
@@ -93,5 +95,10 @@ export function buildLayer(spec, ctx) {
     enable: quote(active),
   });
   const pad = `[${spec.id}]`;
-  return { chain: `${spec.pad || ''}${filters.join(',')}${pad}`, overlay, pad, warnings: geometry.warnings };
+  return {
+    chain: `${spec.pad || ''}${filters.join(',')}${pad}`,
+    overlay,
+    pad,
+    warnings: geometry.warnings,
+  };
 }

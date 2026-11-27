@@ -58,7 +58,8 @@ export const scenesStep = {
   async run(filePath, ctx) {
     const threshold = ctx.options.threshold ?? SCENE_DEFAULTS.threshold;
     let duration = ctx.sidecar?.duration;
-    if (!(duration > 0)) duration = (await ctx.deps.probe(filePath, { signal: ctx.signal }))?.duration;
+    if (!(duration > 0))
+      duration = (await ctx.deps.probe(filePath, { signal: ctx.signal }))?.duration;
     if (!(duration > 0)) throw new Error('Could not determine the video duration');
 
     // Output 1 prints the frames whose scene score passes the threshold.

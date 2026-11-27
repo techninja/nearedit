@@ -23,7 +23,11 @@ const MAX_DESCRIPTION = 600;
  * @returns {string[]} Clean, lower-case, de-duplicated
  */
 export function cleanTags(value) {
-  const list = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/[,;\n]/) : [];
+  const list = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(/[,;\n]/)
+      : [];
   const tags = [];
   for (const item of list) {
     const tag = String(item ?? '')

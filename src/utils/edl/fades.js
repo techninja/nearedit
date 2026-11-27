@@ -52,7 +52,8 @@ export function neighbourOverlaps(clips) {
 
 /**
  * Fit a clip's fades into its duration (invariant 3). A fade locked to an
- * overlap never gives way; a deliberate one is shortened.
+ * overlap never gives way; a deliberate one is shortened. With neither or
+ * both locked the fade-in is served first.
  * @param {number} fadeIn
  * @param {number} fadeOut
  * @param {number} duration
@@ -62,10 +63,12 @@ export function neighbourOverlaps(clips) {
  */
 export function fitFades(fadeIn, fadeOut, duration, inLocked, outLocked) {
   if (fadeIn + fadeOut <= duration + EPS) return [fadeIn, fadeOut];
-  if (inLocked && !outLocked) return [fadeIn, Math.max(0, duration - fadeIn)];
-  if (outLocked && !inLocked) return [Math.max(0, duration - fadeOut), fadeOut];
-  const first = Math.min(fadeIn, duration);
-  return [first, Math.min(fadeOut, duration - first)];
+  if (outLocked && !inLocked) {
+    const kept = Math.min(fadeOut, duration);
+    return [duration - kept, kept];
+  }
+  const kept = Math.min(fadeIn, duration);
+  return [kept, Math.min(fadeOut, duration - kept)];
 }
 
 /**

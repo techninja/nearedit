@@ -6,7 +6,7 @@
  */
 
 import { VIDEO_DRIFT } from '#utils/playback/drift.js';
-import { driveElement } from '#utils/playback/mediaSync.js';
+import { driveElement, freshSync } from '#utils/playback/mediaSync.js';
 
 /** A paused element this close to its target is showing the right frame. */
 const SEEK_EPSILON = 0.0005;
@@ -19,7 +19,7 @@ const SEEK_EPSILON = 0.0005;
  * @property {number} target - Source time wanted while paused
  * @property {boolean} stale - The decoded frame belongs to an earlier clip
  * @property {boolean} failed - The media could not be loaded
- * @property {number} seekAt - performance.now() of the last corrective seek
+ * @property {import('#utils/playback/mediaSync.js').SyncState} sync - Drift bookkeeping
  */
 
 /**
@@ -49,7 +49,15 @@ export function createSlot(onFrame) {
   el.playsInline = true;
   el.preload = 'auto';
   /** @type {VideoSlot} */
-  const slot = { el, clipId: '', url: '', target: 0, stale: true, failed: false, seekAt: 0 };
+  const slot = {
+    el,
+    clipId: '',
+    url: '',
+    target: 0,
+    stale: true,
+    failed: false,
+    sync: freshSync(),
+  };
   el.addEventListener('seeked', () => settle(slot, onFrame));
   el.addEventListener('loadeddata', () => settle(slot, onFrame));
   el.addEventListener('error', () => {
@@ -84,7 +92,7 @@ export function aimSlot(slot, time) {
  * @param {number} nowMs - performance.now()
  */
 export function driveSlot(slot, expected, nowMs) {
-  driveElement(slot.el, slot, expected, VIDEO_DRIFT, nowMs);
+  driveElement(slot.el, slot.sync, expected, VIDEO_DRIFT, nowMs);
   // Already in place and decoded (no seek was needed): its frame is good.
   if (slot.stale && !slot.el.seeking && slot.el.readyState >= 2) slot.stale = false;
 }

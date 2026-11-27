@@ -20,6 +20,7 @@ import * as engine from '#utils/playback/transportEngine.js';
 import { commit, viewNow } from '#utils/playback/transportView.js';
 
 export { onFrame } from '#utils/playback/transportEngine.js';
+export { setLoop, setLoopRange } from '#utils/playback/transportLoop.js';
 
 /** @returns {number} Frame rate of the document */
 const fps = () => engine.timeline().fps || 30;
@@ -60,12 +61,15 @@ export function pause() {
   engine.halt();
   const at = frameAt(engine.playPosition(), fps()) / fps();
   commit({ playing: false, playheadPosition: at, cursorPosition: at });
+  engine.parkAudio(at);
 }
 
 /** Stop and return the playhead to the edit cursor (Space, K, Stop button). */
 export function stop() {
   if (engine.isRunning()) engine.halt();
-  commit({ playing: false, playheadPosition: viewNow().cursorPosition });
+  const at = viewNow().cursorPosition;
+  commit({ playing: false, playheadPosition: at });
+  engine.parkAudio(at);
 }
 
 /**
@@ -92,6 +96,7 @@ export function toggle({ returnToCursor = true } = {}) {
 export function seek(time, { moveCursor = true } = {}) {
   const at = Math.max(0, snapToFrame(Number(time) || 0, fps()));
   if (engine.isRunning()) engine.jump(at);
+  else engine.parkAudio(at);
   commit(moveCursor ? { playheadPosition: at, cursorPosition: at } : { playheadPosition: at });
 }
 
@@ -120,24 +125,6 @@ export function goToStart() {
 /** Move to the end of the last clip. */
 export function goToEnd() {
   seek(getDuration());
-}
-
-/**
- * Turn looping on or off (it takes effect immediately, also mid-play).
- * @param {boolean} [enabled] - Omit to toggle
- */
-export function setLoop(enabled = !store.get(ViewState).loopEnabled) {
-  commit({ loopEnabled: Boolean(enabled) });
-}
-
-/**
- * Set the loop region. An empty region loops the whole timeline.
- * @param {number} start - Seconds
- * @param {number} end - Seconds
- */
-export function setLoopRange(start, end) {
-  const from = Math.max(0, Math.min(start, end));
-  commit({ loopStart: from, loopEnd: Math.max(from, start, end) });
 }
 
 /** Stop playback and release every audio element and node (leaving the editor). */

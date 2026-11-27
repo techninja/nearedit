@@ -22,6 +22,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import urllib.request
@@ -46,12 +47,47 @@ def fetch(url, directory):
     return target
 
 
-def transcribe(path, args):
+def load_audio(path):
+    """Read a 16 kHz mono 16-bit WAV (what NearEdit sends) into a float array.
+
+    This keeps PyAV out of the picture for the normal case. Any other input is
+    returned as a path and decoded by faster-whisper itself.
+    """
+    import wave
+
+    try:
+        with wave.open(path, "rb") as wav:
+            layout = (wav.getframerate(), wav.getnchannels(), wav.getsampwidth())
+            if layout != (16000, 1, 2):
+                return path
+            frames = wav.readframes(wav.getnframes())
+    except (wave.Error, EOFError):
+        return path
+    import numpy
+
+    return numpy.frombuffer(frames, dtype="<i2").astype(numpy.float32) / 32768.0
+
+
+def prepare(path, directory):
+    """Return audio for the model: an array when possible, else the path."""
+    audio = load_audio(path)
+    ffmpeg = shutil.which("ffmpeg")
+    if not isinstance(audio, str) or not ffmpeg:
+        return audio
+    # Not a ready-made WAV (a URL download, a video…): let ffmpeg convert it.
+    target = os.path.join(directory, "audio.wav")
+    command = [ffmpeg, "-v", "error", "-nostdin", "-y", "-i", path]
+    command += ["-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", target]
+    subprocess.run(command, check=True)
+    return load_audio(target)
+
+
+def transcribe(audio, args):
     from faster_whisper import WhisperModel
 
     model = WhisperModel(args.model, device=args.device, compute_type=args.compute_type)
     segments, info = model.transcribe(
-        path,
+        audio,
         language=args.language or None,
         beam_size=args.beam_size,
         word_timestamps=True,
@@ -95,7 +131,7 @@ def main(argv=None):
         if not os.path.exists(path):
             print(f"input not found: {path}", file=sys.stderr)
             return 2
-        result = transcribe(path, args)
+        result = transcribe(prepare(path, directory), args)
     json.dump(result, sys.stdout, ensure_ascii=False)
     sys.stdout.write("\n")
     return 0

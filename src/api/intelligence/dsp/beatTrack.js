@@ -17,7 +17,8 @@ function localScore(envelope, period) {
   const n = envelope.length;
   const reach = Math.max(1, Math.ceil(period / 8));
   const kernel = new Float64Array(2 * reach + 1);
-  for (let k = -reach; k <= reach; k++) kernel[k + reach] = Math.exp(-0.5 * ((k * 32) / period) ** 2);
+  for (let k = -reach; k <= reach; k++)
+    kernel[k + reach] = Math.exp(-0.5 * ((k * 32) / period) ** 2);
   const out = new Float64Array(n);
   for (let i = 0; i < n; i++) {
     let sum = 0;

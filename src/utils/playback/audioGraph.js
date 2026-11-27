@@ -44,6 +44,12 @@ export function getAudioGraph() {
 }
 
 /**
+ * The shared graph if it has been created already (never creates it).
+ * @returns {AudioGraph|null}
+ */
+export const peekAudioGraph = () => graph;
+
+/**
  * Ask the context to run (call from a user gesture). Resolves either way;
  * playback falls back to the wall clock while the context stays suspended.
  * @returns {Promise<void>}

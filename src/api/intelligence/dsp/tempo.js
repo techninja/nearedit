@@ -13,7 +13,7 @@
  */
 
 export const TEMPO_DEFAULTS = {
-  minBpm: 60,
+  minBpm: 40,
   maxBpm: 200,
   priorBpm: 120,
   priorOctaves: 1,

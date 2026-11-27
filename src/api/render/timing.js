@@ -37,7 +37,8 @@ export function fpsRational(value) {
     const numerator = Math.round(ntsc) * 1000;
     return { fps: numerator / 1001, fpsText: `${numerator}/1001` };
   }
-  if (Math.abs(raw - Math.round(raw)) < 1e-6) return { fps: Math.round(raw), fpsText: `${Math.round(raw)}` };
+  if (Math.abs(raw - Math.round(raw)) < 1e-6)
+    return { fps: Math.round(raw), fpsText: `${Math.round(raw)}` };
   const numerator = Math.round(raw * 1000);
   return { fps: numerator / 1000, fpsText: `${numerator}/1000` };
 }
