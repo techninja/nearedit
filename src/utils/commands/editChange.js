@@ -92,6 +92,8 @@ export function describeEdit(before, after) {
   if (before === after || before.tracks.some((track) => !ids.has(track.trackId))) return null;
   const [was, now] = [byId(before), byId(after)];
   const { added, moved, trimmed, removed } = sortEdit(was, now);
+  // Clips deleted and others put in at once is a replacement (a director edit), not a ripple.
+  if (removed.length && added.length) return null;
   /** @type {import('#utils/edl/selectionEdits.js').RippleStep[]} */
   const steps = [];
   /** @type {Map<string, number>} */

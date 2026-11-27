@@ -20,6 +20,8 @@ import { boxPath, fitText } from './shapes.js';
 const LABEL_H = 15;
 /** Narrower than this a clip is a plain rectangle. */
 const DETAIL_MIN = 10;
+/** A filmstrip shorter than this is not worth drawing. */
+const MIN_STRIP_H = 8;
 /** Narrower than this a clip has no label. */
 const LABEL_MIN = 30;
 
@@ -69,7 +71,8 @@ export function drawClip(scene, track, index, lane) {
 
   if (width >= DETAIL_MIN) {
     const box = { x0, x1, y, height };
-    if (kind === 'video' || kind === 'image') {
+    // A minimised lane has room for the label strip only.
+    if ((kind === 'video' || kind === 'image') && height - LABEL_H >= MIN_STRIP_H) {
       drawFilmstrip(scene, clip, kind === 'image', {
         ...box,
         y: y + LABEL_H,

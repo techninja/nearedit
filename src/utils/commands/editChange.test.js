@@ -111,6 +111,12 @@ describe('describeEdit + replayRippled', () => {
     assert.equal(describeEdit(doc, addMarker(doc, 2)), null);
   });
 
+  it('does not take a replacement (clips deleted and added at once) for a ripple', () => {
+    const doc = sample();
+    const swapped = pasteClips(deleteClips(doc, ['b']), copyClips(doc, ['c']), { time: 30 });
+    assert.equal(describeEdit(doc, swapped), null);
+  });
+
   it('ignores a clip that only moved to another track', () => {
     const doc = deepFreeze(testEdl({ v1: [testClip('a', 0, 4)], v2: [] }));
     assert.equal(describeEdit(doc, moveClips(doc, ['a'], { toTrackId: 'v2' })), null);

@@ -10,8 +10,35 @@ import { timeToX } from '#utils/timeline/viewport.js';
 /** @typedef {import('./scene.js').Scene} Scene */
 
 /**
- * Edge-trim mode: a bracket in the snap colour on the chosen edge, and a
- * glow on the clip's side of it, so it reads at any zoom.
+ * A bracket hugging a clip edge, with an arrowhead pointing into the clip.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} x - The edge
+ * @param {number} y - Clip top
+ * @param {number} height - Clip height
+ * @param {1|-1} into - Which way the clip lies: 1 = to the right
+ * @param {number} grow - Extra thickness, for the outline pass
+ */
+function bracket(ctx, x, y, height, into, grow) {
+  const thick = 4 + 2 * grow;
+  const arm = 12 + 2 * grow;
+  const armX = into > 0 ? x - 2 - grow : x - 10 - grow;
+  const top = y - 3 - grow;
+  ctx.fillRect(x - 2 - grow, top, thick, height + 6 + 2 * grow);
+  ctx.fillRect(armX, top, arm, thick);
+  ctx.fillRect(armX, y + height - 1 - grow, arm, thick);
+  const middle = y + height / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + into * (6 - grow), middle - 6 - grow);
+  ctx.lineTo(x + into * (13 + grow), middle);
+  ctx.lineTo(x + into * (6 - grow), middle + 6 + grow);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/**
+ * Edge-trim mode: a bracket in the snap colour on the chosen edge (outlined
+ * in the background colour, so it reads over any picture) and a glow on the
+ * clip's side of it.
  * @param {Scene} scene
  */
 export function drawEdgeTrim(scene) {
@@ -24,21 +51,14 @@ export function drawEdgeTrim(scene) {
     const x = Math.round(timeToX(vp, atStart ? clip.timelineStart : clip.timelineEnd));
     const y = laneY(lane, vp.scrollY) + CLIP_INSET;
     const height = lane.height - 2 * CLIP_INSET;
-    const into = atStart ? 1 : -1;
     ctx.fillStyle = palette.snap;
-    ctx.globalAlpha = 0.4;
-    ctx.fillRect(atStart ? x : x - 14, y, 14, height);
+    ctx.globalAlpha = 0.45;
+    ctx.fillRect(atStart ? x : x - 18, y, 18, height);
     ctx.globalAlpha = 1;
-    ctx.fillRect(atStart ? x - 1 : x - 2, y - 2, 3, height + 4);
-    ctx.fillRect(atStart ? x : x - 8, y - 2, 8, 3);
-    ctx.fillRect(atStart ? x : x - 8, y + height - 1, 8, 3);
-    // A small arrowhead pointing into the clip, where the trim keys pull from.
-    ctx.beginPath();
-    ctx.moveTo(x + into * 5, y + height / 2 - 5);
-    ctx.lineTo(x + into * 11, y + height / 2);
-    ctx.lineTo(x + into * 5, y + height / 2 + 5);
-    ctx.closePath();
-    ctx.fill();
+    ctx.fillStyle = palette.bg;
+    bracket(ctx, x, y, height, atStart ? 1 : -1, 1);
+    ctx.fillStyle = palette.snap;
+    bracket(ctx, x, y, height, atStart ? 1 : -1, 0);
     return;
   }
 }

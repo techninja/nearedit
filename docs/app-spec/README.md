@@ -181,38 +181,62 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 
 ## Keyboard Shortcuts (Configurable)
 
-`Mod` is Ctrl, or Cmd on macOS. Press `?` in the editor for the live list.
+Two layouts ship: **NearEdit** (below) and **Vegas**, which follows Vegas
+Pro's defaults key for key — see [VEGAS.md](./VEGAS.md) for its table, for
+what the browser keeps for itself, and for where NearEdit differs. Choose
+one in the shortcuts dialog; the choice is remembered. `Mod` is Ctrl, or Cmd
+on macOS. Press `?` in the editor for the live list.
 
 | Key | Action |
 | --- | ------ |
 | Space | Play / stop — return to the edit cursor on stop |
 | Enter | Play / pause in place — the cursor follows |
+| Shift+Space | Play from the start |
 | J / K / L | Rewind 2 s / stop (return to cursor) / forward 2 s |
-| Home / End | Go to start / end |
-| ← / → | Step one frame (Shift: ten frames) |
-| ↑ / ↓ | Previous / next edit point (Shift: marker) |
+| Home / End | Go to start / end (Shift: of the time selection, or of the view) |
+| ← / → | Step one frame (Shift: ten frames, Alt: one pixel) |
+| ↑ / ↓ | Previous / next edit point (Shift: marker or region end) |
+| PgUp / PgDn | Previous / next grid mark of the ruler |
+| 1 … 9, 0 | Go to marker 1 … 10 |
+| Mod+G | Go to a typed time |
 | Q | Toggle loop playback |
+| I / O | Mark the time selection in / out at the cursor |
+| Alt+Shift+← / → | Extend the time selection a pixel (Ctrl too: to the next edit point) |
 | Mod+Z / Mod+Shift+Z | Undo / redo |
 | S | Split at the cursor |
 | Delete, Backspace | Delete (Shift: ripple delete, closing the gap) |
 | [ / ] | Trim the selection's start / end to the cursor |
-| , / . | Nudge the selection one frame (< / >: ten frames) |
+| Alt+T | Trim to the time selection |
+| , / . | Nudge the selection one frame (< / >: ten frames; Alt: one pixel) |
 | Mod+X / C / V / D | Cut / copy / paste / duplicate |
+| Mod+Shift+V / Mod+B | Paste insert (every track makes room) / paste repeat |
 | Mod+A / Escape | Select all / none |
-| G / U | Group / ungroup |
+| G / U | Group / ungroup (Shift+G: select the group, Alt+U: remove from it) |
 | Shift+L / Shift+U | Link / unlink picture and sound |
-| M / T | Add a marker / a title at the cursor |
-| N / R / X | Toggle snapping / ripple / auto cross-fade |
-| - / + / \ | Zoom out / in / to fit |
-| ? | Show all shortcuts |
+| M / T | Add a marker / a title at the cursor (Shift+M: and name the marker) |
+| Shift+R | Add a region over the time selection, and name it |
+| N / R / X | Toggle snapping / ripple / auto cross-fade (Shift+F8: snap to markers) |
+| F / Shift+F / Mod+Shift+F | Ripple the last edit: its tracks / plus markers and regions / every track |
+| - / + / \ | Zoom out / in / to fit (Ctrl+↑ / ↓: large steps, \|: centre on the cursor) |
+| Ctrl+Shift+↑ / ↓, ` | Taller / shorter tracks, minimise / restore them |
+| Keypad 4 / 6, 8 / 2 | Nudge a pixel; move to the track above / below |
+| Keypad 7 / 9, 5 | Edge-trim mode on the start / end (nudge keys then trim it); leave |
+| ? | Show all shortcuts, switch layout and wheel mode |
 
 Mouse and touch: drag a clip to move it (onto another track of the same
-type too), drag an edge to trim, Alt-drag to slip, drag the top corners for
-fades, drag the ruler to scrub, Shift-drag the ruler for a loop region,
-Mod+wheel or pinch to zoom about the pointer. Hold Shift while dragging to
+type too), Ctrl-drag to copy it, drag an edge to trim, Alt-drag the clip to
+slip and an edge to slip-trim, Ctrl+Alt-drag an edge to roll the cut and the
+clip to slide it between its neighbours, drag the top corners for fades and
+right-click a fade for its curve, drag the ruler to scrub, Shift-drag the
+ruler for the time selection (which is the loop region), drag a region's tag
+or ends, Mod+wheel or pinch to zoom about the pointer (or let the wheel zoom,
+as in Vegas: a choice in the shortcuts dialog). Hold Shift while dragging to
 bypass snapping. Overlapping two clips cross-fades them.
 
 Custom keymaps are stored in `localStorage.nearedit_keymap` as a JSON
-object. An entry either replaces a command's shortcuts
-(`{ "edit.split": "C", "marker.add": "" }` — an empty value unbinds) or
-binds a key to a command (`{ "Ctrl+B": "edit.split" }`).
+object and apply on top of the chosen layout. An entry either replaces a
+command's shortcuts (`{ "edit.split": "C", "marker.add": "" }` — an empty
+value unbinds) or binds a key to a command (`{ "Ctrl+B": "edit.split" }`).
+Keys are written like `Mod+Shift+Z`, `Alt+[`, `F8`, `PageUp`, or `Num4` for
+the keypad. The shortcuts dialog flags a remapped key that another command
+also uses.

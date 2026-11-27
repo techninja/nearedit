@@ -2,6 +2,7 @@ import { fixture, expect, waitUntil } from '@open-wc/testing';
 import { store } from 'hybrids';
 import ViewState from '#store/ViewState.js';
 import { addMarker, moveMarker, renameMarker } from '#utils/edl/index.js';
+import { addRegion, regionsOf } from '#utils/edl/regions.js';
 import { deepFreeze, testEdl } from '#utils/edl/testkit.js';
 import * as session from '#utils/editor/session.js';
 import './timeline-marker-field.js';
@@ -82,5 +83,18 @@ describe('timeline-marker-field', () => {
     await waitUntil(() => field(el).value === 'Cold open', `value was ${field(el).value}`);
     session.loadDoc(testEdl());
     await waitUntil(() => !field(el), 'the field outlived its marker');
+  });
+  it("names a region the same way, at the region's start", async () => {
+    const { el, done } = await mount();
+    session.edit((doc) => addRegion(doc, 3, 6, { regionId: 'r1', label: 'Verse' }));
+    el.regionId = 'r1';
+    await waitUntil(() => field(el), 'the field never appeared');
+    expect(field(el).getAttribute('aria-label')).to.equal('Region name');
+    expect(field(el).value).to.equal('Verse');
+    expect(left(el)).to.equal(300);
+    type(el, 'Chorus');
+    expect(regionsOf(session.getDoc())[0].label).to.equal('Chorus');
+    expect(done()).to.equal(1);
+    expect(session.getDoc().markers.map((m) => m.label)).to.deep.equal(['Intro', '']);
   });
 });

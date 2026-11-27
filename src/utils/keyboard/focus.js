@@ -61,6 +61,21 @@ export function browserOwnsClipboardKey(combo, mac) {
 }
 
 /**
+ * A chord (with Ctrl, Alt or Cmd) that the layout binds is the editor's
+ * even while its command has nothing to do: the browser must not answer
+ * Ctrl+U with "view source", Ctrl+Shift+A with its tab search or Alt+←
+ * with "back" because no clip happened to be grouped or selected. The
+ * exception is the text family — copy, cut, paste, select all, undo, redo —
+ * which goes back to the browser when the editor cannot use it.
+ * @param {string} combo - Canonical combo
+ * @returns {boolean}
+ */
+export function editorKeepsChord(combo) {
+  if (!/(^|\+)(Ctrl|Alt|Meta)\+/.test(combo)) return false;
+  return !/^((Ctrl|Meta)\+[ACVXYZ]|(Ctrl\+Shift|Shift\+Meta)\+Z)$/.test(combo);
+}
+
+/**
  * Call from the click handler of a button that sits near the timeline: a
  * mouse or touch click gives the focus back to the page, so that Space
  * plays instead of pressing the button again. A keyboard "click" (Enter or

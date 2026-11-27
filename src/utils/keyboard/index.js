@@ -1,10 +1,12 @@
 /**
  * Keyboard shortcuts for the editor, driven by the command registry.
  * `initKeyboard()` starts listening, `destroyKeyboard()` stops. A keystroke
- * is only ever taken (preventDefault) when it maps to a command that is
- * available right now; everything else is left to the browser, and keys
- * typed into fields, buttons, sliders, menus and dialogs are never touched;
- * while a modal dialog is open the shortcuts are off altogether.
+ * is taken (preventDefault) when it maps to a command that is available
+ * right now — and a bound Ctrl / Alt chord also while its command is not,
+ * so the browser never acts on an editor shortcut (`editorKeepsChord`).
+ * Everything else is left to the browser, and keys typed into fields,
+ * buttons, sliders, menus and dialogs are never touched; while a modal
+ * dialog is open the shortcuts are off altogether.
  * The layout is a preset (`presets.js`) plus the user's own remapping in
  * `localStorage.nearedit_keymap` (format: `keymap.js`); see `active.js`.
  * @module utils/keyboard
@@ -14,7 +16,7 @@ import { isEnabled, runCommand } from '#utils/commands/registry.js';
 import { isPlaying } from '#utils/playback/transport.js';
 import { activeKeymap, mac } from './active.js';
 import { eventCombo } from './combo.js';
-import { browserOwnsClipboardKey, controlOwnsKey, modalIsOpen } from './focus.js';
+import { browserOwnsClipboardKey, controlOwnsKey, editorKeepsChord, modalIsOpen } from './focus.js';
 import { KEYMAP_STORAGE_KEY } from './keymap.js';
 import { panKeyDown, panKeyReset, panKeyUp } from './panKey.js';
 
@@ -53,9 +55,10 @@ function onKeyDown(event) {
     if (!event.repeat) panKeyDown(usable ? () => runCommand(id) : null, isPlaying());
     return;
   }
-  if (!usable || browserOwnsClipboardKey(combo, mac)) return;
-  event.preventDefault();
-  if (!event.repeat || repeats(id)) runCommand(id);
+  if (browserOwnsClipboardKey(combo, mac)) return;
+  // A bound chord never falls through to a browser shortcut, usable or not.
+  if (usable || (id && editorKeepsChord(combo))) event.preventDefault();
+  if (usable && (!event.repeat || repeats(id))) runCommand(id);
 }
 
 /** @param {KeyboardEvent} event */

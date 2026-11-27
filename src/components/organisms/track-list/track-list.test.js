@@ -1,6 +1,7 @@
 import { fixture, expect, waitUntil } from '@open-wc/testing';
 import { store } from 'hybrids';
 import ViewState from '#store/ViewState.js';
+import { requestUi } from '#utils/commands/viewCommands.js';
 import { addTrack, moveClips, moveTrack } from '#utils/edl/index.js';
 import { deepFreeze, testClip, testEdl } from '#utils/edl/testkit.js';
 import * as session from '#utils/editor/session.js';
@@ -80,5 +81,17 @@ describe('track-list', () => {
     ask('a1');
     await waitUntil(() => menuItems(el).length > 0, 'the menu never reopened');
     expect(item('Delete track').disabled, 'the only audio track').to.equal(true);
+  });
+  it('opens the go-to field in the corner when a time is asked for', async () => {
+    const el = await mount();
+    expect(el.querySelector('timeline-goto input')).to.equal(null);
+    requestUi('goto');
+    await waitUntil(() => el.querySelector('timeline-goto input'), 'the field never appeared');
+    const input = el.querySelector('timeline-goto input');
+    expect(input.closest('.track-list-corner')).to.exist;
+    input.value = '3.';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await waitUntil(() => !el.querySelector('timeline-goto input'), 'the field stayed');
+    await waitUntil(() => timecode(el) === '00:00:03:00', `timecode was ${timecode(el)}`);
   });
 });
