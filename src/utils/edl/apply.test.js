@@ -156,7 +156,7 @@ describe('applyDirectorResult — modes', () => {
 });
 
 describe('applyDirectorResult — fragment handling', () => {
-  it('re-identifies clips, keeping links and groups inside the fragment', () => {
+  it('replaces clashing ids only, keeping links and groups inside the fragment', () => {
     const start = doc();
     const out = assertValid(applyDirectorResult(start, fragment({ mode: 'append' })));
     const ids = allClips(out).map(({ clip }) => clip.clipId);
@@ -166,7 +166,9 @@ describe('applyDirectorResult — fragment handling', () => {
     const [, , a3, a4] = out.tracks[1].clips;
     assert.deepEqual([v3.linkedClipId, a3.linkedClipId], [a3.clipId, v3.clipId]);
     assert.deepEqual([v4.linkedClipId, a4.linkedClipId], [a4.clipId, v4.clipId]);
-    assert.ok(v3.groupId && v3.groupId === v4.groupId && v3.groupId !== 'g');
+    assert.ok(v3.groupId && v3.groupId === v4.groupId);
+    assert.notEqual(v3.clipId, 'x', 'an id the document already uses is replaced');
+    assert.equal(v4.clipId, 'f2', 'a free id is kept');
     assert.equal(v3.text.fontSize, 72, 'fragment clips are completed with defaults');
   });
 

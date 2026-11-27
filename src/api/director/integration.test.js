@@ -81,14 +81,14 @@ test('base edit on an empty default timeline builds the layout', async (t) => {
   if (!done) return;
   const video = lane(done.out, 'video');
   const audio = lane(done.out, 'audio');
-  // Existing tracks keep their own names; the ones created take the layout's.
+  // A replace adopts the result's layout: every row carries the layout's name.
   assert.deepEqual(
     video.map((v) => v.name),
-    ['Video 1', 'B-roll', 'Main'],
+    ['Titles', 'B-roll', 'Main'],
   );
   assert.deepEqual(
     audio.map((a) => a.name),
-    ['Audio 1', 'Ambience', 'Music'],
+    ['Dialogue', 'Ambience', 'Music'],
   );
   assert.deepEqual(names(video[0]), ['Park']);
   assert.ok(names(video[2]).every((n) => n === 'interview.mp4'));

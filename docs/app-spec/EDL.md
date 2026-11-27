@@ -285,15 +285,22 @@ given ones). Clips that ripple are incoming clips and follow the overlap
 rules above.
 
 **Director results.** `applyDirectorResult` normalises the fragment's
-clips, gives them fresh ids (links and groups inside the fragment are
-kept) and maps fragment tracks to the Nth track of their type, creating
-missing tracks below the existing ones. `replace` removes the clips on
-unlocked tracks and all markers first; `append` starts at the end of the
-timeline; `prepend` and `insert` ripple-insert the fragment's length at 0 /
-`at`; `range` cuts `range` out and ripples later clips by the difference in
-length. A locked target track is never written — its fragment clips go to a
-new track. An unknown mode, or a mode whose position is missing, falls
-back to `append`.
+clips and maps fragment tracks to the Nth track of their type, creating
+missing tracks below the existing ones. A fragment clip keeps its id when
+that id is free in the document — so clips an action rewrites in place stay
+selected — and gets a fresh one when it clashes or repeats; links and
+groups inside the fragment are kept either way.
+
+`replace` removes the clips on unlocked tracks and all markers first, and
+the tracks adopt the result's layout: each row is named as the result names
+it, a row that carries the `trackId` of an existing track stays on that
+track (its mute, solo, volume and lock travel with it), and tracks the
+result does not mention follow the rows it does. `append` starts at the end
+of the timeline; `prepend` and `insert` ripple-insert the fragment's length
+at 0 / `at`; `range` cuts `range` out and ripples later clips by the
+difference in length. A locked target track is never written or renamed —
+its fragment clips go to a new track. An unknown mode, or a mode whose
+position is missing, falls back to `append`.
 
 ## Rendering Semantics
 

@@ -8,6 +8,7 @@
 import { shiftClip } from './clipMath.js';
 import { timelineDuration } from './query.js';
 import { prepareFragment } from './fragment.js';
+import { adoptLayout } from './fragmentLayout.js';
 import { mapClips, tracksOfType } from './immutable.js';
 import { repairLinks } from './links.js';
 import { addClips, ensureTrack } from './placement.js';
@@ -57,10 +58,25 @@ function placeFragment(edl, fragment, offset) {
 }
 
 /**
+ * Clip and group ids in use in a document.
+ * @param {Edl} edl
+ * @returns {{ clipIds: Set<string>, groupIds: Set<string> }}
+ */
+function idsIn(edl) {
+  const clips = edl.tracks.flatMap((track) => track.clips);
+  return {
+    clipIds: new Set(clips.map((clip) => clip.clipId)),
+    groupIds: new Set(clips.map((clip) => clip.groupId).filter(Boolean)),
+  };
+}
+
+/**
  * Merge a DirectorResult into the document.
  *
  * - `replace`: the fragment becomes the timeline. Clips on unlocked tracks
- *   and all markers are removed first; tracks are kept.
+ *   and all markers are removed first, and the tracks take the result's
+ *   layout (`adoptLayout`): rows are named as the result names them and
+ *   keep the existing track they refer to by `trackId`.
  * - `append`: the fragment starts where the timeline ends.
  * - `prepend`: everything moves right by the fragment's length.
  * - `insert`: ripple-insert at `result.at` — clips crossing that time are
@@ -78,17 +94,16 @@ function placeFragment(edl, fragment, offset) {
  */
 export function applyDirectorResult(edl, result) {
   if (!isObject(result)) return edl;
-  const fragment = prepareFragment(result, fpsOf(edl));
+  const replacing = result.mode === 'replace';
+  const base = replacing ? repairLinks(mapClips(adoptLayout(edl, result), () => null)) : edl;
+  const fragment = prepareFragment(result, fpsOf(edl), idsIn(base));
   const length = fragment.duration;
   const at = toNumber(result.at, NaN);
   const start = toNumber(result.range?.start, NaN);
   const end = toNumber(result.range?.end, NaN);
   const ripple = { markers: true };
 
-  if (result.mode === 'replace') {
-    const cleared = repairLinks(mapClips(edl, () => null));
-    return placeFragment({ ...cleared, markers: [] }, fragment, 0);
-  }
+  if (replacing) return placeFragment({ ...base, markers: [] }, fragment, 0);
   if (result.mode === 'prepend') {
     return placeFragment(rippleInsert(edl, 0, length, ripple), fragment, 0);
   }

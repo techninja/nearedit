@@ -1,7 +1,10 @@
 /**
  * Preparing a DirectorResult fragment (API.md) for merging: sanitise its
- * clips, give them ids that cannot collide with the document, and keep the
- * links and groups that live inside the fragment. Isomorphic and pure.
+ * clips, make sure their ids cannot collide with the document, and keep the
+ * links and groups that live inside the fragment. An id that is free in the
+ * document is kept, so clips rewritten in place (silence removal, beat sync)
+ * stay selected; only clashing or repeated ids are replaced.
+ * Isomorphic and pure.
  * @module utils/edl/fragment
  */
 
@@ -32,9 +35,14 @@ import { isObject, toNumber } from './sanitize.js';
 /**
  * @param {any} result - A DirectorResult
  * @param {number} fps - Frame rate of the document it will be merged into
+ * @param {{ clipIds: Set<string>, groupIds: Set<string> }} [taken] - Ids used
+ *   by clips that will remain in the document. When given, fragment ids that
+ *   are free are kept; without it every clip gets a fresh id (paste, duplicate).
  * @returns {Fragment}
  */
-export function prepareFragment(result, fps) {
+export function prepareFragment(result, fps, taken) {
+  const keepClip = (id) => Boolean(taken) && !taken.clipIds.has(id);
+  const keepGroup = (id) => Boolean(taken) && !taken.groupIds.has(id);
   const rawTracks = Array.isArray(result?.tracks) ? result.tracks.filter(isObject) : [];
   const counts = { video: 0, audio: 0 };
   /** @type {Map<string, string>} */
@@ -50,15 +58,18 @@ export function prepareFragment(result, fps) {
       .map((clip) => normalizeClip(clip, fps, type))
       .filter(Boolean);
     for (const clip of clips) {
-      if (clip.clipId && !ids.has(clip.clipId)) ids.set(clip.clipId, newId('clip'));
-      if (clip.groupId && !groups.has(clip.groupId)) groups.set(clip.groupId, newId('grp'));
+      const { clipId, groupId } = clip;
+      if (clipId && !ids.has(clipId)) ids.set(clipId, keepClip(clipId) ? clipId : newId('clip'));
+      if (groupId && !groups.has(groupId)) {
+        groups.set(groupId, keepGroup(groupId) ? groupId : newId('grp'));
+      }
     }
     const name = typeof raw.name === 'string' ? raw.name : '';
     return { type, row: Math.max(0, Math.floor(index)), name, clips };
   });
 
-  // Re-identify. An id that occurs twice keeps its mapping for the first
-  // holder only; links resolve through the same map, so pairs stay pairs.
+  // An id that occurs twice keeps its mapping for the first holder only;
+  // links resolve through the same map, so pairs stay pairs.
   const used = new Set();
   const reidentify = (clip) => {
     const mapped = ids.get(clip.clipId);
