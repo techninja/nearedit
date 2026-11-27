@@ -1,5 +1,5 @@
 /**
- * Clip geometry and levels — the one implementation of the placement
+ * Clip geometry — the one implementation of the placement
  * algorithm in docs/app-spec/EDL.md. The preview compositor and the FFmpeg
  * renderer both call these so what you see is what renders.
  * Isomorphic and pure.
@@ -98,32 +98,4 @@ export function placeSource(srcW, srcH, outW, outH, t) {
   const dw = sw * fit * t.scaleX;
   const dh = sh * fit * t.scaleY;
   return { sx, sy, sw, sh, dx: (outW - dw) / 2 + t.x, dy: (outH - dh) / 2 + t.y, dw, dh };
-}
-
-/**
- * Fade multiplier of a clip at a moment: ramps 0→1 over fadeIn and 1→0 over
- * fadeOut. Drives video opacity and audio gain alike.
- * @param {{ timelineStart: number, timelineEnd: number, fadeIn?: number, fadeOut?: number }} clip
- * @param {number} time - Timeline seconds
- * @returns {number} 0..1
- */
-export function fadeFactor(clip, time) {
-  const sinceStart = time - clip.timelineStart;
-  const untilEnd = clip.timelineEnd - time;
-  let factor = 1;
-  if (clip.fadeIn > 0 && sinceStart < clip.fadeIn) factor = sinceStart / clip.fadeIn;
-  if (clip.fadeOut > 0 && untilEnd < clip.fadeOut)
-    factor = Math.min(factor, untilEnd / clip.fadeOut);
-  return clamp01(factor);
-}
-
-/**
- * Linear audio gain of a clip at a moment.
- * @param {{ volume?: number }} track
- * @param {{ volume?: number, timelineStart: number, timelineEnd: number }} clip
- * @param {number} time - Timeline seconds
- * @returns {number}
- */
-export function clipGain(track, clip, time) {
-  return (track.volume ?? 1) * (clip.volume ?? 1) * fadeFactor(clip, time);
 }

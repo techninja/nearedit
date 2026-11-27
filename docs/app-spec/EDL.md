@@ -180,9 +180,15 @@ undoable step that the user can then hand-tune.
 ## Rendering Semantics
 
 - Layers composite back to front: last video track first, first video
-  track last. Within a cross-fade both clips draw, each with its own fade.
+  track last. Clips on one track draw in `timelineStart` order.
+- **Video cross-fades are true dissolves.** While a later clip on the same
+  track fades in over it, the outgoing clip stays fully opaque underneath;
+  its `fadeOut` is ignored for picture. A `fadeOut` with nothing cross-fading
+  over it fades to whatever is behind (lower tracks, or black).
+  `levels.js` `videoOpacity(track, clip, time)` implements this.
 - Audio from all audible audio tracks is summed. Gain at any moment is
-  `track.volume × clip.volume × fadeFactor`.
+  `track.volume × clip.volume × fadeFactor` (`levels.js` `clipGain`); audio
+  cross-fades are equal-gain, so both clips ramp.
 - Gaps render as black video and silence.
 - Output frame size and rate come from `resolution` and `fps`.
 - Placeholders render as nothing (they are planning aids).
