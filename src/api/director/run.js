@@ -49,13 +49,17 @@ export function jobLabel(prepared) {
 }
 
 /**
- * Job worker: run one directive to its result.
+ * The project's media with their sidecars — or nothing, for an action that
+ * never looks at media (`media: false` in its schema).
  * @param {import('./request.js').Prepared} prepared
- * @param {import('./llm/client.js').LlmClient} llm
  * @param {import('../lib/jobs.js').JobContext} job
- * @returns {Promise<any>} A DirectorResult, or the script result of `generate_script`
+ * @returns {Promise<any[]>}
  */
-export async function runDirective(prepared, llm, job) {
+async function readMedia(prepared, job) {
+  if (prepared.action.media === false) {
+    job.progress(10, prepared.action.title);
+    return [];
+  }
   job.progress(2, 'Reading the project’s media…');
   const media = await gatherMedia(prepared.projectId, {
     signal: job.signal,
@@ -65,6 +69,18 @@ export async function runDirective(prepared, llm, job) {
   });
   const analysed = media.filter((m) => m.analysed).length;
   job.progress(10, `${media.length} media files (${analysed} analysed) — ${prepared.action.title}`);
+  return media;
+}
+
+/**
+ * Job worker: run one directive to its result.
+ * @param {import('./request.js').Prepared} prepared
+ * @param {import('./llm/client.js').LlmClient} llm
+ * @param {import('../lib/jobs.js').JobContext} job
+ * @returns {Promise<any>} A DirectorResult, or the script result of `generate_script`
+ */
+export async function runDirective(prepared, llm, job) {
+  const media = await readMedia(prepared, job);
   const result = await HANDLERS[prepared.action.id]({
     projectId: prepared.projectId,
     projectDir: prepared.projectDir,

@@ -73,6 +73,7 @@ test('GET /director/actions serves the schemas that drive the form', async () =>
       'generate_script',
       'execute_script',
       'insert_broll',
+      'motion_piece',
       'remove_silence',
       'beat_sync',
       'add_captions',

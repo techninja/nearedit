@@ -32,8 +32,7 @@ export function sceneClips(shot, next, piece) {
   const { theme, plan } = piece;
   const { scene, index } = shot;
   const colors = theme.backdrops[(hash(piece.seed, 11) + index) % theme.backdrops.length];
-  const ruled = scene.accent === 'rule';
-  const text = composeScene(scene, theme, piece.format, plan.align, piece.measure, ruled);
+  const text = composeScene(scene, theme, piece.format, plan.align, piece.measure, scene.accent);
   const grade = look(scene.look);
   const onTitle = grade.on === 'title';
   const shade = {

@@ -25,7 +25,7 @@ export const LLM_DOCS = 'docs/app-spec/CONFIGURATION.md § Director LLM';
 
 /**
  * Whether an action can be picked.
- * @param {{ llm: 'no'|'yes'|'optional' }} action
+ * @param {{ llm: 'no'|'yes'|'optional', noLlmNote?: string }} action
  * @param {LlmStatus|null} llm - null while the status is unknown: nothing is blocked on a guess
  * @returns {{ enabled: boolean, note: string }} `note` explains a disabled action, or what an
  *   optional LLM would add
@@ -33,7 +33,9 @@ export const LLM_DOCS = 'docs/app-spec/CONFIGURATION.md § Director LLM';
 export function actionState(action, llm) {
   if (action.llm === 'no' || !llm || llm.available) return { enabled: true, note: '' };
   if (action.llm === 'yes') return { enabled: false, note: llmProblem(llm) };
-  return { enabled: true, note: 'Works by keyword matching; the language model is not available.' };
+  const note =
+    action.noLlmNote || 'Works by keyword matching; the language model is not available.';
+  return { enabled: true, note };
 }
 
 /**

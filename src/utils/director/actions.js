@@ -25,6 +25,10 @@ import { REMOVE_SILENCE } from './actionsTimeline.js';
  * @property {{ label: string, placeholder: string, required: boolean } | null} prompt -
  *   How to ask for `directive.prompt`; null when the action takes none
  * @property {ActionField[]} fields - Form fields, stored in `directive.params`
+ * @property {boolean} [media] - `false` when the action never looks at the
+ *   project's media, so the scan before it is skipped
+ * @property {string} [noLlmNote] - For an `optional` action: what it does
+ *   instead while the language model is not available
  */
 
 /** @type {ActionSchema[]} In the order the form should list them. */

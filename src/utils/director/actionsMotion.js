@@ -18,6 +18,8 @@ export const MOTION_PIECE = {
     'A title sequence made only of generated layers — animated backgrounds, particles, ' +
     'shapes and titles — from a few lines of text. No media files needed.',
   llm: 'optional',
+  noLlmNote: 'Builds the scenes from the lines of the brief; the language model is not available.',
+  media: false,
   jobType: 'director',
   modes: ['replace', 'append', 'prepend', 'insert', 'range'],
   defaultMode: 'replace',
@@ -32,7 +34,7 @@ export const MOTION_PIECE = {
       'theme',
       'Theme',
       [
-        [AUTO, 'Auto — let the seed choose'],
+        [AUTO, 'Auto — by the variation number'],
         ...THEMES.map(
           (theme) =>
             /** @type {[string, string]} */ ([theme.id, `${theme.label} — ${theme.description}`]),
@@ -52,7 +54,7 @@ export const MOTION_PIECE = {
     range(
       'seed',
       'Variation',
-      [1, 999, 1],
+      [1, 99, 1],
       1,
       '',
       'The same brief and number always give the same piece; another number, another take.',

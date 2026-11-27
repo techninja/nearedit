@@ -206,6 +206,7 @@ edit-plan format and the track layout it produces are described in
 | `generate_script` | yes | Markdown edit-script options to review first (`/director/script`) |
 | `execute_script` | yes | Build the timeline from an approved script |
 | `insert_broll` | optional | Find clips matching the prompt by tags/transcript and place them |
+| `motion_piece` | optional | A title sequence built only from generated layers — backgrounds, particles, shapes, animated titles — from a few lines of text; no media ([DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md)) |
 | `remove_silence` | no | Tighten clips using word timestamps or detected silences |
 | `beat_sync` | no | Move cuts onto the beats of a music clip |
 | `add_captions` | no | Title clips generated from a transcript |

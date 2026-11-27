@@ -93,21 +93,18 @@ export async function motionPiece(ctx) {
     pacing: params.pacing,
     duration: target,
   });
-  const byLlm = raw.theme && getTheme(raw.theme)?.id === plan.theme;
-  const chosen =
-    params.theme === plan.theme
-      ? ''
-      : byLlm
-        ? ' (the LLM’s choice)'
-        : ` (variation ${params.seed})`;
+  // Why this theme: the editor named it, the plan did, or the variation number chose.
+  let chosen = ` (variation ${params.seed})`;
+  if (params.theme === plan.theme) chosen = '';
+  else if (getTheme(raw.theme)?.id === plan.theme) chosen = ' (the LLM’s choice)';
   notes.push(
     ...completed.notes,
     `Theme ${theme.label}${chosen}: ${theme.description.toLowerCase()}.`,
     `Laid out for ${format.width}×${format.height} at ${format.fps} fps; text is ` +
       `${plan.align === 'left' ? 'set against the left margin' : 'centred'}.`,
     ...built.notes,
-    `Every clip is an ordinary generator or title: change its text, colours, keyframes or ` +
-      `effects in the inspector, or run again with another seed for a different take.`,
+    'Every clip is an ordinary generator or title: change its text, colours, keyframes or ' +
+      'effects in the inspector, or run again with another variation number for a different take.',
   );
   const count = plan.scenes.length;
   const particles = plan.scenes.map((s) => s.particles).filter((p) => p !== 'none');

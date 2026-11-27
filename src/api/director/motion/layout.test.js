@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { layoutText, textStyle } from '#utils/compose/index.js';
 import { THEMES, getTheme, themeIds } from '#utils/director/motion/themes.js';
-import { MARGIN, composeScene } from './layout.js';
+import { FRAMED_MARGIN, MARGIN, composeScene } from './layout.js';
 import { serverMeasure } from './measure.js';
 import { FORMATS, buildPiece, planFor, row } from './testkit.js';
 import { fitText } from './typeset.js';
@@ -108,7 +108,7 @@ test('a rule sits between title and subtitle, clear of both; a frame stays insid
   for (const format of FORMATS) {
     for (const align of /** @type {const} */ (['center', 'left'])) {
       const scene = { title: 'Keyframes, eased', subtitle: 'every number can move' };
-      const text = composeScene(scene, THEMES[0], format, align, measure, true);
+      const text = composeScene(scene, THEMES[0], format, align, measure, 'rule');
       const titleBottom = text.title.y + text.title.fitted.height / 2;
       const subtitleTop = text.subtitle.y - text.subtitle.fitted.height / 2;
       assert.ok(text.rule.y - text.rule.thickness / 2 >= titleBottom, `${format.name} ${align}`);
@@ -118,7 +118,14 @@ test('a rule sits between title and subtitle, clear of both; a frame stays insid
         assert.ok(Math.abs(text.rule.x - (text.title.x - text.title.fitted.width / 2)) < 1);
       }
       const plan = planFor({ theme: 'blueprint', scene: { accent: 'frame' } });
-      for (const clip of row(buildPiece(plan, { format }).built, 'Accents')) {
+      const framed = buildPiece(plan, { format }).built;
+      // Words keep clear of the outline: as far inside it as it is inside the picture.
+      for (const title of row(framed, 'Titles')) {
+        const box = drawnBox(title, format);
+        assert.ok(box.left >= format.width * (FRAMED_MARGIN - 0.005), `${format.name}: framed`);
+        assert.ok(box.right <= format.width * (1 - FRAMED_MARGIN + 0.005));
+      }
+      for (const clip of row(framed, 'Accents')) {
         const { widthPx, heightPx, strokeWidth } = clip.generator.params;
         const keys = Object.values(clip.keyframes).flat();
         assert.ok(widthPx + strokeWidth < format.width && heightPx + strokeWidth < format.height);

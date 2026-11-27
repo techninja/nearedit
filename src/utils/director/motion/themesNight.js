@@ -90,7 +90,7 @@ export const NIGHT_THEMES = [
     label: 'Noir',
     description: 'Black and white film: a serif, a pool of light, grain',
     ink: '#fafafa',
-    sub: '#d4d4d8',
+    sub: '#e4e4e7',
     accent: '#e4e4e7',
     backdrops: [
       ['#0b0b0c', '#2e2e33', '#5a5a62'],
@@ -104,7 +104,7 @@ export const NIGHT_THEMES = [
       lineHeight: 1.08,
       tracking: 0,
     },
-    subtitle: { fontFamily: 'Inter', weight: 400, size: 0.042, tracking: 0.12, animation: 'fade' },
+    subtitle: { fontFamily: 'Inter', weight: 400, size: 0.046, tracking: 0.1, animation: 'fade' },
     backgrounds: ['spotlight', 'noise', 'gradient'],
     particles: ['dust', 'none'],
     animations: [

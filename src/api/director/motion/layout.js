@@ -28,6 +28,8 @@ import { fitText } from './typeset.js';
 
 /** Share of the width kept free on each side of the text. */
 export const MARGIN = 0.08;
+/** The same inside a `frame` accent, which takes the outer 5.5% for itself. */
+export const FRAMED_MARGIN = 0.115;
 
 /**
  * Long titles are set smaller than short ones, as a designer would.
@@ -43,15 +45,18 @@ const lengthFactor = (text) => Math.max(0.66, Math.min(1, 1.12 - 0.009 * text.le
  * @param {Frame} frame - Output resolution
  * @param {Align} align
  * @param {import('./measure.js').Measure} measure
- * @param {boolean} [ruled=false] - Leave room for a rule between title and subtitle
+ * @param {string} [accent] - The scene's accent: a `rule` needs room
+ *   between title and subtitle, a `frame` a wider margin
  * @returns {Composition}
  */
-export function composeScene(scene, theme, frame, align, measure, ruled = false) {
+export function composeScene(scene, theme, frame, align, measure, accent = 'none') {
   const { width: W, height: H } = frame;
   const short = Math.min(W, H);
   const tall = H > W * 1.2;
   const wide = W > H * 1.2;
-  const budget = W * (align === 'left' && wide ? 0.62 : 1 - MARGIN * 2);
+  const ruled = accent === 'rule';
+  const margin = accent === 'frame' ? FRAMED_MARGIN : MARGIN;
+  const budget = W * (align === 'left' && wide ? 0.62 : 1 - margin * 2);
   const lines = tall ? 4 : 3;
   const title = fitText(
     scene.title,
@@ -86,7 +91,7 @@ export function composeScene(scene, theme, frame, align, measure, ruled = false)
   const width = Math.max(title.width, subtitle?.width || 0);
   const centreY = -H * 0.012;
   const top = centreY - height / 2;
-  const left = -W / 2 + W * MARGIN;
+  const left = -W / 2 + W * margin;
   const xOf = (/** @type {Fitted} */ block) => (align === 'left' ? left + block.width / 2 : 0);
   const thickness = Math.max(3, Math.round(short * 0.0055));
   return {

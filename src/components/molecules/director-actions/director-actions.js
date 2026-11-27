@@ -21,6 +21,7 @@ const ICONS = {
   generate_script: 'file-text',
   execute_script: 'list-video',
   insert_broll: 'film',
+  motion_piece: 'motion',
   remove_silence: 'split',
   beat_sync: 'beat',
   add_captions: 'captions',

@@ -30,7 +30,9 @@ Served as JSON by `GET /api/director/actions` (schemas in
 `src/utils/director/actions*.js`) so the form can be rendered generically.
 Each schema has `id`, `title`, `description`, `llm` (`no`, `yes`,
 `optional`), `jobType`, `modes`, `defaultMode`, `inPlace`, `prompt` (how to
-ask for `directive.prompt`, or `null`) and `fields`. A field is
+ask for `directive.prompt`, or `null`) and `fields`; optionally `media:
+false` (the action never reads the project's media, so the scan is skipped)
+and `noLlmNote`. A field is
 `{ key, type, label, help, default }` plus `min`/`max`/`step`/`unit` for a
 `range`, `options: [{ value, label }]` for a `select` (`allowCustom` lets
 it take free text), and `accept` for a `file`. Field types: `range`,
@@ -43,6 +45,7 @@ it take free text), and `accept` for a `file`. Field types: `range`,
 | `generate_script` | yes | — | `duration`, `style`, `pacing`, `variants` (1–5) |
 | `execute_script` | yes | all | `scriptPath`, `tighten`, `threshold`, `padding`, `beatSync`, `autoBroll`, `naturalSound` |
 | `insert_broll` | optional | insert, append, prepend, range | `duration` (per clip), `count`, `placement` (insert, overlay), `naturalSound`, `useLlm` |
+| `motion_piece` | optional | all | `theme`, `duration`, `pacing`, `seed`, `particles`, `useLlm` — a piece of generated layers only, no media: [DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md) |
 | `remove_silence` | no | replace, range | `threshold`, `padding` |
 | `beat_sync` | no | replace, range | `every` (1, 2, 4), `maxShift`, `protectSpeech` |
 | `add_captions` | no | replace, range | `maxChars`, `maxDuration`, `position`, `size`, `background` |
@@ -433,6 +436,7 @@ injectable (`createLlmClient(cfg, { fetch })`).
 | `src/api/director/assemble/` | Plan → fragment |
 | `src/api/director/baseEdit/` | Heuristic planners |
 | `src/api/director/inplace/` | Actions on the existing timeline |
+| `src/api/director/motion/`, `src/utils/director/motion/` | The motion piece: plan, themes, vocabularies, builder ([DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md)) |
 | `src/api/director/actions/`, `scripts/`, `prompts/` | Action entry points, script files, prompts |
 | `src/api/director/testing/` | Test fixtures: lavfi media projects, a fake LLM server, the fragment invariant checker |
 

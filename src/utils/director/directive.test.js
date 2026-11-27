@@ -14,6 +14,7 @@ test('the action list matches the API.md table', () => {
     generate_script: 'yes',
     execute_script: 'yes',
     insert_broll: 'optional',
+    motion_piece: 'optional',
     remove_silence: 'no',
     beat_sync: 'no',
     add_captions: 'no',
