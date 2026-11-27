@@ -2,8 +2,8 @@
 
 /**
  * Post-install setup — makes a fresh clone runnable: creates the local env
- * file `npm run dev` expects, vendors browser dependencies and builds the
- * icon sprite.
+ * file `npm run dev` expects, vendors browser dependencies and fonts, and
+ * builds the icon sprite.
  * @module scripts/setup
  */
 
@@ -33,4 +33,5 @@ function ensureEnvLocal() {
 
 ensureEnvLocal();
 await import(pathToFileURL(resolve(ROOT, 'scripts/vendor-deps.js')).href);
+await import(pathToFileURL(resolve(ROOT, 'scripts/vendor-fonts.js')).href);
 await import(pathToFileURL(resolve(ROOT, 'scripts/build-icons.js')).href);

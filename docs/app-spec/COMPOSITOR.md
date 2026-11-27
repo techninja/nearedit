@@ -1,0 +1,263 @@
+# Compositor — Generators, Effects, Keyframes
+
+One frame compositor draws every NearEdit picture. The browser preview runs
+it on an HTML canvas; the server runs **the same modules** on a server-side
+canvas (`@napi-rs/canvas`, the same Skia rasteriser Chromium uses) and pipes
+the frames to FFmpeg for encoding. Generators, effects, text and particles
+are therefore written once, and what you preview is what renders.
+
+Measured when this design was chosen: gradients, shapes, shadows, hundreds
+of additively blended sprites and CSS-style filters differ between the two
+canvases by at most 1 level in 255; text differs only at sub-pixel edges.
+
+```text
+EDL ──► resolveClip (keyframes) ──► layers ──► drawFrame(ctx, …) ──► canvas
+                                                   │
+        browser: <canvas> preview        server: frames ──► FFmpeg encode
+```
+
+The FFmpeg filter-graph renderer ([RENDER.md](./RENDER.md)) remains the fast
+path for stretches of plain footage; the canvas path renders everything else.
+
+## Document additions (EDL v3)
+
+All optional; a v2 document is a valid v3 document.
+
+### Clip
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `generator` | `{ type, seed, params }` | A synthetic source. `type` empty = not a generator. `clipKind` is `generator` |
+| `effects` | `[{ effectId, type, enabled, params }]` | Applied in order after the clip is placed |
+| `keyframes` | `{ "<path>": [{ t, v, ease }] }` | Animates any numeric or colour property |
+| `blendMode` | enum | How the clip combines with what is under it. Default `normal` |
+| `text` | object | Title text, extended below |
+
+Generator, title, image and placeholder clips now keep a source window like
+media does: `timelineEnd - timelineStart === sourceOut - sourceIn` for every
+clip. Their source is unbounded, so `sourceIn` may be negative. Trimming a
+clip's start moves `sourceIn`; that is what keeps keyframes and generator
+motion attached to the content through trims, slips and splits.
+
+### Track
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `opacity` | number | 0..1, video tracks |
+| `blendMode` | enum | How the whole track combines with the tracks under it |
+| `effects` | effect[] | Applied to the track's composite |
+
+### Document
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `version` | 3 | |
+| `background` | colour | Behind everything. Default `#000000` |
+
+### text (additions)
+
+| Field | Type | Notes |
+| ----- | ---- | ----- |
+| `fontFamily` | string | A bundled family (`Inter`, `Playfair Display`, `JetBrains Mono`, `Bebas Neue`, `Caveat`) or a generic name |
+| `weight` | number | 0 = from `bold` (700) / regular (400) |
+| `lineHeight` | number | Multiple of `fontSize`. Default 1.2 |
+| `letterSpacing` | number | Pixels at output resolution |
+| `maxWidth` | number | Wrap width in output pixels; 0 = no wrapping |
+| `boxPadding`, `boxRadius` | number | Background box, as multiples of `fontSize` / pixels |
+| `shadowColor`, `shadowBlur`, `shadowX`, `shadowY` | | Drop shadow |
+| `animateIn`, `animateOut` | `{ type, duration, by, stagger, ease }` | `type`: none, fade, slide-up/down/left/right, scale, blur, typewriter. `by`: block, line, word, char |
+
+### Blend modes
+
+`normal`, `add`, `screen`, `multiply`, `overlay`, `darken`, `lighten`,
+`difference`, `soft-light`. They map onto canvas `globalCompositeOperation`
+(`add` is `lighter`).
+
+## Keyframes
+
+```json
+"keyframes": {
+  "transform.x": [{ "t": 0, "v": -400, "ease": "ease-out" }, { "t": 1.2, "v": 0 }],
+  "effects.fx_1.radius": [{ "t": 0, "v": 30 }, { "t": 0.8, "v": 0 }],
+  "generator.params.angle": [{ "t": 0, "v": 0 }, { "t": 10, "v": 360 }],
+  "text.color": [{ "t": 0, "v": "#ffffff" }, { "t": 2, "v": "#f97316" }]
+}
+```
+
+- A **path** is dotted access into the clip. `effects.<effectId>.<param>`
+  addresses one effect's parameter.
+- **`t`** is seconds in clip-local source time: `sourceIn + (time -
+  timelineStart)`. Keys are sorted by `t`.
+- **`v`** is a number or a hex colour (`#rrggbb` / `#rrggbbaa`).
+- **`ease`** shapes the segment leaving its key: `linear` (default), `hold`,
+  `ease-in`, `ease-out`, `ease-in-out`, `back-in`, `back-out`,
+  `elastic-out`, `bounce-out`, `sine`.
+- Before the first key a property holds the first value; after the last, the
+  last. A keyframed property overrides ken burns for that property.
+
+`src/utils/edl/animate.js` `resolveClip(clip, time)` returns the clip with
+every keyframed property replaced by its value at that moment. Everything
+downstream sees plain values.
+
+## Time and size
+
+A generator or effect is a pure function of the document and the time. It
+receives:
+
+| Name | Meaning |
+| ---- | ------- |
+| `time.t` | Clip-local source time, seconds — the keyframe time base |
+| `time.age` | Seconds since the clip's start on the timeline |
+| `time.remaining` | Seconds until the clip's end |
+| `time.duration` | Clip length |
+| `time.frame` | Output frame number of this moment |
+| `frame.width`, `frame.height` | Size of the canvas being drawn, pixels |
+| `frame.scale` | Canvas pixels per output pixel (`frame.width / outputWidth`) |
+| `frame.fps` | Output frame rate |
+
+**Every length in the document is in output pixels.** Code multiplies by
+`frame.scale` before drawing, so a 640-pixel preview and a 1920-pixel render
+show the same picture. A blur radius, a font size, a particle speed — all of
+them scale.
+
+**Determinism.** No `Math.random`, no clocks, no state carried from one frame
+to the next. Randomness comes from `src/utils/compose/random.js`, seeded by
+`generator.seed` and stable per particle or per cell. Any frame can be drawn
+on its own, in any order — that is what makes scrubbing, segment rendering
+and preview/render agreement work.
+
+## Layer pipeline
+
+For each frame, back to front:
+
+1. Fill the canvas with `background`.
+2. For each visible video track (last first; `activeTracks` decides):
+   1. For each clip covering the time, in start order, `resolveClip` it, then
+      draw its **source**: a footage frame or still placed with `placeSource`
+      and `resolveTransform`; a generator or title drawn frame-sized, then
+      transformed the same way.
+   2. If the clip has enabled effects or a non-normal blend mode, it is drawn
+      onto its own frame-sized surface first, its effects are applied in
+      order, and the surface is composited with the clip's opacity
+      (`transform.opacity × videoOpacity`) and `blendMode`. Otherwise it is
+      drawn straight through.
+   3. If the track has effects, opacity below 1 or a non-normal blend mode,
+      its clips are composed on a track surface, the track effects applied,
+      and the surface composited with the track's opacity and `blendMode`.
+
+Effects therefore act in frame space, after the transform: a 20-pixel blur
+is 20 output pixels however the clip is scaled, and glows and shadows can
+spill outside the clip's rectangle.
+
+## Module contracts
+
+Generators and effects live in `src/utils/compose/generators/` and
+`src/utils/compose/effects/`, one module each, registered in a catalog
+(`src/utils/compose/catalog.js`) that the UI, the director and the docs read.
+
+```js
+/** A generator. */
+export default {
+  type: 'gradient',
+  label: 'Gradient',
+  category: 'background', // background | shape | text | particles | pattern
+  description: 'Linear or radial colour gradient',
+  params: {
+    angle: { type: 'number', default: 90, min: 0, max: 360, unit: '°', animatable: true },
+    from: { type: 'color', default: '#1e1b4b', animatable: true },
+  },
+  draw(ctx, params, time, frame, env) {}, // paints the whole frame-sized canvas
+};
+
+/** An effect: either a CSS-style filter string, or a drawing pass. */
+export default {
+  type: 'blur',
+  label: 'Blur',
+  category: 'blur', // color | blur | stylize | light | key | distort
+  params: { radius: { type: 'number', default: 8, min: 0, max: 200, unit: 'px', animatable: true } },
+  filter: (params, frame) => `blur(${params.radius * frame.scale}px)`,
+  // …or, for effects that need more than a filter:
+  // apply(surface, params, time, frame, env) {}  — redraws surface.canvas in place
+};
+```
+
+Parameter types: `number` (`min`, `max`, `step`, `unit`), `color`, `boolean`,
+`select` (`options`), `text`, `image` (a media path), `point` (`{ x, y }` as
+fractions of the frame). `animatable: true` marks what may be keyframed.
+Missing parameters take their defaults, so a document stores only what was
+changed.
+
+### The host environment `env`
+
+The only door to the outside. Compositor modules never touch `document`,
+`window`, `OffscreenCanvas`, `fetch` or the file system.
+
+| Member | Purpose |
+| ------ | ------- |
+| `createCanvas(width, height)` | A scratch canvas with a 2D context |
+| `image(path)` | A decoded still or sprite for a media path, or `null` while it loads |
+| `frameOf(clip, sourceTime)` | The footage frame for a clip, or `null` when not available |
+| `fontReady(font, text)` | Whether the font is loaded (the browser loads on demand) |
+
+`requirements(edl)` lists the images and fonts a document needs, so a host
+can load them before drawing: the server loads all of them first; the
+browser draws what is ready and redraws when the rest arrives.
+
+### Canvas features
+
+Use what both canvases implement identically: paths, `roundRect`, linear and
+radial gradients, `drawImage` with transforms, `globalAlpha`,
+`globalCompositeOperation`, shadows, `filter` with CSS filter functions,
+text with `font` / `measureText`, `getImageData` / `putImageData`. Pixel
+loops are allowed but slow — keep them off the full frame where a filter or
+a composite operation can do the job.
+
+## Starting catalog
+
+**Generators:** `solid`, `gradient`, `noise`, `shape` (rectangle, ellipse,
+polygon, star, line), `pattern` (stripes, checker, dots, grid), `particles`,
+and titles through `clip.text`.
+
+**Particles** are stateless: particle *n* is born at a time fixed by the
+rate and seed, and its position, size, colour and opacity are closed-form
+functions of its age. Parameters cover the emitter (point, line, box,
+circle; position and size), flow (rate, burst, lifetime, speed, direction,
+spread, gravity, turbulence), look (size and its change over life, spin,
+colour from → to, opacity with fade in / out, blend) and the **sprite**: a
+built-in shape (dot, circle, square, star, spark, ring) or any image from
+the project (`sprite: "image"`, `image: "/abs/path.png"`).
+
+**Effects:** `colorAdjust` (brightness, contrast, saturation, hue), `blur`,
+`glow`, `dropShadow`, `vignette`, `tint`, `stylize` (grayscale, sepia,
+invert), `pixelate`, `chromaKey`, `wipe` (a soft-edged reveal for
+transitions), `rgbSplit`, `grain`.
+
+## Fonts
+
+Five families and colour emoji are bundled (`src/utils/compose/fonts.js`),
+vendored from `@fontsource` packages into `src/vendor/fonts/` at install.
+The browser loads them through `fonts.css`; the server registers the same
+files. A document that names another family gets the sans-serif default.
+
+## Rendering on the server
+
+`src/api/render/canvas/` drives the compositor headlessly: FFmpeg decodes
+each active footage clip to raw frames, the compositor draws, and the raw
+result is piped into the same encoder settings the filter-graph path uses, so
+segments from either path join without re-encoding. A segment takes the
+canvas path when anything in it needs the compositor — a generator, a title,
+an effect, a blend mode, a keyframe, track opacity or effects, a non-black
+background — and the filter-graph path otherwise. `RENDER_ENGINE` (`auto`,
+`canvas`, `ffmpeg`) overrides the choice. Audio is mixed by FFmpeg as before.
+
+## Authoring without the UI
+
+```bash
+node bin/nearedit.js frame  edit.json --time 3.5 -o frame.png   # one frame
+node bin/nearedit.js render edit.json -o out.mp4 --preset draft # the whole edit
+node bin/nearedit.js validate edit.json
+node bin/nearedit.js catalog                                    # generators + effects as JSON
+```
+
+A document, a text editor and these commands are enough to build an edit
+from generators alone: write the EDL, look at frames, render.
