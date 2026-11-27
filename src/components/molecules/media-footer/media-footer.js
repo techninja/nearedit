@@ -14,6 +14,7 @@ import '#atoms/app-icon/app-icon.js';
  * @property {number} total - Files in the project
  * @property {number} selected
  * @property {boolean} look - The quick look is open
+ * @property {boolean} lookable - There is something to look at (the button is enabled)
  */
 
 /** @param {MediaFooterHost & HTMLElement} host */
@@ -33,8 +34,9 @@ export default define({
   total: 0,
   selected: 0,
   look: false,
+  lookable: true,
   render: {
-    value: ({ listed, total, selected, look }) => html`
+    value: ({ listed, total, selected, look, lookable }) => html`
       <span class="media-footer-count" aria-live="polite"
         >${listed === total ? `${total} files` : `${listed} of ${total} files`}${selected > 1
           ? ` · ${selected} selected`
@@ -53,8 +55,9 @@ export default define({
         type="button"
         class="icon-btn"
         aria-pressed="${look ? 'true' : 'false'}"
-        title="Show or hide the quick look"
+        title="Quick look: preview the selected file and mark the part to use (Space)"
         aria-label="Quick look"
+        disabled="${!lookable}"
         onclick="${handleToggle}"
       >
         <app-icon name="visible" size="sm"></app-icon>

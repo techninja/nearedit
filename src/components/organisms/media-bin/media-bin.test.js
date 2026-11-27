@@ -196,6 +196,25 @@ describe('media-bin', () => {
     el.querySelector('media-marks [data-edge=clear]').click();
   });
 
+  it('in a short bin keeps the room for the list and opens the quick look on request', async () => {
+    const el = await mount();
+    el.parentElement.style.height = '400px';
+    await waitUntil(() => el.compact === true, 'never became compact');
+    row(el, 'talk.mp4').querySelector('.media-row').click();
+    await waitUntil(() => row(el, 'talk.mp4').querySelector('.media-row-selected'));
+    expect(el.querySelector('.media-bin-look')).to.equal(null);
+    const list = el.querySelector('.media-bin-list');
+    list.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    await waitUntil(
+      () => el.querySelector('media-quicklook video'),
+      'Space did not open the quick look',
+    );
+    expect(getComputedStyle(list).display).to.equal('none');
+    el.querySelector('media-footer [aria-label="Quick look"]').click();
+    await waitUntil(() => !el.querySelector('.media-bin-look'), 'the button did not close it');
+    expect(getComputedStyle(list).display).to.not.equal('none');
+  });
+
   it('names a missing provider plainly', async () => {
     const el = await mount();
     await waitUntil(() => el.querySelector('media-status .media-status-notice'), 'no notice');

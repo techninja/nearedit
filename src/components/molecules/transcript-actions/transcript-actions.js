@@ -32,21 +32,23 @@ function handleAction(host, event) {
 /**
  * @param {string} action
  * @param {string} icon
- * @param {string} label
+ * @param {string} label - Shown next to the icon; with `iconOnly` it is the accessible name
  * @param {string} hint
  * @param {boolean} enabled
+ * @param {boolean} [iconOnly]
  * @returns {import('hybrids').UpdateFunctionWithMethods<TranscriptActionsHost>}
  */
-function button(action, icon, label, hint, enabled) {
+function button(action, icon, label, hint, enabled, iconOnly = false) {
   return html`<button
     type="button"
     class="icon-btn"
     data-action="${action}"
     title="${hint}"
+    aria-label="${label}"
     disabled="${!enabled}"
     onclick="${handleAction}"
   >
-    <app-icon name="${icon}" size="sm"></app-icon> ${label}
+    <app-icon name="${icon}" size="sm"></app-icon> ${iconOnly ? '' : label}
   </button>`;
 }
 
@@ -63,11 +65,6 @@ export default define({
     value: ({ count, seconds, editable, placed, extend, unit }) => {
       const some = count > 0;
       return html`
-        <span class="transcript-actions-summary" aria-live="polite"
-          >${some
-            ? `${count} ${unit}${count === 1 ? '' : 's'} · ${formatSeconds(seconds)}`
-            : `Select ${unit}s to edit`}</span
-        >
         <span class="toolbar-group">
           ${button(
             'cut',
@@ -87,13 +84,14 @@ export default define({
           )}
         </span>
         <span class="toolbar-group">
-          ${button('copy', 'copy', 'Copy', 'Copy these words as text (Ctrl+C)', some)}
+          ${button('copy', 'copy', 'Copy', 'Copy these words as text (Ctrl+C)', some, true)}
           ${button(
             'edit',
             'edit',
             'Correct',
-            'Fix a mis-heard word — the timing stays (double-click)',
+            'Correct a mis-heard word — the timing stays (double-click, F2)',
             count === 1,
+            true,
           )}
           <button
             type="button"
@@ -107,18 +105,13 @@ export default define({
           >
             <app-icon name="trim" size="sm"></app-icon>
           </button>
-          <button
-            type="button"
-            class="icon-btn"
-            data-action="clear"
-            title="Clear the selection (Esc)"
-            aria-label="Clear the selection"
-            disabled="${!some}"
-            onclick="${handleAction}"
-          >
-            <app-icon name="x" size="sm"></app-icon>
-          </button>
+          ${button('clear', 'x', 'Clear the selection', 'Clear the selection (Esc)', some, true)}
         </span>
+        <span class="transcript-actions-summary" aria-live="polite"
+          >${some
+            ? `${count} ${unit}${count === 1 ? '' : 's'} · ${formatSeconds(seconds)}`
+            : `Select ${unit}s to edit`}</span
+        >
       `;
     },
     shadow: false,

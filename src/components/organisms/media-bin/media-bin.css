@@ -62,9 +62,15 @@ media-bin .media-bin-compact .media-bin-list {
 
 media-bin .media-bin-compact .media-bin-look {
   flex: 1;
+  order: 1;
   height: auto;
   max-height: none;
   border-top: 0;
+}
+
+media-bin .media-bin-compact media-footer,
+media-bin .media-bin-compact media-status {
+  order: 2;
 }
 
 /* A wide bin (a bottom dock, a tablet) puts the quick look beside the list. */

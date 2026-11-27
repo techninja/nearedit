@@ -9,9 +9,14 @@ transcript-actions {
   background: color-mix(in srgb, var(--color-selection) 12%, var(--color-surface));
 
   & .transcript-actions-summary {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
     color: var(--color-text-muted);
     font-family: var(--font-mono);
     font-size: 0.6875rem;
+    text-align: right;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 

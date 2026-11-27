@@ -10,6 +10,7 @@ import { define, dispatch, html } from 'hybrids';
 import { analysisBadges } from '#utils/media/analysis.js';
 import { NO_ITEM, formatSize, metaParts } from '#utils/media/format.js';
 import { loadSidecar, onSidecarChange } from '#utils/media/sidecars.js';
+import { onPinChange, pinnedTranscript } from '#utils/transcript/pin.js';
 import '#atoms/app-icon/app-icon.js';
 
 /**
@@ -18,6 +19,7 @@ import '#atoms/app-icon/app-icon.js';
  * @property {Record<string, any>} status - GET /intelligence/status ({} while unknown)
  * @property {Record<string, any>} sidecar - The file's analysis data ({} until loaded)
  * @property {boolean} busy - An analysis job is running: no new one can start
+ * @property {string} pinned - File whose transcript is pinned in the transcript panel
  */
 
 /** @typedef {MediaDetailsHost & HTMLElement} Host */
@@ -65,8 +67,15 @@ export default define({
   status: { value: {} },
   sidecar: { value: {}, connect: (host) => onSidecarChange(() => load(host)) },
   busy: false,
+  pinned: {
+    value: '',
+    connect: (host) => {
+      host.pinned = pinnedTranscript();
+      return onPinChange((path) => (host.pinned = path));
+    },
+  },
   render: {
-    value: ({ item, status, sidecar, busy }) => {
+    value: ({ item, status, sidecar, busy, pinned }) => {
       if (!item.filePath) return html``;
       const badges = analysisBadges(item, Object.keys(status).length ? status : null);
       const tags = item.tags?.length ? item.tags : sidecar.tags || [];
@@ -89,8 +98,14 @@ export default define({
           html`<p class="media-details-text media-details-quote">
             ${text}
             ${spoken &&
-            html`<button type="button" class="icon-btn" onclick="${handleTranscript}">
-              <app-icon name="text-edit" size="sm"></app-icon> Open transcript
+            html`<button
+              type="button"
+              class="icon-btn"
+              title="Show this file's transcript in the transcript panel"
+              onclick="${handleTranscript}"
+            >
+              <app-icon name="text-edit" size="sm"></app-icon>
+              ${pinned === item.filePath ? 'Shown in the transcript panel' : 'Open transcript'}
             </button>`}
           </p>`}
           ${badges.length > 0 &&

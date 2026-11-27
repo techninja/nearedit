@@ -85,6 +85,7 @@ export default define({
             total="${library.length}"
             selected="${selected.length}"
             look="${open}"
+            lookable="${!host.compact || selected.length > 0}"
           ></media-footer>
           <media-status
             job="${job}"
