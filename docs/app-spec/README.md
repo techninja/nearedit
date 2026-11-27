@@ -65,13 +65,14 @@ A media file reference with indexed metadata. Assets can be:
 ### File System Layout
 
 ```
-<project-dir>/                ← User-chosen location (e.g. ~/Projects/park-edit)
+<project-dir>/                ← User-chosen folder; everything in it is the project's media
   .nearedit/
     project.json              ← Self-contained project file (config + adaptations + EDLs)
-
-<media-folder>/               ← User's media (referenced by project.sourceFolders)
   PXL_20251228_*.mp4
-  PXL_20251228_*.mp4.nearedit.json   ← Sidecar: transcript, tags, beats
+  PXL_20251228_*.mp4.nearedit.json   ← Sidecar: transcript, tags, beats, scenes
+  scripts/                    ← Edit scripts written by the director
+
+<extra-media-folder>/         ← Optional further folders (project.mediaFolders)
   WattsNaturalEnvironment.mp3
   WattsNaturalEnvironment.mp3.nearedit.json
 
@@ -79,10 +80,11 @@ A media file reference with indexed metadata. Assets can be:
   logo_intro.mp4
   whoosh.wav
 
-<repo>/data/
+<repo>/data/                  ← NEAREDIT_DATA_DIR
   registry.json               ← Lightweight index: project ID → path on disk
   renders/                    ← FFmpeg output
   previews/                   ← Cached thumbnails + waveforms
+  transcode/                  ← WAV renditions for sample-accurate audio seeking
 ```
 
 ### Sidecar Metadata (`.nearedit.json`)
@@ -111,120 +113,71 @@ expensive to recompute. Invalidated when source file mtime changes.
 }
 ```
 
-Projects reference source folders via `sourceFolders` (array of absolute
-paths). The server scans these on demand. Global folders are configured
-via `GLOBAL_MEDIA_PATHS` env var or future UI settings.
+The project folder is scanned recursively for media. A project can list
+further folders in `mediaFolders` (absolute paths — an external drive, a
+NAS share); folders shared by every project (logos, stings, music) are set
+with the `GLOBAL_MEDIA_PATHS` environment variable. The server reads media
+only from these folders.
 
-The repo's `media/` directory is a dev fallback — when a project has no
-`sourceFolders` configured, the server scans `media/` instead.
+The sidecar also carries `scenes`, `silences`, `bpm` and per-file probe
+data; the complete list is in [API.md](./API.md#sidecar-fields).
+
+The repo's `media/` directory is a dev fallback, scanned when no project
+is given.
 
 ## EDL (Edit Decision List) — Timeline State
 
-Each adaptation's timeline is stored as a JSON EDL in the browser
-(localStorage during dev, synced to server on save).
+Each adaptation's timeline is a JSON EDL saved in the project file and
+loaded into the browser. The full schema — tracks, clips, titles,
+transforms, ken burns, markers, invariants and editing rules — lives in
+[EDL.md](./EDL.md). The short version:
+
+- A document has `fps`, `resolution`, `tracks` and `markers`.
+- Video tracks sit above audio tracks; the first video track is in front.
+- A clip separates **source timing** (`sourceIn`/`sourceOut`) from
+  **timeline timing** (`timelineStart`/`timelineEnd`).
+- Overlapping two clips on a track cross-fades them (the Vegas fade).
+- A video file's sound is a separate clip on an audio track, linked to its
+  picture by `linkedClipId`.
 
 ### Clip Types
 
-Clips on the timeline can be either **fulfilled** (has a source file) or
-**placeholder** (an intention without media yet).
+Clips are **media** (video, audio, image), **titles** (no source file, a
+`text` block) or **placeholders** (an intention without media yet).
 
-Placeholders allow the AI director or user to plan an edit structurally
-before all media exists:
+Placeholders let the AI director or the user plan an edit structurally
+before all media exists: narration that still needs recording, a B-roll
+slot described by mood ("calm nature shot, 5s"), a music cue to find.
 
-- Narration segments that need TTS generation
-- B-roll slots described by mood/content ("calm nature shot, 5s")
-- SFX/music cues to be found or generated
-- Title cards to be designed
-- Transitions to be decided
-
-Placeholder fields:
-
-| Field       | Type    | Purpose                                      |
-| ----------- | ------- | -------------------------------------------- |
-| placeholder | boolean | true = no media attached yet                 |
-| label       | string  | Human-readable name shown on timeline        |
-| prompt      | string  | Generation prompt, search query, or notes    |
+| Field       | Type    | Purpose                                         |
+| ----------- | ------- | ----------------------------------------------- |
+| placeholder | boolean | true = no media attached yet                    |
+| label       | string  | Human-readable name shown on timeline           |
+| prompt      | string  | Generation prompt, search query, or notes       |
 | intent      | string  | narration, broll, sfx, music, title, transition |
-| color       | string  | Override timeline color (hex)                |
+| color       | string  | Override timeline colour (hex)                  |
 
-Once fulfilled, `sourceFile` is set and `placeholder` becomes false.
-The clip retains its label/prompt as metadata.
+Once fulfilled, `sourceFile` is set and `placeholder` becomes false. The
+clip keeps its label and prompt as metadata.
 
 ### Ken Burns (Image Animation)
 
-Still images on the timeline can have animated pan/zoom via the
-`transform.kenBurns` object. Values interpolate linearly from start to
-end over the clip's duration:
+Stills (and video) can pan and zoom through `transform.kenBurns`: with
+`enabled: true`, position, scale and crop interpolate linearly from the
+`start*` to the `end*` values over the clip. The director applies a gentle
+move to stills automatically, chosen for the adaptation's aspect ratio.
 
-```json
-"transform": {
-  "scaleX": 1, "scaleY": 1,
-  "kenBurns": {
-    "startScale": 1.0,
-    "endScale": 1.3,
-    "startX": 0,
-    "endX": -50,
-    "startY": 0,
-    "endY": 0
-  }
-}
-```
+## Related documents
 
-The AI director uses ken burns automatically for images:
-
-- Landscape image in 16:9 → slow zoom toward subject
-- Landscape image in 9:16 → crop to subject, pan across
-- Portrait image in 16:9 → zoom out to reveal, or pan vertically
-
-```json
-{
-  "fps": 30,
-  "resolution": "1920x1080",
-  "playheadPosition": 12.5,
-  "cursorPosition": 10.0,
-  "zoom": 1,
-  "scrollX": 0,
-  "playing": false,
-  "tracks": [
-    {
-      "trackId": "v1",
-      "type": "video",
-      "name": "Video 1",
-      "muted": false,
-      "solo": false,
-      "clips": [
-        {
-          "clipId": "vclip_abc123",
-          "sourceFile": "PXL_20251228_215419040.mp4",
-          "sourceIn": 2.0,
-          "sourceOut": 8.5,
-          "timelineStart": 0.0,
-          "timelineEnd": 6.5,
-          "fadeIn": 0.0,
-          "fadeOut": 0.5,
-          "linkedClipId": "aclip_abc123",
-          "transform": {
-            "x": 0, "y": 0,
-            "scaleX": 1, "scaleY": 1,
-            "rotation": 0, "opacity": 1,
-            "cropTop": 0, "cropBottom": 0,
-            "cropLeft": 0, "cropRight": 0,
-            "anchorX": 0.5, "anchorY": 0.5
-          }
-        }
-      ]
-    },
-    {
-      "trackId": "a1",
-      "type": "audio",
-      "name": "Audio 1",
-      "muted": false,
-      "solo": false,
-      "clips": [...]
-    }
-  ]
-}
-```
+| Document | Covers |
+| -------- | ------ |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Layers, state, pipelines, conventions |
+| [EDL.md](./EDL.md) | Timeline document schema and editing rules |
+| [API.md](./API.md) | HTTP + WebSocket API |
+| [CONFIGURATION.md](./CONFIGURATION.md) | Environment variables, access and security |
+| [INTELLIGENCE.md](./INTELLIGENCE.md) | Transcription, tagging, beats, scenes: setup and output |
+| [DIRECTOR.md](./DIRECTOR.md) | AI director actions, edit plans, base edit |
+| [RENDER.md](./RENDER.md) | How the EDL becomes an FFmpeg render |
 
 ## Keyboard Shortcuts (Configurable)
 

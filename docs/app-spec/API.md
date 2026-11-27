@@ -9,6 +9,10 @@ configured or unreachable).
 Long work never blocks a request: it starts a **job** and answers
 `202 { "jobId": "..." }`. Progress arrives over the WebSocket.
 
+When `NEAREDIT_PASSWORD` is set, every route (and the WebSocket handshake)
+answers `401` with a Basic challenge until credentials are sent; see
+[CONFIGURATION.md](./CONFIGURATION.md#access-and-security).
+
 **File paths.** Media is addressed by absolute path. Every path taken from a
 request is checked with `lib/paths.js` — it must sit inside a registered
 project directory, one of its `mediaFolders`, a global media path, the dev
@@ -19,15 +23,21 @@ project directory, one of its `mediaFolders`, a global media path, the dev
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
 | GET | `/projects` | `{ data: Project[], total }` |
-| POST | `/projects` | `{ name, path }` → `201 Project`. Creates `.nearedit/project.json`, or re-registers an existing one found at `path` |
-| GET | `/projects/:id` | Project with `adaptations[]` |
-| PUT | `/projects/:id` | Shallow-merge update (`name`, `description`, `mediaFolders`, `status`) |
+| POST | `/projects` | `{ name, path }` → `201 Project`. `path` is absolute and inside `BROWSE_ROOTS`; the folder is created when missing. A folder that already holds `.nearedit/project.json` is re-registered, not overwritten (`name` optional then) |
+| GET | `/projects/:id` | Project with `adaptations[]` (without their EDLs) |
+| PUT | `/projects/:id` | Shallow-merge update of `name`, `description`, `mediaFolders`, `status`. New `mediaFolders` must exist and lie inside `BROWSE_ROOTS` (403 otherwise) |
 | DELETE | `/projects/:id` | Unregister only. Never deletes files |
-| POST | `/projects/:id/adaptations` | `{ name, aspectRatio, resolution, fps, parentAdaptationId?, copyFrom? }` → `201 Adaptation`. `copyFrom` deep-copies that adaptation's EDL |
+| POST | `/projects/:id/adaptations` | `{ name, aspectRatio, resolution?, fps?, parentAdaptationId?, copyFrom? }` → `201 Adaptation`. Without `resolution` one is derived from the aspect ratio. `copyFrom` deep-copies that adaptation's EDL |
 | PUT | `/projects/:id/adaptations/:aid` | Update name, aspectRatio, resolution, fps, status |
 | DELETE | `/projects/:id/adaptations/:aid` | Children are re-parented to the deleted one's parent. The last adaptation cannot be deleted (409) |
 | GET | `/projects/:id/edl/:aid` | The adaptation's EDL (normalised to v2) |
-| PUT | `/projects/:id/edl/:aid` | Replace the EDL (validated, 422 on a broken document) |
+| PUT | `/projects/:id/edl/:aid` | Replace the EDL → `{ ok, adaptationId, updatedAt }`. The document is normalised, then validated (422 with `fields` when it still breaks an invariant). A changed `fps` or `resolution` is written through to the adaptation |
+
+A project is `{ id, name, description, status, path, available,
+mediaFolders, adaptations, createdAt, updatedAt }`; `available` is false
+when its folder cannot be reached. An adaptation is `{ id, projectId,
+parentAdaptationId, name, aspectRatio, resolution, fps, status, createdAt,
+updatedAt }`.
 
 ## Media
 
@@ -35,34 +45,40 @@ project directory, one of its `mediaFolders`, a global media path, the dev
 | ------ | ----- | ------- |
 | GET | `/media?projectId=` | `{ data: MediaItem[], total }` |
 | GET | `/media/file?path=` | Stream a file (HTTP range supported) |
-| GET | `/sidecar?path=` | The sidecar, or `{ exists: false }` |
-| PUT | `/sidecar?path=` | Merge a patch into the sidecar (user edits to tags, transcript) |
-| GET | `/previews/thumbnail?path=&cols=10&height=90` | JPEG filmstrip of `cols` frames |
+| GET | `/sidecar?path=` | The fresh sidecar, or `{ exists: false, stale }` |
+| PUT | `/sidecar?path=` | Merge a patch into the sidecar (user edits to tags, transcript) and return it. Known fields are shape-checked (422) |
+| GET | `/previews/thumbnail?path=&cols=10&height=90` | JPEG filmstrip of `cols` (1–40) frames, `height` 16–360 |
 | GET | `/previews/frame?path=&time=&height=` | One JPEG frame |
-| GET | `/previews/waveform?path=` | `200 { peaks, samples, duration }` or `202 { status: "generating" }` (a `waveform` job then completes with `result.path`) |
+| GET | `/previews/waveform?path=` | `200 { peaks, samples, duration, peaksPerSecond }` or `202 { status: "generating", jobId }` (the `waveform` job completes with `result.path`). A file without sound answers 200 with empty peaks |
 | GET | `/transcode?path=` | WAV rendition of a compressed audio file, for sample-accurate seeking |
 | GET | `/index/search?q=&projectId=` | Search filenames, tags and transcripts |
 
 ```json
 {
   "filename": "park.mp4", "filePath": "/abs/park.mp4", "relativePath": "day1/park.mp4",
-  "type": "video", "global": false, "size": 1234567, "duration": 14.08,
-  "width": 3840, "height": 2160, "fps": 60, "hasAudio": true,
+  "type": "video", "global": false, "size": 1234567, "mtime": 1715000000000,
+  "duration": 14.08, "width": 3840, "height": 2160, "fps": 60, "rotation": 0,
+  "hasAudio": true,
   "indexed": true, "tags": ["park", "dog"],
   "analysis": { "transcript": true, "tags": true, "beats": false, "scenes": true, "silences": true }
 }
 ```
 
-`type` is `video`, `audio`, `image` or `text`. `duration` comes from the
-sidecar when indexed, otherwise from a cached probe.
+`type` is `video`, `audio`, `image` or `text`. Fields that do not apply are
+`null` (a still has no duration, audio has no size). Metadata comes from the
+sidecar when the file is indexed, otherwise from a probe cached in memory —
+so the first listing of a large un-indexed folder is slow; index it once.
+
+Search results are `{ filename, filePath, relativePath, type, global,
+duration, score, matchCount, matches: [{ field, text, start?, end?, time? }] }`.
 
 ## Folder browser
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| GET | `/browse?path=` | `{ path, parent, roots, dirs: [{ name, path, hasProject }] }`. No `path` = first browse root. Restricted to `BROWSE_ROOTS` |
-| POST | `/browse/mkdir` | `{ path, name }` → `201 { path }` |
-| POST | `/pick-folder` | Native OS dialog when the server has a desktop; `204` otherwise |
+| GET | `/browse?path=` | `{ path, parent, roots, hasProject, dirs: [{ name, path, hasProject }] }`. No `path` = first browse root. Restricted to `BROWSE_ROOTS`; dot-folders are hidden |
+| POST | `/browse/mkdir` | `{ path, name }` → `201 { path }` (409 when taken, 422 for an unsafe name) |
+| POST | `/pick-folder` | Native OS dialog → `{ path, browsable }` when the server has a desktop and the request comes from that machine; `204` otherwise |
 
 ## Jobs
 
@@ -89,7 +105,8 @@ sidecar when indexed, otherwise from a cached probe.
 
 ### WebSocket `/ws`
 
-Server → client messages:
+Only pages served by this server may connect (the handshake `Origin` must
+match the host). Server → client messages:
 
 ```json
 { "type": "connected" }
@@ -112,21 +129,31 @@ answers `202 { jobId }`.
 | POST | `/index` | `{ projectId }` — alias of analyze with `steps: ["probe"]` |
 
 `steps` is any of `probe`, `transcribe`, `tags`, `beats`, `scenes`,
-`silence`. Default: every step whose provider is available and that suits
-the file type. Steps already present in a fresh sidecar are skipped unless
-`force`. An `analyze` job's result is
-`{ files: [{ path, steps: { probe: "ok", transcribe: "skipped", tags: "error: …" } }] }`.
+`silence`. Default: every step that suits the file type. They run in the
+order probe → silence → scenes → beats → transcribe → tags, because scenes
+feed frame selection and silences feed upload chunking. Steps already
+present in a fresh sidecar are skipped unless `force` (or unless an option
+such as `threshold` or `language` differs from the one it was built with).
+
+An `analyze` job's result is `{ total, failed, files: [{ path, steps }] }`
+where each step outcome is `"ok"`, `"skipped"`, `"skipped: <reason>"` (for
+example a provider that is not set up) or `"error: <message>"`.
+
+The single-step routes answer `400` when the step does not suit the file and
+`503` when its provider is unusable, before any job is created; their job
+result is `{ path, step, outcome, … }`. `/index` also accepts `paths` and
+`force`. Setup and details: [INTELLIGENCE.md](./INTELLIGENCE.md).
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
 | GET | `/intelligence/status` | Which providers are configured and reachable |
-| GET | `/intelligence/transcript?path=&format=` | Export as `json`, `srt`, `vtt` or `txt` |
+| GET | `/intelligence/transcript?path=&format=` | Export as `json`, `srt`, `vtt` or `txt`; `download=1` sends it as a file |
 
 ```json
 {
   "ffmpeg": { "available": true, "detail": "6.1.1" },
-  "transcription": { "provider": "whisper-cpp", "available": true, "detail": "" },
-  "vision": { "provider": "ollama", "available": false, "detail": "connection refused" },
+  "transcription": { "provider": "whisper-cpp", "configured": "auto", "model": "base", "available": true, "detail": "" },
+  "vision": { "provider": "ollama", "model": "llava:7b", "available": false, "detail": "connection refused" },
   "llm": { "provider": "ollama", "model": "qwen3:14b", "available": false, "detail": "" }
 }
 ```
@@ -152,13 +179,15 @@ Extends the sidecar described in `README.md`:
 
 The director turns intent into timeline edits. It never returns a whole
 document — it returns a **DirectorResult** fragment that the client merges
-with `applyDirectorResult` as a single undoable step.
+with `applyDirectorResult` as a single undoable step. Action schemas, the
+edit-plan format and the track layout it produces are described in
+[DIRECTOR.md](./DIRECTOR.md).
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
 | GET | `/director/actions` | `{ data: ActionSchema[] }` — drives the director form |
 | POST | `/director` | `{ projectId, adaptationId, directive, edl }` → `202 { jobId }`; result is a DirectorResult |
-| POST | `/director/script` | Same body → job result `{ scripts: [{ variant, filename, filePath, script }] }` |
+| POST | `/director/script` | Same body → job result `{ scripts: [{ variant, filename, filePath, script }], count, folder, summary, notes }` |
 
 ```json
 {
@@ -205,9 +234,19 @@ with `applyDirectorResult` as a single undoable step.
 
 Fragment clip times are **relative to the fragment start (0)**. `index` is
 the Nth track of that `type` in the document (0 = first); missing tracks are
-created. Clips are complete v2 clips (`createClip`). For `remove_silence`
-and `beat_sync`, which rewrite existing clips in place, `mode` is `replace`
-or `range` and the fragment already contains the rewritten clips.
+created. Clips are complete v2 clips (`createClip`). `range` is `null`
+unless the mode is `range`; a result also carries its `duration`.
+
+Actions that rewrite existing clips in place — `remove_silence`,
+`beat_sync`, `add_captions`, and `insert_broll` with `placement: "overlay"`
+— need the current `edl` in the request and always answer in `replace` mode
+with the whole rewritten timeline. Their tracks carry the `trackId` of the
+track they came from, and clips keep their ids, so the merge keeps track
+settings and the selection. For these actions `directive.mode: "range"`
+only limits which clips are touched.
+
+LLM actions answer `503` straight away when the LLM provider is disabled or
+unreachable; the other actions never depend on it.
 
 ## Render
 
@@ -215,12 +254,19 @@ or `range` and the fragment already contains the rewritten clips.
 | ------ | ----- | ------- |
 | GET | `/render/presets` | `{ data: [{ id, label, description }] }` |
 | POST | `/render` | `{ projectId, adaptationId, edl?, preset?, range?, filename? }` → `202 { jobId }`. Without `edl` the saved one is rendered |
-| POST | `/render/plan` | Same body → `{ args, filterComplex, duration }` without running (inspection, tests) |
-| GET | `/renders?projectId=` | `{ data: [{ file, url, size, createdAt, projectId, adaptationId }] }` |
-| GET | `/render/file/:name` | Stream or download a finished render (range supported) |
+| POST | `/render/plan` | Same body → `{ args, filterComplex, duration, width, height, fps, inputs, files, warnings, segments }` without running (inspection, tests) |
+| GET | `/renders?projectId=` | `{ data: [{ file, url, size, createdAt, projectId, adaptationId, preset, duration, width, height, fps, range }], total }` |
+| GET | `/render/file/:name` | Stream a finished render (range supported); `?download` sends it as an attachment |
 | DELETE | `/render/file/:name` | Delete a finished render |
 
 Presets: `draft` (half resolution, fast), `standard` (default), `high`.
 A `render` job's result is
 `{ output, file, url, duration, size, width, height, fps }`. Cancelling the
 job kills FFmpeg and removes the partial file.
+
+Every `sourceFile` in a posted EDL must pass the media allow-list (403). An
+empty timeline, or one with only placeholders or muted tracks, is a 422. An
+existing render is never overwritten: a second "My Cut" becomes
+`My Cut-2.mp4`. Long timelines are rendered in segments and joined without
+re-encoding. How the graph is built, the presets and the limits:
+[RENDER.md](./RENDER.md).

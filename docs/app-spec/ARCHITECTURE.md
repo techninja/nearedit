@@ -28,7 +28,8 @@ Three rules hold the design together:
 | Timeline UI | `src/utils/timeline/`, `organisms/timeline-*` | browser | Canvas drawing + pointer/keyboard interaction |
 | Playback | `src/utils/playback/`, `organisms/video-preview` | browser | Compositor, Web Audio mixer, transport |
 | Panels | `src/components/`, `src/pages/` | browser | Media bin, inspector, transcript, director, export |
-| Stores | `src/store/` | browser | `TimelineState` (document), `ViewState` (transient), `AppState` (prefs) |
+| Edit session | `src/utils/editor/` | browser | The one door for document changes: commit, undo, gestures, autosave |
+| Stores | `src/store/` | browser | `TimelineState` (document), `ViewState` (transient), `ProjectState`, `AppState` |
 | Server lib | `src/api/lib/` | Node | Config, registry, sidecars, scanning, path safety, FFmpeg, jobs |
 | Render | `src/api/render/` | Node | EDL → `filter_complex` → FFmpeg job |
 | Intelligence | `src/api/intelligence/` | Node | Providers + analysis steps → sidecars |
@@ -49,12 +50,18 @@ browser through the import map (`#utils/…`) and by Node through the
   ripple, loop. Never undoable. Playback ticks touch only this small model.
 - **`AppState`** — theme and panel layout, persisted to `localStorage`.
 
-`store.set` is asynchronous (the new value is visible a microtask later).
-Interactions that fire faster than that — drags, playback — keep a local
-working copy and commit it, rather than reading the store back mid-gesture.
+`store.set` is asynchronous (the new value is visible a microtask later),
+and editing is faster than that. So the **edit session**
+(`src/utils/editor/session.js`) holds the authoritative document as a plain
+object and mirrors it into `TimelineState` for rendering. Nothing else
+writes `TimelineState`.
 
-An edit is always: push the current document to undo history → call a pure
-operation from `src/utils/edl/` → `store.set(TimelineState, result)`.
+An edit is always `edit(doc => operation(doc, …))`: the session pushes the
+current document to undo history, stores the result of a pure operation
+from `src/utils/edl/`, and notifies autosave. A drag wraps its moves in
+`beginGesture()` … `endGesture()`, so it previews live and undoes as one
+step. `src/utils/editor/project.js` opens an adaptation, debounce-saves it
+and reports dirty / error state through `ProjectState`.
 
 ## Playback
 
@@ -74,19 +81,26 @@ algorithm in [EDL.md](./EDL.md#transform).
 workers in concurrency lanes (`render`, `analysis`, `llm`), gives each an
 `AbortSignal`, and broadcasts every status change over `/ws`.
 
-**Analysis.** `probe → transcribe → tags → beats → scenes → silence`. Each
-step is independent, idempotent, and merges its output into the file's
+**Analysis.** `probe → silence → scenes → beats → transcribe → tags`
+(scenes feed frame selection for tagging, silences feed upload chunking).
+Each step is independent, idempotent, and merges its output into the file's
 sidecar with `lib/sidecar.js` `updateSidecar`. A step whose provider is
-missing is skipped, never fatal.
+missing is skipped, never fatal. See [INTELLIGENCE.md](./INTELLIGENCE.md).
 
 **Director.** `directive → gather sidecar context → (LLM edit plan |
 heuristic plan) → validate → align to word / scene / beat boundaries →
 DirectorResult fragment`. The LLM only ever chooses *what* to use; all
-timing maths is deterministic code.
+timing maths is deterministic code. See [DIRECTOR.md](./DIRECTOR.md).
 
 **Render.** `EDL → normalise → filter graph (per-clip trim, scale, crop,
 fade, overlay; audio delay, gain, mix) → FFmpeg with -progress → file in
-data/renders/`.
+data/renders/`. Long timelines are cut into segments at clip boundaries and
+joined without re-encoding. See [RENDER.md](./RENDER.md).
+
+**Safety.** Every path from a request passes `lib/paths.js` (allowed media
+roots only; symlinks resolved). `lib/auth.js` optionally puts the whole
+server behind a password. See
+[CONFIGURATION.md](./CONFIGURATION.md#access-and-security).
 
 ## Providers
 
