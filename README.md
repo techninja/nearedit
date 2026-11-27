@@ -31,7 +31,7 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  FFmpeg (headless ren
   tracks mixed together, zoom from single frames to hours.
 - Move, trim, slip, split, ripple; linked picture and sound; groups;
   copy / paste / duplicate; markers; loop region; snapping to clip edges,
-  markers and the playhead.
+  markers, the playhead and the beats of your music.
 - **Overlap means cross-fade.** Drag one clip over another for a dissolve;
   pull them apart and it is gone. Drag a clip's top corners for fades.
 - Titles, stills with ken-burns moves, per-clip position, scale, rotation,
@@ -83,8 +83,9 @@ npm start
 ```
 
 Open <http://localhost:6556>, create a project by picking a folder of
-footage, press **Analyse**, then open the editor and run **Base edit** in
-the Director tab. Tweak, then **Export**.
+footage, press **Analyse project**, then open the editor and run **Base
+edit** in the Director tab. Tweak, then **Export**. Press `?` in the editor
+for the shortcuts.
 
 By default the folder browser can see your home directory. To use footage
 elsewhere, set `BROWSE_ROOTS` in `.env.local`:
