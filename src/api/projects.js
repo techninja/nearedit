@@ -1,234 +1,90 @@
 /**
- * Project file manager — self-contained project JSON + sidecar metadata.
- *
- * Architecture:
- *   <project-dir>/.nearedit/project.json  — project config + adaptations + EDLs
- *   <media-dir>/filename.mp4.nearedit.json — sidecar metadata per media file
- *   data/registry.json                     — lightweight index of known project paths
- *
- * Sidecar files live next to source media. They're regenerated when the
- * source file's mtime changes (stale check on access).
- *
+ * Project, adaptation and EDL routes. Contract: docs/app-spec/API.md § Projects.
+ * The logic lives in ./projects/; handlers only translate HTTP.
  * @module api/projects
  */
 
 import { Router } from 'express';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
-import { resolve, basename } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { errorHandler } from './lib/httpErrors.js';
+import {
+  addAdaptation,
+  patchAdaptation,
+  publicAdaptation,
+  removeAdaptation,
+} from './projects/adaptations.js';
+import { createProject } from './projects/create.js';
+import { readEdl, replaceEdl } from './projects/edl.js';
+import {
+  listProjects,
+  publicProject,
+  requireProject,
+  saveProject,
+  unregisterProject,
+  updateProject,
+} from './projects/store.js';
 
 export const projectsRouter = Router();
 
-const DATA_DIR = resolve(process.cwd(), 'data');
-const REGISTRY_PATH = resolve(DATA_DIR, 'registry.json');
-
-// --- Registry: index of known project paths ---
-
-/**
- *
- */
-function loadRegistry() {
-  mkdirSync(DATA_DIR, { recursive: true });
-  if (!existsSync(REGISTRY_PATH)) writeFileSync(REGISTRY_PATH, '{}');
-  return JSON.parse(readFileSync(REGISTRY_PATH, 'utf-8'));
-}
-
-/**
- *
- */
-function saveRegistry(reg) {
-  writeFileSync(REGISTRY_PATH, JSON.stringify(reg, null, 2));
-}
-
-// --- Project file operations ---
-
-/**
- * Default project structure.
- * @param {string} name
- * @returns {object}
- */
-function createProjectData(name) {
-  return {
-    id: randomUUID(),
-    name,
-    description: '',
-    mediaFolders: [], // additional scan paths (external drives, NAS, etc.)
-    adaptations: [
-      {
-        id: randomUUID(),
-        name: 'Main Edit',
-        parentAdaptationId: '',
-        aspectRatio: '16:9',
-        resolution: '1920x1080',
-        fps: 30,
-        status: 'draft',
-        edl: {
-          playheadPosition: 0,
-          cursorPosition: 0,
-          zoom: 1,
-          scrollX: 0,
-          tracks: [
-            { trackId: 'v1', type: 'video', name: 'Video 1', muted: false, solo: false, clips: [] },
-            { trackId: 'a1', type: 'audio', name: 'Audio 1', muted: false, solo: false, clips: [] },
-          ],
-        },
-      },
-    ],
-    createdAt: new Date().toISOString(),
-  };
-}
-
-/**
- * Read a project file from disk.
- * @param {string} projectDir - Absolute path to the project directory
- * @returns {object|null}
- */
-function readProject(projectDir) {
-  const filePath = resolve(projectDir, '.nearedit', 'project.json');
-  if (!existsSync(filePath)) return null;
-  return JSON.parse(readFileSync(filePath, 'utf-8'));
-}
-
-/**
- * Write a project file to disk.
- * @param {string} projectDir
- * @param {object} data
- */
-function writeProject(projectDir, data) {
-  const dir = resolve(projectDir, '.nearedit');
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(resolve(dir, 'project.json'), JSON.stringify(data, null, 2));
-}
-
-// --- Sidecar metadata ---
-
-/**
- * Get the sidecar path for a media file.
- * @param {string} mediaPath - Absolute path to media file
- * @returns {string}
- */
-function sidecarPath(mediaPath) {
-  return `${mediaPath}.nearedit.json`;
-}
-
-/**
- * Read sidecar metadata. Returns null if missing or stale.
- * @param {string} mediaPath
- * @returns {object|null}
- */
-export function readSidecar(mediaPath) {
-  const path = sidecarPath(mediaPath);
-  if (!existsSync(path)) return null;
-  const sidecar = JSON.parse(readFileSync(path, 'utf-8'));
-  // Stale check: if source mtime is newer, sidecar needs regeneration
-  const sourceMtime = statSync(mediaPath).mtimeMs;
-  if (sidecar._sourceMtime && sidecar._sourceMtime < sourceMtime) return null;
-  return sidecar;
-}
-
-/**
- * Write sidecar metadata next to a media file.
- * @param {string} mediaPath
- * @param {object} metadata
- */
-export function writeSidecar(mediaPath, metadata) {
-  const sourceMtime = statSync(mediaPath).mtimeMs;
-  const data = { ...metadata, _sourceMtime: sourceMtime, _updatedAt: new Date().toISOString() };
-  writeFileSync(sidecarPath(mediaPath), JSON.stringify(data, null, 2));
-}
-
-// --- API Routes ---
-
-/** GET /api/projects — list all known projects from registry */
+/** GET /api/projects — every registered project */
 projectsRouter.get('/projects', (_req, res) => {
-  const reg = loadRegistry();
-  const projects = Object.entries(reg).map(([id, entry]) => {
-    const data = readProject(entry.path);
-    return data || { id, name: basename(entry.path), path: entry.path, error: 'unreadable' };
-  });
-  res.json({ data: projects, total: projects.length });
+  const data = listProjects();
+  res.json({ data, total: data.length });
 });
 
-/** POST /api/projects — create a new project at a given directory */
+/** POST /api/projects — create a project at a folder, or register the one already there */
 projectsRouter.post('/projects', (req, res) => {
-  const { name, path: projectDir } = req.body;
-  if (!name || !projectDir) return res.status(422).json({ error: 'name and path required' });
-
-  const data = createProjectData(name);
-  writeProject(projectDir, data);
-
-  // Register it
-  const reg = loadRegistry();
-  reg[data.id] = { path: projectDir, name };
-  saveRegistry(reg);
-
-  res.status(201).json(data);
+  res.status(201).json(createProject(req.body));
 });
 
-/** GET /api/projects/:id — read a project by registry ID */
+/** GET /api/projects/:id — one project with its adaptations */
 projectsRouter.get('/projects/:id', (req, res) => {
-  const reg = loadRegistry();
-  const entry = reg[req.params.id];
-  if (!entry) return res.status(404).json({ error: 'Project not found in registry' });
-  const data = readProject(entry.path);
-  if (!data) return res.status(404).json({ error: 'Project file not found on disk' });
-  res.json(data);
+  const { project, dir } = requireProject(req.params.id);
+  res.json(publicProject(project, dir, req.params.id));
 });
 
-/** PUT /api/projects/:id — update project data */
+/** PUT /api/projects/:id — update name, description, mediaFolders, status */
 projectsRouter.put('/projects/:id', (req, res) => {
-  const reg = loadRegistry();
-  const entry = reg[req.params.id];
-  if (!entry) return res.status(404).json({ error: 'Project not found' });
-  const existing = readProject(entry.path);
-  if (!existing) return res.status(404).json({ error: 'Project file missing' });
-  const updated = { ...existing, ...req.body, id: existing.id, createdAt: existing.createdAt };
-  writeProject(entry.path, updated);
-  res.json(updated);
+  res.json(updateProject(req.params.id, req.body));
 });
 
-/** PUT /api/projects/:id/edl/:adaptationId — save an adaptation's EDL */
-projectsRouter.put('/projects/:id/edl/:adaptationId', (req, res) => {
-  const reg = loadRegistry();
-  const entry = reg[req.params.id];
-  if (!entry) return res.status(404).json({ error: 'Project not found' });
-  const project = readProject(entry.path);
-  if (!project) return res.status(404).json({ error: 'Project file missing' });
-
-  const adaptation = project.adaptations.find((a) => a.id === req.params.adaptationId);
-  if (!adaptation) return res.status(404).json({ error: 'Adaptation not found' });
-
-  adaptation.edl = req.body;
-  writeProject(entry.path, project);
-  res.json(adaptation);
+/** DELETE /api/projects/:id — unregister; files stay on disk */
+projectsRouter.delete('/projects/:id', (req, res) => {
+  unregisterProject(req.params.id);
+  res.status(204).end();
 });
 
-/** GET /api/projects/:id/edl/:adaptationId — load an adaptation's EDL */
-projectsRouter.get('/projects/:id/edl/:adaptationId', (req, res) => {
-  const reg = loadRegistry();
-  const entry = reg[req.params.id];
-  if (!entry) return res.status(404).json({ error: 'Project not found' });
-  const project = readProject(entry.path);
-  if (!project) return res.status(404).json({ error: 'Project file missing' });
-
-  const adaptation = project.adaptations.find((a) => a.id === req.params.adaptationId);
-  if (!adaptation) return res.status(404).json({ error: 'Adaptation not found' });
-  res.json(adaptation.edl);
+/** POST /api/projects/:id/adaptations — add an adaptation, optionally copying another's EDL */
+projectsRouter.post('/projects/:id/adaptations', (req, res) => {
+  const { project } = requireProject(req.params.id);
+  const adaptation = addAdaptation(project, req.body);
+  saveProject(req.params.id, project);
+  res.status(201).json(publicAdaptation(adaptation, req.params.id));
 });
 
-/** GET /api/sidecar?path=/absolute/path/to/file.mp4 — read sidecar metadata */
-projectsRouter.get('/sidecar', (req, res) => {
-  const filePath = req.query.path;
-  if (!filePath) return res.status(400).json({ error: 'path required' });
-  const data = readSidecar(filePath);
-  res.json(data || { exists: false, stale: true });
+/** PUT /api/projects/:id/adaptations/:aid — update an adaptation's settings */
+projectsRouter.put('/projects/:id/adaptations/:aid', (req, res) => {
+  const { project } = requireProject(req.params.id);
+  const adaptation = patchAdaptation(project, req.params.aid, req.body);
+  saveProject(req.params.id, project);
+  res.json(publicAdaptation(adaptation, req.params.id));
 });
 
-/** PUT /api/sidecar?path=/absolute/path/to/file.mp4 — write sidecar metadata */
-projectsRouter.put('/sidecar', (req, res) => {
-  const filePath = req.query.path;
-  if (!filePath) return res.status(400).json({ error: 'path required' });
-  if (!existsSync(filePath)) return res.status(404).json({ error: 'Source file not found' });
-  writeSidecar(filePath, req.body);
-  res.json({ ok: true });
+/** DELETE /api/projects/:id/adaptations/:aid — remove one; its children move up a level */
+projectsRouter.delete('/projects/:id/adaptations/:aid', (req, res) => {
+  const { project } = requireProject(req.params.id);
+  removeAdaptation(project, req.params.aid);
+  saveProject(req.params.id, project);
+  res.status(204).end();
 });
+
+/** GET /api/projects/:id/edl/:aid — the adaptation's timeline document */
+projectsRouter.get('/projects/:id/edl/:aid', (req, res) => {
+  res.json(readEdl(req.params.id, req.params.aid));
+});
+
+/** PUT /api/projects/:id/edl/:aid — replace the timeline document */
+projectsRouter.put('/projects/:id/edl/:aid', (req, res) => {
+  res.json(replaceEdl(req.params.id, req.params.aid, req.body));
+});
+
+projectsRouter.use(errorHandler);

@@ -10,9 +10,10 @@
  */
 
 import { existsSync, realpathSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { getConfig } from './config.js';
-import { loadRegistry, readProjectAt } from './registry.js';
+import { mediaFoldersOf } from './mediaFolders.js';
+import { loadRegistry } from './registry.js';
 
 /**
  * True when `child` is `parent` or lives underneath it.
@@ -27,13 +28,25 @@ export function isInside(parent, child) {
 }
 
 /**
- * Resolve symlinks when the path exists, so a link cannot escape a root.
+ * Resolve symlinks so a link cannot escape a root. A path that does not
+ * exist yet (a folder about to be created) is resolved through its deepest
+ * existing ancestor, so a symlinked parent cannot smuggle it out either.
  * @param {string} path
  * @returns {string}
  */
 function real(path) {
   const abs = resolve(path);
-  return existsSync(abs) ? realpathSync(abs) : abs;
+  let existing = abs;
+  while (!existsSync(existing)) {
+    const parent = dirname(existing);
+    if (parent === existing) return abs;
+    existing = parent;
+  }
+  try {
+    return join(realpathSync(existing), relative(existing, abs));
+  } catch {
+    return abs; // vanished or unreadable between the two calls: nothing to follow
+  }
 }
 
 /** @returns {string[]} Every directory the server may read media from. */
@@ -41,10 +54,9 @@ export function allowedRoots() {
   const cfg = getConfig();
   const roots = new Set([cfg.devMediaDir, cfg.dataDir, ...cfg.globalMediaPaths]);
   for (const entry of Object.values(loadRegistry())) {
-    if (!entry?.path) continue;
+    if (typeof entry?.path !== 'string' || !entry.path) continue;
     roots.add(resolve(entry.path));
-    const extra = readProjectAt(entry.path)?.mediaFolders;
-    for (const f of Array.isArray(extra) ? extra : []) if (f) roots.add(resolve(f));
+    for (const folder of mediaFoldersOf(entry.path)) roots.add(folder);
   }
   return [...roots];
 }

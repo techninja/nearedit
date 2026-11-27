@@ -1,118 +1,82 @@
 /**
- * Video preview — composited output using dual-mode compositor.
- * Canvas aspect ratio matches the adaptation's resolution.
+ * Video preview — the program monitor. Shows the timeline's picture at the
+ * adaptation's aspect ratio: the transport feeds it frames while playing,
+ * and while paused it follows the playhead and the document (scrub).
  * @module components/organisms/video-preview
  */
 
 import { html, define, store } from 'hybrids';
 import TimelineState from '#store/TimelineState.js';
-import { Compositor } from '#utils/compositor.js';
-import { totalDuration } from '#utils/timelineMath.js';
-
-/** @type {Compositor|null} */
-let compositor = null;
-let lastScrubTime = -1;
+import ViewState from '#store/ViewState.js';
+import { createPreviewSurface } from '#utils/playback/previewSurface.js';
+import { formatTimecode } from '#utils/playback/timecode.js';
+import { isPlaying, onFrame, shutdown } from '#utils/playback/transport.js';
 
 /**
- * Parse resolution string into width/height.
- * @param {string} res - e.g. "1920x1080" or "1080x1920"
- * @returns {{ w: number, h: number }}
+ * @typedef {Object} VideoPreviewHost
+ * @property {any} timeline - The document (TimelineState)
+ * @property {import('#store/ViewState.js').ViewStateShape} view
  */
-function parseResolution(res) {
-  const [w, h] = (res || '1920x1080').split('x').map(Number);
-  return { w: w || 1920, h: h || 1080 };
+
+/** @type {WeakMap<HTMLElement, import('#utils/playback/previewSurface.js').PreviewSurface>} */
+const surfaces = new WeakMap();
+
+/**
+ * The surface driving a preview's canvas, for diagnostics and tests.
+ * @param {HTMLElement} host
+ * @returns {import('#utils/playback/previewSurface.js').PreviewSurface|undefined}
+ */
+export const previewSurface = (host) => surfaces.get(host);
+
+/**
+ * After every render: make sure the canvas has a surface and, while
+ * paused, that it shows the playhead frame of the current document.
+ * @param {VideoPreviewHost & HTMLElement} host
+ */
+function refresh(host) {
+  let surface = surfaces.get(host);
+  if (!surface) {
+    const canvas = host.querySelector('canvas');
+    if (!canvas) return;
+    surface = createPreviewSurface(canvas, canvas.parentElement);
+    surfaces.set(host, surface);
+  }
+  if (!store.ready(host.timeline) || isPlaying()) return;
+  surface.show(host.timeline, host.view.playheadPosition);
 }
 
+/**
+ * Take frames from the transport while connected; on disconnect stop
+ * playback and release media elements and audio nodes.
+ * @param {VideoPreviewHost & HTMLElement} host
+ * @returns {() => void}
+ */
+function connect(host) {
+  const stopFrames = onFrame((time) => surfaces.get(host)?.play(host.timeline, time));
+  return () => {
+    stopFrames();
+    surfaces.get(host)?.destroy();
+    surfaces.delete(host);
+    shutdown();
+  };
+}
+
+/** @type {import('hybrids').Component<VideoPreviewHost>} */
 export default define({
   tag: 'video-preview',
-  timeline: {
-    ...store(TimelineState),
-    observe(host, val) {
-      if (!val || !compositor) return;
-
-      if (val.playing) {
-        if (!compositor.isPlaying) {
-          const dur = totalDuration(val.tracks || []);
-          compositor.startPlayback(val.tracks, val.playheadPosition, (time) => {
-            if (time >= dur) compositor.stopPlayback();
-          });
-        }
-      } else {
-        if (compositor.isPlaying) compositor.stopPlayback();
-        if (Math.abs(val.playheadPosition - lastScrubTime) > 0.01) {
-          lastScrubTime = val.playheadPosition;
-          compositor.scrub(val.tracks || [], val.playheadPosition);
-        }
-      }
-    },
-  },
+  timeline: store(TimelineState),
+  view: store(ViewState),
   render: {
-    value: () => html`
+    value: ({ timeline, view }) => html`
       <div class="video-preview">
-        <canvas></canvas>
+        <canvas role="img" aria-label="Program preview"></canvas>
+        <span class="preview-timecode" aria-hidden="true"
+          >${formatTimecode(view.playheadPosition, timeline.fps)}</span
+        >
       </div>
     `,
     shadow: false,
-    connect(host) {
-      requestAnimationFrame(() => {
-        const canvas = host.querySelector('canvas');
-        if (!canvas) return;
-
-        const s = store.get(TimelineState);
-        const { w: outW, h: outH } = parseResolution(s?.resolution);
-        const outputAspect = outW / outH;
-        const rect = canvas.parentElement.getBoundingClientRect();
-
-        // Size canvas pixels to fit container at the output aspect ratio
-        let cw, ch;
-        if (outputAspect > rect.width / rect.height) {
-          cw = Math.floor(rect.width);
-          ch = Math.floor(rect.width / outputAspect);
-        } else {
-          ch = Math.floor(rect.height);
-          cw = Math.floor(rect.height * outputAspect);
-        }
-        canvas.width = cw;
-        canvas.height = ch;
-
-        compositor = new Compositor(cw, ch, outputAspect);
-        compositor.setOutput(canvas);
-
-        if (s) compositor.scrub(s.tracks || [], s.playheadPosition || 0);
-
-        const obs = new ResizeObserver(() => {
-          const r = canvas.parentElement.getBoundingClientRect();
-          const st = store.get(TimelineState);
-          const { w: ow, h: oh } = parseResolution(st?.resolution);
-          const aspect = ow / oh;
-          let nw, nh;
-          if (aspect > r.width / r.height) {
-            nw = Math.floor(r.width);
-            nh = Math.floor(r.width / aspect);
-          } else {
-            nh = Math.floor(r.height);
-            nw = Math.floor(r.height * aspect);
-          }
-          if (nw < 1 || nh < 1) return;
-          canvas.width = nw;
-          canvas.height = nh;
-          if (compositor) {
-            compositor.resize(nw, nh, aspect);
-            if (st && !compositor.isPlaying)
-              compositor.scrub(st.tracks || [], st.playheadPosition || 0);
-          }
-        });
-        obs.observe(canvas.parentElement);
-        host._resizeObs = obs;
-      });
-    },
-    disconnect(host) {
-      host._resizeObs?.disconnect();
-      if (compositor) {
-        compositor.destroy();
-        compositor = null;
-      }
-      lastScrubTime = -1;
-    },
+    connect,
+    observe: refresh,
   },
 });

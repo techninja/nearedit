@@ -1,19 +1,84 @@
-.transport-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
+transport-controls {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+
+  & .transport-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+
+  & .transport-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-text);
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+
+    &:hover {
+      border-color: var(--color-border);
+      background: var(--color-bg);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    &[aria-pressed='true'] {
+      border-color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+      color: var(--color-primary);
+    }
+  }
+
+  & .transport-play {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+
+    &:hover {
+      border-color: transparent;
+      background: var(--color-primary-hover);
+    }
+  }
+
+  & .transport-time {
+    padding: 0 var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--color-text);
+  }
+
+  & .transport-duration {
+    color: var(--color-text-muted);
+  }
 }
 
-.transport-controls .btn {
-  padding: var(--space-xs);
-  min-width: 28px;
-  justify-content: center;
+/* Touch screens: finger-sized targets. */
+@media (pointer: coarse) {
+  transport-controls .transport-button {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
 }
 
-.transport-time {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--color-text-muted);
-  min-width: 12ch;
-  padding: 0 var(--space-sm);
+/* Phones: the total duration gives way so the bar stays on one or two rows. */
+@media (width <= 480px) {
+  transport-controls .transport-duration {
+    display: none;
+  }
 }

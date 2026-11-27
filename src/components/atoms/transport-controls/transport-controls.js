@@ -1,64 +1,114 @@
 /**
- * Transport controls — play, pause, skip, time display.
- * Delegates to the keyboard action system for consistent behavior.
+ * Transport controls — go to start, frame step, play/pause, stop, go to
+ * end, loop, and a `HH:MM:SS:FF` readout with the total duration. Every
+ * button calls the transport; this component holds no playback state.
  * @module components/atoms/transport-controls
  */
 
 import { html, define, store } from 'hybrids';
 import TimelineState from '#store/TimelineState.js';
-import { totalDuration } from '#utils/timelineMath.js';
-import '#atoms/app-icon/index.js';
+import ViewState from '#store/ViewState.js';
+import { timelineDuration } from '#utils/edl/query.js';
+import { formatTimecode } from '#utils/playback/timecode.js';
+import * as transport from '#utils/playback/transport.js';
+import '#atoms/app-icon/app-icon.js';
 
-/** Format seconds as MM:SS.ff */
-function fmt(s) {
-  const m = Math.floor(s / 60);
-  const sec = (s % 60).toFixed(2).padStart(5, '0');
-  return `${String(m).padStart(2, '0')}:${sec}`;
+/**
+ * @typedef {Object} TransportControlsHost
+ * @property {any} timeline - The document (TimelineState)
+ * @property {import('#store/ViewState.js').ViewStateShape} view
+ */
+
+/** Play, or pause where playback is (the Stop button returns to the cursor). */
+function handlePlayPause() {
+  transport.toggle({ returnToCursor: false });
 }
 
+/** Step one frame back. */
+function handleStepBack() {
+  transport.stepFrames(-1);
+}
+
+/** Step one frame forward. */
+function handleStepForward() {
+  transport.stepFrames(1);
+}
+
+/** Toggle looping. */
+function handleLoop() {
+  transport.setLoop();
+}
+
+/**
+ * One icon button.
+ * @param {string} icon - Key of src/icons.json
+ * @param {string} label - Accessible name
+ * @param {string} hint - Tooltip, with the keyboard shortcut
+ * @param {() => void} action
+ * @returns {import('hybrids').UpdateFunctionWithMethods<TransportControlsHost>}
+ */
+function button(icon, label, hint, action) {
+  return html`
+    <button
+      type="button"
+      class="transport-button"
+      aria-label="${label}"
+      title="${hint}"
+      onclick="${action}"
+    >
+      <app-icon name="${icon}" size="sm"></app-icon>
+    </button>
+  `;
+}
+
+// The icon atom resolves its artwork once, when it connects, so play and
+// pause are two separate templates that hybrids swaps rather than one
+// `<app-icon>` whose name changes.
+const PLAY_ICON = html`<app-icon name="play" size="sm"></app-icon>`;
+const PAUSE_ICON = html`<app-icon name="pause" size="sm"></app-icon>`;
+
+/** @type {import('hybrids').Component<TransportControlsHost>} */
 export default define({
   tag: 'transport-controls',
   timeline: store(TimelineState),
+  view: store(ViewState),
   render: {
-    value: ({ timeline }) => {
-      const dur = totalDuration(timeline.tracks || []);
-      return html`
-        <div class="transport-controls">
-          <button
-            class="btn btn-ghost"
-            title="Go to start (Home)"
-            onclick="${() => {
-              store.set(TimelineState, { ...timeline, playheadPosition: 0, cursorPosition: 0 });
-            }}"
+    value: ({ timeline, view }) => html`
+      <div class="transport-controls" role="toolbar" aria-label="Transport">
+        ${button('skip-back', 'Go to start', 'Go to start (Home)', transport.goToStart)}
+        ${button('step-back', 'Previous frame', 'Previous frame (←)', handleStepBack)}
+        <button
+          type="button"
+          class="transport-button transport-play"
+          aria-label="${view.playing ? 'Pause' : 'Play'}"
+          title="${view.playing ? 'Pause (Enter)' : 'Play (Space / Enter)'}"
+          onclick="${handlePlayPause}"
+        >
+          ${view.playing ? PAUSE_ICON : PLAY_ICON}
+        </button>
+        ${button('stop', 'Stop', 'Stop and return to the cursor (K)', transport.stop)}
+        ${button('step-forward', 'Next frame', 'Next frame (→)', handleStepForward)}
+        ${button('skip-forward', 'Go to end', 'Go to end (End)', transport.goToEnd)}
+        <button
+          type="button"
+          class="transport-button transport-loop"
+          aria-label="Loop playback"
+          aria-pressed="${view.loopEnabled ? 'true' : 'false'}"
+          title="Loop playback"
+          onclick="${handleLoop}"
+        >
+          <app-icon name="loop" size="sm"></app-icon>
+        </button>
+        <span class="transport-time">
+          <span class="transport-timecode" role="timer" aria-label="Playhead position"
+            >${formatTimecode(view.playheadPosition, timeline.fps)}</span
           >
-            <app-icon name="skip-back" size="sm"></app-icon>
-          </button>
-          <button
-            class="btn btn-primary"
-            title="Play/Pause (Space)"
-            onclick="${() => {
-              // Simulate SPACE behavior: play/pause with return
-              document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
-            }}"
+          <span class="transport-duration" aria-label="Duration"
+            >/ ${formatTimecode(timelineDuration(timeline.tracks), timeline.fps)}</span
           >
-            <app-icon name="${timeline.playing ? 'pause' : 'play'}" size="sm"></app-icon>
-          </button>
-          <button
-            class="btn btn-ghost"
-            title="Go to end (End)"
-            onclick="${() => {
-              store.set(TimelineState, { ...timeline, playheadPosition: dur, cursorPosition: dur });
-            }}"
-          >
-            <app-icon name="skip-forward" size="sm"></app-icon>
-          </button>
-          <span class="transport-time">${fmt(timeline.playheadPosition || 0)} / ${fmt(dur)}</span>
-          <button class="btn btn-ghost" title="Split at playhead (S)">
-            <app-icon name="split" size="sm"></app-icon>
-          </button>
-        </div>
-      `;
-    },
+        </span>
+      </div>
+    `,
     shadow: false,
   },
 });

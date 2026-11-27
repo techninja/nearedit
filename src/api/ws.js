@@ -1,43 +1,90 @@
 /**
- * WebSocket server — real-time job updates to connected clients.
- * Attaches to the existing HTTP server.
+ * WebSocket endpoint `/ws` — pushes job updates to connected browsers.
+ * Server → client only: `{ type: 'connected' }` on connect, then one
+ * `{ type: 'job_update', job }` per job change (see API.md § Jobs).
  * @module api/ws
  */
 
-import { WebSocketServer } from 'ws';
-import { subscribe } from './jobs.js';
+import WebSocket from 'ws';
+import { subscribe } from './lib/jobs.js';
+
+const HEARTBEAT_MS = 30_000;
+/** Nothing a client sends is acted on, so there is no reason to accept much. */
+const MAX_INBOUND_BYTES = 16 * 1024;
+/** A client this far behind on reading is treated as gone. */
+const MAX_BUFFERED_BYTES = 8 * 1024 * 1024;
 
 /**
- * Attach WebSocket server to an HTTP server.
- * @param {import('node:http').Server} server
+ * Only pages served by this server may connect. Browsers do not apply the
+ * same-origin policy to WebSockets, so without this any web page the user
+ * visits could listen in on job updates. Non-browser clients send no Origin
+ * header and are let through.
+ * @param {{ origin?: string, req: import('node:http').IncomingMessage }} info
+ * @returns {boolean}
  */
-export function attachWebSocket(server) {
-  const wss = new WebSocketServer({ server, path: '/ws' });
+function sameOrigin({ origin, req }) {
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === req.headers.host;
+  } catch {
+    return false; // an unparseable Origin is not ours
+  }
+}
+
+/**
+ * Attach the WebSocket server to an HTTP server.
+ *
+ * Every client is pinged on a heartbeat; one that has not answered the
+ * previous ping (a closed laptop, a dropped Wi-Fi link) is terminated, so
+ * dead sockets do not pile up as job-update subscribers.
+ * @param {import('node:http').Server} server
+ * @param {{ heartbeatMs?: number }} [opts]
+ * @returns {import('ws').Server}
+ */
+export function attachWebSocket(server, opts = {}) {
+  const { heartbeatMs = HEARTBEAT_MS } = opts;
+  const wss = new WebSocket.Server({
+    server,
+    path: '/ws',
+    maxPayload: MAX_INBOUND_BYTES,
+    verifyClient: sameOrigin,
+  });
+  /** @type {WeakSet<object>} Sockets that answered the most recent ping */
+  const alive = new WeakSet();
 
   wss.on('connection', (ws) => {
-    console.log('[WS] Client connected');
+    alive.add(ws);
+    ws.on('pong', () => alive.add(ws));
 
-    // Subscribe this client to job broadcasts
-    const unsubscribe = subscribe((msg) => {
-      if (ws.readyState === ws.OPEN) ws.send(msg);
+    const unsubscribe = subscribe((message) => {
+      if (ws.readyState !== WebSocket.OPEN) return;
+      if (ws.bufferedAmount > MAX_BUFFERED_BYTES) return ws.terminate();
+      ws.send(message);
     });
+    ws.on('close', unsubscribe);
+    // An 'error' is always followed by 'close'; it only needs to be visible.
+    ws.on('error', (err) => console.warn(`[ws] client error: ${err.message}`));
 
-    ws.on('message', (data) => {
-      // Future: handle client commands (cancel job, etc.)
-      try {
-        const msg = JSON.parse(data);
-        console.log('[WS] Received:', msg.type);
-      } catch {}
-    });
-
-    ws.on('close', () => {
-      console.log('[WS] Client disconnected');
-      unsubscribe();
-    });
-
-    // Send initial connection confirmation
     ws.send(JSON.stringify({ type: 'connected' }));
   });
 
+  const heartbeat = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (!alive.has(ws)) {
+        ws.terminate();
+        continue;
+      }
+      alive.delete(ws);
+      ws.ping();
+    }
+  }, heartbeatMs);
+  heartbeat.unref();
+
+  wss.on('close', () => clearInterval(heartbeat));
+  // ws re-emits the HTTP server's errors, and an 'error' event nobody listens
+  // for would crash the process. Listen failures are reported by server.js.
+  wss.on('error', (/** @type {NodeJS.ErrnoException} */ err) => {
+    if (err.syscall !== 'listen') console.error('[ws] server error:', err.message);
+  });
   return wss;
 }

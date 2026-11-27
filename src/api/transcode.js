@@ -1,109 +1,35 @@
 /**
- * Audio transcode — converts VBR audio to WAV for accurate seeking/waveform.
- * Caches transcoded files in data/transcode/.
+ * Audio transcode route — serves a WAV rendition of compressed audio so the
+ * browser can seek to the exact sample. Rendition logic and its cache live
+ * in ./media/wavRendition.js. Contract: docs/app-spec/API.md § Media.
  * @module api/transcode
  */
 
 import { Router } from 'express';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { existsSync, mkdirSync, statSync } from 'node:fs';
-import { resolve, extname } from 'node:path';
-import { createHash } from 'node:crypto';
+import { HttpError, errorHandler } from './lib/httpErrors.js';
+import { sendFile } from './lib/sendFile.js';
+import { requireMediaFile } from './media/guards.js';
+import { ensureWav, needsWav } from './media/wavRendition.js';
 
-const exec = promisify(execFile);
 export const transcodeRouter = Router();
 
-const CACHE_DIR = resolve(process.cwd(), 'data/transcode');
-mkdirSync(CACHE_DIR, { recursive: true });
-
-const AUDIO_EXTS = ['.mp3', '.aac', '.ogg', '.flac', '.m4a'];
-
-/** Hash a path for cache key */
-function hashPath(p) {
-  return createHash('md5').update(p).digest('hex').slice(0, 16);
-}
-
 /**
- * Get the cached WAV path for a source file. Returns null if not cached.
- * @param {string} sourcePath
- * @returns {string|null}
+ * GET /api/transcode?path= — the WAV rendition of a compressed audio file
+ * (made on first request, then cached). Files that need no rendition are
+ * streamed as they are. Range requests are supported either way.
  */
-function getCachedWav(sourcePath) {
-  const key = hashPath(sourcePath);
-  const wavPath = resolve(CACHE_DIR, `${key}.wav`);
-  if (!existsSync(wavPath)) return null;
-  // Stale check
-  const srcMtime = statSync(sourcePath).mtimeMs;
-  const wavMtime = statSync(wavPath).mtimeMs;
-  if (srcMtime > wavMtime) return null;
-  return wavPath;
-}
-
-/**
- * Transcode an audio file to WAV.
- * @param {string} sourcePath
- * @returns {Promise<string>} Path to the WAV file
- */
-async function transcodeToWav(sourcePath) {
-  const key = hashPath(sourcePath);
-  const wavPath = resolve(CACHE_DIR, `${key}.wav`);
-
-  await exec(
-    'ffmpeg',
-    ['-i', sourcePath, '-acodec', 'pcm_s16le', '-ar', '44100', '-ac', '2', '-y', wavPath],
-    { timeout: 300_000 },
-  );
-
-  return wavPath;
-}
-
-/**
- * GET /api/transcode?path=/abs/path.mp3
- * Returns the WAV version of an audio file (transcodes on first request).
- */
-transcodeRouter.get('/transcode', async (req, res) => {
-  const sourcePath = req.query.path;
-  if (!sourcePath || !existsSync(sourcePath)) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-
-  const ext = extname(sourcePath).toLowerCase();
-  if (!AUDIO_EXTS.includes(ext)) {
-    // Not a compressed audio file — serve directly
-    return res.sendFile(sourcePath);
-  }
-
-  // Check cache
-  let wavPath = getCachedWav(sourcePath);
-  if (!wavPath) {
-    try {
-      wavPath = await transcodeToWav(sourcePath);
-    } catch (err) {
-      return res.status(500).json({ error: 'Transcode failed', detail: err.message });
-    }
-  }
-
-  res.sendFile(wavPath);
-});
-
-/**
- * POST /api/transcode — pre-transcode a file (for background processing)
- * Body: { path: "/abs/path.mp3" }
- */
-transcodeRouter.post('/transcode', async (req, res) => {
-  const sourcePath = req.body.path;
-  if (!sourcePath || !existsSync(sourcePath)) {
-    return res.status(404).json({ error: 'File not found' });
-  }
-
-  let wavPath = getCachedWav(sourcePath);
-  if (wavPath) return res.json({ path: wavPath, cached: true });
-
+transcodeRouter.get('/transcode', requireMediaFile(), async (_req, res) => {
+  const { mediaPath, mediaStat } = res.locals;
+  if (!needsWav(mediaPath)) return sendFile(res, mediaPath);
+  let wav;
   try {
-    wavPath = await transcodeToWav(sourcePath);
-    res.json({ path: wavPath, cached: false });
+    wav = await ensureWav(mediaPath, mediaStat);
   } catch (err) {
-    res.status(500).json({ error: 'Transcode failed', detail: err.message });
+    if (err.code === 'ENOENT') throw new Error('ffmpeg is not installed or not on the PATH');
+    const detail = String(err.message).split('\n').slice(-2).join(' ').slice(0, 400);
+    throw new HttpError(422, 'The audio of this file could not be decoded', { detail });
   }
+  sendFile(res, wav, { type: 'audio/wav' });
 });
+
+transcodeRouter.use(errorHandler);

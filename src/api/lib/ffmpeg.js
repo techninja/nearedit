@@ -13,6 +13,8 @@ import { spawn } from 'node:child_process';
  * @property {(line: string) => void} [onStderr] - Called per stderr line
  * @property {boolean} [binary] - Resolve stdout as a Buffer instead of a string
  * @property {number} [maxStderr] - Bytes of stderr tail to keep (default 16k)
+ * @property {(chunk: Buffer) => void} [onStdout] - Receive stdout as it arrives instead of
+ *   buffering it (for output too large to hold in memory); stdout then resolves empty
  */
 
 /**
@@ -23,7 +25,7 @@ import { spawn } from 'node:child_process';
  * @returns {Promise<{ stdout: any, stderr: string }>} stdout is string, or Buffer when binary
  */
 export function run(cmd, args, opts = {}) {
-  const { signal, timeout = 0, onStderr, binary = false, maxStderr = 16384 } = opts;
+  const { signal, timeout = 0, onStderr, onStdout, binary = false, maxStderr = 16384 } = opts;
   return new Promise((resolvePromise, reject) => {
     const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
     const out = [];
@@ -41,7 +43,7 @@ export function run(cmd, args, opts = {}) {
     signal?.addEventListener('abort', onAbort, { once: true });
     if (timeout > 0) timer = setTimeout(() => kill('timed out'), timeout);
 
-    child.stdout.on('data', (chunk) => out.push(chunk));
+    child.stdout.on('data', (chunk) => (onStdout ? onStdout(chunk) : out.push(chunk)));
     child.stderr.on('data', (chunk) => {
       const text = chunk.toString();
       stderr = (stderr + text).slice(-maxStderr);
