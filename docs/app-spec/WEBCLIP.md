@@ -237,8 +237,10 @@ side), `fill` (the target takes at most 0.6 of the frame), `maxZoom` (2.2;
 a step's own `zoom`, up to 8, overrides the fit), `release` (0.6 s), `join`
 (two zooms closer than 1.5 s glide into each other without zooming out).
 The picture is never moved so far that the frame's edge shows, and a
-target too large to zoom is still panned into view. The maths assumes the
-clip is neither cropped nor rotated.
+target too large to zoom is still panned into view. A clip that rests
+smaller than the frame — a page shown as a window on a background — is
+zoomed inside the box it rests in, and returns to its own scale and
+position. The maths assumes the clip is neither cropped nor rotated.
 
 ## Server
 

@@ -87,6 +87,12 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (can
 - **Text-based editing** — cut, keep or insert by selecting words in the
   transcript.
 - Remove silences, sync cuts to the beat, add captions, find B-roll.
+- **Site demo** — give an address and say what to show in plain lines
+  (`click Pricing`, `type hello@example.com into Email | sign up in
+  seconds`, or nothing at all for a tour): the director finds those things
+  on the page, records the visit, zooms in on what matters, captions each
+  stop and frames the page as a window on a background. Every part of it
+  stays editable — the steps, the timing, the zooms, the words.
 - **Motion piece** — type a few lines and get a title sequence made only
   of generated layers (animated backgrounds, particles, shapes, titles) in
   one of eight themes, fitted to 16:9, 9:16 or 1:1. No media, and no AI
@@ -217,7 +223,7 @@ NearEdit is young. Things worth knowing before you rely on it:
 | [API](docs/app-spec/API.md) | HTTP + WebSocket API |
 | [Configuration](docs/app-spec/CONFIGURATION.md) | Environment variables, access and security |
 | [Intelligence](docs/app-spec/INTELLIGENCE.md) | Transcription, tagging, beats, scenes |
-| [Director](docs/app-spec/DIRECTOR.md), [motion pieces](docs/app-spec/DIRECTOR-MOTION.md) | Director actions, edit plans, base edit; sequences built from generated layers |
+| [Director](docs/app-spec/DIRECTOR.md), [motion pieces](docs/app-spec/DIRECTOR-MOTION.md), [site demos](docs/app-spec/DIRECTOR-WEB.md) | Director actions, edit plans, base edit; generated sequences; demos of web pages |
 | [Render](docs/app-spec/RENDER.md) | How a timeline becomes a file: filter graph, canvas path, segments |
 | [Clearstack](docs/clearstack/) | The no-build web-component conventions the code follows |
 

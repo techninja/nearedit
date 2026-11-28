@@ -9,7 +9,7 @@ import { Router } from 'express';
 import { ACTIONS } from '#utils/director/actions.js';
 import { errorResponse, unavailable } from './director/errors.js';
 import { createLlmClient } from './director/llm/client.js';
-import { prepareRequest } from './director/request.js';
+import { precheck, prepareRequest } from './director/request.js';
 import { jobLabel, runDirective, usesLlm } from './director/run.js';
 import { runJob } from './lib/jobRunner.js';
 
@@ -25,6 +25,7 @@ function start(route) {
   return async (req, res) => {
     try {
       const prepared = prepareRequest(req.body, route);
+      await precheck(prepared);
       const llm = createLlmClient();
       if (prepared.action.llm === 'yes') {
         const status = await llm.available();
