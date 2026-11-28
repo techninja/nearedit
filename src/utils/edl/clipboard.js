@@ -8,10 +8,12 @@
  */
 
 import { shiftClip } from './clipMath.js';
+import { syncFonts } from './elementFonts.js';
 import { prepareFragment } from './fragment.js';
 import { idList, tracksOfType } from './immutable.js';
 import { addClips, ensureTrack } from './placement.js';
 import { rippleInsert } from './ripple.js';
+import { fontEnums } from './sanitize.js';
 import { finite, fpsOf, snap } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
@@ -77,7 +79,7 @@ export function pasteClips(edl, clipboard, opts = {}) {
   // keep only the links and groups that live inside it.
   const items = Array.isArray(clipboard?.items) ? clipboard.items : [];
   const parts = items.map((item) => ({ type: item?.type, index: item?.row, clips: [item?.clip] }));
-  const fragment = prepareFragment({ tracks: parts }, fpsOf(edl));
+  const fragment = prepareFragment({ tracks: parts }, fpsOf(edl), undefined, fontEnums(edl.fonts));
   if (!(fragment.duration > 0)) return edl;
   const at = Math.max(0, snap(edl, finite(opts.time, 0)));
   const target = edl.tracks.find((track) => track.trackId === opts.trackId);
@@ -95,7 +97,8 @@ export function pasteClips(edl, clipboard, opts = {}) {
       placed.push({ trackId: picked.track.trackId, clip: shiftClip(clip, at, fpsOf(edl)) });
     }
   }
-  return addClips(doc, placed, { autoCrossfade: opts.autoCrossfade });
+  // A pasted element clip brings the font files its design needs.
+  return syncFonts(addClips(doc, placed, { autoCrossfade: opts.autoCrossfade }));
 }
 
 /**

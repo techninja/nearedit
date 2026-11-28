@@ -9,7 +9,7 @@ import { tracksOfType } from './immutable.js';
 import { addOverlay, overlaySpan } from './overlayClip.js';
 import { addClips, pairedAudioTracks, pickTrack } from './placement.js';
 import { rippleInsert } from './ripple.js';
-import { mergeShape } from './sanitize.js';
+import { fontEnums, mergeShape } from './sanitize.js';
 import { EPS, clamp, finite, floorToFrame, frameDuration, snap } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
@@ -108,7 +108,7 @@ export function insertMedia(edl, item, opts = {}) {
  */
 export function insertTitle(edl, title) {
   const patch = typeof title?.text === 'string' ? { content: title.text } : title?.text;
-  const text = mergeShape(defaultText(), patch);
+  const text = mergeShape(defaultText(), patch, fontEnums(edl.fonts));
   if (!text.content) return edl;
   const clip = createClip({
     ...overlaySpan(edl, title.time, title.duration),

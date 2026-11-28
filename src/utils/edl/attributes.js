@@ -10,6 +10,7 @@ import { NO_OVERLAP, fitFades, neighbourOverlaps } from './fades.js';
 import { idList, indexClips, mapClips } from './immutable.js';
 import { sameJson } from './jsonBag.js';
 import { normalizeClip } from './normalizeClip.js';
+import { fontEnums } from './sanitize.js';
 import { EPS, fpsOf, snap } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
@@ -41,7 +42,7 @@ function sourceClip(edl, source) {
   if (typeof source === 'string') return indexClips(edl).get(source)?.clip || null;
   const raw = source?.kind === 'nearedit/clips' ? source.items?.[0]?.clip : source;
   // A clip from outside the document may have crossed the system clipboard.
-  return normalizeClip(raw, fpsOf(edl), 'video');
+  return normalizeClip(raw, fpsOf(edl), 'video', { enums: fontEnums(edl.fonts) });
 }
 
 /**

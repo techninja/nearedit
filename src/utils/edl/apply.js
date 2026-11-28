@@ -7,13 +7,14 @@
 
 import { shiftClip } from './clipMath.js';
 import { timelineDuration } from './query.js';
+import { syncFonts } from './elementFonts.js';
 import { prepareFragment } from './fragment.js';
 import { adoptLayout } from './fragmentLayout.js';
 import { mapClips, tracksOfType } from './immutable.js';
 import { repairLinks } from './links.js';
 import { addClips, ensureTrack } from './placement.js';
 import { rippleDeleteRange, rippleInsert } from './ripple.js';
-import { isObject, toNumber } from './sanitize.js';
+import { fontEnums, isObject, toNumber } from './sanitize.js';
 import { fpsOf, snap } from './time.js';
 import { addTrack } from './trackOps.js';
 
@@ -93,10 +94,19 @@ function idsIn(edl) {
  * @returns {Edl} A document that satisfies `validateEdl`
  */
 export function applyDirectorResult(edl, result) {
-  if (!isObject(result)) return edl;
+  // Element clips of the fragment bring the font files their designs need.
+  return isObject(result) ? syncFonts(mergeResult(edl, result)) : edl;
+}
+
+/**
+ * @param {Edl} edl
+ * @param {any} result - A DirectorResult object
+ * @returns {Edl}
+ */
+function mergeResult(edl, result) {
   const replacing = result.mode === 'replace';
   const base = replacing ? repairLinks(mapClips(adoptLayout(edl, result), () => null)) : edl;
-  const fragment = prepareFragment(result, fpsOf(edl), idsIn(base));
+  const fragment = prepareFragment(result, fpsOf(edl), idsIn(base), fontEnums(edl.fonts));
   const length = fragment.duration;
   const at = toNumber(result.at, NaN);
   const start = toNumber(result.range?.start, NaN);

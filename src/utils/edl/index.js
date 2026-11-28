@@ -83,6 +83,16 @@ export {
   updateSong,
 } from './musicClip.js';
 export { isMusicClip, isStaleMusic, musicDuration } from '#utils/music/clip.js';
+export {
+  elementClips,
+  insertElement,
+  restyle,
+  staleElements,
+  updateElementSlots,
+} from './elementClip.js';
+export { detachElement } from './elementDetach.js';
+export { syncFonts } from './elementFonts.js';
+export { elementSpan, isElementClip } from '#utils/brand/clip.js';
 export { pasteAttributes } from './attributes.js';
 export { repairLinks } from './links.js';
 

@@ -38,9 +38,11 @@ import { isObject, toNumber } from './sanitize.js';
  * @param {{ clipIds: Set<string>, groupIds: Set<string> }} [taken] - Ids used
  *   by clips that will remain in the document. When given, fragment ids that
  *   are free are kept; without it every clip gets a fresh id (paste, duplicate).
+ * @param {Record<string, string[]>} [enums] - The enumerations in force in
+ *   that document (`fontEnums(edl.fonts)`), so titles keep its own fonts
  * @returns {Fragment}
  */
-export function prepareFragment(result, fps, taken) {
+export function prepareFragment(result, fps, taken, enums) {
   const keepClip = (id) => Boolean(taken) && !taken.clipIds.has(id);
   const keepGroup = (id) => Boolean(taken) && !taken.groupIds.has(id);
   const rawTracks = Array.isArray(result?.tracks) ? result.tracks.filter(isObject) : [];
@@ -55,7 +57,7 @@ export function prepareFragment(result, fps, taken) {
     const index = toNumber(raw.index, counts[type]);
     counts[type]++;
     const clips = (Array.isArray(raw.clips) ? raw.clips : [])
-      .map((clip) => normalizeClip(clip, fps, type))
+      .map((clip) => normalizeClip(clip, fps, type, { enums }))
       .filter(Boolean);
     for (const clip of clips) {
       const { clipId, groupId } = clip;

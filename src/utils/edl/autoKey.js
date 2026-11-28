@@ -8,6 +8,7 @@
 import { clipLocalTime, getPath, valueAt } from './animate.js';
 import { writeValue } from './clipPatch.js';
 import { changeClip } from './immutable.js';
+import { fontEnums } from './sanitize.js';
 import { putKey, withKeys } from './keyEdit.js';
 import { isAnimated, keysOf } from './keyframeQuery.js';
 
@@ -34,7 +35,7 @@ export function setValueAt(edl, clipId, path, value, time) {
   return changeClip(edl, clipId, (clip, track) =>
     isAnimated(clip, path)
       ? putKey(edl, clip, path, time, value)
-      : writeValue(clip, track, path, value),
+      : writeValue(clip, track, path, value, fontEnums(edl.fonts)),
   );
 }
 
