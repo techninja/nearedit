@@ -48,6 +48,25 @@ On the document, the style every caption is drawn with:
 { "captions": { "style": { "preset": "pop", "size": 6, "highlight": { "color": "#facc15" } } } }
 ```
 
+Both fields are optional and absent when there is nothing to say: a clip
+has no `captions` while they are off and it carries no words, a document
+none until it names a style — so a document without captions is the
+document it always was. Only a clip that plays video or sound (footage, a
+sound file, a web or a music clip) can have the block. `normalizeEdl`
+reads both (`normalizeCaptions`, `normalizeCaptionStyle`: words as triples
+in time order, to the millisecond; a style as its preset and what differs),
+`validateEdl` accepts exactly what it writes, and the saved document
+carries them. Words are in source seconds, so a clip keeps its block as it
+is through every edit — move, trim, slip, ripple, copy and paste — and the
+pieces of a split clip share one list.
+
+**Editing them** is five operations ([EDL-OPERATIONS.md](./EDL-OPERATIONS.md#captions)):
+`setCaptions`, `captionAllSpeech`, `setCaptionWords`, `setCaptionStyle`
+and `patchCaptionStyle`. They write a linked pair's block on its **sound
+clip**, whichever of the two was named — the voice belongs to what is
+heard, so unlinking, or deleting the picture, leaves the captions where the
+speech is. `updateClip` cannot write `captions`.
+
 ## Style
 
 A style is a preset plus what differs from it. Lengths are in units (one
@@ -99,28 +118,94 @@ balances two lines when there are two. `captionAt(groups, time)` gives the
 group on screen and the word being said. A group appears with its first
 word and stays `hold` seconds after its last, or until the next begins.
 Words the transcript timed badly (zero length, overlapping, out of order)
-are repaired first. Groups are made per clip, from the words the clip
+are repaired first. Groups are made per voice, from the words the clip
 actually plays, so a caption never shows a word that was cut away.
+
+**A split changes nothing.** Pieces that play on from each other — they
+touch on their track, the second plays its file from where the first
+stopped, and they show the same words — are one voice (`runs.js`): no
+group breaks at the cut and the frame at it is the frame it was. Move,
+slip or trim a piece and it speaks for itself again; a word under the cut
+then goes with the piece that plays most of it.
 
 The same groups make subtitle files: `timelineCues(edl, wordsOf)` walks the
 timeline's captioned clips and returns cues in timeline time, which
 `formatSrt` / `formatVtt` write out. By default the cues are the groups as
 drawn; `{ group: SUBTITLE_GROUP }` gives two-line phrases instead, for a
-file meant to be read by a player. An export can save them beside the
-video.
+file meant to be read by a player. A render saves one beside the video
+when asked ([below](#in-a-render)); `nearedit captions` writes one on its
+own.
 
 ## Drawing
 
-Captions are the last thing drawn, over every track: for each clip that
-has them and sounds at this instant, the compositor asks the host for its
-words (`env.words(clip)`, like `env.image`), finds the group, lays the
-words out with the text engine and draws them with the style. Two voices at
-once stack. A clip whose words have not arrived yet draws none, and the
-preview draws again when they do. On the server the words are loaded before
-the first frame; a segment with captions is rendered by the compositor.
-A caption costs about a millisecond a frame at 1920 × 1080 (0.2 for
-`boxed`, 2 for `minimal`), nearly all of it the soft shadow; the server and
-the browser draw the same pixels.
+Captions are the last thing drawn, over every track
+(`src/utils/compose/captionPass.js`): for each voice that sounds at this
+instant, the compositor asks the host for its words, finds the group, lays
+the words out with the text engine and draws them with the style, on
+whatever canvas it is drawing — a 640-pixel preview and a 1920-pixel
+render show the same picture. Two voices at once stack: the first with
+words takes the style's place, the next sits clear of it.
+
+**`env.words(clip)`** joins `image` and `frameOf` in the
+[host environment](./COMPOSITOR.md#the-host-environment-env). It answers
+with the transcript of the clip's file — the sidecar, its list of words,
+or triples in source seconds — or `null` while it loads and when there is
+none. It must hand back **the same object** until the transcript changes:
+groups are remembered by it. It is not asked for a clip that carries its
+own words. `requirements(edl, wordsOf?)` lists the files that will be
+asked for (`words`) and the caption font with the characters it draws.
+A voice whose words or font have not arrived draws nothing.
+
+The server and the browser draw the same pixels: 22 documents — every
+preset in wide, tall and square over footage, two voices, a caption over
+an element and a title, a split clip, words written on the clip, a
+slipped clip, a top anchor, a font of the document's own — are compared
+by `tests/compose/parity.test.js` and differ in no channel.
+
+## In the preview
+
+The editor's compositor host (`src/utils/playback/captionWords.js`) takes
+the words from the sidecar cache the transcript panel and the media bin
+share (`#utils/media/sidecars.js`, `GET /api/sidecar`), so a file's
+analysis is fetched once for all three and no route of its own is needed.
+Every captioned file of a document is asked for when the document is first
+painted. The preview paints again when words arrive — and when a sidecar
+changes: a correction in the transcript panel, a transcription that has
+just finished, a re-analysis. The old words stay on screen until the new
+ones are there. A failed request is tried again after five seconds.
+
+At the preview's size (769 × 433 in a 1440 × 900 window) a paused paint of
+one footage layer takes 1.2 ms in Chromium without captions and 1.1 to
+2.7 ms with them — up to 1.4 ms for the caption, `minimal` the most — and
+playing holds 60 frames a second either way (480 frames in 8 s; at most
+one late frame, with captions as without). On the server a caption costs
+about a millisecond a frame at 1920 × 1080 (0.2 for `boxed`, 2 for
+`minimal`), nearly all of it the soft shadow.
+
+## In a render
+
+- **Words** are read once, before anything is planned
+  (`src/api/render/words.js`, in `prepareRender`): the fresh sidecar beside
+  each captioned file. They travel to every canvas worker with the job, so
+  each has them before its first frame and all draw the same words.
+- **Routing.** A stretch with a sounding captioned clip that has words is
+  drawn by the compositor — reason `captions` in `POST /render/plan`
+  ([RENDER.md](./RENDER.md#two-renderers)). A caption's first frame is the
+  frame its word starts on: `ceil(start × fps)`.
+- **No words** is not an error: a captioned file without a transcript
+  renders without captions, stays on the fast path, and the job says so in
+  its log and in `warnings` of its result.
+- **Subtitles.** `POST /render` takes `subtitles: "srt" | "vtt"` and saves
+  the captions beside the video as `<name>.srt` — phrases for reading, with
+  the capitals and punctuation the words were written with whatever the
+  style does to them on screen, timed from the start of the range when one
+  is rendered. The result names it (`subtitles`, `subtitlesUrl`); it is
+  served and deleted with its video.
+- **The command line.** `nearedit frame` and `render` read the sidecars
+  beside the media (`<file>.nearedit.json`, also in `--media` folders);
+  `validate` names a captioned clip for which no words can be found;
+  `nearedit captions edit.json [--format srt|vtt] [-o file] [--as
+  phrases|drawn]` writes the subtitle file; `catalog` lists the presets.
 
 ## Editing
 
@@ -145,3 +230,12 @@ the browser draw the same pixels.
 - No translation, no speaker names, no emoji insertion.
 - Right-to-left and vertical scripts are laid out as the text engine lays
   out any text; scripts written without spaces are grouped by characters.
+- A picture clip without a linked sound clip can be captioned, though
+  nothing is heard from it; "caption all speech" leaves such clips alone.
+- When one of two voices stops, the other's caption moves down to the
+  first place.
+- Glyphs sit on whole pixel rows of the canvas they are drawn on, so a
+  line of a small preview may sit half a pixel from where the render has
+  it — as for titles.
+- A sidecar older than its media file is not read: the render then has no
+  words for that file, and says so.

@@ -85,7 +85,10 @@ describe('pieces that play on are one voice', () => {
     for (const edl of cases) assert.equal(captionVoices(edl).length, 2);
     const off = audio(clip('a', 2, 2), clip('b', 4, 2, 2, { captions: { on: false } }));
     assert.deepEqual(spans(off), [[2, 4, 'a']]);
-    const shared = audio(clip('a', 2, 2, 0, { captions: lyrics }), clip('b', 4, 2, 2, { captions: lyrics }));
+    const shared = audio(
+      clip('a', 2, 2, 0, { captions: lyrics }),
+      clip('b', 4, 2, 2, { captions: lyrics }),
+    );
     assert.deepEqual(spans(shared), [[2, 6, 'a+b']], 'pieces that share their own words are one');
   });
 
@@ -96,8 +99,16 @@ describe('pieces that play on are one voice', () => {
       clip(id, start, length, sourceIn, { linkedClipId: partner, captions: undefined });
     const edl = {
       tracks: [
-        { trackId: 'v1', type: 'video', clips: [picture('p1', 0, 3, 0, 's1'), picture('p2', 3, 3, 3, 's2')] },
-        { trackId: 'a1', type: 'audio', clips: [sound('s1', 0, 3, 0, 'p1'), sound('s2', 3, 3, 3, 'p2')] },
+        {
+          trackId: 'v1',
+          type: 'video',
+          clips: [picture('p1', 0, 3, 0, 's1'), picture('p2', 3, 3, 3, 's2')],
+        },
+        {
+          trackId: 'a1',
+          type: 'audio',
+          clips: [sound('s1', 0, 3, 0, 'p1'), sound('s2', 3, 3, 3, 'p2')],
+        },
       ],
     };
     assert.deepEqual(spans(edl), [[0, 6, 's1+s2']]);

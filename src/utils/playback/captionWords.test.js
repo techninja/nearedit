@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createWordSource, hasTranscript } from './captionWords.js';
+import { hasTranscript } from '#utils/captions/index.js';
+import { createWordSource } from './captionWords.js';
 
 /** A sidecar store whose answers the test hands out by hand. */
 function fakeIo() {

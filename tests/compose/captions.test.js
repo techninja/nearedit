@@ -20,8 +20,18 @@ const FPS = 30;
 /** A grey backdrop, and the talk's sound on an audio track with captions on. */
 function spoken(sound = {}, extra = {}) {
   const span = { timelineStart: 0, timelineEnd: 20 };
-  const bg = createClip({ clipId: 'bg', ...span, generator: { type: 'solid', seed: 0, params: { color: '#4b5563' } } });
-  const voice = createClip({ clipId: 'vo', sourceFile: TALK, ...span, captions: { on: true }, ...sound });
+  const bg = createClip({
+    clipId: 'bg',
+    ...span,
+    generator: { type: 'solid', seed: 0, params: { color: '#4b5563' } },
+  });
+  const voice = createClip({
+    clipId: 'vo',
+    sourceFile: TALK,
+    ...span,
+    captions: { on: true },
+    ...sound,
+  });
   return createEdl({
     fps: FPS,
     tracks: [
@@ -134,7 +144,13 @@ describe('a split clip', () => {
 
   it('shows the same pixels for a linked pair cut together, captions set on the picture', () => {
     const pair = spoken({ linkedClipId: 'pic', captions: undefined });
-    const picture = createClip({ clipId: 'pic', sourceFile: TALK, timelineStart: 0, timelineEnd: 20, linkedClipId: 'vo' });
+    const picture = createClip({
+      clipId: 'pic',
+      sourceFile: TALK,
+      timelineStart: 0,
+      timelineEnd: 20,
+      linkedClipId: 'vo',
+    });
     const tracks = [createTrack('video', { trackId: 'v0', clips: [picture] }), ...pair.tracks];
     const on = setCaptions({ ...pair, tracks }, 'pic');
     const cut = Math.round((said[0] + 0.2) * FPS) / FPS;
@@ -162,7 +178,10 @@ describe('requirements of a captioned document', () => {
 
   it('asks for no file when the clip carries its words, and follows the style’s font', () => {
     const own = setCaptionWords(spoken(), 'vo', [[0.5, 3, 'Über']]);
-    const styled = { ...own, captions: { style: { preset: 'clean', font: { family: 'Bebas Neue' } } } };
+    const styled = {
+      ...own,
+      captions: { style: { preset: 'clean', font: { family: 'Bebas Neue' } } },
+    };
     const needs = requirements(styled);
     assert.deepEqual(needs.words, []);
     assert.match(needs.fonts[0].font, /"Bebas Neue"/);

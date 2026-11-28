@@ -32,8 +32,9 @@ Everything lives in `src/api/render/`; `src/api/render.js` is the thin router.
 | Module | Role | I/O |
 | ------ | ---- | --- |
 | `request.js`, `mediaPaths.js` | Validate the request, normalise the EDL, check every file path | reads |
+| `words.js`, `subtitles.js` | The transcripts captions are drawn from; the subtitle file of a render | reads sidecars |
 | `scope.js` | Which clips render, which files they read, empty-timeline check | pure |
-| `prepare.js`, `probe.js`, `capabilities.js` | Render missing music, probe sources, detect what this FFmpeg can do | runs ffprobe/ffmpeg |
+| `prepare.js`, `probe.js`, `capabilities.js` | Render missing music, probe sources, read the captions' words, detect what this FFmpeg can do | runs ffprobe/ffmpeg |
 | `route.js`, `segments.js`, `segmentRules.js` | What needs the compositor; segments and their renderer | pure |
 | `plan.js`, `context.js`, `timing.js`, `sources.js`, `conform.js` | Filter-graph plan, frame arithmetic, frame choice | pure |
 | `videoGraph.js`, `layer.js`, `layerFilters.js`, `layerMotion.js`, `layerParts.js`, `placement.js`, `mediaLayer.js`, `visible.js` | Picture graph | pure |
@@ -49,7 +50,7 @@ Everything lives in `src/api/render/`; `src/api/render.js` is the thin router.
 ```js
 buildRenderPlan(edl, { probes, preset, range, outputPath, workDir, capabilities, streams })
 // → { args, filterComplex, duration, inputs, files, warnings, width, height, fps, frames }
-buildCanvasPlan(edl, { probes, preset, range, outputPath })
+buildCanvasPlan(edl, { probes, words, preset, range, outputPath })
 // → { doc, width, height, fps, startFrame, frames, footage, images, stills, encoderArgs, output }
 ```
 
@@ -74,6 +75,7 @@ compositor, and the **filter graph** otherwise (`route.js`):
 | `fade-curve` | A fade that is not linear (a fade-out hidden by a cross-fade does not count) |
 | `track-opacity` | Track opacity below 1 |
 | `background` | A document background other than black — every segment |
+| `captions` | A clip whose [captions](./CAPTIONS.md) are on, that is heard, and that has words — for as long as it sounds |
 
 `POST /render/plan` lists the segments with their `engine` (`ffmpeg` or
 `canvas`) and `reasons`. The filter graph refuses a range that holds any of
@@ -202,9 +204,15 @@ ffmpeg -f rawvideo -i pipe:0 -vf scale(bt709,tv),setsar=1,format=yuv420p + the p
   `Cannot read image: <path>`.
 - **Titles** are drawn here and nowhere else: the bundled fonts, wrapping,
   animation and colour emoji come from the compositor.
+- **Captions** are the compositor's last pass. Their words — the transcript
+  in the sidecar beside each captioned file — are read once by
+  `prepareRender` (`words.js`) and sent to every worker with the job, so
+  all workers draw the same words from their first frame. A captioned file
+  without a transcript is not drawn for and not an error: the job warns.
+  A caption appears on the frame its word starts on.
 
-`renderStill(edl, time, { probes, width })` (`canvas/still.js`) draws one
-frame with the same plan and decoders; `nearedit frame` uses it.
+`renderStill(edl, time, { probes, words, width })` (`canvas/still.js`) draws
+one frame with the same plan and decoders; `nearedit frame` uses it.
 
 ## Sound graph
 
@@ -298,11 +306,19 @@ shows; otherwise the plan shows the joining pass.
   swept when the next job starts.
 - The finished file is renamed into `<data>/renders/` with a record
   `<name>.mp4.json` that `GET /renders?projectId=` reads.
+- **Subtitles.** With `subtitles: "srt"` or `"vtt"` in the request (anything
+  else is a `422`) the timeline's captions are saved beside the video as
+  `<name>.srt` / `<name>.vtt` (`subtitles.js`): two-line phrases for
+  reading, from the same words the picture shows but with their capitals
+  and punctuation as written, timed from the start of a rendered range. The result and the record name it (`subtitles`,
+  `subtitlesUrl`). Asked for on a timeline without captions, no file is
+  written and the result's `warnings` say so.
 - Names: `filename` is reduced to letters, digits, space and `._()-`, given
   an `.mp4` extension, and refused (`422`) if it contains a path separator.
   An existing render is never overwritten (`name-2.mp4`).
-- `GET`/`DELETE /render/file/:name` accept only a plain, non-hidden `.mp4`
-  basename inside the renders directory; `GET` supports HTTP ranges.
+- `GET`/`DELETE /render/file/:name` accept only a plain, non-hidden `.mp4`,
+  `.srt` or `.vtt` basename inside the renders directory; `GET` supports
+  HTTP ranges. Deleting a video deletes its record and its subtitle files.
 
 ### Path safety
 
@@ -441,6 +457,7 @@ look-ahead and the decoders) and 0.2 GB the canvas worker.
 | `audio.test.js`, `audioLevels.test.js` | Measured levels: gain, fades on every curve, envelopes, cross-fades, mute/solo, silence, limiter |
 | `segments.test.js` | A segmented render equals the whole render frame for frame |
 | `routes.test.js`, `routesCanvas.test.js` | Every route, the job result, listing, serving, deletion, refusals (also for image parameters), cancellation and cleanup |
+| `captions.test.js`, `captionUnits.test.js` | Captions through `POST /render`: routing, the frame a word starts on, rendered frames against `renderStill`, words in every chunk, the subtitle file, a file without a transcript; words, routing and cues as units |
 
 Renders are 320×180 and a few seconds long; pixels are read back as raw RGB
 and tones with a single-bin DFT, so assertions are numeric.

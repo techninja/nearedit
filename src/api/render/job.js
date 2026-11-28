@@ -58,15 +58,15 @@ function defaultName(name) {
  * @param {import('./request.js').RenderRequest} request
  * @param {import('./words.js').WordTable} words
  * @param {string} file - The render's file name
- * @returns {{ file: string, url: string, format: string, cues: number } | null}
- *   null when the timeline has no captions to write
+ * @returns {{ subtitles: string, subtitlesUrl: string } | null} The file's
+ *   name and where it is served; null when the timeline has no captions to write
  */
 function saveSubtitles(request, words, file) {
   const cues = subtitleCues(request.edl, words, { range: request.range });
   if (!cues.length) return null;
   const name = subtitleName(file, request.subtitles);
   writeFileSync(join(rendersDir(), name), subtitleText(cues, request.subtitles));
-  return { file: name, url: renderUrl(name), format: request.subtitles, cues: cues.length };
+  return { subtitles: name, subtitlesUrl: renderUrl(name) };
 }
 
 /**
@@ -75,9 +75,10 @@ function saveSubtitles(request, words, file) {
  * @param {import('../lib/jobs.js').JobContext} ctx
  * @returns {Promise<{ output: string, file: string, url: string, duration: number,
  *   size: number, width: number, height: number, fps: number, warnings: string[],
- *   subtitles?: { file: string, url: string, format: string, cues: number } }>}
- *   `warnings`: what the render could not honour; `subtitles`: the file
- *   that was saved beside the video, when one was asked for and there were captions
+ *   subtitles?: string, subtitlesUrl?: string }>} `warnings`: what the
+ *   render could not honour; `subtitles`: the name of the file saved beside
+ *   the video, when one was asked for and there were captions — plain
+ *   strings, so the job's summary carries them too
  */
 export async function runRender(request, ctx) {
   const dir = rendersDir();
@@ -109,18 +110,17 @@ export async function runRender(request, ctx) {
       ...{ width, height, fps: Number(plan.fps.toFixed(3)) },
     };
     const warnings = [...prepared.warnings, ...plan.warnings];
-    const subtitles = request.subtitles ? saveSubtitles(request, words, file) : null;
-    if (request.subtitles && !subtitles) {
+    const extras = request.subtitles ? saveSubtitles(request, words, file) : null;
+    if (request.subtitles && !extras) {
       warnings.push('Subtitles were asked for, but no clip that is heard has captions with words');
       log(`Warning: ${warnings[warnings.length - 1]}`);
     }
-    const extras = subtitles ? { subtitles } : {};
     writeRecord(file, {
       ...{ projectId: request.projectId, adaptationId: request.adaptationId },
       ...{ preset: request.preset, range: request.range, ...facts, createdAt: Date.now() },
       ...extras,
     });
-    ctx.log(`Finished ${file}${subtitles ? ` and ${subtitles.file}` : ''}`);
+    ctx.log(`Finished ${file}${extras ? ` and ${extras.subtitles}` : ''}`);
     return { output, file, url: renderUrl(file), ...facts, warnings, ...extras };
   } finally {
     active.delete(basename(workDir));

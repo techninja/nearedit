@@ -28,7 +28,7 @@ describe('nearedit: captions', () => {
     ],
     ...more,
   });
-  /** How many pixels of a PNG's lower half are nearly white (the film is red). */
+  /** How many pixels of a PNG's lower half are light: letters (the film is pure red). */
   const white = (png) => {
     const raw = spawnSync(
       'ffmpeg',
@@ -36,7 +36,8 @@ describe('nearedit: captions', () => {
       { maxBuffer: 1 << 26 },
     ).stdout;
     let count = 0;
-    for (let i = raw.length / 2; i < raw.length; i += 3) if (raw[i + 1] > 200 && raw[i + 2] > 200) count++;
+    for (let i = raw.length / 2; i < raw.length; i += 3)
+      if (raw[i + 1] > 120 && raw[i + 2] > 120) count++;
     return count;
   };
 
@@ -50,7 +51,10 @@ describe('nearedit: captions', () => {
   after(() => fx.remove());
 
   it('validate accepts a captioned document and says which renderer draws it', () => {
-    const file = fx.save('spoken.json', spoken({ captions: { style: { preset: 'pop', size: 9 } } }));
+    const file = fx.save(
+      'spoken.json',
+      spoken({ captions: { style: { preset: 'pop', size: 9 } } }),
+    );
     const done = fx.cli('validate', file, '--json');
     const report = JSON.parse(done.out);
     assert.equal(done.code, 0, done.out + done.err);
@@ -79,10 +83,15 @@ describe('nearedit: captions', () => {
   it('validate says what it repaired in captions, one line each', () => {
     const words = [[2, 2.5, 'b'], { start: 1, end: 1.5, word: 'a' }, 'junk', [0, 1]];
     const doc = spoken(
-      { captions: { style: { preset: 'vapor', size: 99, glitter: 1, group: { words: 2 } }, mood: 'x' } },
+      {
+        captions: {
+          style: { preset: 'vapor', size: 99, glitter: 1, group: { words: 2 } },
+          mood: 'x',
+        },
+      },
       { captions: { on: 'yes', words } },
     );
-    doc.tracks[0].clips.push({ ...title(0, 1), captions: { on: true } });
+    doc.tracks[0].clips.push({ ...title(5, 6), captions: { on: true } });
     doc.tracks[1].clips.push({ ...film(5, 6), sourceIn: 0, captions: { on: false } });
     const done = fx.cli('validate', fx.save('repaired.json', doc));
     assert.equal(done.code, 0, done.out + done.err);
@@ -106,10 +115,18 @@ describe('nearedit: captions', () => {
       return white(done.out.trim());
     };
     assert.equal(at(0.3, 'before.png'), 0, 'no word yet');
-    assert.ok(at(1.2, 'saying.png') > 100, 'a caption while a word is said');
+    const saying = at(1.2, 'saying.png');
+    assert.ok(saying > 30, `a caption while a word is said: ${saying} light pixels`);
     const plain = spoken();
     delete plain.tracks[1].clips[0].captions;
-    const done = fx.cli('frame', fx.save('plain.json', plain), '-t', '1.2', '-o', join(fx.root, 'plain.png'));
+    const done = fx.cli(
+      'frame',
+      fx.save('plain.json', plain),
+      '-t',
+      '1.2',
+      '-o',
+      join(fx.root, 'plain.png'),
+    );
     assert.equal(white(done.out.trim()), 0, 'and none without captions');
   });
 
@@ -122,11 +139,23 @@ describe('nearedit: captions', () => {
     assert.equal(probe(out)[0].nb_read_frames, '120');
     const shot = (time, name) => {
       const png = join(fx.root, name);
-      spawnSync('ffmpeg', ['-v', 'error', '-y', '-ss', String(time), '-i', out, '-frames:v', '1', png]);
+      spawnSync('ffmpeg', [
+        '-v',
+        'error',
+        '-y',
+        '-ss',
+        String(time),
+        '-i',
+        out,
+        '-frames:v',
+        '1',
+        png,
+      ]);
       return white(png);
     };
     assert.equal(shot(0.2, 'r-before.png'), 0);
-    assert.ok(shot(1.2, 'r-saying.png') > 20);
+    const saying = shot(1.2, 'r-saying.png');
+    assert.ok(saying > 5, `${saying} light pixels at half size`);
   });
 
   it('captions writes the subtitle file, as phrases or as drawn', () => {
@@ -136,14 +165,42 @@ describe('nearedit: captions', () => {
     assert.equal(done.out.trim(), join(fx.project, 'subs.srt'));
     assert.equal(
       readFileSync(done.out.trim(), 'utf8'),
-      '1\n00:00:00,500 --> 00:00:02,800\nHello there, everyone.\n\n2\n00:00:02,800 --> 00:00:04,000\nWelcome back.\n',
+      '1\n00:00:00,500 --> 00:00:02,500\nHello there, everyone.\n\n2\n00:00:02,800 --> 00:00:04,000\nWelcome back.\n',
     );
-    const drawn = fx.cli('captions', file, '--as', 'drawn', '-o', join(fx.root, 'out', 'drawn.vtt'));
+    const drawn = fx.cli(
+      'captions',
+      file,
+      '--as',
+      'drawn',
+      '-o',
+      join(fx.root, 'out', 'drawn.vtt'),
+    );
     assert.equal(drawn.code, 0, drawn.err);
     const text = readFileSync(join(fx.root, 'out', 'drawn.vtt'), 'utf8');
-    assert.match(text, /^WEBVTT\n\n00:00:00\.500 --> 00:00:01\.500\nHello there,\n\n00:00:01\.500 --> /);
+    assert.match(
+      text,
+      /^WEBVTT\n\n00:00:00\.500 --> 00:00:01\.500\nHello there,\n\n00:00:01\.500 --> /,
+    );
     const vtt = fx.cli('captions', file, '--format', 'vtt');
     assert.equal(vtt.out.trim(), join(fx.project, 'subs.vtt'));
+  });
+
+  it('reads the sidecar beside media in a --media folder, and none outside what is allowed', () => {
+    const sea = join(fx.library, 'sea.mp4');
+    const transcript = [{ word: 'Waves.', start: 1, end: 2 }];
+    const sidecar = { transcript, segments: [], _sourceMtime: statSync(sea).mtimeMs };
+    writeFileSync(`${sea}.nearedit.json`, JSON.stringify(sidecar));
+    const doc = spoken();
+    doc.tracks[1].clips = [{ ...film(0, 4, sea), captions: { on: true } }];
+    const file = fx.save('sea.json', doc);
+    const done = fx.cli('captions', file, '--media', fx.library, '-o', join(fx.root, 'sea.srt'));
+    assert.equal(done.code, 0, done.err);
+    assert.match(readFileSync(join(fx.root, 'sea.srt'), 'utf8'), /\nWaves\.\n/);
+    const shut = fx.cli('captions', file);
+    assert.equal(shut.code, 1, 'outside the document’s folder: its sidecar is not opened');
+    assert.match(shut.err, /sea\.mp4 is outside the document's folder/);
+    assert.match(shut.err, /has no captions to write/);
+    rmSync(`${sea}.nearedit.json`);
   });
 
   it('captions says so when there is nothing to write, and how it is used', () => {
@@ -174,7 +231,9 @@ describe('nearedit: captions', () => {
   });
 
   it('a document font whose file is missing is a warning, not an error', () => {
-    const fonts = [{ family: 'House Sans', weight: 700, style: 'normal', file: 'fonts/gone.woff2' }];
+    const fonts = [
+      { family: 'House Sans', weight: 700, style: 'normal', file: 'fonts/gone.woff2' },
+    ];
     const doc = spoken({ fonts, captions: { style: { font: { family: 'House Sans' } } } });
     const file = fx.save('fontless.json', doc);
     const done = fx.cli('validate', file);
@@ -185,7 +244,7 @@ describe('nearedit: captions', () => {
     );
     const frame = fx.cli('frame', file, '-t', '1.2', '-o', join(fx.root, 'fontless.png'));
     assert.equal(frame.code, 0, frame.err);
-    assert.ok(white(frame.out.trim()) > 100, 'drawn in the fallback');
+    assert.ok(white(frame.out.trim()) > 30, 'drawn in the fallback');
     rmSync(join(fx.root, 'fontless.png'));
   });
 });

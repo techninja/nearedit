@@ -36,10 +36,5 @@ export { elementSpan, isElementClip } from '#utils/brand/clip.js';
 // Captions: a clip's switch and words, the timeline's style, and what an editor reads
 export { captionAllSpeech, setCaptionWords, setCaptions } from './captions.js';
 export { patchCaptionStyle, setCaptionStyle } from './captionStyle.js';
-export {
-  canCaption,
-  captionInfo,
-  captionedClips,
-  captionsWithoutWords,
-} from './captionQuery.js';
+export { canCaption, captionInfo, captionedClips, captionsWithoutWords } from './captionQuery.js';
 export { captionVoices, voiceFiles, voicesAt } from '#utils/captions/voices.js';

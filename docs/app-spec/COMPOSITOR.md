@@ -155,6 +155,9 @@ For each frame, back to front:
    3. If the track has effects, opacity below 1 or a non-normal blend mode,
       its clips are composed on a track surface, the track effects applied,
       and the surface composited with the track's opacity and `blendMode`.
+3. Over every track, the [captions](./CAPTIONS.md#drawing) of the clips
+   that are heard (`captionPass.js`): the group of words on screen at this
+   moment, in the timeline's caption style.
 
 Effects therefore act in frame space, after the transform: a 20-pixel blur
 is 20 output pixels however the clip is scaled, and glows and shadows can
@@ -255,9 +258,11 @@ The only door to the outside. Compositor modules never touch `document`,
 | `frameOf(clip, sourceTime)` | The footage frame for a clip, or `null` when not available |
 | `fontReady(font, text)` | Whether the font is loaded (the browser loads on demand) |
 | `fonts(table)` | Optional: make the document's own font files known. Called with `edl.fonts` on every frame that has one, so it must cost nothing for a table it has seen |
+| `words(clip)` | The transcript of a captioned clip's file — its sidecar, its word list, or `[start, end, text]` triples in source seconds — or `null` while it loads and when there is none. The same object every time until the transcript changes. Not asked for a clip that carries its own words |
 
-`requirements(edl)` lists the images and fonts a document needs, so a host
-can load them before drawing: the server loads all of them first; the
+`requirements(edl, wordsOf?)` lists the images, the fonts and — for
+captions — the files whose transcripts (`words`) a document needs, so a
+host can load them before drawing: the server loads all of them first; the
 browser draws what is ready and redraws when the rest arrives.
 
 ### Canvas features
@@ -343,7 +348,7 @@ re-encoding.
 - **Routing.** A segment takes the canvas path when anything in it needs the
   compositor — a generator, a title, an enabled effect, a blend mode,
   keyframes on a visual property, a curved fade, track opacity below 1, a
-  non-black background — and the filter-graph path otherwise.
+  non-black background, a caption — and the filter-graph path otherwise.
   `POST /render/plan` says which, and why. `RENDER_ENGINE` (`auto`, `canvas`,
   `ffmpeg`) overrides the choice; `ffmpeg` refuses a timeline that needs the
   compositor instead of drawing it wrong.
@@ -378,6 +383,7 @@ nearedit validate edit.json                    # what is wrong, and where
 nearedit catalog                               # generators, effects, blend modes, easings, fonts
 nearedit frame  edit.json --time 3.5           # one frame as PNG → edit-3.5s.png
 nearedit render edit.json --preset draft       # the whole edit → edit.mp4
+nearedit captions edit.json --format vtt       # its captions → edit.vtt
 ```
 
 | Command | Does | Output |
@@ -385,13 +391,17 @@ nearedit render edit.json --preset draft       # the whole edit → edit.mp4
 | `render <edl.json> [-o out.mp4] [--preset draft\|standard\|high] [--range start:end] [--workers n]` | Encodes the document with the passes of the render job | Progress on stderr, the file's path on stdout |
 | `frame <edl.json> --time <seconds> [-o frame.png] [--width n]` | Draws the frame the render shows at that moment, footage included | The PNG's path on stdout |
 | `validate <edl.json> [--json]` | Normalises and checks the document | One line per problem with its path (`tracks[0].clips[2].generator.type: unknown generator …`); exit 1 when it cannot be rendered |
-| `catalog [--json]` | Lists generators and effects with every parameter (type, range, default), effect presets, blend modes, easings, text animations, fonts — read from `catalog()` | Text, or one JSON object |
+| `catalog [--json]` | Lists generators and effects with every parameter (type, range, default), effect presets, blend modes, easings, text animations, fonts, brand kits and caption presets — read from `catalog()` | Text, or one JSON object |
+| `captions <edl.json> [--format srt\|vtt] [-o file] [--as phrases\|drawn]` | Writes the timeline's [captions](./CAPTIONS.md) as a subtitle file: phrases for reading, or the groups as drawn | The file's path |
 | `record <recipe.json> [-o out.mp4] [--allow host]` | Records a [web clip](./WEBCLIP.md) recipe in the headless browser | The recording's path; its track beside it |
 | `music <song.json> [-o out.wav]` | Renders a [song](./MUSIC.md) with the synth engine | The WAV's path |
 | `help [command]` | Explains | |
 
 `render` and `frame` first make whatever a document's web clips and music
-clips still lack: recordings need the browser, music needs nothing.
+clips still lack: recordings need the browser, music needs nothing. The
+words of captions come from the sidecar beside each media file
+(`talk.mp4.nearedit.json`, written by the server's transcriber) or from
+the clip itself.
 
 - **A document** is one JSON file in the [EDL](./EDL.md) shape. Only what
   differs from the defaults has to be written: `fps`, `resolution`,
@@ -405,8 +415,10 @@ clips still lack: recordings need the browser, music needs nothing.
   generator or effect, a clip that could not be read at all — one without
   `timelineStart`, say — a broken invariant, an empty timeline) and warnings
   (a value that was repaired on the way in — `"glow" was read as "normal"` —
-  an unknown field or parameter, a clip longer than its file). With `--json`
-  it also lists the segments and the renderer each will take.
+  an unknown field or parameter, a clip longer than its file, a captioned
+  clip without words, a font file that is missing: its text is drawn in the
+  bundled sans-serif). With `--json` it also lists the segments and the
+  renderer each will take.
 - **Exit codes:** 0 done, 1 the document or the render failed, 2 the command
   line was not understood (the message says what was expected), 130
   interrupted. An interrupted render leaves no file behind.

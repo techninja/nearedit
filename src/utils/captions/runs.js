@@ -61,7 +61,8 @@ function spanOf(run) {
 export function joinRuns(voices) {
   /** @type {Map<any, Voice[]>} */
   const byTrack = new Map();
-  for (const voice of voices) byTrack.set(voice.track, [...(byTrack.get(voice.track) || []), voice]);
+  for (const voice of voices)
+    byTrack.set(voice.track, [...(byTrack.get(voice.track) || []), voice]);
   /** @type {Map<Voice, Voice[]>} Runs by their first voice */
   const runs = new Map();
   const joined = new Set();

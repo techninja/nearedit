@@ -12,7 +12,9 @@ const TALK = '/m/talk.mp4';
 const BED = '/m/bed.mp3';
 const said = (text, from = 1) =>
   text.split(' ').map((word, i) => ({ word, start: from + i * 0.5, end: from + 0.4 + i * 0.5 }));
-const SIDECARS = { [TALK]: { transcript: said('We ship. It works well. Thanks for watching all.') } };
+const SIDECARS = {
+  [TALK]: { transcript: said('We ship. It works well. Thanks for watching all.') },
+};
 const read = (file) => SIDECARS[file] || null;
 
 /** Plain footage for 20 s; the talk's sound from 4 to 12 s and a music bed, both captioned. */
@@ -41,7 +43,11 @@ describe('words of a render', () => {
     assert.equal(words[BED], null);
     assert.equal(warnings.length, 1);
     assert.match(warnings[0], /^Captions are on for \/m\/bed\.mp3, which has no transcript/);
-    assert.equal(wordsFrom(words)({ sourceFile: TALK }), words[TALK], 'the same object every frame');
+    assert.equal(
+      wordsFrom(words)({ sourceFile: TALK }),
+      words[TALK],
+      'the same object every frame',
+    );
     assert.equal(wordsFrom(words)({ sourceFile: '/m/other.mp4' }), null);
     assert.equal(wordsFrom(undefined)({ sourceFile: TALK }), null);
   });
@@ -61,7 +67,10 @@ describe('words of a render', () => {
     } finally {
       console.warn = warn;
     }
-    assert.equal(loadWords(timeline(), () => ({ transcript: 'x', segments: [] })).words[TALK], null);
+    assert.equal(
+      loadWords(timeline(), () => ({ transcript: 'x', segments: [] })).words[TALK],
+      null,
+    );
     const phrases = { segments: [{ start: 1, end: 2, text: 'only phrases' }] };
     assert.deepEqual(loadWords(timeline(), () => phrases).words[TALK].transcript, []);
   });
@@ -101,8 +110,14 @@ describe('routing captions', () => {
 
   it('is refused by a renderer that cannot draw it', () => {
     const edl = timeline();
-    const options = { words: loadWords(edl, read).words, engine: /** @type {'ffmpeg'} */ ('ffmpeg') };
-    assert.throws(() => renderSegments(edl, options), /cannot render this timeline: it has captions/);
+    const options = {
+      words: loadWords(edl, read).words,
+      engine: /** @type {'ffmpeg'} */ ('ffmpeg'),
+    };
+    assert.throws(
+      () => renderSegments(edl, options),
+      /cannot render this timeline: it has captions/,
+    );
   });
 });
 
@@ -119,8 +134,15 @@ describe('subtitle files', () => {
     assert.deepEqual([phrases[0].start, phrases[1].start], [5, 6]);
     const drawn = subtitleCues(edl, words, { as: 'drawn' });
     assert.deepEqual(drawn.map((cue) => cue.text).slice(-2), ['Thanks', 'for watching all.']);
-    assert.match(subtitleText(phrases, 'srt'), /^1\n00:00:05,000 --> 00:00:06,000\nWe ship\.\n\n2\n/);
+    assert.match(
+      subtitleText(phrases, 'srt'),
+      /^1\n00:00:05,000 --> 00:00:06,000\nWe ship\.\n\n2\n/,
+    );
     assert.match(subtitleText(phrases, 'vtt'), /^WEBVTT\n\n00:00:05\.000 --> /);
+    // A style that shouts: the picture's groups do, the phrases keep the text as written.
+    const pop = { ...edl, captions: { style: { preset: 'pop' } } };
+    assert.equal(subtitleCues(pop, words)[1].text, 'It works well.');
+    assert.equal(subtitleCues(pop, words, { as: 'drawn' })[1].text, 'IT WORKS');
   });
 
   it('times a range from its start and keeps only what falls inside', () => {

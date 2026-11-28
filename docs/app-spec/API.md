@@ -266,6 +266,8 @@ Presets: `draft` (half resolution, fast), `standard` (default), `high`.
 A `render` job's result is
 `{ output, file, url, duration, size, width, height, fps }`. Cancelling the
 job kills FFmpeg and removes the partial file.
+With `subtitles: "srt" | "vtt"` in the body the timeline's captions are saved beside the video; the
+result gains `subtitles`, `subtitlesUrl` and (always) `warnings` — [CAPTIONS.md](./CAPTIONS.md#in-a-render).
 
 Every `sourceFile` in a posted EDL, and every image a generator or an
 effect names (a particle sprite, for one), must pass the media allow-list

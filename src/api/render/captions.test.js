@@ -34,8 +34,16 @@ describe('render: captions', () => {
   const spoken = (file = talk, length = 10, more = {}) => {
     const span = { sourceFile: file, timelineStart: 0, timelineEnd: length };
     const picture = createClip({ clipId: 'pic', ...span, linkedClipId: 'snd' });
-    const sound = createClip({ clipId: 'snd', ...span, linkedClipId: 'pic', captions: { on: true } });
-    const tracks = [createTrack('video', { clips: [picture] }), createTrack('audio', { clips: [sound] })];
+    const sound = createClip({
+      clipId: 'snd',
+      ...span,
+      linkedClipId: 'pic',
+      captions: { on: true },
+    });
+    const tracks = [
+      createTrack('video', { clips: [picture] }),
+      createTrack('audio', { clips: [sound] }),
+    ];
     return createEdl({ resolution: `${W}x${H}`, fps: FPS, tracks, ...more });
   };
   const post = (path, body) =>
@@ -104,7 +112,10 @@ describe('render: captions', () => {
     const off = spoken();
     off.tracks[1].clips[0].captions = { on: false };
     const plain = await (await post('/render/plan', { edl: off })).json();
-    assert.deepEqual(plain.segments.map((s) => s.engine), ['ffmpeg']);
+    assert.deepEqual(
+      plain.segments.map((s) => s.engine),
+      ['ffmpeg'],
+    );
   });
 
   it('refuses a subtitle format it does not write', async () => {
@@ -119,7 +130,9 @@ describe('render: captions', () => {
     assert.equal(job.status, 'complete', job.error);
     const { result } = job;
     assert.deepEqual(result.warnings, []);
-    assert.ok(job.log.some((line) => /3 segments, 3 drawn by the compositor/.test(line.message ?? line)));
+    assert.ok(
+      job.log.some((line) => /3 segments, 3 drawn by the compositor/.test(line.message ?? line)),
+    );
     const frames = await kit.readFrames(result.output, W, H);
     assert.equal(frames.count, 300);
     // "one" starts at 1.05 s — between frames 31 and 32: on screen from frame 32.
@@ -147,8 +160,8 @@ describe('render: captions', () => {
 
   it('saves the subtitle file beside the video, names it in the result and serves it', async () => {
     const job = await rendered({ edl: spoken(), filename: 'subbed', subtitles: 'vtt' });
-    const { subtitles, file } = job.result;
-    assert.deepEqual(subtitles, { file: 'subbed.vtt', url: '/api/render/file/subbed.vtt', format: 'vtt', cues: 2 });
+    const { subtitles, subtitlesUrl, file } = job.result;
+    assert.deepEqual([subtitles, subtitlesUrl], ['subbed.vtt', '/api/render/file/subbed.vtt']);
     assert.equal(file, 'subbed.mp4');
     const text = readFileSync(join(renders, 'subbed.vtt'), 'utf8');
     const cues = [
@@ -159,16 +172,23 @@ describe('render: captions', () => {
     const served = await fetch(`${base}/render/file/subbed.vtt`);
     assert.equal(served.status, 200);
     assert.equal(await served.text(), text);
-    const listed = (await (await fetch(`${base}/renders`)).json()).data.find((r) => r.file === file);
-    assert.deepEqual(listed.subtitles, subtitles);
+    const listed = (await (await fetch(`${base}/renders`)).json()).data.find(
+      (r) => r.file === file,
+    );
+    assert.deepEqual([listed.subtitles, listed.subtitlesUrl], [subtitles, subtitlesUrl]);
     const gone = await fetch(`${base}/render/file/subbed.mp4`, { method: 'DELETE' });
     assert.equal(gone.status, 204);
     assert.equal(existsSync(join(renders, 'subbed.vtt')), false, 'deleted with its video');
   });
 
   it('times the subtitles of a range render from the start of the range', async () => {
-    const job = await rendered({ edl: spoken(), filename: 'part', subtitles: 'srt', range: { start: 2, end: 5 } });
-    const text = readFileSync(join(renders, job.result.subtitles.file), 'utf8');
+    const job = await rendered({
+      edl: spoken(),
+      filename: 'part',
+      subtitles: 'srt',
+      range: { start: 2, end: 5 },
+    });
+    const text = readFileSync(join(renders, job.result.subtitles), 'utf8');
     assert.match(text, /^1\n00:00:00,000 --> 00:00:03,000\n/);
     assert.equal(job.result.duration, 3);
   });

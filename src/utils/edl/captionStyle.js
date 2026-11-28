@@ -25,8 +25,9 @@ import { sameJson } from './jsonBag.js';
 export function setCaptionStyle(edl, style) {
   if (style === null || style === undefined) {
     if (edl.captions === undefined) return edl;
-    const { captions: _dropped, ...rest } = edl;
-    return /** @type {Edl} */ (rest);
+    const rest = { ...edl };
+    delete rest.captions;
+    return rest;
   }
   const next = normalizeCaptionStyle(style);
   if (edl.captions && sameJson(edl.captions.style, next)) return edl;

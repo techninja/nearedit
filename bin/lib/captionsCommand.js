@@ -6,6 +6,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, extname, resolve } from 'node:path';
+import { readSidecar } from '../../src/api/lib/sidecar.js';
 import {
   SUBTITLE_FORMATS,
   SUBTITLE_SHAPES,
@@ -40,11 +41,13 @@ export async function captionsCommand(argv, io) {
     .toLowerCase();
   const format = values.format || (SUBTITLE_FORMATS.includes(named) ? named : 'srt');
   const loaded = loadDocument(rest[0], { media: values.media });
-  // Missing footage does not stop a subtitle file; a captioned clip without words is said.
-  const { words } = loadWords(loaded.edl);
+  // Missing footage does not stop a subtitle file — what is wrong is said, a captioned clip
+  // without words too. Only the sidecars of media the document may read are opened.
+  const allowed = new Set(loaded.media);
+  const { words } = loadWords(loaded.edl, (file) => (allowed.has(file) ? readSidecar(file) : null));
   const findings = [...loaded.findings, ...wordFindings(loaded.edl, words)];
-  const about = findings.filter((one) => /captions/.test(one.path));
-  for (const line of describe([...byLevel(about).errors, ...byLevel(about).warnings])) io.err(line);
+  const about = byLevel(findings.filter((one) => /captions/.test(one.path))).warnings;
+  for (const line of describe([...byLevel(findings).errors, ...about])) io.err(line);
   const cues = subtitleCues(loaded.edl, words, { as: values.as });
   if (!cues.length)
     throw new DocumentError(

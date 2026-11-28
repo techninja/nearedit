@@ -53,7 +53,9 @@ const talking = () =>
 /** Every word the timeline shows, as `text@start`, in voice order. */
 const said = (edl) =>
   captionVoices(edl).flatMap((voice) =>
-    voiceWords(voice, TRANSCRIPT).map(([start, , text]) => `${text}@${Math.round(start * 100) / 100}`),
+    voiceWords(voice, TRANSCRIPT).map(
+      ([start, , text]) => `${text}@${Math.round(start * 100) / 100}`,
+    ),
   );
 
 describe('captions follow the clip', () => {
@@ -75,7 +77,10 @@ describe('captions follow the clip', () => {
     const apart = assertValid(moveClips(cut, [right.clipId], { delta: 2 }));
     assert.equal(captionVoices(apart).length, 2);
     assert.deepEqual(said(apart).slice(3, 6), ['w3@4.5', 'w4@7.1', 'w5@7.5']);
-    assert.equal(cut.tracks[0].clips.every((clip) => !('captions' in clip)), true);
+    assert.equal(
+      cut.tracks[0].clips.every((clip) => !('captions' in clip)),
+      true,
+    );
   });
 
   it('through a split of words written on the clip', () => {
@@ -104,7 +109,10 @@ describe('captions follow the clip', () => {
 
   it('through a move, a ripple insert and a ripple delete', () => {
     const start = talking();
-    assert.deepEqual(said(moveClips(start, ['talk'], { delta: 3 })).slice(0, 2), ['w0@6', 'w1@6.5']);
+    assert.deepEqual(said(moveClips(start, ['talk'], { delta: 3 })).slice(0, 2), [
+      'w0@6',
+      'w1@6.5',
+    ]);
     assert.deepEqual(said(rippleInsert(start, 1, 2)).slice(0, 2), ['w0@5', 'w1@5.5']);
     const closed = assertValid(rippleDeleteRange(start, 4, 6, { scope: 'all' }));
     assert.deepEqual(said(closed), ['w0@3', 'w1@3.5', 'w6@4', 'w7@4.5', 'w8@5', 'w9@5.5']);
@@ -128,12 +136,20 @@ describe('captions through copy and paste', () => {
     assert.equal(captionVoices(pasted).length, 2);
     assert.deepEqual(said(pasted).slice(3), ['la@21', 'di@23', 'da@25']);
     const twice = assertValid(duplicateClips(talking(), ['talk', 'talk_s']));
-    assert.deepEqual(twice.tracks[1].clips.map((clip) => clip.captions), [{ on: true }, { on: true }]);
+    assert.deepEqual(
+      twice.tracks[1].clips.map((clip) => clip.captions),
+      [{ on: true }, { on: true }],
+    );
   });
 
   it('keeps a target’s captions when attributes are pasted onto it', () => {
     const start = talking();
-    const look = createClip({ clipId: 'look', timelineStart: 0, timelineEnd: 2, blendMode: 'screen' });
+    const look = createClip({
+      clipId: 'look',
+      timelineStart: 0,
+      timelineEnd: 2,
+      blendMode: 'screen',
+    });
     const pasted = assertValid(pasteAttributes(start, look, ['talk', 'talk_s']));
     assert.equal(clipOf(pasted, 'talk').blendMode, 'screen');
     assert.deepEqual(clipOf(pasted, 'talk_s').captions, { on: true });
@@ -149,14 +165,19 @@ describe('captions through copy and paste', () => {
     const on = assertValid(pasteAttributes(start, 'one', ['two'], { captions: true }));
     assert.deepEqual(clipOf(on, 'two').captions, { on: true }, 'the switch, not the words');
     const off = pasteAttributes(on, 'two', ['one'], { captions: true });
-    assert.deepEqual(clipOf(off, 'one').captions, { on: true, words: OWN }, 'two is on: one stays on');
+    assert.deepEqual(
+      clipOf(off, 'one').captions,
+      { on: true, words: OWN },
+      'two is on: one stays on',
+    );
     const none = pasteAttributes(start, clipOf(start, 'two'), ['one'], { captions: true });
     assert.deepEqual(clipOf(none, 'one').captions, { on: false, words: OWN });
   });
 });
 
 describe('captions in a stored document', () => {
-  const styled = () => setCaptionStyle(setCaptionWords(talking(), 'talk', OWN), { preset: 'pop', size: 8 });
+  const styled = () =>
+    setCaptionStyle(setCaptionWords(talking(), 'talk', OWN), { preset: 'pop', size: 8 });
 
   it('round-trips through the saved shape unchanged', () => {
     const edl = splitClips(styled(), 6);
@@ -176,7 +197,10 @@ describe('captions in a stored document', () => {
     assert.deepEqual(loaded, plain);
     assert.equal('captions' in loaded, false);
     assert.equal('captions' in toSavedDocument(loaded), false);
-    assert.equal(loaded.tracks.some((track) => track.clips.some((clip) => 'captions' in clip)), false);
+    assert.equal(
+      loaded.tracks.some((track) => track.clips.some((clip) => 'captions' in clip)),
+      false,
+    );
   });
 
   it('repairs what a hand-written document says', () => {
@@ -194,7 +218,10 @@ describe('captions in a stored document', () => {
           clips: [
             {
               ...{ sourceFile: 'a.wav', timelineStart: 0, timelineEnd: 4 },
-              captions: { on: 'yes', words: [[2, 2.5, 'b'], { start: 1, end: 1.5, word: 'a' }, [0, 1]] },
+              captions: {
+                on: 'yes',
+                words: [[2, 2.5, 'b'], { start: 1, end: 1.5, word: 'a' }, [0, 1]],
+              },
             },
             { sourceFile: 'b.wav', timelineStart: 5, timelineEnd: 9, captions: { on: true } },
             { sourceFile: 'c.wav', timelineStart: 10, timelineEnd: 12, captions: { on: false } },
@@ -208,7 +235,18 @@ describe('captions in a stored document', () => {
     assert.equal('captions' in edl.tracks[0].clips[0], false, 'a title has no captions');
     assert.deepEqual(
       edl.tracks[1].clips.map((clip) => clip.captions),
-      [{ on: false, words: [[1, 1.5, 'a'], [2, 2.5, 'b']] }, { on: true }, undefined, undefined],
+      [
+        {
+          on: false,
+          words: [
+            [1, 1.5, 'a'],
+            [2, 2.5, 'b'],
+          ],
+        },
+        { on: true },
+        undefined,
+        undefined,
+      ],
     );
     assert.equal(normalizeEdl({ tracks: [], captions: {} }).captions, undefined);
     assert.equal(normalizeEdl({ tracks: [], captions: { style: 7 } }).captions, undefined);
@@ -230,12 +268,29 @@ describe('captions in a stored document', () => {
     assert.deepEqual(paths(withClip({ on: 'yes' })), ['tracks[1].clips[0].captions']);
     assert.deepEqual(paths(withClip({ on: false })), ['tracks[1].clips[0].captions']);
     assert.deepEqual(paths(withClip({ on: true, words: [] })), ['tracks[1].clips[0].captions']);
-    const unsorted = [[2, 3, 'b'], [1, 1.5, 'a']];
-    assert.deepEqual(paths(withClip({ on: true, words: unsorted })), ['tracks[1].clips[0].captions']);
-    const title = createClip({ clipId: 't', timelineStart: 0, timelineEnd: 2, text: { content: 'x' } });
-    const titled = { ...good.tracks[0], clips: [{ ...title, captions: { on: true } }, good.tracks[0].clips[0]] };
-    assert.deepEqual(paths({ ...good, tracks: [titled, good.tracks[1]] }), ['tracks[0].clips[0].captions']);
-    assert.deepEqual(paths({ ...good, captions: { style: { preset: 'pop', size: 999 } } }), ['captions']);
+    const unsorted = [
+      [2, 3, 'b'],
+      [1, 1.5, 'a'],
+    ];
+    assert.deepEqual(paths(withClip({ on: true, words: unsorted })), [
+      'tracks[1].clips[0].captions',
+    ]);
+    const title = createClip({
+      clipId: 't',
+      timelineStart: 0,
+      timelineEnd: 2,
+      text: { content: 'x' },
+    });
+    const titled = {
+      ...good.tracks[0],
+      clips: [{ ...title, captions: { on: true } }, good.tracks[0].clips[0]],
+    };
+    assert.deepEqual(paths({ ...good, tracks: [titled, good.tracks[1]] }), [
+      'tracks[0].clips[0].captions',
+    ]);
+    assert.deepEqual(paths({ ...good, captions: { style: { preset: 'pop', size: 999 } } }), [
+      'captions',
+    ]);
     assert.deepEqual(paths({ ...good, captions: {} }), ['captions']);
   });
 });

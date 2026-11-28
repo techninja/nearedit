@@ -44,6 +44,21 @@ function spread(segments) {
 }
 
 /**
+ * Whether a file's sidecar says anything captions can show: timed words,
+ * or phrases. An interface asks this to tell "captions are on" from
+ * "captions are on, but this file has no transcript yet".
+ * @param {unknown} sidecar - A sidecar, or null when the file has none
+ * @returns {boolean}
+ */
+export function hasTranscript(sidecar) {
+  const some = (/** @type {unknown} */ list) => Array.isArray(list) && list.length > 0;
+  const data = /** @type {any} */ (sidecar);
+  return (
+    Boolean(data) && typeof data === 'object' && (some(data.transcript) || some(data.segments))
+  );
+}
+
+/**
  * The caption words of a transcript, repaired and in time order.
  * @param {unknown} transcript - A sidecar (`{ transcript, segments }`), or
  *   its list of words (`[{ word, start, end }]`, or triples)

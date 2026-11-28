@@ -11,6 +11,7 @@
  * @module utils/playback/captionWords
  */
 
+import { hasTranscript } from '#utils/captions/transcript.js';
 import { loadSidecar, onSidecarChange } from '#utils/media/sidecars.js';
 
 /** A transcript that could not be fetched is asked for again after this long, ms. */
@@ -26,15 +27,6 @@ const RETRY_MS = 5000;
  * @property {number} asked - Which request the entry is waiting for
  * @property {number} retryAt - When a failed request may be made again, ms
  */
-
-/**
- * @param {Record<string, any>|null} sidecar
- * @returns {boolean} True when the sidecar says anything: timed words, or phrases
- */
-export function hasTranscript(sidecar) {
-  const some = (/** @type {unknown} */ list) => Array.isArray(list) && list.length > 0;
-  return Boolean(sidecar) && (some(sidecar.transcript) || some(sidecar.segments));
-}
 
 /**
  * Create the word source of a preview.
@@ -72,7 +64,9 @@ export function createWordSource(onArrive, io = {}) {
     load(path).then(
       (sidecar) =>
         settle(
-          hasTranscript(sidecar) ? { words: sidecar, state: 'ready' } : { words: null, state: 'none' },
+          hasTranscript(sidecar)
+            ? { words: sidecar, state: 'ready' }
+            : { words: null, state: 'none' },
         ),
       (err) => {
         console.warn(`[captions] could not load the transcript of ${path}: ${err.message}`);

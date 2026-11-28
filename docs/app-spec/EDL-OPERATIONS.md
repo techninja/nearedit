@@ -38,6 +38,7 @@ then hand-tune.
 | `webClip.js`, `webZoom.js` | [Web clips](#web-clips): `insertWebClip`, `updateWebRecipe`, `setWebRecording`, `webClips`, `staleWebClips`; `applyWebZoom`, `clearWebZoom` |
 | `musicClip.js` | [Music clips](#music-clips): `insertMusicClip`, `updateSong`, `setMusicRendering`, `musicClips`, `staleMusicClips` |
 | `elementClip.js`, `elementDetach.js`, `elementFonts.js` | [Element clips](#element-clips): `insertElement`, `updateElementSlots`, `restyle`, `elementClips`, `staleElements`; `detachElement`; `syncFonts` |
+| `captions.js`, `captionStyle.js`, `captionQuery.js` | [Captions](#captions): `setCaptions`, `captionAllSpeech`, `setCaptionWords`; `setCaptionStyle`, `patchCaptionStyle`; `canCaption`, `captionInfo`, `captionedClips`, `captionsWithoutWords` |
 | `animate.js`, `easing.js` | Keyframe evaluation: `resolveClip`, `valueAt`, `clipLocalTime`, `getPath`, `setPath`, `EASINGS` |
 | `keyframes.js`, `autoKey.js` | `setKeyframe`, `removeKeyframe`, `moveKeyframe`, `setKeyframeEase`, `removeKeyframesAt`, `moveKeyframesAt`, `clearKeyframes`; `setValueAt`, `setAnimated` |
 | `keyframeQuery.js`, `clipPaths.js` | `isAnimated`, `keysOf`, `animatedPaths`, `listKeyframes`, `keyframeTimes`, `nextKeyframeTime`, `previousKeyframeTime`, `keyTime`; `describePath` |
@@ -53,7 +54,9 @@ Internal building blocks: `time.js`, `immutable.js`, `clipMath.js`,
 `sanitize.js`, `jsonBag.js`, `keyList.js`, `effectList.js`,
 `effectStack.js`, `keyEdit.js`, `clipPatch.js`, `normalizeClip.js`,
 `normalizeMarks.js`, `fragment.js`, `validateClip.js`, `validateExtras.js`,
-`validateMarks.js`, `elementInsert.js`, `fontEnums.js`. The `web` field as
+`validateMarks.js`, `elementInsert.js`, `fontEnums.js`, `captionField.js`
+(the captions fields as data), `kinds.js` (the part of the barrel for web,
+music, element clips and captions). The `web` field as
 data (`cleanWeb`, `checkWeb`, the window fit) is `src/utils/web/field.js`,
 the `music` field `src/utils/music/field.js`, the `element` field
 `src/utils/brand/field.js`. `types.js` holds the shared JSDoc types (`Edl`, `Track`,
@@ -101,8 +104,8 @@ A target is `{ clipId }` or `{ trackId }` (a bare string is a clip id).
 | --------- | ------------ |
 | `insertGenerator(edl, { type, params, seed }, { time, duration, trackId, label, autoCrossfade, clip }?)` | Add a generator clip, placed like a title: on the front-most video track when it is free there, otherwise on a new top track; with `trackId` under the normal overlap rules. `clip` is an `updateClip`-style patch for its look |
 | `updateGenerator(edl, clipId, { type, seed, params })` | Merge parameters, set the seed, or switch the type (which resets the parameters and drops their keyframes) |
-| `updateClip(edl, clipId, patch)` | Also `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator`, `effects` (whole list), `keyframes` (by path) and the new `text` fields. Never `web`, `music` or `element`, nor a web or music clip's `sourceFile` and `sourceIn` |
-| `pasteAttributes(edl, source, clipIds, parts?)` | Copy `transform`, `effects`, `keyframes`, `blendMode`, `fades` and/or `text` style from one clip (id, clip or clipboard payload) onto others |
+| `updateClip(edl, clipId, patch)` | Also `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator`, `effects` (whole list), `keyframes` (by path) and the new `text` fields. Never `web`, `music`, `element` or `captions`, nor a web or music clip's `sourceFile` and `sourceIn` |
+| `pasteAttributes(edl, source, clipIds, parts?)` | Copy `transform`, `effects`, `keyframes`, `blendMode`, `fades` and/or `text` style from one clip (id, clip or clipboard payload) onto others. `captions: true` in `parts` — never by default — also copies whether captions are on, through `setCaptions`; a clip's own words are never copied |
 | `setTrackOpacity`, `setTrackBlendMode`, `updateTrack` | Track compositing settings |
 | `gainEnvelope(track, clip, { step, from, to }?)`, `hasGainEnvelope(clip)` | A clip's gain sampled at even steps; whether it needs more than two linear ramps |
 
@@ -179,6 +182,37 @@ is another instance. `insertElement`, `restyle`, paste and
 `applyDirectorResult` keep the document's `fonts` table in step; entries
 nobody dropped are never removed. Like every edit, these leave a clip on a
 locked track alone.
+
+## Captions
+
+A clip that plays video or sound may carry `captions: { on, words? }`, the
+document `captions: { style }` ([CAPTIONS.md](./CAPTIONS.md)). A clip and
+the clip it is linked to on the other kind of track are **one voice**: an
+operation may name either, reads whichever holds the block, and writes it
+on the **sound clip** (the other loses its own). Nothing changes on a
+locked track — for a pair, when either of the two is locked. The style
+library itself (`CAPTION_STYLE`, presets, `resolveCaptionStyle`) is
+`src/utils/captions/`.
+
+| Operation | What it does |
+| --------- | ------------ |
+| `setCaptions(edl, clipIds, on = true)` | Switch captions on or off for any number of clips in one step. Off, a clip that carries no words has no `captions` field left. Clips that cannot have captions (titles, generators, stills, elements, placeholders) and unknown ids are left alone |
+| `captionAllSpeech(edl, hasWords?)` | Switch on every clip on an audio track that plays a file and has words: `hasWords(clip)` says whether its file has a transcript (not asked for a clip that carries words). Without it every sound clip is switched on, music clips excepted |
+| `setCaptionWords(edl, clipId, words)` | Give a voice words of its own — `[[start, end, text], …]` in source seconds, or `{ start, end, word }` objects; stored in time order, to the millisecond, at most 20 000 — instead of its file's transcript. `null`, or nothing usable, removes them |
+| `setCaptionStyle(edl, style)` | The timeline's style: a preset's name or a style, stored as its preset and what differs (`normalizeCaptionStyle`). `null` removes it: captions are drawn with the default, `clean` |
+| `patchCaptionStyle(edl, path, value)` | One field by its path in `CAPTION_STYLE` (`size`, `highlight.color`…), coerced to its type and range; a value that cannot be used changes nothing, `null` returns the field to what the preset says. `preset` switches preset as it comes, dropping what differed |
+| `canCaption(clip, track)` | Whether a clip can have captions at all |
+| `captionInfo(edl, clipId)` | For an inspector: `{ can, on, carrierId, ownWords, file, heard }` — `carrierId` is the clip that holds the block, `ownWords` how many words the voice carries itself (0: the transcript of `file` is shown), `heard` whether its captions are drawn (on, and its track sounds) |
+| `captionedClips(edl)` | The clips whose captions are on, muted or not — each voice once, as `{ clip, track }` of the clip that carries it |
+| `captionsWithoutWords(edl, hasWords)` | Of those, the ones with nothing to show: no words of their own and no transcript of their file |
+| `captionVoices(edl)`, `voicesAt(edl, time)`, `voiceFiles(edl)` | What is drawn: the voices that are heard (pieces of a split clip that play on are one), those sounding at a time, and the files whose transcripts they need |
+
+Every edit a clip survives, its captions survive: the block travels with
+the clip, and its words are in source seconds like keyframes, so move,
+trim, slip, slide, ripple and paste need no bookkeeping. Both halves of a
+split share one block — the words are not copied — and play as one voice
+until one of them is moved, slipped or trimmed. A pasted clip is read like
+any loaded one. Loading lets clips with equal words share one list again.
 
 ## Editing rules
 

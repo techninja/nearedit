@@ -28,8 +28,9 @@ function withBlock(clip, { on, words }) {
   const had = clip.captions;
   if (!on && !words) {
     if (had === undefined) return clip;
-    const { captions: _dropped, ...rest } = clip;
-    return /** @type {Clip} */ (rest);
+    const rest = { ...clip };
+    delete rest.captions;
+    return rest;
   }
   if (had && had.on === on && had.words === words && Object.keys(had).length === (words ? 2 : 1))
     return clip;
@@ -94,8 +95,9 @@ export function captionAllSpeech(edl, hasWords) {
     for (const clip of track.clips) {
       const voice = voiceRef(index, clip.clipId);
       if (!voice || voice.on) continue;
-      const known = hasWords ? hasWords(voice.clip) === true : !isMusicClip(voice.clip);
-      if (voice.words || (voice.clip.sourceFile && known)) ids.push(clip.clipId);
+      const transcribed = () =>
+        hasWords ? hasWords(voice.clip) === true : !isMusicClip(voice.clip);
+      if (voice.words || (voice.clip.sourceFile && transcribed())) ids.push(clip.clipId);
     }
   }
   return setCaptions(edl, ids, true);

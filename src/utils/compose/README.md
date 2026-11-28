@@ -19,12 +19,13 @@ drawFrame(ctx, edl, time, env, frameInfo(edl, canvas.width, canvas.height));
 
 - `time` is timeline seconds. A frame is a pure function of `(edl, time)`:
   draw any frame, in any order, and get the same pixels.
-- `env` is the host: `{ createCanvas(w, h), image(path), frameOf(clip, sourceTime), fontReady(font, text) }`.
+- `env` is the host: `{ createCanvas(w, h), image(path), frameOf(clip, sourceTime), fontReady(font, text) }`
+  — and, for captions, `words(clip)`: the transcript of a captioned clip's file.
   `image` and `frameOf` return something `drawImage` takes, or `null` while
   it is not available (the layer is then left out of that frame).
 - Keep one `env` object per canvas size. Scratch canvases are pooled per
   `env`, so a steady stream of frames allocates nothing.
-- `requirements(edl)` → `{ images: [path], fonts: [{ font, text }] }`, what
+- `requirements(edl)` → `{ images: [path], fonts: [{ font, text }], words: [path] }`, what
   to load first. `layersAt(edl, time)` → the layers of a frame back to
   front, each with `kind` (`video`, `image`, `title`, `generator`,
   `element`) and `sourceTime` — how a host knows which footage frames a

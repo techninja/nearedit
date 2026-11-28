@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { doc, gen, media, title } from '../../../tests/compose/build.js';
 import { createCanvas } from '../../api/compose/index.js';
-import { createClip, createTrack } from '../edl/factory.js';
+import { createClip, createTrack } from '#utils/edl/factory.js';
 
 /** A fake `document.fonts`: one unloaded face per family, loaded on demand. */
 const face = (family) => ({
@@ -120,7 +120,12 @@ describe('preview painter', () => {
   it('asks for the words of captioned clips and draws their captions when they are there', () => {
     const canvas = createCanvas(320, 180);
     const span = { timelineStart: 0, timelineEnd: 4 };
-    const voice = createClip({ clipId: 'vo', sourceFile: '/m/talk.wav', ...span, captions: { on: true } });
+    const voice = createClip({
+      clipId: 'vo',
+      sourceFile: '/m/talk.wav',
+      ...span,
+      captions: { on: true },
+    });
     const base = doc([[gen('g', 'solid', { color: '#3366cc' })]]);
     const spoken = { ...base, tracks: [base.tracks[0], createTrack('audio', { clips: [voice] })] };
     /** Whether anything but the backdrop is on the canvas. */

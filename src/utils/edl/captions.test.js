@@ -95,7 +95,10 @@ describe('setCaptions', () => {
   it('cannot be written through updateClip', () => {
     const on = setCaptions(timeline(), 'vo');
     assert.equal(updateClip(on, 'vo', { captions: { on: false } }), on);
-    assert.equal(updateClip(timeline(), 'vo', { captions: { on: true } }).tracks[3].clips[0].captions, undefined);
+    assert.equal(
+      updateClip(timeline(), 'vo', { captions: { on: true } }).tracks[3].clips[0].captions,
+      undefined,
+    );
   });
 });
 
@@ -123,7 +126,9 @@ describe('captionAllSpeech', () => {
     const start = timeline();
     assert.deepEqual(Object.keys(blocks(captionAllSpeech(start))), ['talk_s', 'vo', 'bed']);
     const lyrics = setCaptionWords(start, 'bed', WORDS);
-    const on = captionAllSpeech(lyrics, () => false);
+    const asked = [];
+    const on = captionAllSpeech(lyrics, (clip) => (asked.push(clip.clipId), false));
+    assert.deepEqual(asked, ['talk_s', 'vo'], 'not asked for the clip that carries words');
     assert.deepEqual(blocks(on), { bed: { on: true, words: WORDS } });
   });
 });
@@ -149,7 +154,9 @@ describe('setCaptionWords', () => {
     assert.equal(setCaptionWords(own, 'vo', loose), own, 'the same words again');
     assert.deepEqual(blocks(setCaptions(own, 'vo')).vo.on, true);
     assert.deepEqual(blocks(setCaptionWords(own, 'vo', null)), {});
-    assert.deepEqual(blocks(setCaptionWords(setCaptions(own, 'vo'), 'vo', [])), { vo: { on: true } });
+    assert.deepEqual(blocks(setCaptionWords(setCaptions(own, 'vo'), 'vo', [])), {
+      vo: { on: true },
+    });
   });
 
   it('writes a pair’s words on its sound clip', () => {
@@ -166,7 +173,12 @@ describe('the timeline’s caption style', () => {
     const pop = assertValid(setCaptionStyle(start, 'pop'));
     assert.deepEqual(pop.captions, { style: { preset: 'pop' } });
     const own = assertValid(
-      setCaptionStyle(start, { preset: 'boxed', size: 6, nonsense: 1, highlight: { color: '#FF0000' } }),
+      setCaptionStyle(start, {
+        preset: 'boxed',
+        size: 6,
+        nonsense: 1,
+        highlight: { color: '#FF0000' },
+      }),
     );
     assert.deepEqual(own.captions, {
       style: { preset: 'boxed', size: 6, highlight: { color: '#ff0000' } },
@@ -183,7 +195,11 @@ describe('the timeline’s caption style', () => {
     const sized = assertValid(patchCaptionStyle(start, 'size', '7'));
     assert.deepEqual(sized.captions, { style: { preset: 'clean', size: 7 } });
     const marked = patchCaptionStyle(sized, 'highlight.mode', 'box');
-    assert.deepEqual(marked.captions.style, { preset: 'clean', size: 7, highlight: { mode: 'box' } });
+    assert.deepEqual(marked.captions.style, {
+      preset: 'clean',
+      size: 7,
+      highlight: { mode: 'box' },
+    });
     assert.equal(patchCaptionStyle(marked, 'size', 400).captions.style.size, 20, 'clamped');
     assert.equal(patchCaptionStyle(marked, 'group.words', 4.4).captions.style.group.words, 4);
     assert.deepEqual(patchCaptionStyle(marked, 'highlight.mode', null).captions.style, {
@@ -254,7 +270,10 @@ describe('reading caption state', () => {
   it('knows a muted or out-soloed voice is on but not heard', () => {
     const on = setCaptions(timeline(), ['talk', 'vo']);
     const muted = toggleTrackMute(on, 'a1');
-    assert.deepEqual([captionInfo(muted, 'talk').on, captionInfo(muted, 'talk').heard], [true, false]);
+    assert.deepEqual(
+      [captionInfo(muted, 'talk').on, captionInfo(muted, 'talk').heard],
+      [true, false],
+    );
     assert.equal(captionInfo(muted, 'vo').heard, true);
     const solo = toggleTrackSolo(on, 'a1');
     assert.equal(captionInfo(solo, 'talk').heard, true);
@@ -270,6 +289,9 @@ describe('reading caption state', () => {
       missing.map(({ clip }) => clip.clipId),
       ['vo'],
     );
-    assert.deepEqual(captionsWithoutWords(on, () => true), []);
+    assert.deepEqual(
+      captionsWithoutWords(on, () => true),
+      [],
+    );
   });
 });

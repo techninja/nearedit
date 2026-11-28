@@ -98,7 +98,7 @@ export function writeRecord(file, meta) {
  * List finished renders, newest first.
  * @param {string} [projectId] - Only renders of this project
  * @returns {object[]} `{ file, url, size, createdAt, projectId, adaptationId, …,
- *   subtitles? }`
+ *   subtitles?, subtitlesUrl? }`
  */
 export function listRenders(projectId) {
   const dir = rendersDir();
@@ -111,7 +111,10 @@ export function listRenders(projectId) {
     const record = readJson(join(dir, `${file}.json`), {});
     if (projectId && record.projectId !== projectId) continue;
     // A subtitle file that was deleted on its own is no longer part of the render.
-    if (record.subtitles && !resolveRender(record.subtitles.file)) delete record.subtitles;
+    if (record.subtitles && !resolveRender(record.subtitles)) {
+      delete record.subtitles;
+      delete record.subtitlesUrl;
+    }
     renders.push({
       projectId: '',
       adaptationId: '',

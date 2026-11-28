@@ -26,10 +26,8 @@ modified.
   "tracks": [],
   "markers": [{ "markerId": "m_1", "time": 12.5, "label": "Chorus", "color": "" }],
   "regions": [{ "regionId": "r_1", "start": 30, "end": 45, "label": "Verse", "color": "" }],
-  "playheadPosition": 0,
-  "cursorPosition": 0,
-  "zoom": 1,
-  "scrollX": 0
+  "playheadPosition": 0, "cursorPosition": 0,
+  "zoom": 1, "scrollX": 0
 }
 ```
 
@@ -43,6 +41,7 @@ modified.
 | markers    | Marker[] | Sorted by `time`                                         |
 | regions    | Region[] | Named time spans, sorted by `start` (`src/utils/edl/regions.js`) |
 | fonts      | Font[]   | Only when the document needs fonts that are not bundled, see [fonts](#fonts) |
+| captions   | object   | Only when the document names a caption style: `{ style }`, see [CAPTIONS.md](./CAPTIONS.md#in-the-document) |
 
 `playheadPosition`, `cursorPosition`, `zoom` and `scrollX` are view state.
 In the browser they live in `ViewState`, not in the session's document; they
@@ -102,6 +101,7 @@ an audio track, joined to its picture by `linkedClipId`.
 | web           | object   | Only on a web clip: its recipe and recording, see [web](#web) |
 | music         | object   | Only on a music clip: its song and rendering, see [music](#music) |
 | element       | object   | Only on an element clip: a brand element, its slots and its design, see [element](#element) |
+| captions      | object   | Only on a clip that plays video or sound, when captions are on or it carries words: `{ on, words? }`, see [CAPTIONS.md](./CAPTIONS.md#in-the-document) |
 | effects       | Effect[] | Applied in order after the clip is placed          |
 | keyframes     | object   | Animated properties, see [keyframes](#keyframes)   |
 | text          | object   | Title text block, see below                        |

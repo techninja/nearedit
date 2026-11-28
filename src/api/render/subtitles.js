@@ -10,7 +10,11 @@ import { SUBTITLE_GROUP, formatSrt, formatVtt, timelineCues } from '#utils/capti
 import { wordsFrom } from './words.js';
 
 export const SUBTITLE_FORMATS = ['srt', 'vtt'];
-/** `phrases`: two-line phrases for reading. `drawn`: the groups as the picture shows them. */
+/**
+ * `phrases`: two-line phrases for reading, with the capitals and the
+ * punctuation the words were written with, whatever the style does to them
+ * on screen. `drawn`: the groups exactly as the picture shows them.
+ */
 export const SUBTITLE_SHAPES = ['phrases', 'drawn'];
 
 /**
@@ -23,7 +27,11 @@ export const SUBTITLE_SHAPES = ['phrases', 'drawn'];
  * @returns {import('#utils/captions/types.js').Cue[]}
  */
 export function subtitleCues(edl, words, options = {}) {
-  const shaped = options.as === 'drawn' ? {} : { group: SUBTITLE_GROUP };
+  const stored = edl?.captions?.style;
+  const base = stored !== null && typeof stored === 'object' ? stored : { preset: stored };
+  // A design may shout or drop its commas; a file that is read keeps the text as it is.
+  const reading = { ...base, case: 'as-is', punctuation: 'keep' };
+  const shaped = options.as === 'drawn' ? {} : { style: reading, group: SUBTITLE_GROUP };
   const cues = timelineCues(edl, wordsFrom(words), shaped);
   const { range } = options;
   if (!range) return cues;
