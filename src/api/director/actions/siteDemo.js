@@ -67,13 +67,16 @@ export async function siteDemo(ctx, recorder = {}) {
   const heading = splitCaption(params.title || '');
   // The card's length does not depend on the plan, so the plan can be given the time that is left.
   const style = { theme: look.theme.id, format, pacing: params.pacing, seed: 1 };
-  const titled = (/** @type {{ title?: string, subtitle?: string }} */ words) => {
+  /** @type {(words: { title?: string, subtitle?: string }) => [string, string]} */
+  const titled = (words) => {
     const given = heading.head ? [heading.head, heading.caption] : [words.title, words.subtitle];
     // A finished piece always opens: with the page's own name when no title was given.
     return [given[0] || (finished ? seen.title || hostOf(url) : ''), given[1] || ''];
   };
-  const cardOf = (/** @type {{ title?: string, subtitle?: string }} */ words) =>
-    brand ? brandCard(brand.kit, ...titled(words), format) : titleCard(...titled(words), style);
+  const cardOf = (/** @type {{ title?: string, subtitle?: string }} */ words) => {
+    const [head, second] = titled(words);
+    return brand ? brandCard(brand.kit, head, second, format) : titleCard(head, second, style);
+  };
   const tailF = finished ? finishFrames(brand.kit, fps) : 0;
   const spare = (/** @type {number} */ frames) =>
     total ? Math.max(1, total - (frames + tailF) / fps) : 0;

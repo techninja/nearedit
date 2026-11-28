@@ -17,10 +17,26 @@ describe('director-actions', () => {
   it('lists every action of the schema, marking those that use AI', async () => {
     const el = await mount();
     expect(ids(el, '.director-actions-item')).to.deep.equal(ACTIONS.map((a) => a.id));
-    const badge = (id) => el.querySelector(`[data-id="${id}"] .chip`)?.textContent.trim();
+    const badge = (id) =>
+      el.querySelector(`[data-id="${id}"] .chip:not(.director-actions-brand)`)?.textContent.trim();
     expect(badge('generate_edit')).to.equal('AI');
     expect(badge('insert_broll')).to.equal('AI optional');
     expect(badge('base_edit')).to.equal(undefined);
+  });
+
+  it('marks the actions that follow the brand kit, saying what they take from it', async () => {
+    const el = await mount();
+    const marked = [...el.querySelectorAll('.director-actions-brand')];
+    expect(marked.map((chip) => chip.closest('[data-id]').dataset.id)).to.deep.equal(
+      ACTIONS.filter((action) => action.brand).map((action) => action.id),
+    );
+    expect(marked.every((chip) => chip.textContent.trim() === 'On brand')).to.equal(true);
+    const score = el.querySelector('[data-id="score"] .director-actions-brand');
+    expect(score.title).to.contain('musical style and key');
+    expect(el.querySelector('[data-id="remove_silence"] .director-actions-brand')).to.equal(null);
+    expect(el.querySelector('[data-id="brand"] .director-actions-title').textContent).to.contain(
+      'Apply brand',
+    );
   });
 
   it('blocks nothing while the LLM status is unknown', async () => {

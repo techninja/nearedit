@@ -177,7 +177,7 @@ test('narration with visuals: voice on the dialogue track, pictures above it', (
   assert.equal(out.broll[0].transform.kenBurns.enabled, false);
 });
 
-test('titles go on the front track and never overlap', () => {
+test('what a plan puts on screen is the brand kit’s: on the front track, never overlapping', () => {
   const plan = {
     title: 'A Day at the Park',
     picks: [
@@ -192,23 +192,27 @@ test('titles go on the front track and never overlap', () => {
     ],
   };
   const out = build(plan);
+  // The opening title is the kit's `title` element, a pick's title its lower third.
   assert.deepEqual(
-    out.titles.map((t) => t.text.content),
-    ['A Day at the Park', 'Downtown'],
+    out.titles.map((t) => [t.element.id, t.element.slots, t.element.kit.id]),
+    [
+      ['title', { title: 'A Day at the Park' }, 'clean'],
+      ['lower-third', { name: 'Downtown' }, 'clean'],
+    ],
   );
   assert.deepEqual([out.titles[0].timelineStart, out.titles[0].timelineEnd], [0, 4]);
   assert.equal(out.titles[0].sourceFile, '');
-  assert.ok(out.titles[0].fadeIn > 0 && out.titles[0].text.fontSize > out.titles[1].text.fontSize);
+  assert.deepEqual([out.titles[0].label, out.titles[1].label], ['A Day at the Park', 'Downtown']);
   // The second pick starts at 3.7s, under the opening title: its title waits.
   assert.equal(out.titles[1].timelineStart, 4);
-  assert.ok(out.titles[1].transform.y > 0);
+  assert.ok(out.titles[1].timelineEnd <= 7.2 + 1e-9, 'and ends with its pick');
   assert.match(out.notes.join(' '), /“Morning” did not fit/);
   assert.deepEqual(
     out.markers.map((m) => [m.time, m.label]),
     [[0, 'intro']],
   );
-  // Interview (picture + linked sound count once), city, two titles.
-  assert.equal(out.summary, '4 clips, 7.2s, 2 titles');
+  // Interview (picture + linked sound count once), city, two elements.
+  assert.equal(out.summary, '4 clips, 7.2s, 2 brand elements');
 });
 
 test('stills get a ken burns move that suits the frame', () => {

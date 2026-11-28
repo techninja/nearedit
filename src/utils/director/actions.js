@@ -6,6 +6,7 @@
  * @module utils/director/actions
  */
 
+import { BRAND_PASS } from './actionsBrand.js';
 import { BASE_EDIT, EXECUTE_SCRIPT, GENERATE_EDIT, GENERATE_SCRIPT } from './actionsGenerate.js';
 import { MOTION_PIECE } from './actionsMotion.js';
 import { SCORE } from './actionsScore.js';
@@ -31,6 +32,11 @@ import { SITE_DEMO } from './actionsWeb.js';
  *   project's media, so the scan before it is skipped
  * @property {string} [noLlmNote] - For an `optional` action: what it does
  *   instead while the language model is not available
+ * @property {string} [brand] - For an action that follows the project's
+ *   brand kit: what it takes from it, in a line
+ * @property {string} [run] - What the button that runs it says; left out, "Run <title>"
+ * @property {number} [shown] - How many of its fields a form shows before
+ *   "More options"; left out, the form decides
  */
 
 /** @type {ActionSchema[]} In the order the form should list them. */
@@ -46,6 +52,7 @@ export const ACTIONS = [
   REMOVE_SILENCE,
   BEAT_SYNC_ACTION,
   ADD_CAPTIONS,
+  BRAND_PASS,
 ];
 
 export const MODES = ['replace', 'append', 'prepend', 'insert', 'range'];

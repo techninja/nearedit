@@ -8,6 +8,7 @@
  * @module api/director/web/brand
  */
 
+import { resolveElement } from '#utils/brand/index.js';
 import { elementBounds } from '#utils/brandUi/elementBounds.js';
 import { elementClip, elementFor } from '#utils/director/brand/elementClip.js';
 import { BRAND, brandTheme } from '#utils/director/brand/theme.js';
@@ -74,6 +75,18 @@ export function brandCard(kit, title, subtitle, format) {
 }
 
 /**
+ * Whether a kit's caption brings a ground of its own — a plate behind its
+ * words. One that is set straight on the picture reads on footage; over a
+ * web page, which may be white, it cannot be relied on.
+ * @param {Kit} kit
+ * @returns {boolean}
+ */
+export function captionHasPlate(kit) {
+  const design = resolveElement(kit, elementFor(kit, 'captions'));
+  return Boolean(design?.layers.some((layer) => layer.type === 'shape' || layer.plate));
+}
+
+/**
  * One caption as the kit's caption element, moved to where the demo wants
  * it: the middle of the band under a window, or the head of the picture.
  * @param {Kit} kit
@@ -104,7 +117,7 @@ export function brandCaption(kit, words, span, where = {}) {
  * What the result says about the brand.
  * @param {Object} facts
  * @param {{ name: string }|null} facts.brand
- * @param {{ counts: { captions: number }, finished: string[] }} facts.built
+ * @param {{ counts: { captions: number, elements: boolean }, finished: string[] }} facts.built
  * @param {{ frames: number }} facts.card
  * @param {boolean} facts.asked - A finished piece was asked for
  * @returns {string[]}
@@ -117,7 +130,15 @@ export function brandNotes({ brand, built, card, asked }) {
   }
   const parts = [
     ...(card.frames ? ['the title card is its intro'] : []),
-    ...(built.counts.captions ? ['the captions are its caption element'] : []),
+    ...(built.counts.captions && built.counts.elements
+      ? ['the captions are its caption element']
+      : []),
+    ...(built.counts.captions && !built.counts.elements
+      ? [
+          'the captions are set in its type on a plate in its colours — its own caption has ' +
+            'no plate, and a page may be white',
+        ]
+      : []),
     ...built.finished.map((what) => `added: ${what}`),
   ];
   return [

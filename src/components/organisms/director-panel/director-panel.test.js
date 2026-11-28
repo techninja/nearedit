@@ -3,8 +3,10 @@ import { store } from 'hybrids';
 import ProjectState from '#store/ProjectState.js';
 import UserPrefs, { USER_PREFS_KEY } from '#store/UserPrefs.js';
 import { ACTIONS } from '#utils/director/actions.js';
+import { builtinKit, captionStyleOf, resolveKit } from '#utils/brand/index.js';
+import { kitState, standIn } from '#utils/brandUi/kitState.js';
 import { directorState } from '#utils/directorUi/state.js';
-import { loadDoc } from '#utils/editor/session.js';
+import { getDoc, loadDoc } from '#utils/editor/session.js';
 import { createEdl } from '#utils/edl/factory.js';
 import { mockApi, settle } from '#utils/ui/testing/mockApi.js';
 import './director-panel.js';
@@ -63,6 +65,56 @@ describe('director-panel', () => {
       'No language model is set up',
     );
     expect(el.querySelector('[data-id="base_edit"]').disabled).to.equal(false);
+  });
+
+  it('names the project’s brand kit on an action that follows it, and applies a brand pass', async () => {
+    const bold = resolveKit(builtinKit('bold'));
+    kitState.set({ ...standIn('p1', 'ready'), effective: bold });
+    const style = captionStyleOf(bold);
+    const result = {
+      ...{ mode: 'replace', at: 0, range: null, tracks: [], markers: [], duration: 0, notes: [] },
+      summary: 'Brand “Bold”: caption style Boxed',
+      document: { captions: { style } },
+    };
+    api = mockApi({
+      ...routes(LLM_OFF),
+      'POST /api/director': { jobId: 'j1' },
+      'GET /api/jobs/j1': { id: 'j1', status: 'complete', progress: 100, log: [] },
+      'GET /api/jobs/j1/result': result,
+    });
+    const el = await fixture(`<director-panel></director-panel>`);
+    await settle(120);
+    el.querySelector('[data-id="brand"]').click();
+    await settle();
+    const note = el.querySelector('.director-panel-brand');
+    expect(note.textContent.replace(/\s+/g, ' ')).to.contain('On brand · Bold.');
+    expect(note.querySelectorAll('.director-panel-swatch i').length).to.equal(5);
+    expect(el.querySelector('director-modes')).to.equal(
+      null,
+      'the whole timeline: nothing to choose',
+    );
+    const shown = [...el.querySelectorAll('director-form')][0].querySelectorAll(
+      '.director-form-field',
+    );
+    expect([...shown].map((field) => field.querySelector('input').name)).to.deep.equal([
+      'title',
+      'subtitle',
+      'speakers',
+    ]);
+    expect(el.querySelector('.director-panel-run .btn').textContent.trim()).to.equal('Apply brand');
+    el.querySelector('.director-panel-run .btn').click();
+    await settle(400);
+    // What the result says about the document itself is applied with it, as one step.
+    expect(getDoc().captions).to.deep.equal({ style });
+    expect(el.querySelector('.director-panel-done').textContent).to.contain('caption style Boxed');
+    expect(directorState.get().history.length).to.equal(1);
+    // The same result again changes nothing: no step is added to undo.
+    el.querySelector('.director-panel-run .btn').click();
+    await settle(400);
+    expect(directorState.get().history.length).to.equal(1);
+    expect(el.querySelector('.director-panel-done').textContent).to.contain('caption style Boxed');
+    // An action that does not follow the brand says nothing about it.
+    kitState.set(standIn('', 'fallback'));
   });
 
   it('opens an action as a generated form with its modes and a run button', async () => {

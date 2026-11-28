@@ -63,7 +63,14 @@ async function merged(t, fn, directive, edl) {
   assert.deepEqual(report.problems, [], `${directive.action} (${result.mode})`);
   return { out, result };
 }
-const names = (track) => track.clips.map((c) => c.sourceFile.split('/').pop() || c.text.content);
+/** What a clip shows: its file, its text, or what fills the first slot of a brand element. */
+const names = (track) =>
+  track.clips.map(
+    (c) =>
+      c.sourceFile.split('/').pop() || c.text.content || Object.values(c.element?.slots || {})[0],
+  );
+/** Two lengths that are the same frame: sums of frame times differ in the last digit. */
+const sameLength = (a, b, message) => assert.ok(Math.abs(a - b) < 1e-9, `${message}: ${a} ≠ ${b}`);
 const lane = (out, type) => out.tracks.filter((t) => t.type === type);
 
 test('a generated fragment merges validly in every mode', async (t) => {
@@ -92,8 +99,10 @@ test('a motion piece — generators and titles only — merges validly in every 
     if (mode === 'replace') assert.equal(length, done.result.duration);
     else if (mode === 'range') assert.equal(length, 20 - 4 + done.result.duration);
     else assert.equal(length, 20 + done.result.duration);
+    // On brand by default: the opening is the kit's intro, an element clip.
     const added = done.result.tracks.flatMap((track) => track.clips);
-    assert.ok(added.length >= 5 && added.every((c) => !c.sourceFile), mode);
+    assert.ok(added.length >= 3 && added.every((c) => !c.sourceFile), mode);
+    assert.equal(added.filter((c) => c.element?.id === 'intro').length, 1, mode);
   }
 });
 
@@ -108,8 +117,8 @@ test('a site demo — a recorded web clip, zooms, captions, a ground — merges 
     if (!done) return;
     const length = timelineDuration(done.out);
     if (mode === 'replace') assert.equal(length, done.result.duration);
-    else if (mode === 'range') assert.equal(length, 20 - 12 + done.result.duration);
-    else assert.equal(length, 20 + done.result.duration);
+    else if (mode === 'range') sameLength(length, 20 - 12 + done.result.duration, mode);
+    else sameLength(length, 20 + done.result.duration, mode);
     if (mode === 'range') assert.equal(done.result.duration, 12, 'the demo fills the range');
     const web = done.out.tracks.flatMap((track) => track.clips).filter((c) => c.web);
     assert.equal(web.length, 1, mode);
@@ -146,7 +155,9 @@ test('in-place results merge back into the same timeline', async (t) => {
     [[11.5, 'city']],
   );
 
-  const captions = await merged(t, addCaptions, { action: 'add_captions' }, timeline());
+  // The phrase captions of `add_captions`: title clips on the front track.
+  const phrases = { action: 'add_captions', params: { as: 'phrases' } };
+  const captions = await merged(t, addCaptions, phrases, timeline());
   const front = lane(captions.out, 'video')[0];
   assert.equal(front.clips.length, 4);
   assert.ok(front.clips.every((c) => !c.sourceFile && c.text.content));

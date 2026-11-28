@@ -1,6 +1,7 @@
 /**
  * Action schemas for the actions that work on the existing timeline:
- * insert_broll, remove_silence, beat_sync, add_captions.
+ * insert_broll, remove_silence, beat_sync — and add_captions, which has a
+ * module of its own (`actionsCaptions.js`).
  * Isomorphic, pure data.
  * @module utils/director/actionsTimeline
  */
@@ -103,24 +104,4 @@ export const BEAT_SYNC_ACTION = {
   ],
 };
 
-/** @type {import('./actions.js').ActionSchema} */
-export const ADD_CAPTIONS = {
-  id: 'add_captions',
-  title: 'Add captions',
-  description:
-    'Title clips from the transcript of the selected clips — or every speech clip — timed ' +
-    'to the words and grouped into readable phrases.',
-  llm: 'no',
-  jobType: 'director',
-  modes: SCOPE_MODES,
-  defaultMode: 'replace',
-  inPlace: true,
-  prompt: null,
-  fields: [
-    range('maxChars', 'Characters per caption', [12, 80, 1], 36),
-    range('maxDuration', 'Longest caption', [1, 8, 0.5], 4, 's'),
-    select('position', 'Position', ['bottom', 'middle', 'top'], 'bottom'),
-    select('size', 'Size', ['small', 'medium', 'large'], 'medium'),
-    toggle('background', 'Box behind the text', false),
-  ],
-};
+export { ADD_CAPTIONS } from './actionsCaptions.js';

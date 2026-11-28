@@ -8,6 +8,7 @@
 import { html } from 'hybrids';
 import { getLibrary } from '#utils/media/library.js';
 import { actionState, llmProblem } from '#utils/directorUi/availability.js';
+import { brandNote } from '#utils/directorUi/brandNote.js';
 import { closeAction, setDirectorField } from '#utils/directorUi/controller.js';
 import { fieldGroups, usesLlm } from '#utils/directorUi/form.js';
 import { runForm } from '#utils/directorUi/run.js';
@@ -49,12 +50,23 @@ function outcome(state) {
 }
 
 /**
+ * @param {import('#utils/director/actions.js').ActionSchema} action
+ * @returns {string} What the button that runs an action says
+ */
+export function runLabel(action) {
+  if (action.run) return action.run;
+  return action.jobType === 'script' ? 'Write the scripts' : `Run ${action.title.toLowerCase()}`;
+}
+
+/**
  * @param {DirectorState} state
  * @param {import('#utils/director/actions.js').ActionSchema} action
  * @param {import('#utils/directorUi/modes.js').ModeChoice[]} modes
+ * @param {import('#utils/brandUi/kitState.js').KitState} [kit] - The project's
+ *   brand kit, named on the actions that follow it
  * @returns {any}
  */
-export function formView(state, action, modes) {
+export function formView(state, action, modes, kit) {
   const groups = fieldGroups(action);
   const files = getLibrary().filter((item) => item.type === 'text');
   const blocked = usesLlm(action, state.values) && !actionState({ llm: 'yes' }, state.llm).enabled;
@@ -80,7 +92,7 @@ export function formView(state, action, modes) {
       <h3>${action.title}</h3>
     </header>
     <p class="director-panel-about">${action.description}</p>
-    ${outcome(state)}
+    ${brandNote(action, kit)} ${outcome(state)}
     ${action.prompt
       ? html`<label class="director-panel-prompt">
           <span>${action.prompt.label}</span>
@@ -115,7 +127,7 @@ export function formView(state, action, modes) {
       ${blocked ? html`<span class="director-panel-llm">${llmProblem(state.llm)}</span>` : html``}
       <button type="button" class="btn btn-primary" disabled="${blocked}" onclick="${runForm}">
         <app-icon name="${action.llm === 'no' ? 'wand' : 'ai'}" size="sm"></app-icon>
-        ${action.jobType === 'script' ? 'Write the scripts' : `Run ${action.title.toLowerCase()}`}
+        ${runLabel(action)}
       </button>
     </footer>
   `;

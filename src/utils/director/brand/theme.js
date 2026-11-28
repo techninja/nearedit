@@ -20,8 +20,6 @@ import { contrast, luminance, mix } from '#utils/director/motion/color.js';
 export const BRAND = 'brand';
 /** Least contrast of the theme's ink on its grounds (as every theme keeps). */
 const READS = 4.5;
-/** A ground counts as dark below this luminance. */
-const DARK = 0.2;
 
 /** How a kit's `motion.enter` arrives as a text animation. */
 const ENTERS = {
@@ -78,10 +76,12 @@ export function brandTheme(kit) {
   if (known) return known;
   const { color = {}, font = {}, shape = {}, motion = {} } = kit.tokens || {};
   const ground = color.background || '#0b1220';
-  const dark = luminance(ground) < DARK;
-  const away = dark ? '#000000' : '#ffffff';
   const reads = contrast(color.text || '', ground) >= READS;
-  const ink = reads ? color.text : dark ? '#ffffff' : '#000000';
+  // Text that would not read on the brand's own ground: black or white, whichever reads better.
+  const white = contrast('#ffffff', ground) >= contrast('#000000', ground);
+  const ink = reads ? color.text : white ? '#ffffff' : '#000000';
+  const dark = luminance(ink) > luminance(ground);
+  const away = dark ? '#000000' : '#ffffff';
   const surface = contrast(ink, color.surface || ground) >= READS ? color.surface : ground;
   const lit = (/** @type {string} */ from, /** @type {string} */ tint, /** @type {number} */ far) =>
     tinted(from, tint || from, far, ink);

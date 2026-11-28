@@ -15,6 +15,7 @@ import { hostOf } from '#utils/web/index.js';
 import { background } from '../motion/backgrounds.js';
 import { clipAt, keyframes, paramKeys } from '../motion/clips.js';
 import { serverMeasure } from '../motion/measure.js';
+import { captionHasPlate } from './brand.js';
 import { brandCaptionClips } from './brandCaptions.js';
 import { cameraKeys } from './camera.js';
 import { captionClips } from './captions.js';
@@ -44,7 +45,8 @@ const ARRIVE = 0.4;
  * @property {{ type: string, index: number, name: string, clips: any[] }[]} tracks
  * @property {object[]} markers
  * @property {number} seconds
- * @property {{ zooms: number, captions: number, top: number }} counts
+ * @property {{ zooms: number, captions: number, top: number, elements: boolean }} counts - `elements`:
+ *   the captions are the brand kit's caption element
  */
 
 /**
@@ -94,7 +96,10 @@ export function buildDemo(parts) {
   }
   const timed = { track, owners: parts.owners, keys, stage, startF };
   let said = { clips: [], top: 0 };
-  if (parts.captions && parts.kit) said = brandCaptionClips({ ...timed, kit: parts.kit, format });
+  // The kit's own caption wherever it has a ground to stand on: the band under a
+  // window, or a plate of its own. Over a page, without one, the theme's plate carries it.
+  const own = parts.kit && (stage.band || captionHasPlate(parts.kit));
+  if (parts.captions && own) said = brandCaptionClips({ ...timed, kit: parts.kit, format });
   else if (parts.captions) {
     said = captionClips({ ...timed, theme, colors, fps, measure: serverMeasure() });
   }
@@ -124,6 +129,7 @@ export function buildDemo(parts) {
       zooms: zooms.filter(arrives).length,
       captions: said.clips.length,
       top: said.top,
+      elements: Boolean(parts.captions && own),
     },
   };
 }

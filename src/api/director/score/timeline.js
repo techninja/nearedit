@@ -7,10 +7,14 @@
  * @module api/director/score/timeline
  */
 
+import { coverTime } from '#utils/brand/index.js';
 import { clipKind } from '#utils/edl/factory.js';
 import { snapToFrame, timelineDuration } from '#utils/edl/query.js';
 import { DirectorError } from '../errors.js';
 import { typedTracks } from '../result.js';
+
+/** @param {any} clip @returns {boolean} A brand element that lies over the picture: not a shot */
+const laidOver = (clip) => Boolean(clip.element?.design) && clip.element.design.kind !== 'segment';
 
 /**
  * @typedef {{ start: number, end: number, seconds: number, what: string }} Span - Timeline
@@ -109,7 +113,13 @@ export function turningPoints(edl, span) {
   for (const { clip, kind } of shown(edl, span)) {
     const length = clip.timelineEnd - clip.timelineStart;
     if (kind === 'title') add(clip.timelineStart, 'title', words(clip.text?.content));
-    else if (kind === 'generator') add(clip.timelineStart, 'scene', words(clip.label));
+    else if (/** @type {string} */ (kind) === 'element') {
+      // A brand element turns the piece like a title — but not the bug, which only sits there.
+      const bug = !Object.keys(clip.element.slots || {}).length && length > span.seconds / 2;
+      const { design } = clip.element;
+      const at = design.kind === 'transition' ? clip.timelineStart + coverTime(design, length) : 0;
+      if (!bug) add(at || clip.timelineStart, 'title', words(clip.label));
+    } else if (kind === 'generator') add(clip.timelineStart, 'scene', words(clip.label));
     else if (kind !== 'placeholder' && length >= LONG_SHOT) add(clip.timelineStart, 'shot');
   }
   /** @type {TurningPoint[]} */
@@ -129,7 +139,7 @@ export function turningPoints(edl, span) {
  */
 export function cutsPerMinute(edl, span) {
   const starts = shown(edl, span)
-    .filter(({ kind }) => kind !== 'title' && kind !== 'placeholder')
+    .filter(({ clip, kind }) => kind !== 'title' && kind !== 'placeholder' && !laidOver(clip))
     .map(({ clip }) => Math.round(clip.timelineStart * 100))
     .filter((at) => at > Math.round(span.start * 100));
   return (new Set(starts).size * 60) / span.seconds;

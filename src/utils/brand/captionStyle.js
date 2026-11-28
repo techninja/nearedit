@@ -51,8 +51,12 @@ export function captionStyleOf(kit) {
   if (font) {
     style.font = { family: font.family.trim() };
     if (font.upper) style.case = 'upper';
-    // A family that runs small is drawn larger everywhere — in captions too.
-    if (Number.isFinite(font.scale) && font.scale > 0) scale = font.scale;
+    // A family that runs small is drawn larger everywhere — in captions too. The
+    // correction is for its lower case: a style that sets it in capitals takes half of it.
+    const capitals = base.case === 'upper' && !font.upper;
+    if (Number.isFinite(font.scale) && font.scale > 0) {
+      scale = capitals ? Math.sqrt(font.scale) : font.scale;
+    }
   }
   const { min, max } = CAPTION_STYLE.size;
   const asked = Number(own.size) > 0 ? Number(own.size) : base.size * scale;

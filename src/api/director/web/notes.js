@@ -16,7 +16,7 @@ import { hostOf } from '#utils/web/index.js';
  * @param {{ notes: string[] }} facts.paced
  * @param {import('../../web/cache.js').Recording} facts.recording
  * @param {{ why: string, scale: number, cursor: { style: string } }} facts.view
- * @param {{ theme: { label: string, description: string }, why: string }} facts.look
+ * @param {{ theme: { id?: string, label: string, description: string }, why: string }} facts.look
  * @param {import('./stage.js').Stage} facts.stage
  * @param {import('./build.js').BuiltDemo} facts.built
  * @param {import('./card.js').Card} facts.card
@@ -38,7 +38,10 @@ export function demoNotes(facts) {
   );
   if (recording.cached)
     notes.push('This exact demo had been recorded before: the recording in the project was used.');
-  const themed = `the ${look.theme.label} theme${look.why ? ` (${look.why})` : ''}`;
+  const brand = look.theme.id === 'brand';
+  const themed = brand
+    ? look.why
+    : `the ${look.theme.label} theme${look.why ? ` (${look.why})` : ''}`;
   if (stage.look === 'window') {
     notes.push(
       `Window look: the page sits ${Math.round((1 - stage.window.width / stage.frame.width) * 50)}% ` +

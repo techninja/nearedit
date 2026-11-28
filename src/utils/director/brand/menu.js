@@ -39,15 +39,20 @@ export function findElement(kit, name) {
   const wanted = plain(name);
   if (!wanted) return '';
   const ids = Object.keys(elements);
-  const direct =
-    ids.find((id) => plain(id) === wanted) ||
-    ids.find((id) => plain(elements[id].label) === wanted);
-  if (direct) return direct;
+  const exact = String(name).trim();
+  if (Object.hasOwn(elements, exact)) return exact;
+  // A role, by its name or a word for it: the element the kit uses in that role.
   const role = Object.keys(ROLES).find(
-    (key) => plain(key) === wanted || (WORDS[key] || []).some((word) => plain(word) === wanted),
+    (key) =>
+      [key, ROLES[key], ...(WORDS[key] || [])].some((word) => plain(word) === wanted) &&
+      Object.hasOwn(elements, kit.defaults?.[key] || ROLES[key]),
   );
-  const id = role ? kit.defaults?.[role] || ROLES[role] : '';
-  return id && Object.hasOwn(elements, id) ? id : '';
+  if (role) return kit.defaults?.[role] || ROLES[role];
+  return (
+    ids.find((id) => plain(id) === wanted) ||
+    ids.find((id) => plain(elements[id].label) === wanted) ||
+    ''
+  );
 }
 
 /**

@@ -22,14 +22,16 @@ export function initialValues(action) {
 
 /**
  * Split an action's fields into those always shown and those under "More
- * options", keeping the schema's order.
+ * options", keeping the schema's order. An action may say how many of its
+ * fields come first (`shown`).
  * @param {ActionSchema} action
  * @returns {{ main: ActionField[], more: ActionField[] }}
  */
 export function fieldGroups(action) {
   const fields = action?.fields || [];
-  if (fields.length <= MAX_PLAIN) return { main: fields, more: [] };
-  return { main: fields.slice(0, FIRST_SHOWN), more: fields.slice(FIRST_SHOWN) };
+  const first = Number.isInteger(action?.shown) && action.shown > 0 ? action.shown : FIRST_SHOWN;
+  if (!action?.shown && fields.length <= MAX_PLAIN) return { main: fields, more: [] };
+  return { main: fields.slice(0, first), more: fields.slice(first) };
 }
 
 /**

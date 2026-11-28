@@ -14,6 +14,7 @@ import { siteDemo } from './actions/siteDemo.js';
 import { gatherMedia } from './context/gather.js';
 import { addCaptions } from './inplace/addCaptions.js';
 import { beatSync } from './inplace/beatSync.js';
+import { applyBrand } from './inplace/brand.js';
 import { removeSilence } from './inplace/removeSilence.js';
 
 /** @type {Record<string, (ctx: import('./pipeline.js').ActionContext) => any>} */
@@ -29,6 +30,7 @@ export const HANDLERS = {
   remove_silence: removeSilence,
   beat_sync: beatSync,
   add_captions: addCaptions,
+  brand: applyBrand,
 };
 
 /**

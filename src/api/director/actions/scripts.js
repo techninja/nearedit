@@ -5,6 +5,7 @@
  * @module api/director/actions/scripts
  */
 
+import { kitOf } from '../brand/kit.js';
 import { buildDigest } from '../context/digest.js';
 import { DirectorError } from '../errors.js';
 import { scriptPlanPrompt } from '../prompts/editPlan.js';
@@ -99,7 +100,8 @@ export async function executeScript(ctx) {
   if (!ctx.media.length) throw new DirectorError('This project has no media yet', { status: 422 });
   // The script cites segment numbers, so a smaller digest is enough context.
   const digest = buildDigest(ctx.media, { focus: script.slice(0, 3000), budget: 14000 });
-  const prompt = scriptPlanPrompt({ digest: digest.text, script, format: ctx.format });
+  const kit = kitOf(ctx);
+  const prompt = scriptPlanPrompt({ digest: digest.text, script, format: ctx.format, kit });
   const result = await planAndAssemble(ctx, prompt, []);
   result.summary = `From script: ${result.summary}`;
   return result;

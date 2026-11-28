@@ -112,7 +112,7 @@ export function assemblePlan(plan, opts) {
 
   const { tracks } = dressed;
   const seconds = timelineDuration(tracks);
-  const bits = [`${countClips(tracks) - dressed.placed} clips`, formatSeconds(seconds)];
+  const bits = [`${countClips(tracks)} clips`, formatSeconds(seconds)];
   if (plan.music) {
     const bpm = plan.music.media.bpm ? ` at ${Math.round(plan.music.media.bpm)} BPM` : '';
     bits.push(stats.beatCuts ? `cut on the beat${bpm}` : `music bed${bpm}`);

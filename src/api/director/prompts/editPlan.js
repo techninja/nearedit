@@ -7,6 +7,7 @@
 
 import { PLAN_EXAMPLE } from '#utils/director/planSchema.js';
 import { PACING } from '../assemble/options.js';
+import { brandBlock } from './brand.js';
 
 export const PLAN_SYSTEM = `You are the assistant editor inside a video editing program. You decide WHAT goes into an edit: which files, roughly which part of each, in what order, and what any titles say. The program does all exact timing afterwards (it cuts on word, shot and beat boundaries), so rough times are fine.
 
@@ -26,6 +27,7 @@ Rules:
 - "music" is optional: one file marked [music], played quietly under everything.
 - "title" (an opening title) and a pick's "title" (shown over that pick) are optional and short.
 - "note" is optional: a few words naming the section.
+- "elements" is optional: graphics of the brand kit, listed under BRAND. Each is {"element": name, "slots": {...}} with "pick": n — the number of the pick it goes with, counting from 1 — or "at": seconds into the edit. An overlay shows over that pick, a card stands before it, a stinger covers the cut into it. Use only the names listed.
 - "rationale": one or two sentences on why you built it this way.`;
 
 /**
@@ -60,10 +62,11 @@ export function requestLines(directive) {
 /**
  * Prompt for `generate_edit`.
  * @param {{ digest: string, directive: import('#utils/director/directive.js').Directive,
- *   format: any }} input
+ *   format: any, kit?: import('#utils/brand/types.js').Kit }} input - `kit`:
+ *   the brand kit whose elements the plan may name
  * @returns {{ system: string, user: string }}
  */
-export function editPlanPrompt({ digest, directive, format }) {
+export function editPlanPrompt({ digest, directive, format, kit }) {
   const user = [
     'MEDIA',
     digest,
@@ -71,6 +74,7 @@ export function editPlanPrompt({ digest, directive, format }) {
     'TIMELINE',
     formatLine(format),
     '',
+    ...(kit ? [...brandBlock(kit), ''] : []),
     'REQUEST',
     ...requestLines(directive),
     '',
@@ -81,10 +85,11 @@ export function editPlanPrompt({ digest, directive, format }) {
 
 /**
  * Prompt for `execute_script`: turn an approved script into a plan.
- * @param {{ digest: string, script: string, format: any }} input
+ * @param {{ digest: string, script: string, format: any,
+ *   kit?: import('#utils/brand/types.js').Kit }} input
  * @returns {{ system: string, user: string }}
  */
-export function scriptPlanPrompt({ digest, script, format }) {
+export function scriptPlanPrompt({ digest, script, format, kit }) {
   const user = [
     'MEDIA',
     digest,
@@ -92,13 +97,15 @@ export function scriptPlanPrompt({ digest, script, format }) {
     'TIMELINE',
     formatLine(format),
     '',
+    ...(kit ? [...brandBlock(kit), ''] : []),
     'APPROVED SCRIPT',
     script,
     '',
     'Convert the approved script into the JSON edit plan. Follow it exactly: the same ' +
       'sources, parts, order, visuals, music and titles. Do not add, drop or reorder ' +
       'sections. Where the script gives segment numbers, use "segments"; where it gives ' +
-      'seconds, use "start" and "end".',
+      'seconds, use "start" and "end". Where it names a speaker, a chapter, an opening or ' +
+      'a closing, use the brand element for it in "elements".',
   ].join('\n');
   return { system: PLAN_SYSTEM, user };
 }

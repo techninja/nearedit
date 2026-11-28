@@ -25,6 +25,23 @@ describe('fieldGroups', () => {
     assert.equal(groups.more.length, 0);
   });
 
+  it('follows an action that says how many of its fields come first', () => {
+    const groups = fieldGroups(getAction('brand'));
+    assert.deepEqual(
+      groups.main.map((f) => f.key),
+      ['title', 'subtitle', 'speakers'],
+    );
+    assert.deepEqual(
+      groups.more.slice(0, 3).map((f) => f.key),
+      ['intro', 'outro', 'bug'],
+    );
+    const short = { ...getAction('remove_silence'), shown: 1 };
+    assert.deepEqual(
+      fieldGroups(short).main.map((f) => f.key),
+      ['threshold'],
+    );
+  });
+
   it('tucks the tail of a long form under "more", in schema order', () => {
     const action = getAction('base_edit');
     const groups = fieldGroups(action);

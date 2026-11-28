@@ -12,7 +12,7 @@
 
 import { cleanFonts, mergeFonts, sameFonts } from '#utils/brand/fontTable.js';
 import { applyDirectorResult, setCaptionStyle } from '#utils/edl/index.js';
-import { isPlainObject } from '#utils/edl/jsonBag.js';
+import { isPlainObject, sameJson } from '#utils/edl/jsonBag.js';
 
 /** @typedef {import('#utils/edl/types.js').Edl} Edl */
 
@@ -40,18 +40,39 @@ export function withFonts(edl, fonts) {
 }
 
 /**
+ * A merge gives every marker of a result a new id. Markers that came back
+ * as they were — the same times, labels and colours — keep the ids they had.
+ * @param {Edl} before
+ * @param {Edl} next
+ * @returns {Edl}
+ */
+function keepMarkers(before, next) {
+  const [had, has] = [before.markers || [], next.markers || []];
+  const same =
+    had.length === has.length &&
+    had.every(
+      (m, i) => m.time === has[i].time && m.label === has[i].label && m.color === has[i].color,
+    );
+  return same && had.length ? { ...next, markers: had } : next;
+}
+
+/**
  * Merge a director result into a document, document parts included.
  * @param {Edl} edl
  * @param {any} result - A DirectorResult, perhaps with `document`
- * @returns {Edl} A document that satisfies `validateEdl`
+ * @returns {Edl} A document that satisfies `validateEdl` — the document that
+ *   came in, itself, when the result changes nothing about it (a brand pass
+ *   run a second time): there is then nothing to commit, and nothing to undo
  */
 export function applyDirected(edl, result) {
-  const parts = isPlainObject(result?.document) ? result.document : {};
+  if (!isPlainObject(result)) return edl;
+  const parts = isPlainObject(result.document) ? result.document : {};
   // The font files first: titles of the fragment may then name their families.
   let next = applyDirectorResult(withFonts(edl, parts.fonts), result);
   if (isPlainObject(parts.captions) && parts.captions.style !== undefined) {
     next = setCaptionStyle(next, parts.captions.style);
   }
   if (Array.isArray(parts.regions)) next = { ...next, regions: parts.regions };
-  return next;
+  next = keepMarkers(edl, next);
+  return sameJson(next, edl) ? edl : next;
 }

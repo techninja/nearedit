@@ -11,6 +11,7 @@ import ProjectState from '#store/ProjectState.js';
 import ViewState from '#store/ViewState.js';
 import { getDoc, onDocChange } from '#utils/editor/session.js';
 import { isPlaying } from '#utils/playback/transport.js';
+import { kitState } from '#utils/brandUi/kitState.js';
 import { currentModes, loadDirector, reconcileMode } from '#utils/directorUi/controller.js';
 import { syncHistory } from '#utils/directorUi/history.js';
 import { directorState, resetDirector } from '#utils/directorUi/state.js';
@@ -27,6 +28,7 @@ import '#molecules/director-scripts/index.js';
  * @property {import('#utils/directorUi/state.js').DirectorState} state
  * @property {import('#store/ProjectState.js').ProjectStateShape} project
  * @property {import('#store/ViewState.js').ViewStateShape} view
+ * @property {import('#utils/brandUi/kitState.js').KitState} kit - The project's brand kit
  * @property {string} facts - What of the editor the form depends on, as one comparable value
  * @property {string} showing - Which view is up; a change scrolls the panel back to its top
  * @property {boolean} wired - Internal: loads the schemas and follows the document
@@ -64,7 +66,7 @@ function editorFacts({ view }) {
 
 /** @param {DirectorPanelHost} host @returns {any} */
 function content(host) {
-  const { state, project, facts } = host;
+  const { state, project, facts, kit } = host;
   if (!project.loaded || !facts)
     return html`<p class="empty-state">Open an adaptation to work with the director.</p>`;
   if (state.loadError)
@@ -74,7 +76,7 @@ function content(host) {
     </div>`;
   if (state.run) return html`<director-progress run="${state.run}"></director-progress>`;
   const action = state.actions.find((a) => a.id === state.actionId);
-  return action ? formView(state, action, currentModes(action)) : listView(state, getDoc());
+  return action ? formView(state, action, currentModes(action), kit) : listView(state, getDoc());
 }
 
 /** @type {import('hybrids').Component<DirectorPanelHost>} */
@@ -88,6 +90,7 @@ export default define({
     },
   },
   view: store(ViewState),
+  kit: watch(kitState),
   facts: { value: editorFacts, observe: reconcileMode },
   showing: {
     value: ({ state }) => [state.actionId, Boolean(state.run), Boolean(state.result)].join(),

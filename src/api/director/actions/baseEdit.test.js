@@ -66,7 +66,7 @@ test('auto style picks a talking-head cut when the project has speech', async ()
   assert.ok(Math.abs(covered - (voices.at(-1).timelineEnd - voices[0].timelineStart)) < 1e-6);
   // Music under speech, opening title in front.
   assert.equal(out.music[0].volume, 0.25);
-  assert.equal(out.titles[0].text.content, 'Park day');
+  assert.deepEqual(out.titles[0].element.slots, { title: 'Park day' }, 'the kit’s title element');
   assert.equal(out.result.mode, 'replace');
   assert.ok(Math.abs(out.result.duration - 18.7) < 0.2, String(out.result.duration));
 });

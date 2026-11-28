@@ -7,12 +7,12 @@
  */
 
 import { LAYOUT } from '#utils/director/layout.js';
-import { clipKind } from '#utils/edl/factory.js';
 import { docTracks, insertTrack, isFree } from './doc.js';
+import { isOverlay } from './kinds.js';
 
 /** @typedef {import('./doc.js').DocTrack} DocTrack */
 
-const hasTitles = (/** @type {DocTrack} */ t) => t.clips.some((c) => clipKind(c, t) === 'title');
+const hasTitles = (/** @type {DocTrack} */ t) => t.clips.some((c) => isOverlay(c, t));
 
 /**
  * The video track a cutaway over [start, end) belongs on: the nearest free
@@ -27,8 +27,7 @@ export function cutawayTrack(tracks, start, end) {
   const video = tracks.filter((t) => t.type === 'video').sort((a, b) => a.index - b.index);
   const showing = video.find((t) =>
     t.clips.some(
-      (c) =>
-        clipKind(c, t) !== 'title' && c.timelineEnd > start + 1e-6 && c.timelineStart < end - 1e-6,
+      (c) => !isOverlay(c, t) && c.timelineEnd > start + 1e-6 && c.timelineStart < end - 1e-6,
     ),
   );
   const usable = (/** @type {DocTrack} */ t) => !t.locked && !hasTitles(t) && isFree(t, start, end);
@@ -98,7 +97,7 @@ export function insertTargets(edl, at) {
   const tracks = docTracks(edl);
   const video = tracks.filter((t) => t.type === 'video');
   const audio = tracks.filter((t) => t.type === 'audio');
-  const pictures = (/** @type {DocTrack} */ t) => t.clips.filter((c) => clipKind(c, t) !== 'title');
+  const pictures = (/** @type {DocTrack} */ t) => t.clips.filter((c) => !isOverlay(c, t));
   const covers = (/** @type {any} */ c) => at >= c.timelineStart && at < c.timelineEnd;
   const under = video.find((t) => pictures(t).some(covers));
   const busiest = [...video].sort((a, b) => pictures(b).length - pictures(a).length)[0];

@@ -107,9 +107,9 @@ export function beatSync(ctx) {
       count.already++;
       continue;
     }
-    let why = `no beat within ${params.maxShift}s`;
+    let why = cut.held || `no beat within ${params.maxShift}s`;
     let beat;
-    for (const option of options) {
+    for (const option of cut.held ? [] : options) {
       why = blocked(cut.moves, option - cut.atF, env);
       if (why) continue;
       beat = option;

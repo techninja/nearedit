@@ -19,6 +19,9 @@ import { snapToFrame, timelineDuration } from '#utils/edl/query.js';
  * @property {string} summary
  * @property {string[]} notes
  * @property {object} plan
+ * @property {import('#utils/director/applyResult.js').ResultDocument} [document] - What
+ *   the result says about the document itself, beside its clips: font files
+ *   its text is set in, the timeline's caption style (`applyDirected`)
  */
 
 /**

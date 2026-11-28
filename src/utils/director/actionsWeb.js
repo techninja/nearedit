@@ -23,6 +23,7 @@ export const SITE_DEMO = {
     'A demo of a web page: the page is recorded as it is scrolled, clicked and typed into, ' +
     'then framed with zooms on what matters, captions and a background. From an address ' +
     'and a few plain lines — or no lines at all, for a tour of the page.',
+  brand: 'Follows the brand kit: its colours on the ground, its caption element, its intro.',
   llm: 'optional',
   noLlmNote: 'Reads the brief line by line as instructions; the language model is not available.',
   media: false,

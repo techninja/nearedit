@@ -63,7 +63,10 @@ test('generate_edit: an over-talkative reply still becomes a valid fragment', as
   const result = await generateEdit(ctx);
   check(result, ctx);
   assert.equal(result.mode, 'replace');
-  assert.match(result.summary, /^\d+ clips, 1\d(\.\d)?s, cut on the beat at 120 BPM, 2 titles$/);
+  assert.match(
+    result.summary,
+    /^\d+ clips, 1\d(\.\d)?s, cut on the beat at 120 BPM, 2 brand elements$/,
+  );
   assert.match(result.notes.join('\n'), /Pick 4: unknown file "drone\.mp4" — dropped/);
   assert.deepEqual(
     result.plan.picks.map((p) => [p.file, p.role]),

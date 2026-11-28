@@ -130,6 +130,7 @@ test('the fragment: four rows, one web clip that can be recorded again, a marker
         zooms: built.counts.zooms,
         captions: 4,
         top: built.counts.top,
+        elements: false,
       });
       assert.ok(
         built.counts.zooms >= (format.name === '16:9' ? 3 : 1),

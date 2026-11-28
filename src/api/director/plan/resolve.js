@@ -7,7 +7,7 @@
  * @module api/director/plan/resolve
  */
 
-import { resolveItem } from '#utils/director/brand/items.js';
+import { resolveElements } from './elements.js';
 import { resolvePart, segmentRuns } from './parts.js';
 
 /**
@@ -20,7 +20,7 @@ import { resolvePart, segmentRuns } from './parts.js';
  * @property {string} rationale
  * @property {{ media: MediaInfo, start: number, volume: number|null } | null} music
  * @property {ResolvedPick[]} picks
- * @property {NonNullable<ReturnType<typeof resolveItem>>[]} [elements] - The
+ * @property {ReturnType<typeof resolveElements>} [elements] - The
  *   brand elements the plan names, as the kit has them
  * @property {string[]} notes
  */
@@ -115,13 +115,8 @@ export function resolvePlan(plan, media, kit) {
     else setMusic(m, plan.music.start, plan.music.volume);
   }
 
-  if (kit && Array.isArray(plan.elements)) {
-    out.elements = plan.elements.flatMap((/** @type {any} */ item) => {
-      const found = resolveItem(item, kit);
-      if (!found) notes.push(`The brand kit has no element “${item.element}” — left out.`);
-      return found ? [found] : [];
-    });
-  }
+  if (kit && Array.isArray(plan.elements))
+    out.elements = resolveElements(plan.elements, kit, notes);
 
   plan.picks.forEach((/** @type {any} */ pick, /** @type {number} */ i) => {
     const label = `Pick ${i + 1}`;

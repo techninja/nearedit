@@ -51,6 +51,11 @@ it take free text), and `accept` for a `file`. Field types: `range`,
 | `remove_silence` | no | replace, range | `threshold`, `padding` |
 | `beat_sync` | no | replace, range | `every` (1, 2, 4), `maxShift`, `protectSpeech` |
 | `add_captions` | no | replace, range | `maxChars`, `maxDuration`, `position`, `size`, `background` |
+| `brand` | optional | — | `title`, `subtitle`, `speakers`, a switch per part, `useLlm` — dresses the timeline in the project's brand kit: [DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md) |
+
+The project's [brand kit](./BRAND.md) is the default look of everything above: themes,
+titles, captions and musical style default to `brand`, and a plan may name the kit's
+elements — [DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md).
 
 `pacing` is `slow`, `medium` or `fast` (picture shots of about 5.5 s, 3.5 s
 and 2 s; stills 6 s, 4.5 s and 2.5 s). `naturalSound` says what happens to
@@ -277,6 +282,8 @@ for every media clip and linked clips share their times exactly.
    already showing and is left out (with a note) if no second of its pick
    remains. Text is sized from the output resolution and wrapped to two
    lines when the frame is narrow.
+   Both are now drawn by the brand kit's `title` and `lower-third` elements:
+   [DIRECTOR-BRAND.md § Elements in a plan](./DIRECTOR-BRAND.md#elements-in-a-plan).
 
 ## Base edit
 
@@ -443,6 +450,7 @@ injectable (`createLlmClient(cfg, { fetch })`).
 | `src/api/director/score/`, `src/utils/director/score/` | The score: styles, tempo fitting, sections, the song generator, speech and ducking ([DIRECTOR-SCORE.md](./DIRECTOR-SCORE.md)) |
 | `src/api/director/actions/`, `scripts/`, `prompts/` | Action entry points, script files, prompts |
 | `src/api/director/testing/` | Test fixtures: lavfi media projects, a fake LLM server, the fragment invariant checker |
+| `src/api/director/brand/`, `src/utils/director/brand/` | The brand kit in the director: theme, element items, the brand pass ([DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md)) |
 
 Tests sit beside the code (`node --test`). Everything deterministic is
 tested against generated media and hand-built sidecars; the LLM paths run

@@ -5,6 +5,7 @@
  */
 
 import { formatSeconds } from '#utils/director/snap.js';
+import { kitOf } from '../brand/kit.js';
 import { buildDigest } from '../context/digest.js';
 import { DirectorError } from '../errors.js';
 import { assembleResult } from '../pipeline.js';
@@ -83,7 +84,7 @@ export async function generateEdit(ctx) {
     );
   const result = await planAndAssemble(
     ctx,
-    editPlanPrompt({ digest: digest.text, directive, format: ctx.format }),
+    editPlanPrompt({ digest: digest.text, directive, format: ctx.format, kit: kitOf(ctx) }),
     notes,
   );
   const target = directive.params.duration;

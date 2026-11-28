@@ -1,7 +1,8 @@
 /**
  * Director actions molecule — the list of things the director can do, one
  * button each. An action that needs the language model while none can be
- * reached is disabled and says why. Announces `actionpick` (`detail.id`).
+ * reached is disabled and says why; one that follows the project's brand
+ * kit says so. Announces `actionpick` (`detail.id`).
  * @module components/molecules/director-actions
  */
 
@@ -27,6 +28,7 @@ const ICONS = {
   remove_silence: 'split',
   beat_sync: 'beat',
   add_captions: 'captions',
+  brand: 'palette',
 };
 
 const BADGES = { yes: 'AI', optional: 'AI optional' };
@@ -58,6 +60,11 @@ function actionTemplate(action, llm) {
           <span class="director-actions-title">
             <strong>${action.title}</strong>
             ${BADGES[action.llm] ? html`<span class="chip">${BADGES[action.llm]}</span>` : html``}
+            ${action.brand
+              ? html`<span class="chip director-actions-brand" title="${action.brand}"
+                  >On brand</span
+                >`
+              : html``}
           </span>
           <span class="director-actions-about">${action.description}</span>
           ${note ? html`<span class="director-actions-note">${note}</span>` : html``}

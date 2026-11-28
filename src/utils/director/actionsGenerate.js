@@ -32,6 +32,7 @@ export const BASE_EDIT = {
   description:
     'Automatic rough cut from analysed media, no AI: speech with dead air removed, ' +
     'b-roll by scene, stills with a slow move, music cut on the beat.',
+  brand: 'What it puts on screen — titles, names, cards — is drawn by the brand kit’s elements.',
   llm: 'no',
   jobType: 'director',
   modes: ALL_MODES,
@@ -74,6 +75,7 @@ export const GENERATE_EDIT = {
   description:
     'The LLM chooses what to use — files, parts, order, titles — and the timeline is ' +
     'assembled deterministically on word, scene and beat boundaries.',
+  brand: 'What it puts on screen — titles, names, cards — is drawn by the brand kit’s elements.',
   llm: 'yes',
   jobType: 'director',
   modes: ALL_MODES,
@@ -112,6 +114,7 @@ export const EXECUTE_SCRIPT = {
   id: 'execute_script',
   title: 'Execute script',
   description: 'Build the timeline from an approved edit script.',
+  brand: 'What it puts on screen — titles, names, cards — is drawn by the brand kit’s elements.',
   llm: 'yes',
   jobType: 'director',
   modes: ALL_MODES,

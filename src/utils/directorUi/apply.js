@@ -5,8 +5,8 @@
  * @module utils/directorUi/apply
  */
 
+import { applyDirected } from '#utils/director/applyResult.js';
 import { commit, getDoc, undo } from '#utils/editor/session.js';
-import { applyDirectorResult } from '#utils/edl/index.js';
 import { addRun, markUndone, undoKind } from '#utils/directorUi/history.js';
 import { directorState } from '#utils/directorUi/state.js';
 import { confirmAction } from '#utils/ui/confirm.js';
@@ -33,19 +33,24 @@ export async function applyResult(action, result, posted, where) {
     });
     if (!sure) return directorState.set({ result: null });
   }
-  commit(applyDirectorResult(before, result));
+  // Clips and markers, and what a result says about the document itself (the
+  // caption style, font files) — one change, one undo step.
+  const next = applyDirected(before, result);
+  const { title, summary = '', notes = [] } = { title: action.title, ...result };
+  // A pass that found nothing to change leaves no step to undo behind.
+  if (next === before) return directorState.set({ result: { title, summary, notes } });
+  commit(next);
   const record = {
     id: nextRunId++,
     title: action.title,
     where,
-    summary: result.summary || '',
-    notes: result.notes || [],
+    summary,
+    notes,
     time: Date.now(),
     before,
     after: getDoc(),
     undone: false,
   };
-  const { title, summary, notes } = record;
   const history = addRun(directorState.get().history, record);
   directorState.set({ result: { title, summary, notes }, history });
 }

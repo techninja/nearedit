@@ -16,9 +16,12 @@ before(async () => {
 });
 after(() => park.cleanup());
 
+/** Title clips of phrases: what `add_captions` made before it could switch captions on. */
 async function run(edl, directive = {}, extra = {}) {
-  const ctx = await makeContext(park, { action: 'add_captions', ...directive }, { edl, ...extra });
-  const result = addCaptions(ctx);
+  const params = { as: 'phrases', ...directive.params };
+  const asked = { action: 'add_captions', ...directive, params };
+  const ctx = await makeContext(park, asked, { edl, ...extra });
+  const result = await addCaptions(ctx);
   const durations = Object.fromEntries(ctx.media.map((m) => [m.filePath, m.duration]));
   assert.deepEqual(checkResult(result, { fps: 30, durations, roots: [park.dir] }), []);
   assert.equal(result.mode, 'replace');

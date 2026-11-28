@@ -30,7 +30,7 @@ const rowId = (/** @type {{ type: string, index: number }} */ row) => `${row.typ
 
 /**
  * Put elements on a fragment.
- * @param {{ type: 'video'|'audio', index: number, name: string, clips: any[] }[]} tracks
+ * @param {{ type: string, index: number, name: string, clips: any[] }[]} tracks
  * @param {object[]} markers
  * @param {Wanted[]} wanted
  * @param {{ kit: import('#utils/brand/types.js').Kit, fps: number, width: number, height: number }} opts
@@ -43,7 +43,9 @@ export function dressFragment(tracks, markers, wanted, { kit, fps, width, height
     fps,
     resolution: `${width}x${height}`,
     tracks: tracks.map((row) =>
-      createTrack(row.type, { trackId: rowId(row), name: row.name, clips: row.clips }),
+      createTrack(row.type === 'audio' ? 'audio' : 'video', {
+        ...{ trackId: rowId(row), name: row.name, clips: row.clips },
+      }),
     ),
     markers,
   });

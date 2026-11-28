@@ -58,8 +58,11 @@ function checkTrack(track, opts) {
     }
     if (kind === 'audio' && track.type !== 'audio')
       errors.push(`${id}: audio file on a video track`);
-    if ((kind === 'title' || kind === 'image') && track.type !== 'video')
+    if (['title', 'image', 'element'].includes(kind) && track.type !== 'video')
       errors.push(`${id}: ${kind} on an audio track`);
+    // An element clip carries its design, so the document draws with no kit at hand.
+    if (clip.element !== undefined && kind !== 'element')
+      errors.push(`${id}: an element block without a design`);
     if (clip.sourceFile && !existsSync(clip.sourceFile))
       errors.push(`${id}: missing ${clip.sourceFile}`);
     const next = clips[i + 1];

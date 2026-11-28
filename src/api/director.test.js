@@ -79,6 +79,7 @@ test('GET /director/actions serves the schemas that drive the form', async () =>
       'remove_silence',
       'beat_sync',
       'add_captions',
+      'brand',
     ],
   );
   const duration = data[0].fields.find((f) => f.key === 'duration');
