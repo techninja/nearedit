@@ -42,7 +42,9 @@ describe('captions-create', () => {
     el.querySelector('.captions-create-tile').click();
     expect(said[0]).to.equal('Looking for speech with a transcript…');
     await waitUntil(() => said.length === 2);
-    expect(said[1]).to.match(/^Captions on for 1 clip — No transcript yet for memo\.wav, song\.mp3/);
+    expect(said[1]).to.match(
+      /^Captions on for 1 clip — No transcript yet for memo\.wav, song\.mp3/,
+    );
     expect(clipOf(getDoc(), 'a').captions.on).to.equal(true);
     expect(clipOf(getDoc(), 'memo').captions).to.equal(undefined);
     expect(undo()).to.equal(true);

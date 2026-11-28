@@ -33,13 +33,13 @@ const MAX_LEVELS = 3;
  * @param {import('#utils/compose/pool.js').Surface} surface
  * @param {number} levels
  * @param {import('#utils/compose/host.js').ComposeEnv} env
- * @returns {import('#utils/compose/pool.js').Surface} A scratch surface
+ * @returns {import('#utils/compose/pool.js').Surface} A scratch surface whose pixels may be read
  */
 function reduced(surface, levels, env) {
   let small = surface;
   for (let i = 0; i < Math.max(1, levels); i++) {
     const by = levels ? 2 : 1;
-    const next = env.scratch(Math.ceil(small.width / by), Math.ceil(small.height / by));
+    const next = env.scratch(Math.ceil(small.width / by), Math.ceil(small.height / by), true);
     next.ctx.drawImage(small.canvas, 0, 0, small.width / by, small.height / by);
     small = next;
   }
@@ -77,7 +77,7 @@ export default {
     const shape = edgeShape(soft, -grow, FOOTPRINT, env);
     let border = small;
     if (shape.blur > 0) {
-      border = env.scratch(small.width, small.height);
+      border = env.scratch(small.width, small.height, true);
       drawFiltered(border.ctx, small, `blur(${shape.blur}px)`, 0, env);
     }
     alphaToShape(border, shape.curve, [r, g, b]);

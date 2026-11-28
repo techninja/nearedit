@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { setCaptionWords, setCaptions } from '#utils/edl/index.js';
 import { testClip, testEdl } from '#utils/edl/testkit.js';
 import { allSpeechReport } from './actions.js';
-import { captionSummary, summaryLine } from './summary.js';
+import { captionSummary, summaryFor, summaryLine } from './summary.js';
 import { MEMO, SONG, TALK, talkDoc, wordsOf } from './testkit.js';
 
 describe('captions of the whole timeline', () => {
@@ -60,7 +60,22 @@ describe('captions of the whole timeline', () => {
       { file: MEMO, name: 'memo.wav', clipIds: ['m1', 'm2'], on: false },
     ]);
     assert.equal(summary.voices.length, 2);
-    assert.equal(summaryLine(captionSummary(testEdl({}), wordsOf())), 'No clip with sound on the timeline yet');
+    assert.equal(
+      summaryLine(captionSummary(testEdl({}), wordsOf())),
+      'No clip with sound on the timeline yet',
+    );
+  });
+
+  it('is worked out once per document and state of the transcripts', () => {
+    const doc = talkDoc();
+    let asked = 0;
+    const counting = (file) => (asked++, wordsOf()(file));
+    const first = summaryFor(doc, counting, 1);
+    assert.equal(summaryFor(doc, counting, 1), first);
+    assert.equal(asked, 3);
+    assert.notEqual(summaryFor(doc, counting, 2), first);
+    assert.notEqual(summaryFor(setCaptions(doc, ['a']), counting, 2), first);
+    assert.deepEqual(first, captionSummary(doc, wordsOf()));
   });
 
   it('reports what “Caption all speech” did', () => {
@@ -69,7 +84,10 @@ describe('captions of the whole timeline', () => {
       title: 'Captions on for 1 clip',
       detail: 'No transcript yet for memo.wav, song.mp3 — transcribe in Inspector ▸ Captions.',
     });
-    assert.equal(allSpeechReport(0, after).title, 'Every clip with a transcript already has captions');
+    assert.equal(
+      allSpeechReport(0, after).title,
+      'Every clip with a transcript already has captions',
+    );
     const none = captionSummary(talkDoc(), wordsOf({ [TALK]: 'none' }));
     assert.equal(allSpeechReport(0, none).title, 'Nothing to caption yet');
     assert.match(allSpeechReport(0, none).detail, /talk\.mp4, memo\.wav, song\.mp3/);

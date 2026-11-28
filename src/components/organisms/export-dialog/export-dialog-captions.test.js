@@ -51,9 +51,11 @@ describe('export-dialog and subtitles', () => {
 
   it('offers a subtitle file once captions are on, and remembers the choice', async () => {
     const el = await open(setCaptions(talkDoc(), ['a']));
-    expect([...el.querySelectorAll('input[name="subtitles"]')].map((r) => r.value)).to.deep.equal(
-      ['', 'srt', 'vtt'],
-    );
+    expect([...el.querySelectorAll('input[name="subtitles"]')].map((r) => r.value)).to.deep.equal([
+      '',
+      'srt',
+      'vtt',
+    ]);
     expect(choice(el, '').checked).to.equal(true);
     expect(choice(el, 'srt').disabled).to.equal(false);
     pick(el, 'srt');

@@ -48,6 +48,8 @@ const NEUTRAL = [
   ['glow', { radius: 0 }],
   ['glow', { intensity: 0 }],
   ['dropShadow', { opacity: 0 }],
+  ['outline', { width: 0 }],
+  ['outline', { color: '#ffffff00' }],
   ['vignette', { amount: 0 }],
   ['grain', { amount: 0 }],
   ['scanlines', { opacity: 0 }],
@@ -72,7 +74,8 @@ describe('the effect library', () => {
     for (const type of ['tint', 'vignette', 'pixelate', 'levels', 'colorBalance', 'posterize']) {
       assert.equal(kinds[type], 'apply', type);
     }
-    assert.equal(EFFECTS.length, 19);
+    assert.equal(kinds.outline, 'apply');
+    assert.equal(EFFECTS.length, 20);
   });
 
   it('describes every parameter: label, default, and a range for numbers', () => {

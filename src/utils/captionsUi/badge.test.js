@@ -14,7 +14,12 @@ describe('the CC badge', () => {
     const doc = setCaptions(off, ['v']);
     for (const id of ['a', 'v']) {
       const badge = captionBadge(clipOf(doc, id), doc, wordsOf());
-      assert.deepEqual(badge, { id: 'captions', text: 'CC', tone: 'on', title: 'Captions: 8 words' });
+      assert.deepEqual(badge, {
+        id: 'captions',
+        text: 'CC',
+        tone: 'on',
+        title: 'Captions: 8 words',
+      });
     }
     assert.equal(captionBadge(clipOf(doc, 'memo'), doc, wordsOf()), null);
     assert.equal(captionBadge(clipOf(doc, 'bed'), doc, wordsOf()), null);

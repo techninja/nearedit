@@ -88,7 +88,9 @@ describe('captions-inspector', () => {
       },
     });
     await waitUntil(() => line(el)?.dataset.kind === 'missing');
-    expect(line(el).textContent.replace(/\s+/g, ' ').trim()).to.equal('No transcript yet Transcribe');
+    expect(line(el).textContent.replace(/\s+/g, ' ').trim()).to.equal(
+      'No transcript yet Transcribe',
+    );
     line(el).querySelector('button').click();
     expect(clipOf(getDoc(), 'memo').captions.on).to.equal(true);
     show();
@@ -166,7 +168,10 @@ describe('captions-inspector', () => {
 
   it('cannot be changed on a locked track', async () => {
     const doc = talkDoc();
-    const locked = { ...doc, tracks: doc.tracks.map((t) => ({ ...t, locked: t.trackId === 'a1' })) };
+    const locked = {
+      ...doc,
+      tracks: doc.tracks.map((t) => ({ ...t, locked: t.trackId === 'a1' })),
+    };
     const { el } = await mount(['memo'], { doc: locked });
     await waitUntil(() => line(el)?.dataset.kind === 'missing');
     expect(box(el).disabled).to.equal(true);

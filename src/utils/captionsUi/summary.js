@@ -44,23 +44,18 @@ const baseName = (path) => path.split(/[\\/]/).pop() || path;
 export function captionSummary(doc, wordsOf) {
   /** @type {Map<string, VoiceState>} */
   const voices = new Map();
+  // Both loops below hand over the clip that carries its voice: a sound
+  // clip, or a captioned picture that has none.
   const add = (/** @type {any} */ clip) => {
     const info = captionInfo(doc, clip.clipId);
-    if (!info.can || voices.has(info.carrierId)) return;
+    if (!info.can || info.carrierId !== clip.clipId || voices.has(clip.clipId)) return;
     // A music clip speaks only the words written on it.
     if (isMusicClip(clip) && !info.ownWords && !info.on) return;
-    const carrier = info.carrierId === clip.clipId ? clip : null;
     const known = info.ownWords ? null : wordsOf(info.file);
     const words = info.ownWords ? 'ready' : info.file ? known.state : 'none';
-    const list = info.ownWords ? carrier?.captions?.words || [] : known?.words || [];
-    const count = words === 'ready' && carrier ? playedWords(list, carrier) : 0;
-    voices.set(info.carrierId, {
-      clipId: info.carrierId,
-      file: info.file,
-      on: info.on,
-      words,
-      count,
-    });
+    const list = info.ownWords ? clip.captions?.words || [] : known?.words || [];
+    const count = words === 'ready' ? playedWords(list, clip) : 0;
+    voices.set(clip.clipId, { clipId: clip.clipId, file: info.file, on: info.on, words, count });
   };
   for (const track of doc?.tracks || []) {
     if (track.type === 'audio') track.clips.forEach(add);
@@ -90,6 +85,26 @@ export function captionSummary(doc, wordsOf) {
     ready: all.filter((voice) => !voice.on && voice.words === 'ready').length,
     missing: [...missing.values()],
   };
+}
+
+/** @type {WeakMap<object, { stamp: number, summary: CaptionSummary }>} */
+const remembered = new WeakMap();
+
+/**
+ * `captionSummary`, worked out once per document and state of the
+ * transcripts — a panel that shows it is drawn far more often than either
+ * changes.
+ * @param {import('#utils/edl/types.js').Edl} doc
+ * @param {(file: string) => import('./words.js').FileWords} wordsOf
+ * @param {number} stamp - Changes whenever what `wordsOf` answers may have
+ * @returns {CaptionSummary}
+ */
+export function summaryFor(doc, wordsOf, stamp) {
+  const known = remembered.get(doc);
+  if (known?.stamp === stamp) return known.summary;
+  const summary = captionSummary(doc, wordsOf);
+  remembered.set(doc, { stamp, summary });
+  return summary;
 }
 
 /**

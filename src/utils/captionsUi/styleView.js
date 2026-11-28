@@ -17,12 +17,28 @@ import { createObservable } from '#utils/ui/observable.js';
 /**
  * @typedef {Object} StyleView
  * @property {boolean} open - The style is unfolded under a selected clip's captions
- * @property {number} asked - Counts requests to show the style: a component
- *   that sees it grow brings its style section into view
+ * @property {number} asked - Counts requests to show the style; the style
+ *   section on screen answers each once (`takeStyleRequest`)
  */
 
 /** @type {import('#utils/ui/observable.js').Observable<StyleView>} */
 export const styleView = createObservable({ open: false, asked: 0 });
+
+/** The latest request a style section has answered. */
+let answered = 0;
+
+/**
+ * Whether a request to show the style is waiting — asked once per request,
+ * by the style section that is on screen (also one that has only just been
+ * put there by the request).
+ * @returns {boolean} True once for every `openCaptionStyle()`
+ */
+export function takeStyleRequest() {
+  const { asked } = styleView.get();
+  if (asked === answered) return false;
+  answered = asked;
+  return true;
+}
 
 /** Fold or unfold the style under a clip's captions. */
 export function toggleStyleFold() {

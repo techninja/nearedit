@@ -67,8 +67,8 @@ describe('captions-style', () => {
     const { el } = await mount();
     el.querySelector('.captions-style-all').click();
     await waitUntil(() => clipOf(getDoc(), 'a').captions?.on === true);
-    await waitUntil(
-      () => el.querySelector('.captions-style-state').textContent.startsWith('On for 1 of 3'),
+    await waitUntil(() =>
+      el.querySelector('.captions-style-state').textContent.startsWith('On for 1 of 3'),
     );
     expect(el.querySelector('.captions-style-state').textContent).to.contain('8 words');
     expect(clipOf(getDoc(), 'memo').captions).to.equal(undefined);

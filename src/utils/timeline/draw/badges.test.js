@@ -51,7 +51,13 @@ function draw(pps, clipExtra = {}) {
   const title = { sourceFile: '', text: { content: 'c.mp4' } };
   const doc = testEdl({ v1: [testClip('c', 0, 10, { ...title, ...clipExtra })] });
   const { ctx, seen, canvas } = recorder();
-  const palette = { title: '#7c3aed', clipText: '#fff', warning: '#f59e0b', sans: 'sans', mono: 'm' };
+  const palette = {
+    title: '#7c3aed',
+    clipText: '#fff',
+    warning: '#f59e0b',
+    sans: 'sans',
+    mono: 'm',
+  };
   const vp = { pps, scrollX: 0, scrollY: 0, width: 800, height: 300 };
   const scene = { ctx, vp, doc, palette, selected: new Set(), overlay: {}, durations: {} };
   resetBadgeSpots(canvas);
@@ -73,7 +79,11 @@ describe('where badges go', () => {
   });
 
   it('shows one dot on a narrow clip — the most urgent badge — and nothing on a sliver', () => {
-    const [dot] = layoutBadges([CC, BUSY, WARN], { width: PILL_MIN - 1, right: 100, taken: 0 }, measure);
+    const [dot] = layoutBadges(
+      [CC, BUSY, WARN],
+      { width: PILL_MIN - 1, right: 100, taken: 0 },
+      measure,
+    );
     assert.deepEqual([dot.badge.tone, dot.dot, dot.width], ['warn', true, 7]);
     assert.deepEqual(layoutBadges([CC], { width: DOT_MIN - 1, right: 100, taken: 0 }, measure), []);
   });
@@ -138,7 +148,13 @@ describe('badges on a clip', () => {
     register(() => CC);
     const { scene, doc } = draw(40);
     const box = { x0: 0, x1: 400, y: 30, height: 50 };
-    assert.equal(drawBadges(/** @type {any} */ (scene), doc.tracks[0].clips[0], doc.tracks[0], box, 0), 23);
-    assert.equal(drawBadges(/** @type {any} */ (scene), doc.tracks[0].clips[0], doc.tracks[0], box, 22), 23);
+    assert.equal(
+      drawBadges(/** @type {any} */ (scene), doc.tracks[0].clips[0], doc.tracks[0], box, 0),
+      23,
+    );
+    assert.equal(
+      drawBadges(/** @type {any} */ (scene), doc.tracks[0].clips[0], doc.tracks[0], box, 22),
+      23,
+    );
   });
 });

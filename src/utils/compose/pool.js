@@ -18,6 +18,7 @@ export const MAX_IDLE_FRAMES = 240;
  * @property {number} width
  * @property {number} height
  * @property {number} usedAt - Frame it was last handed out in
+ * @property {boolean} [read] - Its pixels are read back: made for that
  */
 
 /**
@@ -53,17 +54,20 @@ export function createPool(createCanvas) {
    * A blank surface of exactly this size.
    * @param {number} [width] - Defaults to the frame being drawn
    * @param {number} [height]
+   * @param {boolean} [read] - Its pixels will be read back (`getImageData`):
+   *   a browser then keeps the canvas where reading costs nothing
    * @returns {Surface}
    */
-  function acquire(width = size.width, height = size.height) {
+  function acquire(width = size.width, height = size.height, read = false) {
     const w = Math.max(1, Math.round(width));
     const h = Math.max(1, Math.round(height));
-    let surface = free.get(`${w}x${h}`)?.pop();
+    let surface = free.get(`${w}x${h}${read ? 'r' : ''}`)?.pop();
     if (surface) {
       wipe(surface);
     } else {
       const canvas = createCanvas(w, h);
-      surface = { canvas, ctx: canvas.getContext('2d'), width: w, height: h, usedAt: frame };
+      const ctx = canvas.getContext('2d', read ? { willReadFrequently: true } : undefined);
+      surface = { canvas, ctx, width: w, height: h, usedAt: frame, read };
       created++;
     }
     surface.usedAt = frame;
@@ -72,7 +76,7 @@ export function createPool(createCanvas) {
 
   /** @param {Surface} surface - Give a surface back */
   function release(surface) {
-    const key = `${surface.width}x${surface.height}`;
+    const key = `${surface.width}x${surface.height}${surface.read ? 'r' : ''}`;
     if (!free.has(key)) free.set(key, []);
     free.get(key).push(surface);
   }
@@ -82,8 +86,8 @@ export function createPool(createCanvas) {
     release,
 
     /** Lend a surface to a module; `settle` takes it back. */
-    lease(/** @type {number} */ width, /** @type {number} */ height) {
-      const surface = acquire(width, height);
+    lease(/** @type {number} */ width, /** @type {number} */ height, read = false) {
+      const surface = acquire(width, height, read);
       leased.push(surface);
       return surface;
     },

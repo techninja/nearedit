@@ -69,7 +69,7 @@ export function drawCutout(ctx, packed, size, clip, t, alpha, run) {
     /** @type {(target: any, left: number, by: number) => void} */
     const take = (target, left, by) =>
       target.drawImage(packed, left + p.sx, p.sy, p.sw, p.sh, 0, 0, width / by, height / by);
-    const matte = env.scratch(Math.ceil(width / less), Math.ceil(height / less));
+    const matte = env.scratch(Math.ceil(width / less), Math.ceil(height / less), true);
     take(matte.ctx, size.width - half, less);
     const shrink = (settings.shrink * unit) / less;
     const shape = edgeShape(soft / less, shrink, Math.hypot(native / less, FOOTPRINT), env);

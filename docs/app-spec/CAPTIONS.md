@@ -209,14 +209,94 @@ about a millisecond a frame at 1920 × 1080 (0.2 for `boxed`, 2 for
 
 ## Editing
 
-- **Switching on**: per clip in the inspector, or "Caption all speech" for
-  the timeline. A clip without a transcript offers to transcribe it.
-- **Style**: presets as tiles with a live preview, then the controls of
-  `CAPTION_STYLE`, in the document's settings.
-- **Fixing a word**: in the transcript panel — a correction is part of the
-  transcript, so the caption and every other use of that word follow.
-- **The director**: `add_captions` gains a mode — `words` switches
-  captions on and sets a style; `phrases` makes title clips as before.
+Everything below is `src/utils/captionsUi/**` and the `captions-*` /
+`caption-tile` components; each change to the document is one of the five
+operations, as one undo step.
+
+**For a clip** — Inspector ▸ Captions (`captions-inspector`), on any
+selected clip that plays video or sound. A linked picture and sound are
+one voice, so either shows the same group:
+
+- the **switch** (`setCaptions`); with several voices selected it says how
+  many are on and switches them together;
+- one **line about the words**, from the transcript the preview draws
+  (`words.js`, the shared sidecar cache), counting only the words the clip
+  plays:
+
+  | The line | When | Beside it |
+  | -------- | ---- | --------- |
+  | *142 words* | The file has a transcript | — |
+  | *12 words written on this clip* | The clip carries words of its own | — |
+  | *… — not shown while its track is silent* | On, but muted or not soloed | — |
+  | *No transcript yet* | The file was never transcribed | **Transcribe** |
+  | *Transcribing… 40 %* | Its transcription is running | **Cancel** |
+  | *Transcription failed* | The job ended in an error — *Why?* has it | **Try again** |
+  | *No speech was found in this file* | Transcribed, nothing said | **Transcribe again** |
+  | *This server cannot transcribe* | No provider is usable — *Why?* says which and where to read on | — |
+  | *This file has no sound to caption* | A picture without sound | — |
+
+  **Transcribe** switches captions on at once (the undo step) and starts
+  the file's transcription — the same job the transcript panel starts, and
+  both show its progress (`transcribe.js`). When it finishes the cached
+  sidecar is dropped and the words appear in the preview by themselves;
+- **Edit words** opens the transcript panel on the clip's file, and
+  **Style** unfolds the timeline's style in place.
+
+**For the timeline** — Inspector ▸ Captions with nothing selected (the
+document's view, `captions-style`): where captions stand (*On for 2 of 3
+clips · 181 words*); **Caption all speech** (`captionAllSpeech`, after
+every sound clip's transcript was asked for — only clips known to have
+words are switched on, and a message names the files that have none);
+**Save subtitles…** `.srt` / `.vtt`, written at once in the browser from
+`timelineCues` as phrases for reading — the same text a render saves; and
+a row for every file on the timeline without a transcript, with its own
+**Transcribe** (captions on for what plays it, then the job), or, on a
+server that cannot, the reason. "Caption all speech" is also a command, a
+tile in Create ▸ Text (`captions-create`) and an entry in the lane's
+context menu.
+
+**Style** — below that, and under a clip's group: the five presets as
+tiles, each a sentence being said, drawn by `drawCaptionAt` itself over a
+backdrop (`sample.js`: a close view, seventy units across). They move in
+step, rest when the system asks for less motion, and the tile of the
+preset in use shows the style as it is now. Arrow keys walk the tiles;
+Enter chooses. Under them the fields of `CAPTION_STYLE` as controls —
+`paramControls(CAPTION_STYLE, flatCaptionStyle(style), 'captions.style')`,
+in the sections the table names, each saying how many of its fields
+differ from the preset; the font is a dropdown of the bundled families and
+the document's own. Every change is `patchCaptionStyle`, previewed as it
+is made; a drag of a slider is one undo step. **Back to preset** shows
+when something differs. Position is set by its two fields: the preview
+has no handle for captions.
+
+**Commands** (both keymaps; they are in the shortcuts list):
+
+| Command | Keys | Does |
+| ------- | ---- | ---- |
+| `captions.toggle` — Captions on / off | Alt+C | For the selection: on when any of it is off, else off. Also in a clip's context menu |
+| `captions.all` — Caption all speech | Alt+Shift+C | As above |
+| `captions.style` — Caption style… | — | Brings the inspector's style forward |
+
+**Fixing a word** — in the transcript panel: a correction is part of the
+transcript, so the caption and every other use of that word follow. Its
+toolbar has a **CC** switch for the clips that play the file being read.
+
+**On the timeline** a captioned clip — the sound clip that carries the
+captions and the picture linked to it — wears a **CC** badge
+(`badge.js`, through `#utils/timeline/badges.js`): dark when it has words,
+amber when captions are on and the file has no transcript, inverted
+(*CC…*) while that transcript is being made. Badges sit at the right end of
+a clip's label strip, become a dot on a narrow clip, and pointing at one
+gives its sentence as the canvas's tooltip.
+
+**Export** — the export dialog's *Subtitle file* (none, `.srt`, `.vtt`;
+remembered on this computer) is the render's `subtitles`
+([above](#in-a-render)); it is offered once a clip has captions, and the
+finished render names the file with a link to download it.
+
+**The director** — `add_captions` switches captions on (`as: words`, its
+default) in a look read from the request, or makes title clips
+(`as: phrases`): [DIRECTOR.md](./DIRECTOR.md#working-on-the-existing-timeline).
 
 ## Limits
 

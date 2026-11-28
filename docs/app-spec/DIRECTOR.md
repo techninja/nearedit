@@ -50,7 +50,7 @@ it take free text), and `accept` for a `file`. Field types: `range`,
 | `score` | optional | replace, range | `style`, `energy`, `key`, `bpm`, `duck`, `volume`, `seed`, `useLlm` — music written for the timeline, one music clip ducked under speech: [DIRECTOR-SCORE.md](./DIRECTOR-SCORE.md) |
 | `remove_silence` | no | replace, range | `threshold`, `padding` |
 | `beat_sync` | no | replace, range | `every` (1, 2, 4), `maxShift`, `protectSpeech` |
-| `add_captions` | no | replace, range | `maxChars`, `maxDuration`, `position`, `size`, `background` |
+| `add_captions` | optional | replace, range | `as` (words, phrases), `preset` (auto, clean, pop, karaoke, boxed, minimal), `useLlm`; for phrases `maxChars`, `maxDuration`, `position`, `size`, `background` |
 | `brand` | optional | — | `title`, `subtitle`, `speakers`, a switch per part, `useLlm` — dresses the timeline in the project's brand kit: [DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md) |
 
 The project's [brand kit](./BRAND.md) is the default look of everything above: themes,
@@ -367,19 +367,40 @@ there, leave a clip shorter than 0.3 s, run linked sound into a neighbour,
 or — with `protectSpeech` — cut into a word; the next nearest beat is
 tried first.
 
-**`add_captions`** (`inplace/addCaptions.js`). For the selected clips, or
-every clip that is heard (not music, not on a muted track), the words the
-clip plays are grouped into phrases: a new phrase starts at a pause over
-0.6 s, at the character or duration limit, after a sentence end, or after
-a comma once the phrase is long enough. Phrase times are mapped from
-source to timeline time through the clip
-(`timelineStart + (t - sourceIn)`). Each caption lingers 0.3 s after its
-last word and shows for at least 0.7 s, but never into the next one.
-Captions are title clips on the front-most video track; when that track is
-busy at those moments a new `Captions` track is put in front of
-everything. Text size, position and line length follow the output
-resolution. Files with segments but no words are captioned from the
-segments, timed by share of characters.
+**`add_captions`** (`inplace/addCaptions*.js`, `captionsLook.js`) captions
+the selected clips, or every clip that is heard (not music, not on a muted
+track), in one of two ways — `params.as`:
+
+- **`words`** (the default) switches [captions](./CAPTIONS.md) on: each
+  voice whose file has a transcript for the part it plays gets
+  `captions: { on: true }` on its sound clip (`setCaptions`), and nothing
+  else is added — the compositor draws the words as they are spoken, and
+  they stay in step however the speech is cut afterwards. The look is one
+  of the caption presets: the form's `preset`; else the request's own words
+  read by rule (`presetFromText`: "big bold captions" → `pop`, "karaoke" →
+  `karaoke`, "on a box" → `boxed`, "subtitles" → `minimal`, "simple" →
+  `clean`; a preset's own name wins, then the preset most words point at);
+  else, with `useLlm` and a request that names none, the language model's
+  choice — it is shown the five presets and may only answer with one of
+  their names, and any failure leaves the style alone. A look that was
+  chosen travels as `document.captions.style` and is set in the same step
+  (`applyDirected`); the look the timeline already has is kept as it is,
+  fine-tuning included. The summary says how many clips were switched on
+  and in which look; `notes` name each file that has no transcript (it is
+  not switched on), what was already on, and how the request was read.
+- **`phrases`** makes a title clip per phrase, as the action did before
+  captions were part of the document: a new phrase starts at a pause over
+  0.6 s, at the character or duration limit, after a sentence end, or
+  after a comma once the phrase is long enough. Phrase times are mapped
+  from source to timeline time through the clip
+  (`timelineStart + (t - sourceIn)`). Each caption lingers 0.3 s after its
+  last word and shows for at least 0.7 s, but never into the next one. The
+  clips go on the front-most video track; when that track is busy at those
+  moments a new `Captions` track is put in front of everything. Text size,
+  position and line length follow the output resolution. Files with
+  segments but no words are captioned from the segments, timed by share of
+  characters. Title clips can be rewritten and moved one by one, and do not
+  follow the speech when it is cut later.
 
 **`insert_broll`** (`actions/insertBroll.js`, `search.js`). Candidates are
 scored by keywords from the prompt (stop words and editing chatter such as

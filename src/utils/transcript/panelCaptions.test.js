@@ -37,7 +37,12 @@ describe('captions from the transcript panel', () => {
 
   it('switches them with the toolbar’s button, one undo step, and says so', () => {
     loadDoc(talkEdl());
-    const host = /** @type {any} */ ({ file: TALK, focusClip: 'v', track: '', sidecar: TALK_SIDECAR });
+    const host = /** @type {any} */ ({
+      file: TALK,
+      focusClip: 'v',
+      track: '',
+      sidecar: TALK_SIDECAR,
+    });
     host.anchor = host.head = -1;
     host.query = '';
     assert.ok(transcriptText(TALK_SIDECAR).units.length > 0);

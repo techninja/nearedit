@@ -6,7 +6,11 @@ import { captionLine, playedWords, wordCount } from './clipState.js';
 import { MEMO, talkDoc, wordsOf } from './testkit.js';
 
 const CAN = { provider: 'faster-whisper', available: true, detail: '' };
-const CANNOT = { provider: 'none', available: false, detail: 'disabled (TRANSCRIBE_PROVIDER=none)' };
+const CANNOT = {
+  provider: 'none',
+  available: false,
+  detail: 'disabled (TRANSCRIBE_PROVIDER=none)',
+};
 
 /** The line for a clip of a document. */
 function lineOf(doc, clipId, facts = {}) {
@@ -23,7 +27,10 @@ describe('the line about a clip’s captions', () => {
     assert.equal(playedWords(wordsOf()('/media/talk.mp4').words, { sourceIn: 2, sourceOut: 3 }), 2);
     assert.deepEqual([wordCount(1), wordCount(142)], ['1 word', '142 words']);
     const line = lineOf(doc, 'v');
-    assert.deepEqual([line.kind, line.text, line.tone, line.action], ['words', '8 words', 'ok', '']);
+    assert.deepEqual(
+      [line.kind, line.text, line.tone, line.action],
+      ['words', '8 words', 'ok', ''],
+    );
   });
 
   it('says when captions are on but not shown, and when the part is silent', () => {
@@ -34,7 +41,13 @@ describe('the line about a clip’s captions', () => {
     const trimmed = talkDoc();
     const quiet = { ...clipOf(trimmed, 'a'), sourceIn: 0, sourceOut: 0.5 };
     const info = captionInfo(trimmed, 'a');
-    const line = captionLine({ info, carrier: quiet, words: wordsOf()(info.file), job: null, provider: CAN });
+    const line = captionLine({
+      info,
+      carrier: quiet,
+      words: wordsOf()(info.file),
+      job: null,
+      provider: CAN,
+    });
     assert.deepEqual([line.kind, line.text], ['empty', 'Nothing is said in this part of the file']);
   });
 
@@ -48,7 +61,13 @@ describe('the line about a clip’s captions', () => {
   });
 
   it('shows a running transcription with its progress, and a failed one with its reason', () => {
-    const running = { active: true, progress: 40, label: 'Transcribing', detail: 'chunk 2 of 5', error: '' };
+    const running = {
+      active: true,
+      progress: 40,
+      label: 'Transcribing',
+      detail: 'chunk 2 of 5',
+      error: '',
+    };
     const line = lineOf(talkDoc(), 'memo', { job: running });
     assert.deepEqual(
       [line.kind, line.text, line.action, line.progress, line.tone],
@@ -64,7 +83,10 @@ describe('the line about a clip’s captions', () => {
 
   it('explains a server that cannot transcribe instead of offering a button', () => {
     const line = lineOf(talkDoc(), 'memo', { provider: CANNOT });
-    assert.deepEqual([line.kind, line.text, line.action], ['unavailable', 'This server cannot transcribe', '']);
+    assert.deepEqual(
+      [line.kind, line.text, line.action],
+      ['unavailable', 'This server cannot transcribe', ''],
+    );
     assert.match(line.detail, /TRANSCRIBE_PROVIDER=none.*INTELLIGENCE\.md/);
     // With a transcript, what the server can do does not matter.
     assert.equal(lineOf(talkDoc(), 'a', { provider: CANNOT }).text, '8 words');

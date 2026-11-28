@@ -15,8 +15,8 @@ import { liveDoc } from '#utils/editor/liveDoc.js';
 import { changedPaths, presetOf, styleSections } from '#utils/captionsUi/styleControls.js';
 import { handleBackToPreset, listenForStyle } from '#utils/captionsUi/styleEvents.js';
 import { presetTiles, sectionFields } from '#utils/captionsUi/styleParts.js';
-import { styleView } from '#utils/captionsUi/styleView.js';
-import { captionSummary } from '#utils/captionsUi/summary.js';
+import { styleView, takeStyleRequest } from '#utils/captionsUi/styleView.js';
+import { summaryFor } from '#utils/captionsUi/summary.js';
 import { onMotionPreference, prefersStill } from '#utils/captionsUi/tileClock.js';
 import { timelineRows } from '#utils/captionsUi/timelineParts.js';
 import { loadProvider, transcribeState } from '#utils/captionsUi/transcribe.js';
@@ -52,18 +52,19 @@ function connectStill(host, _key, invalidate) {
 }
 
 /**
- * Someone asked to see the style: bring it into view.
+ * Someone asked to see the style: bring it into view, and its first tile
+ * into focus.
  * @param {Host} host
- * @param {import('#utils/captionsUi/styleView.js').StyleView} view
- * @param {import('#utils/captionsUi/styleView.js').StyleView} [last]
  */
-function reveal(host, view, last) {
-  if (!last || view.asked === last.asked) return;
-  requestAnimationFrame(() => {
-    const target = host.querySelector('.captions-style-heading') || host;
-    target.scrollIntoView({ block: 'nearest' });
-    /** @type {HTMLElement|null} */ (host.querySelector('.captions-style-tile'))?.focus();
-  });
+function reveal(host) {
+  if (!takeStyleRequest()) return;
+  const show = () => {
+    const tile = /** @type {HTMLElement|null} */ (host.querySelector('.captions-style-tile'));
+    tile?.focus({ preventScroll: true });
+    (host.querySelector('.captions-style-heading') || host).scrollIntoView({ block: 'start' });
+  };
+  // The request may also have brought the panel forward: wait for that frame to be drawn.
+  requestAnimationFrame(() => requestAnimationFrame(show));
 }
 
 /** @type {import('hybrids').Component<CaptionsStyleHost>} */
@@ -81,7 +82,7 @@ export default define({
       const fonts = doc.fonts || [];
       const preset = presetOf(stored);
       const changed = changedPaths(stored).length;
-      const summary = !plain && words >= 0 ? captionSummary(doc, wordBook.get) : null;
+      const summary = plain ? null : summaryFor(doc, wordBook.get, words);
       return html`
         ${summary
           ? html`<div class="field-group-title">Captions</div>

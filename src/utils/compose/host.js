@@ -43,9 +43,10 @@ import { createPool } from './pool.js';
  * @property {(font: string, text: string) => boolean} fontReady
  * @property {(fonts: any[]) => void} fonts
  * @property {(clip: any) => any} words
- * @property {(width?: number, height?: number) => import('./pool.js').Surface} scratch -
- *   A blank pooled surface `{ canvas, ctx, width, height }`, frame-sized by
- *   default. It is taken back when the module's `draw` / `apply` returns
+ * @property {(width?: number, height?: number, read?: boolean) =>
+ *   import('./pool.js').Surface} scratch - A blank pooled surface `{ canvas,
+ *   ctx, width, height }`, frame-sized by default. It is taken back when the
+ *   module's `draw` / `apply` returns. `read`: its pixels will be read back
  */
 
 /**
@@ -77,7 +78,7 @@ export function composeFor(host) {
         fontReady: (font, text) => (host.fontReady ? host.fontReady(font, text) !== false : true),
         fonts: (fonts) => void (host.fonts && host.fonts(fonts)),
         words: (clip) => (host.words ? host.words(clip) || null : null),
-        scratch: (width, height) => pool.lease(width, height),
+        scratch: (width, height, read) => pool.lease(width, height, read),
       },
     };
     hosts.set(host, compose);

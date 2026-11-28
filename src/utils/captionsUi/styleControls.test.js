@@ -14,7 +14,13 @@ describe('the caption style as an editor shows it', () => {
     );
     const paths = sections.flatMap((section) => section.controls.map((control) => control.name));
     // Everything but the preset (tiles choose it) and what a `when` hides.
-    const hidden = ['plate.color', 'plate.opacity', 'plate.padding', 'plate.radius', 'highlight.scale'];
+    const hidden = [
+      'plate.color',
+      'plate.opacity',
+      'plate.padding',
+      'plate.radius',
+      'highlight.scale',
+    ];
     assert.deepEqual(
       paths,
       Object.keys(CAPTION_STYLE).filter((path) => path !== 'preset' && !hidden.includes(path)),

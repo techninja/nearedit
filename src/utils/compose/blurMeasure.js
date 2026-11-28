@@ -56,7 +56,7 @@ function measure(sigma, env) {
   step.ctx.fillRect(0, 0, half, height);
   step.ctx.fillStyle = '#ffffff';
   step.ctx.fillRect(half, 0, half, height);
-  const out = env.scratch(width, height);
+  const out = env.scratch(width, height, true);
   out.ctx.filter = `blur(${sigma}px)`;
   out.ctx.drawImage(step.canvas, 0, 0);
   const { data } = out.ctx.getImageData(0, height >> 1, width, 1);
