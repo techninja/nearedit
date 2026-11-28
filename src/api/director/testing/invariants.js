@@ -82,8 +82,12 @@ function checkTrack(track, opts) {
 /**
  * Every way a DirectorResult breaks the contract. Empty means valid.
  * @param {any} result
- * @param {{ fps?: number, durations?: Record<string, number|null>, roots?: string[] }} [opts] -
- *   `durations`: known source lengths by path; `roots`: folders every sourceFile must be under
+ * @param {{ fps?: number, durations?: Record<string, number|null>, roots?: string[],
+ *   edl?: any }} [opts] - `durations`: known source lengths by path; `roots`: folders every
+ *   sourceFile must be under; `edl`: the document an in-place result was made from. Such a
+ *   result sends locked tracks empty, so a clip of it may be linked to a clip that is not
+ *   in the fragment: its partner on a locked track of that document, linked back. The two
+ *   need not be in step — a locked clip cannot follow a ripple
  * @returns {string[]}
  */
 export function checkResult(result, opts = {}) {
@@ -111,10 +115,21 @@ export function checkResult(result, opts = {}) {
         errors.push(`${clip.clipId}: ${clip.sourceFile} is outside the project`);
     }
   }
+  const locked = new Map(
+    (opts.edl?.tracks || [])
+      .filter((/** @type {any} */ track) => track.locked)
+      .flatMap((/** @type {any} */ track) => track.clips)
+      .map((/** @type {any} */ clip) => [clip.clipId, clip]),
+  );
   for (const clip of byId.values()) {
+    if (locked.has(clip.clipId)) errors.push(`${clip.clipId}: a clip of a locked track was sent`);
     if (!clip.linkedClipId) continue;
     const partner = byId.get(clip.linkedClipId);
-    if (!partner)
+    const kept = locked.get(clip.linkedClipId);
+    if (!partner && kept) {
+      if (kept.linkedClipId !== clip.clipId)
+        errors.push(`${clip.clipId}: ${kept.clipId} on a locked track is not linked to it`);
+    } else if (!partner)
       errors.push(`${clip.clipId}: linked clip ${clip.linkedClipId} not in the fragment`);
     else if (partner.linkedClipId !== clip.clipId)
       errors.push(`${clip.clipId}: link is not symmetric`);

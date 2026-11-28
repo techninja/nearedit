@@ -41,6 +41,16 @@ function draw(host, time) {
 }
 
 /**
+ * Draw the resting instant again — a font has arrived. A running tile
+ * draws on every tick anyway.
+ * @param {Host} host
+ * @param {object} state - The state it was asked for; a tile that has gone is left alone
+ */
+function rest(host, state) {
+  if (states.get(host) === state && !host.playing) draw(host, SAMPLE_STILL);
+}
+
+/**
  * Make sure the style's font is there, then draw the resting instant.
  * @param {Host} host
  */
@@ -49,16 +59,16 @@ function settle(host) {
   const state = states.get(host);
   if (!canvas || !state) return;
   const need = tileFontNeed(styleOf(host), canvas.width, canvas.height, host.fonts);
-  const fonts = document.fonts;
-  if (need.font !== state.font && fonts && !fonts.check(need.font, need.text)) {
-    fonts.load(need.font, need.text).then(
-      () => {
-        state.font = need.font;
-        if (states.get(host) === state) draw(host, SAMPLE_STILL);
-      },
+  // Always asked for, never only checked: `check` also says yes while the
+  // face is not declared yet (a cold start), and the tile would stay in a
+  // fallback face.
+  if (need.font !== state.font && document.fonts) {
+    state.font = need.font;
+    document.fonts.load(need.font, need.text).then(
+      () => rest(host, state),
       (err) => console.warn(`[captions] the font of a tile did not load: ${err.message}`),
     );
-  } else state.font = need.font;
+  }
   draw(host, SAMPLE_STILL);
 }
 
@@ -83,7 +93,11 @@ function connect(host) {
     state.seen = entries[entries.length - 1].isIntersecting;
   });
   watcher.observe(host);
+  // Faces declared after the first draw (the stylesheet came late) arrive here.
+  const arrived = () => rest(host, state);
+  document.fonts?.addEventListener?.('loadingdone', arrived);
   return () => {
+    document.fonts?.removeEventListener?.('loadingdone', arrived);
     watcher.disconnect();
     state.stop();
     states.delete(host);

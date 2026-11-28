@@ -242,7 +242,7 @@ describe('element clips are first-class', () => {
   it('elsewhere: effects, the transcript panel, playback cues', () => {
     session.loadDoc(doc);
     assert.deepEqual(effectTargets([clipIds[0]]), [{ clipId: clipIds[0], label: 'Ada' }]);
-    assert.equal(resolveSubject({ edl: doc, selection: [clipIds[0]] }).note, 'title');
+    assert.equal(resolveSubject({ edl: doc, selection: [clipIds[0]] }).note, 'element');
     assert.equal(
       videoCues(doc.tracks, 2).some((cue) => cue.kind === 'element'),
       true,

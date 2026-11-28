@@ -10,6 +10,8 @@ import ProjectState from '#store/ProjectState.js';
 import UserPrefs from '#store/UserPrefs.js';
 import ViewState from '#store/ViewState.js';
 import { api } from '#utils/api/http.js';
+import { rememberSubtitles, rememberedSubtitles } from '#utils/captionsUi/exportSubtitles.js';
+import { subtitleChoice } from '#utils/captionsUi/exportSubtitles.js';
 import { getDoc } from '#utils/editor/session.js';
 import { defaultFilename, rangeChoices, renderRequest } from '#utils/ui/exportPlan.js';
 import { createObservable } from '#utils/ui/observable.js';
@@ -21,6 +23,8 @@ import { createObservable } from '#utils/ui/observable.js';
  * @property {string} preset
  * @property {'all'|'loop'} rangeId
  * @property {string} filename
+ * @property {string} subtitles - The subtitle file a render saves beside the video: '', `srt`
+ *   or `vtt`. Remembered on this computer, and kept from one adaptation to the next
  * @property {any} plan - `{ width, height, fps, duration, warnings }` from `/render/plan`; null = unknown
  * @property {string} planError - Why this cannot be rendered
  * @property {import('#utils/api/jobs.js').JobSummary|null} job - The running render
@@ -36,6 +40,7 @@ const EMPTY = {
   preset: 'standard',
   rangeId: /** @type {'all'|'loop'} */ ('all'),
   filename: '',
+  subtitles: '',
   plan: null,
   planError: '',
   job: null,
@@ -46,7 +51,7 @@ const EMPTY = {
 };
 
 /** @type {import('#utils/ui/observable.js').Observable<ExportState>} */
-export const exportState = createObservable({ ...EMPTY });
+export const exportState = createObservable({ ...EMPTY, subtitles: rememberedSubtitles() });
 
 let planSerial = 0;
 
@@ -56,10 +61,11 @@ export const currentRanges = () => rangeChoices(getDoc(), store.get(ViewState));
 /** @returns {Record<string, any>} The render request for the options as they stand */
 export function exportRequest() {
   const { projectId, adaptationId } = store.get(ProjectState);
-  const { preset, rangeId, filename } = exportState.get();
+  const { preset, rangeId, filename, subtitles } = exportState.get();
   const ranges = currentRanges();
   const range = ranges.find((r) => r.id === rangeId && r.available) || ranges[0];
-  return renderRequest({ projectId, adaptationId, doc: getDoc(), preset, range, filename });
+  const doc = getDoc();
+  return renderRequest({ projectId, adaptationId, doc, preset, range, filename, subtitles });
 }
 
 /** Ask the server what the render would be (size, rate, length, warnings). */
@@ -81,9 +87,9 @@ export async function openExport() {
   const { adaptationId, adaptationName } = store.get(ProjectState);
   if (exportState.get().adaptationId !== adaptationId) {
     // A render of another adaptation carries on; the job tray shows it.
-    const { presets } = exportState.get();
+    const { presets, subtitles } = exportState.get();
     const filename = defaultFilename(adaptationName);
-    exportState.set({ ...EMPTY, presets, adaptationId, filename });
+    exportState.set({ ...EMPTY, presets, subtitles, adaptationId, filename });
   }
   if (!currentRanges().find((r) => r.id === exportState.get().rangeId)?.available)
     exportState.set({ rangeId: 'all' });
@@ -102,11 +108,18 @@ export async function openExport() {
 }
 
 /**
- * Change an option.
- * @param {'preset'|'rangeId'|'filename'} key
+ * Change an option. The preset and the range change what will be rendered,
+ * so the server is asked again; the file's name and the subtitle file do
+ * not. The subtitle choice is remembered on this computer.
+ * @param {'preset'|'rangeId'|'filename'|'subtitles'} key
  * @param {string} value
  */
 export function setExportOption(key, value) {
+  if (key === 'subtitles') {
+    exportState.set({ subtitles: subtitleChoice(value), error: '' });
+    rememberSubtitles(value);
+    return;
+  }
   exportState.set({ [key]: value, error: '' });
   if (key !== 'filename') refreshPlan();
 }

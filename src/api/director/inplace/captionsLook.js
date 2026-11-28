@@ -90,7 +90,8 @@ async function askLlm(ctx) {
  * @param {import('../pipeline.js').ActionContext} ctx
  * @param {string[]} notes - Added to when the model was asked
  * @returns {Promise<{ preset: string, by: 'form'|'words'|'llm'|'' }>} `preset`
- *   '' = none was asked for: the timeline keeps the style it has
+ *   '' = none was asked for (or the model could not say): the timeline keeps
+ *   the style it has, or follows the brand kit (`captionsStyle.js`)
  */
 export async function chooseLook(ctx, notes) {
   const { params, prompt } = ctx.directive;
@@ -107,9 +108,8 @@ export async function chooseLook(ctx, notes) {
     return { preset, by: 'llm' };
   } catch (err) {
     if (err.name === 'AbortError') throw err;
-    notes.push(
-      `The LLM could not choose a look (${err.message}) — the timeline keeps the caption style it has.`,
-    );
+    // What the captions then look like is said with the style that is used instead.
+    notes.push(`The LLM could not choose a look (${err.message}).`);
     return { preset: '', by: '' };
   }
 }

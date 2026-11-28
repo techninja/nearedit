@@ -13,10 +13,10 @@ import { currentRanges, exportState, openExport } from '#utils/ui/exportControll
 import { setExportOption } from '#utils/ui/exportController.js';
 import { filenameProblem } from '#utils/ui/exportPlan.js';
 import { subtitleResult } from '#utils/captionsUi/exportParts.js';
-import { cancelExport, setSubtitleFormat, startExport } from '#utils/captionsUi/exportSubtitles.js';
 import { dialogFrame } from '#utils/ui/dialogFrame.js';
 import { cutoutExportNote, cutoutJobs } from '#utils/cutoutUi/exportNote.js';
 import { watch } from '#utils/ui/observable.js';
+import { cancelExport, startExport } from '#utils/ui/exportRun.js';
 import { exportBody } from '#utils/ui/exportViews.js';
 import { liveDoc } from '#utils/editor/liveDoc.js';
 import { webExportNote } from '#utils/webUi/exportNote.js';
@@ -42,9 +42,7 @@ function handleClose(host) {
 
 /** @param {ExportDialogHost} _host @param {CustomEvent} event */
 function handleField(_host, event) {
-  const { key, value } = event.detail;
-  if (key === 'subtitles') setSubtitleFormat(value);
-  else setExportOption(key, value);
+  setExportOption(event.detail.key, event.detail.value);
 }
 
 /** @param {ExportDialogHost} _host @param {boolean} open */

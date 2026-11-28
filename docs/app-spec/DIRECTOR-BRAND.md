@@ -35,6 +35,7 @@ carry a line `brand` ("Follows the brand kit: …"), which the panel shows.
 | `site_demo` | `theme: brand` | The ground in the brand theme's colours; captions are its `caption` element; a title card is its `intro`; `finished` adds its `outro` and `bug` |
 | `score` | `style: brand`, `key: brand` | `tokens.sound.style` and `.key`; `.scale` where the style is written in it |
 | `base_edit`, `generate_edit`, `execute_script` | — | What a plan puts on screen is drawn by elements: the opening title is `title`, a pick's title `lower-third`, and a plan may [name elements](#elements-in-a-plan) |
+| `add_captions` | `preset: auto` | With no look named — in the form or in the request's words — a timeline that has no caption style of its own takes [the kit's](#the-caption-style-of-a-kit); one that has a style keeps it ([DIRECTOR.md](./DIRECTOR.md#working-on-the-existing-timeline)) |
 | `brand` | — | [The brand pass](#the-brand-pass) |
 
 Roles are resolved through the kit's `defaults` (`intro`, `outro`,
@@ -308,6 +309,14 @@ a document stores — the preset and what differs:
   `shape.radius`, the words in `color.text`. Without a plate the words
   stay the preset's white with its outline: they must read on any picture.
 
+Two actions write it into a document. The brand pass sets it every time
+it runs. `add_captions` sets it only as a default: when captions are
+switched on, no look was asked for, and the timeline has no caption style
+of its own (`edl.captions` is not there) — a timeline that has one, even
+the plain default somebody chose, keeps it, and so does one this action
+has styled once. Its result says so: "Captions switched on for 2 clips
+(Boxed, from the brand kit)", with a note naming the kit and the font.
+
 ## The result
 
 A `DirectorResult` ([API.md](./API.md#directorresult)) may carry
@@ -323,9 +332,12 @@ A `DirectorResult` ([API.md](./API.md#directorresult)) may carry
 `applyDirectorResult` with these applied in the same step: the font files
 first — so the fragment's titles keep their family — then the merge, then
 the style and the regions. Markers that came back unchanged keep their
-ids, and a result that changes nothing returns the document it was given.
-The director panel applies results with it; `applyDirectorResult` alone
-still merges every result, without those parts.
+ids, a clip that a whole-timeline result returned keeps its link to a
+partner on a locked track
+([DIRECTOR.md](./DIRECTOR.md#working-on-the-existing-timeline)), and a
+result that changes nothing returns the document it was given. The
+director panel applies results with it; `applyDirectorResult` alone still
+merges every result, without those parts and without those links.
 
 ## The actions that work on a timeline
 

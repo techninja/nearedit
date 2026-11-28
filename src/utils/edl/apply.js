@@ -12,6 +12,7 @@ import { prepareFragment } from './fragment.js';
 import { adoptLayout } from './fragmentLayout.js';
 import { mapClips, tracksOfType } from './immutable.js';
 import { repairLinks } from './links.js';
+import { keepLockedLinks } from './lockedLinks.js';
 import { addClips, ensureTrack } from './placement.js';
 import { rippleDeleteRange, rippleInsert } from './ripple.js';
 import { isObject, toNumber } from './sanitize.js';
@@ -95,8 +96,11 @@ function idsIn(edl) {
  * @returns {Edl} A document that satisfies `validateEdl`
  */
 export function applyDirectorResult(edl, result) {
+  if (!isObject(result)) return edl;
+  // A whole-timeline result leaves locked tracks out: keep the links that cross the lock.
+  const merged = keepLockedLinks(edl, result, mergeResult(edl, result));
   // Element clips of the fragment bring the font files their designs need.
-  return isObject(result) ? syncFonts(mergeResult(edl, result)) : edl;
+  return syncFonts(merged);
 }
 
 /**

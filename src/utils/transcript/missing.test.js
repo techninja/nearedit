@@ -15,6 +15,12 @@ describe('explainMissing', () => {
       explainMissing({ file: '', note: 'title' }, null, null, null).detail,
       /Titles are text/,
     );
+    const element = explainMissing({ file: '', note: 'element' }, null, null, null);
+    assert.deepEqual([element.title, element.canTranscribe], ['No transcript to show', false]);
+    assert.equal(
+      element.detail,
+      'A brand element is drawn by the brand kit — its words are typed in the Inspector, and there is nothing to transcribe.',
+    );
     assert.match(
       explainMissing({ file: '', note: 'image' }, null, null, null).detail,
       /still image/,

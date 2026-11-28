@@ -14,7 +14,7 @@ import { edit, getDoc } from '#utils/editor/session.js';
 import { shortcutLabel } from '#utils/keyboard/index.js';
 import { elementMenu } from './menuElement.js';
 import { fadeMenu } from './menuFades.js';
-import { CLIP_MENU, LANE_MENU, RULER_MENU } from './menuLists.js';
+import { CLIP_MENU, LANE_MENU, RULER_MENU, WHERE_POSSIBLE } from './menuLists.js';
 import { musicMenu } from './menuMusic.js';
 import { webMenu } from './menuWeb.js';
 
@@ -48,12 +48,15 @@ export function commandItem(id) {
 }
 
 /**
- * @param {string[]} ids - Command ids; `-` is a separator
+ * @param {string[]} ids - Command ids; `-` is a separator. A command of
+ *   `WHERE_POSSIBLE` is left out while it cannot act (the command decides)
  * @param {Record<string, MenuItem>} [extra] - Items that are not registry commands
  * @returns {MenuItem[]}
  */
 function build(ids, extra = {}) {
-  return ids.map((id) => (id === '-' ? LINE : extra[id] || commandItem(id)));
+  return ids
+    .filter((id) => !WHERE_POSSIBLE.includes(id) || isEnabled(id))
+    .map((id) => (id === '-' ? LINE : extra[id] || commandItem(id)));
 }
 
 /**

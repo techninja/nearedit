@@ -53,7 +53,7 @@ export const ADD_CAPTIONS = {
       'preset',
       'Look',
       [
-        ['auto', 'As described — or as the timeline has it'],
+        ['auto', 'As described — else the timeline’s, else the brand’s'],
         ['clean', 'Clean'],
         ['pop', 'Pop'],
         ['karaoke', 'Karaoke'],
@@ -61,7 +61,8 @@ export const ADD_CAPTIONS = {
         ['minimal', 'Minimal'],
       ],
       'auto',
-      'For words: one of the caption presets. Fine-tune it in Inspector ▸ Captions.',
+      'For words: one of the caption presets. With none named the timeline keeps its own ' +
+        'caption style — or, having none, takes the brand kit’s. Fine-tune it in Inspector ▸ Captions.',
     ),
     toggle(
       'useLlm',

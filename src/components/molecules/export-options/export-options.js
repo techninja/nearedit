@@ -7,10 +7,9 @@
  */
 
 import { html, define, dispatch } from 'hybrids';
-import { captionedCount, subtitleOption } from '#utils/captionsUi/exportSubtitles.js';
+import { captionedCount } from '#utils/captionsUi/exportSubtitles.js';
 import { liveDoc } from '#utils/editor/liveDoc.js';
 import { filenameProblem } from '#utils/ui/exportPlan.js';
-import { watch } from '#utils/ui/observable.js';
 
 /**
  * @typedef {Object} ExportOptionsHost
@@ -19,7 +18,7 @@ import { watch } from '#utils/ui/observable.js';
  * @property {import('#utils/ui/exportPlan.js').RangeChoice[]} ranges
  * @property {string} rangeId - Selected range id
  * @property {string} filename
- * @property {{ format: string }} subtitles - The subtitle file chosen: '', `srt` or `vtt`
+ * @property {string} subtitles - The subtitle file chosen: '', `srt` or `vtt`
  * @property {any} doc - The open document: without captions there is nothing to save
  */
 
@@ -44,7 +43,7 @@ export default define({
   ranges: { value: [] },
   rangeId: 'all',
   filename: '',
-  subtitles: watch(subtitleOption),
+  subtitles: '',
   doc: liveDoc(),
   render: {
     value: ({ presets, preset, ranges, rangeId, filename, subtitles, doc }) => {
@@ -120,7 +119,7 @@ export default define({
                     type="radio"
                     name="subtitles"
                     value="${value}"
-                    checked="${value === (captioned ? subtitles.format : '')}"
+                    checked="${value === (captioned ? subtitles : '')}"
                     disabled="${!captioned}"
                   />
                   <span>

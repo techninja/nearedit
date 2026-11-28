@@ -5,6 +5,13 @@
  * @module utils/timeline/menuLists
  */
 
+/**
+ * Commands a menu lists only where they can act: for anything else they
+ * are left out, where the other commands stay, greyed. The person cutout is
+ * for footage only — on a title, a still or sound it would be noise.
+ */
+export const WHERE_POSSIBLE = ['cutout.toggle'];
+
 export const CLIP_MENU = [
   'edit.split',
   '-',
@@ -21,6 +28,7 @@ export const CLIP_MENU = [
   ...['keyframe.add', 'keyframe.remove', 'keyframe.clear'],
   '-',
   'captions.toggle',
+  'cutout.toggle',
   '-',
   ...['ripple.postTracks', 'ripple.postMarks', 'ripple.postAll'],
 ];

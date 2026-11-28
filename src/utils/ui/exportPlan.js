@@ -5,6 +5,7 @@
  * @module utils/ui/exportPlan
  */
 
+import { captionedCount, withSubtitles } from '#utils/captionsUi/exportSubtitles.js';
 import { timelineDuration } from '#utils/edl/query.js';
 import { formatDuration } from '#utils/ui/format.js';
 
@@ -92,15 +93,18 @@ export function filenameProblem(filename) {
 /**
  * Body of `POST /api/render` (and `/api/render/plan`).
  * @param {{ projectId: string, adaptationId: string, doc: any, preset: string,
- *   range: RangeChoice, filename: string }} options
+ *   range: RangeChoice, filename: string, subtitles?: string }} options -
+ *   `subtitles`: the subtitle file to save beside the video ('', `srt` or
+ *   `vtt`); it is asked for only when the document has captions to write
  * @returns {Record<string, any>}
  */
-export function renderRequest({ projectId, adaptationId, doc, preset, range, filename }) {
+export function renderRequest(options) {
+  const { projectId, adaptationId, doc, preset, range, filename, subtitles = '' } = options;
   const body = { projectId, adaptationId, edl: doc, preset };
   if (range.id === 'loop') body.range = { start: range.start, end: range.end };
   const name = filename.trim().replace(/\.mp4$/i, '');
   if (name) body.filename = name;
-  return body;
+  return withSubtitles(body, subtitles, captionedCount(doc));
 }
 
 /**

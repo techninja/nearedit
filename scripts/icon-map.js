@@ -95,6 +95,7 @@ export const ICON_MAP = {
   ratio: 'ratio',
   'file-text': 'file-text',
   'scan-search': 'scan',
+  'user-round': 'person',
   zap: 'zap',
   sun: 'sun',
   moon: 'moon',

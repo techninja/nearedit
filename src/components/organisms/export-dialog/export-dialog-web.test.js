@@ -43,6 +43,10 @@ describe('export-dialog and web clips', () => {
       '1 web clip is not ready: 1 not recorded yet.',
     );
     expect(el.querySelector('.export-dialog-start').disabled).to.equal(false);
+    // The note comes before the options, where it is seen without scrolling.
+    const options = el.querySelector('export-options');
+    const after = note.compareDocumentPosition(options) & Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(after).to.equal(Node.DOCUMENT_POSITION_FOLLOWING);
     note.querySelector('.export-dialog-record').click();
     await settle(300);
     expect(api.calls.some((call) => call.path === '/api/web/record')).to.equal(true);

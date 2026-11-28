@@ -100,7 +100,9 @@ function done(result) {
 /**
  * @param {ExportState} state
  * @param {import('#utils/ui/exportPlan.js').RangeChoice[]} ranges
- * @param {any} [note] - Template shown above the summary (web clips that need recording)
+ * @param {any} [note] - Templates shown first, above the options, where they
+ *   are seen without scrolling: what would not render as it looks (web clips
+ *   that need recording, cutouts that are not made)
  * @returns {import('hybrids').UpdateFunctionWithMethods<any>}
  */
 export function exportBody(state, ranges, note = html``) {
@@ -112,13 +114,15 @@ export function exportBody(state, ranges, note = html``) {
           <strong>The render failed</strong><span>${state.error}</span>
         </p>`
       : html``}
+    ${note}
     <export-options
       presets="${state.presets}"
       preset="${state.preset}"
       ranges="${ranges}"
       rangeId="${state.rangeId}"
       filename="${state.filename}"
+      subtitles="${state.subtitles}"
     ></export-options>
-    ${note} ${summary(state)}
+    ${summary(state)}
   `;
 }

@@ -71,7 +71,7 @@ export const CUTOUT_COMMANDS = [
   change('cutout.toggle', 'Cut out person', ['Alt+P'], toggleCutout, {
     enabled: hasSubject,
     pressed: selectionIsCutOut,
-    icon: 'scan',
+    icon: 'person',
   }),
   change('cutout.makeAll', 'Make all missing cutouts', [], () => void makeWaiting(), {
     enabled: hasWaitingCutouts,

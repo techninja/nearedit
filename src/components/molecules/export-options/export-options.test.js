@@ -1,5 +1,4 @@
 import { fixture, expect } from '@open-wc/testing';
-import { setSubtitleFormat } from '#utils/captionsUi/exportSubtitles.js';
 import { talkDoc } from '#utils/captionsUi/testkit.js';
 import { loadDoc } from '#utils/editor/session.js';
 import { setCaptions } from '#utils/edl/index.js';
@@ -62,9 +61,8 @@ describe('export-options', () => {
   });
 
   it('offers a subtitle file when the timeline has captions, and announces the choice', async () => {
-    setSubtitleFormat('vtt');
     loadDoc(setCaptions(talkDoc(), ['a']));
-    const { el, changes } = await mount();
+    const { el, changes } = await mount({ subtitles: 'vtt' });
     const radios = [...el.querySelectorAll('input[name="subtitles"]')];
     expect(radios.map((r) => [r.value, r.checked, r.disabled])).to.deep.equal([
       ['', false, false],
@@ -77,13 +75,21 @@ describe('export-options', () => {
     radios[1].checked = true;
     radios[1].dispatchEvent(new Event('change', { bubbles: true }));
     expect(changes).to.deep.include(['subtitles', 'srt']);
-    setSubtitleFormat('');
+  });
+
+  it('has no subtitle file chosen until it is given one', async () => {
+    loadDoc(setCaptions(talkDoc(), ['a']));
+    const { el } = await mount();
+    const radios = [...el.querySelectorAll('input[name="subtitles"]')];
+    expect(radios.map((r) => r.checked)).to.deep.equal([true, false, false]);
+    el.subtitles = 'srt';
+    await frame();
+    expect(radios.map((r) => r.checked)).to.deep.equal([false, true, false]);
   });
 
   it('shows the subtitle choice without offering it while nothing is captioned', async () => {
-    setSubtitleFormat('srt');
     loadDoc(talkDoc());
-    const { el } = await mount();
+    const { el } = await mount({ subtitles: 'srt' });
     const radios = [...el.querySelectorAll('input[name="subtitles"]')];
     expect(radios.map((r) => [r.checked, r.disabled])).to.deep.equal([
       [true, true],
@@ -93,6 +99,5 @@ describe('export-options', () => {
     expect(el.querySelector('.export-options-subtitles-hint').textContent).to.contain(
       'Inspector ▸ Captions',
     );
-    setSubtitleFormat('');
   });
 });

@@ -15,8 +15,8 @@ import { allClips } from '#utils/edl/query.js';
  * @property {string} clipId - Focus clip (it plays `file`); '' without one
  * @property {'pinned'|'selection'|'cursor'|'none'} from
  * @property {string} note - Why there is no file, when a clip without
- *   speech is selected: `title` (also for a brand element), `image`,
- *   `generator` or `placeholder`
+ *   speech is selected: what the clip is — `title`, `element` (a brand
+ *   element), `image`, `generator` or `placeholder`
  */
 
 /**
@@ -43,9 +43,7 @@ export function resolveSubject(context) {
     if (pick)
       return { file: pick.clip.sourceFile, clipId: pick.clip.clipId, from: 'selection', note: '' };
     const { clip, track } = selected[0];
-    // A brand element is words already, as a title is: there is nothing to transcribe.
-    const kind = clipKind(clip, track);
-    return { file: '', clipId: '', from: 'selection', note: kind === 'element' ? 'title' : kind };
+    return { file: '', clipId: '', from: 'selection', note: clipKind(clip, track) };
   }
   const under = refs.filter(
     ({ clip }) => cursor >= clip.timelineStart && cursor < clip.timelineEnd,

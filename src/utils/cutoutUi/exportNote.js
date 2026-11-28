@@ -86,7 +86,7 @@ export function cutoutExportNote(doc, jobs) {
               disabled="${!note.canMake}"
               onclick="${handleMake}"
             >
-              <app-icon name="scan" size="sm"></app-icon> ${note.action}
+              <app-icon name="person" size="sm"></app-icon> ${note.action}
             </button>
           </span>`}
     </div>

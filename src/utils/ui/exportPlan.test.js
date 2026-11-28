@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createClip, createEdl } from '#utils/edl/factory.js';
+import { setCaptions } from '#utils/edl/index.js';
 import { defaultFilename, filenameProblem, loopRange } from './exportPlan.js';
 import { rangeChoices, renderRequest, summaryText } from './exportPlan.js';
 
@@ -90,6 +91,22 @@ describe('renderRequest', () => {
       'teaser',
     );
     assert.equal('filename' in renderRequest({ ...base, range: all, filename: '  ' }), false);
+  });
+
+  it('asks for the chosen subtitle file when the timeline has captions to save', () => {
+    const captioned = setCaptions(doc, ['c']);
+    const ask = (/** @type {any} */ edl, /** @type {any} */ subtitles) =>
+      renderRequest({ ...base, doc: edl, range: all, filename: '', subtitles });
+    assert.equal(ask(captioned, 'srt').subtitles, 'srt');
+    assert.equal(ask(captioned, 'vtt').subtitles, 'vtt');
+    assert.equal(ask(captioned, 'vtt').edl, captioned);
+    assert.equal('subtitles' in ask(captioned, ''), false, 'none chosen');
+    assert.equal('subtitles' in ask(captioned, 'docx'), false, 'not a subtitle file');
+    assert.equal('subtitles' in ask(doc, 'srt'), false, 'a remembered choice, nothing captioned');
+    assert.equal(
+      'subtitles' in renderRequest({ ...base, doc: captioned, range: all, filename: '' }),
+      false,
+    );
   });
 });
 

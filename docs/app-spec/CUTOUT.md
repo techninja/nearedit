@@ -279,8 +279,8 @@ themselves.
 
 Select footage on a video track and the inspector shows **Cut out
 person** (not for stills, titles, generators, sound or web recordings).
-The command *Cut out person* (`Alt+P`, `cutout.toggle`) switches it for the
-selection and opens the inspector; *Make all missing cutouts*
+The command *Cut out person* (`Alt+P`, `cutout.toggle`, also in a clip's
+right-click menu) switches it for the selection and opens the inspector; *Make all missing cutouts*
 (`cutout.makeAll`) retries whatever is held up. The interface is
 `src/utils/cutoutUi/` with `<cutout-inspector>`, `<cutout-place>` and
 `<cutout-watch>`.

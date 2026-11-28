@@ -332,12 +332,16 @@ document in order (each entry also carries the track's `trackId`, `muted`,
 markers through, and sends locked tracks empty, since a replace never
 touches them.
 
-Two things to know about how such a result is merged today
-(`applyDirectorResult`): tracks are matched by row and an existing track
-keeps its own name, so when a track is added in front (captions, a
-cutaway) the names stay with the rows while the clips move down one; and
-every clip of a fragment gets a new id, so a selection does not survive.
-The picture is right either way.
+How such a result is merged (`applyDirectorResult`): each row keeps the
+existing track it names by `trackId`, a row without one is a new track,
+and a clip id that is free in the document is kept — so a track's
+settings and the selection survive. A clip whose linked partner sits on a
+**locked track** still names it, though the partner is not in the result.
+The merge keeps that link (`src/utils/edl/lockedLinks.js`) by the
+editor's rule for locked tracks: it ends only where the clip was deleted
+or cut up — `remove_silence` lets it go for a clip it cuts, and says the
+locked track may be out of step. An action that finds nothing to change
+therefore changes nothing, and leaves no undo step.
 
 **`remove_silence`** (`inplace/removeSilence.js`). Targets: the selected
 clips, else every clip with sound whose file has word timestamps (or, for
@@ -382,12 +386,23 @@ track), in one of two ways — `params.as`:
   `clean`; a preset's own name wins, then the preset most words point at);
   else, with `useLlm` and a request that names none, the language model's
   choice — it is shown the five presets and may only answer with one of
-  their names, and any failure leaves the style alone. A look that was
-  chosen travels as `document.captions.style` and is set in the same step
-  (`applyDirected`); the look the timeline already has is kept as it is,
-  fine-tuning included. The summary says how many clips were switched on
-  and in which look; `notes` name each file that has no transcript (it is
-  not switched on), what was already on, and how the request was read.
+  their names, and any failure is as if no look had been asked for. With
+  **no look asked for** (`inplace/captionsStyle.js`) a timeline that has a
+  caption style of its own keeps it — the plain default too, once somebody
+  chose it — and one that has none follows the project's
+  [brand kit](./DIRECTOR-BRAND.md#the-caption-style-of-a-kit):
+  `captionStyleOf(kit)`, with the kit's own font files the style is set in
+  as `document.fonts`. That happens once: the style is the timeline's own
+  from then on. A style that changes travels as `document.captions.style`
+  and is set in the same step (`applyDirected`), only when some clip has
+  captions on; a look that is asked for and is the one the timeline
+  already has is kept as it is, fine-tuning included. The summary says how
+  many clips were switched on and in which look ("Boxed, from the brand
+  kit" when it is the kit's); `notes` name each file that has no transcript
+  or sits on a locked track — alone or as half of a linked pair — (it is
+  not switched on, and not counted), what was already on, and why this
+  look: how the request was read, that the timeline kept its own, or which
+  kit it follows.
 - **`phrases`** makes a title clip per phrase, as the action did before
   captions were part of the document: a new phrase starts at a pause over
   0.6 s, at the character or duration limit, after a sentence end, or

@@ -211,7 +211,7 @@ edit-plan format and the track layout it produces are described in
 | `score` | optional | Music written for the timeline by NearEdit's own synth — a style, a tempo that makes the span whole bars, sections on the markers, titles and cuts — rendered inside the job and added as one [music clip](./MUSIC.md), ducked under speech; needs the current `edl` ([DIRECTOR-SCORE.md](./DIRECTOR-SCORE.md)) |
 | `remove_silence` | no | Tighten clips using word timestamps or detected silences |
 | `beat_sync` | no | Move cuts onto the beats of a music clip |
-| `add_captions` | optional | Captions for the speech on the timeline: switched on for the clips that speak and drawn word by word ([CAPTIONS.md](./CAPTIONS.md)), in a look read from the prompt — or, with `params.as: "phrases"`, title clips of readable phrases |
+| `add_captions` | optional | Captions for the speech on the timeline: switched on for the clips that speak and drawn word by word ([CAPTIONS.md](./CAPTIONS.md)), in a look read from the prompt, else the brand kit's — or, with `params.as: "phrases"`, title clips of readable phrases |
 | `brand` | optional | "Apply brand": the project's brand kit on the open timeline — intro, outro, logo, names, stingers, caption style; idempotent ([DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md)) |
 
 `mode` says where the fragment goes: `replace` (whole timeline), `append`,

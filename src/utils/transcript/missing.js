@@ -13,6 +13,8 @@
 
 const NOTES = {
   title: 'Titles are text already — there is nothing to transcribe.',
+  element:
+    'A brand element is drawn by the brand kit — its words are typed in the Inspector, and there is nothing to transcribe.',
   image: 'A still image has no sound to transcribe.',
   placeholder: 'A placeholder has no media yet.',
 };

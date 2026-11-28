@@ -23,6 +23,7 @@ const ICONS = {
   transcribe: 'mic',
   tag: 'image',
   web: 'web',
+  cutout: 'person',
   beats: 'beat',
   scenes: 'film',
   silence: 'waveform',
