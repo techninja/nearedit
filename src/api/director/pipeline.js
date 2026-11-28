@@ -8,6 +8,7 @@
 
 import { assemblePlan } from './assemble/index.js';
 import { assembleOptions } from './assemble/options.js';
+import { kitOf } from './brand/kit.js';
 import { DirectorError } from './errors.js';
 import { describePlan } from './plan/describe.js';
 import { resolvePlan } from './plan/resolve.js';
@@ -55,7 +56,8 @@ export function brollPool(media, plan) {
  * @throws {DirectorError} 422 when no pick names a file of this project
  */
 export function assembleFragment(plan, ctx, options = {}) {
-  const resolved = resolvePlan(plan, ctx.media);
+  const kit = kitOf(ctx);
+  const resolved = resolvePlan(plan, ctx.media, kit);
   if (!resolved.picks.length)
     throw new DirectorError('The plan uses no file from this project', {
       status: 422,
@@ -63,6 +65,7 @@ export function assembleFragment(plan, ctx, options = {}) {
     });
   const opts = assembleOptions(ctx.format, ctx.directive.params, {
     pool: brollPool(ctx.media, resolved),
+    kit,
     ...options,
   });
   return { ...assemblePlan(resolved, opts), plan: describePlan(resolved) };

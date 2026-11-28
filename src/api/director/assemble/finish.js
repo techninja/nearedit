@@ -1,13 +1,13 @@
 /**
- * Finishing passes of the assembler: the music bed, titles and markers.
+ * Finishing passes of the assembler: the music bed and the markers. What a
+ * plan puts on screen is `elements.js`.
  * @module api/director/assemble/finish
  */
 
 import { MUSIC_LEVEL_ALONE, MUSIC_LEVEL_UNDER_SPEECH } from '#utils/director/layout.js';
-import { wrapLines } from '#utils/director/phrases.js';
 import { floorFrames, formatSeconds, toFrames } from '#utils/director/snap.js';
 import { newId } from '#utils/edl/factory.js';
-import { mediaClip, titleClip } from './clips.js';
+import { mediaClip } from './clips.js';
 
 /**
  * @typedef {import('./fragment.js').Fragment} Fragment
@@ -46,52 +46,6 @@ export function addMusic(fragment, music, opts, notes) {
     notes.push(
       `${music.media.filename} is shorter than the edit — the music ends at ${formatSeconds(seconds)}.`,
     );
-}
-
-/**
- * Text style for a title, sized to the output frame.
- * @param {'opening'|'lower'} kind
- * @param {{ width: number, height: number }} format
- * @returns {{ text: object, transform: object, fade: number, lineChars: number }}
- */
-export function titleStyle(kind, format) {
-  const base = Math.min(format.height, format.width * 1.2);
-  const fontSize = Math.round(base * (kind === 'opening' ? 0.09 : 0.05));
-  const outlineWidth = Math.max(2, Math.round(fontSize / 14));
-  return {
-    text: { fontSize, bold: true, outlineColor: '#000000', outlineWidth },
-    transform: kind === 'opening' ? {} : { y: Math.round(format.height * 0.33) },
-    fade: kind === 'opening' ? 0.5 : 0.3,
-    lineChars: Math.max(8, Math.floor((format.width * 0.9) / (fontSize * 0.55))),
-  };
-}
-
-/**
- * Put the opening title and the per-pick titles on the Titles track.
- * @param {Fragment} fragment
- * @param {string} opening - Opening title text, '' for none
- * @param {SpineItem[]} items
- * @param {AssembleOptions} opts
- * @param {string[]} notes
- */
-export function addTitles(fragment, opening, items, opts, notes) {
-  const { fps } = opts;
-  const totalF = fragment.endF();
-  const place = (/** @type {string} */ text, /** @type {'opening'|'lower'} */ kind, atF, lenF) => {
-    const style = titleStyle(kind, opts);
-    fragment.add('titles', titleClip(wrapLines(text, style.lineChars), { atF, lenF }, fps, style));
-  };
-  if (opening && totalF >= 2) place(opening, 'opening', 0, Math.min(toFrames(4, fps), totalF));
-  const minF = toFrames(1, fps);
-  for (const item of items) {
-    if (!item.pick.title) continue;
-    // Start after any title already showing, as long as a second of the pick is left.
-    const busy = fragment.spans('titles').filter(([s, e]) => e > item.startF && s < item.endF);
-    const atF = Math.max(item.startF, ...busy.map(([, e]) => e));
-    const lenF = Math.min(toFrames(3.5, fps), item.endF - atF);
-    if (lenF >= minF) place(item.pick.title, 'lower', atF, lenF);
-    else notes.push(`The title “${item.pick.title}” did not fit beside another title — left out.`);
-  }
 }
 
 /**

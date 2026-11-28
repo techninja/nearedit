@@ -7,6 +7,8 @@
  * @module utils/director/planSchema
  */
 
+import { ITEM_EXAMPLE, ITEM_SCHEMA, MAX_ITEMS } from './brand/items.js';
+
 /**
  * - `primary`: picture with its own sound (someone talking on camera)
  * - `narration`: only the voice is used; `visuals` supply the picture
@@ -63,6 +65,8 @@ export const PLAN_SCHEMA = {
       },
     },
     picks: { type: 'array', minItems: 1, maxItems: 400, items: PICK_SCHEMA },
+    // Brand elements the plan names, each with a pick of the plan or at a time.
+    elements: { type: 'array', maxItems: MAX_ITEMS, items: ITEM_SCHEMA },
   },
 };
 
@@ -76,4 +80,5 @@ export const PLAN_EXAMPLE = {
     { file: 'm1', role: 'narration', segments: [9, 12], visuals: [{ file: 'm2' }, { file: 'm4' }] },
     { file: 'm3', role: 'broll', start: 4, end: 9, title: 'Golden hour' },
   ],
+  elements: [ITEM_EXAMPLE],
 };

@@ -10,7 +10,11 @@ import { formatSeconds } from '#utils/director/snap.js';
 import { DirectorError } from '../errors.js';
 import { autoBroll } from './autoBroll.js';
 import { beatFrames } from './beats.js';
-import { addMusic, addTitles, pickMarkers } from './finish.js';
+import { timelineDuration } from '#utils/edl/query.js';
+import { dressFragment } from '../brand/dress.js';
+import { kitOf } from '../brand/kit.js';
+import { wantedElements } from './elements.js';
+import { addMusic, pickMarkers } from './finish.js';
 import { createFragment } from './fragment.js';
 import { createStats } from './options.js';
 import { layoutSpine } from './spine.js';
@@ -97,20 +101,27 @@ export function assemblePlan(plan, opts) {
     if (item.pick.visuals.length) layoutVisuals(fragment, item, opts, beatsF, stats);
   if (opts.autoBroll) autoBroll(fragment, items, opts, beatsF, stats);
   addMusic(fragment, plan.music, opts, stats.notes);
-  addTitles(fragment, plan.title, items, opts, stats.notes);
+  // What the plan puts on screen is the brand's: its title, its lower thirds, the elements it names.
+  const kit = kitOf(opts);
+  const facts = { kit, fps: opts.fps, total: fragment.endF() / opts.fps };
+  const wanted = wantedElements(plan, items, facts, stats.notes);
+  const dressed = dressFragment(fragment.toTracks(), pickMarkers(items, opts.fps), wanted, {
+    ...{ kit, fps: opts.fps, width: opts.width, height: opts.height },
+  });
+  stats.notes.push(...dressed.notes);
 
-  const tracks = fragment.toTracks();
-  const seconds = fragment.endF() / opts.fps;
-  const bits = [`${countClips(tracks)} clips`, formatSeconds(seconds)];
+  const { tracks } = dressed;
+  const seconds = timelineDuration(tracks);
+  const bits = [`${countClips(tracks) - dressed.placed} clips`, formatSeconds(seconds)];
   if (plan.music) {
     const bpm = plan.music.media.bpm ? ` at ${Math.round(plan.music.media.bpm)} BPM` : '';
     bits.push(stats.beatCuts ? `cut on the beat${bpm}` : `music bed${bpm}`);
   }
-  const titles = fragment.slots.titles.length;
-  if (titles) bits.push(titles === 1 ? '1 title' : `${titles} titles`);
+  const shown = dressed.placed;
+  if (shown) bits.push(shown === 1 ? '1 brand element' : `${shown} brand elements`);
   return {
     tracks,
-    markers: pickMarkers(items, opts.fps),
+    markers: dressed.markers,
     summary: bits.join(', '),
     notes: [...plan.notes, ...stats.notes, ...timingNotes(stats, plan, opts, beatsF)],
     seconds,

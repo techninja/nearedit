@@ -101,7 +101,14 @@ export function salvagePlan(reply) {
   });
   if (!picks.length) return null;
   const plan = { ...best, picks };
-  for (const key of ['title', 'rationale', 'music']) {
+  if (Array.isArray(plan.elements)) {
+    const kept = plan.elements.filter((item) => validatePlan({ picks, elements: [item] }));
+    if (kept.length < plan.elements.length) {
+      dropped.push(`${plan.elements.length - kept.length} element item(s) could not be read`);
+    }
+    plan.elements = kept;
+  }
+  for (const key of ['title', 'rationale', 'music', 'elements']) {
     if (plan[key] === undefined || validatePlan({ picks, [key]: plan[key] })) continue;
     dropped.push(`${key}: ${explain(validatePlan.errors)[0]}`);
     delete plan[key];

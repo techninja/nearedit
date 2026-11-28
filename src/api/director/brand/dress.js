@@ -22,7 +22,6 @@ import { createEdl, createTrack, snapToFrame, timelineDuration } from '#utils/ed
  * @property {number} time - Fragment seconds
  * @property {number} [until] - Where what it goes with ends
  * @property {number|null} [duration] - Seconds asked for
- * @property {boolean} [whole] - An overlay for the whole piece (the bug)
  */
 
 /** The shortest an overlay is worth showing, seconds. */
@@ -82,16 +81,14 @@ export function dressFragment(tracks, markers, wanted, { kit, fps, width, height
     if (made) doc = made.edl;
     if (made) placed++;
   }
-  const overlays = wanted.filter((item) => item.kind === 'overlay');
-  for (const item of overlays.sort((a, b) => Number(b.whole || 0) - Number(a.whole || 0))) {
+  for (const item of wanted.filter((entry) => entry.kind === 'overlay')) {
     const design = kit.elements[item.id];
     let start = snapToFrame(later(item.time), fps);
-    const until = item.whole ? end : Number.isFinite(item.until) ? later(item.until) : end;
+    const until = Number.isFinite(item.until) ? later(item.until) : end;
     const busy = blocker(track(front), start, start + SHORTEST);
     if (busy) start = busy.timelineEnd;
-    const room = until - start;
-    const asked = item.whole ? room : item.duration || Number(design?.duration) || 5;
-    const length = snapToFrame(Math.min(asked, room), fps);
+    const asked = item.duration || Number(design?.duration) || 5;
+    const length = snapToFrame(Math.min(asked, until - start), fps);
     const next = blocker(track(front), start, start + length);
     const fits = next ? next.timelineStart - start : length;
     if (fits < SHORTEST - 1e-6) {

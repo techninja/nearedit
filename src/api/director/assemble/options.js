@@ -25,6 +25,8 @@ import { SCENE_TOLERANCE } from './usable.js';
  * @property {number} stillDuration - Length of a still, seconds
  * @property {number} sceneTolerance - A picture cut this close to a shot boundary moves onto it
  * @property {MediaInfo[]} pool - Picture material auto b-roll may draw on
+ * @property {import('#utils/brand/types.js').Kit} [kit] - The brand kit whose
+ *   elements draw what the plan puts on screen; the built-in kit without one
  */
 
 /** Shot lengths per pacing, in seconds. */

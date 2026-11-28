@@ -7,6 +7,7 @@
  * @module api/director/plan/resolve
  */
 
+import { resolveItem } from '#utils/director/brand/items.js';
 import { resolvePart, segmentRuns } from './parts.js';
 
 /**
@@ -19,6 +20,8 @@ import { resolvePart, segmentRuns } from './parts.js';
  * @property {string} rationale
  * @property {{ media: MediaInfo, start: number, volume: number|null } | null} music
  * @property {ResolvedPick[]} picks
+ * @property {NonNullable<ReturnType<typeof resolveItem>>[]} [elements] - The
+ *   brand elements the plan names, as the kit has them
  * @property {string[]} notes
  */
 
@@ -83,9 +86,11 @@ function resolveVisuals(visuals, media, label, notes) {
  * Resolve a plan against the project's media.
  * @param {any} plan - Valid against PLAN_SCHEMA
  * @param {MediaInfo[]} media
+ * @param {import('#utils/brand/types.js').Kit} [kit] - The brand kit the
+ *   plan's element items name elements of; without one they are left out
  * @returns {ResolvedPlan}
  */
-export function resolvePlan(plan, media) {
+export function resolvePlan(plan, media, kit) {
   const notes = [];
   /** @type {ResolvedPlan} */
   const out = {
@@ -108,6 +113,14 @@ export function resolvePlan(plan, media) {
     if (!m) notes.push(`Music: unknown file "${plan.music.file}" — dropped.`);
     else if (!m.hasAudio) notes.push(`Music: ${m.filename} has no sound — dropped.`);
     else setMusic(m, plan.music.start, plan.music.volume);
+  }
+
+  if (kit && Array.isArray(plan.elements)) {
+    out.elements = plan.elements.flatMap((/** @type {any} */ item) => {
+      const found = resolveItem(item, kit);
+      if (!found) notes.push(`The brand kit has no element “${item.element}” — left out.`);
+      return found ? [found] : [];
+    });
   }
 
   plan.picks.forEach((/** @type {any} */ pick, /** @type {number} */ i) => {

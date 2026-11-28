@@ -30,6 +30,14 @@ export function describePlan(plan) {
     ...(plan.music && {
       music: { ...part({ ...plan.music, end: null, duration: null, basis: 'times' }) },
     }),
+    ...(plan.elements?.length && {
+      elements: plan.elements.map((item) => ({
+        element: item.id,
+        slots: item.slots,
+        ...(item.pick !== null && { pick: item.pick }),
+        ...(item.at !== null && { at: item.at }),
+      })),
+    }),
     picks: plan.picks.map((p) => ({
       ...part(p),
       role: p.role,

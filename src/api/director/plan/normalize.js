@@ -6,10 +6,13 @@
  * @module api/director/plan/normalize
  */
 
+import { MAX_ITEMS, normalizeItem } from '#utils/director/brand/items.js';
 import { ROLES } from '#utils/director/planSchema.js';
 import { toSeconds, toSegments } from './coerce.js';
 
 const PICKS_KEYS = ['picks', 'segments', 'clips', 'sequence', 'timeline', 'shots', 'edits'];
+/** Where a plan may keep the brand elements it names. */
+const ELEMENT_KEYS = ['elements', 'graphics', 'brand'];
 const PART_KEYS = {
   file: ['file', 'source', 'media', 'handle', 'id', 'filename', 'sourceFile'],
   start: ['start', 'in', 'from', 'sourceIn', 'start_time', 'startTime'],
@@ -109,6 +112,8 @@ export function normalizePlan(parsed) {
   if (picksKey) plan.picks = raw[picksKey].map(normalizePick);
   for (const key of ['rationale', 'title'])
     if (typeof raw[key] === 'string' && raw[key].trim()) plan[key] = raw[key].trim().slice(0, 600);
+  const elements = ELEMENT_KEYS.map((key) => raw[key]).find(Array.isArray);
+  if (elements) plan.elements = elements.slice(0, MAX_ITEMS).map(normalizeItem);
   if (raw.music) {
     const music = normalizePart(raw.music, { file: PART_KEYS.file, start: PART_KEYS.start });
     if (music && typeof music === 'object') {
