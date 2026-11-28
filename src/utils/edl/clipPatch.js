@@ -21,8 +21,11 @@ const RELATIONS = ['linkedClipId', 'groupId'];
  * musicClip.js and elementClip.js only.
  */
 const DESCRIPTIONS = ['web', 'music', 'element'];
-/** A clip's captions are switched and written by captions.js only, its cutout by cutout.js. */
-const SPOKEN = ['captions', 'cutout'];
+/**
+ * A clip's captions are switched and written by captions.js only, its
+ * cutout by cutout.js, its credit by credit.js (`setCredit`).
+ */
+const SPOKEN = ['captions', 'cutout', 'credit'];
 /** A web or music clip's recording and its window belong to those operations too. */
 const RECORDED = ['sourceFile', 'sourceIn'];
 
@@ -45,9 +48,12 @@ export function patchClip(clip, track, patch, enums) {
   if (merged === clip) return clip;
   // Real media cannot start before its first frame; any other source can.
   const sourceIn = isTimed(merged, track) ? Math.max(0, merged.sourceIn) : merged.sourceIn;
-  const resourced = sourceIn !== clip.sourceIn || merged.sourceFile !== clip.sourceFile;
-  if (!resourced) return merged;
-  return { ...merged, sourceIn, sourceOut: sourceIn + (merged.timelineEnd - merged.timelineStart) };
+  const replaced = merged.sourceFile !== clip.sourceFile;
+  if (sourceIn === clip.sourceIn && !replaced) return merged;
+  // A credit is for the file the clip played: another file does not inherit it.
+  const { credit, ...rest } = merged;
+  const next = replaced && credit ? rest : merged;
+  return { ...next, sourceIn, sourceOut: sourceIn + (merged.timelineEnd - merged.timelineStart) };
 }
 
 /**

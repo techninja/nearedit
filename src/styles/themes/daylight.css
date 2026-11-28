@@ -22,9 +22,9 @@
   --color-timeline-lane: #e9e6e2;
   --color-timeline-lane-alt: #e3e0db;
   --color-timeline-grid: #cfcbc5;
-  --color-playhead: #ef4444;
+  --color-playhead: #e23c3c;
   --color-cursor: #1c1b19;
-  --color-selection: #f59e0b;
+  --color-selection: #92400e;
   --color-snap: #06b6d4;
   --color-marker: #f97316;
   --color-clip-video: #3b82f6;
@@ -34,7 +34,7 @@
   --color-clip-generator: #ec4899;
   --color-clip-web: #0891b2;
   --color-clip-music: #818cf8;
-  --color-clip-element: #9aa987;
+  --color-clip-element: #7fb5ad;
   --color-clip-placeholder: #8a8a8a;
   --color-clip-text: #111;
   --color-primary-hover: #1f54c8;

@@ -28,6 +28,7 @@ export default {
     lane: '#171717',
     laneAlt: '#141414',
     grid: '#2b2b2b',
+    selection: '#ffd84d',
     clipText: '#111111',
   },
 };

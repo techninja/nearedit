@@ -8,6 +8,7 @@
 import { cleanElement } from '#utils/brand/field.js';
 import { cleanCutout } from '#utils/cutout/block.js';
 import { cleanMusic } from '#utils/music/field.js';
+import { cleanCredit } from '#utils/stock/credit.js';
 import { cleanWeb, fitWindow } from '#utils/web/field.js';
 import { cleanCaptions } from './captionField.js';
 import { clipKind } from './clipKind.js';
@@ -52,7 +53,8 @@ function migrateKenBurns(kenBurns, raw) {
  *   that is neither, read as `cleanElement` reads it; such a clip names no
  *   file. A `captions` block is kept on a clip that plays video or sound,
  *   when captions are on or the clip carries words of its own, and a
- *   `cutout` block on a clip that plays a video file (`cleanCutout`).
+ *   `cutout` block on a clip that plays a video file (`cleanCutout`). A
+ *   `credit` is kept on any clip, as `cleanCredit` reads it.
  * - Timeline times snap to the frame grid. A missing `timelineEnd` is derived
  *   from the source range; a clip that starts before 0 is trimmed to 0.
  * - Every clip plays at speed 1 (invariant 1). Video/audio: when the
@@ -132,5 +134,7 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
   );
   const placed = { ...clip, timelineStart, timelineEnd, sourceIn, sourceOut, fadeIn, fadeOut };
   const spoken = captions ? { ...placed, captions } : placed;
-  return cutout ? { ...spoken, cutout } : spoken;
+  const credit = cleanCredit(raw.credit);
+  const cut = cutout ? { ...spoken, cutout } : spoken;
+  return credit ? { ...cut, credit } : cut;
 }

@@ -35,7 +35,7 @@ function pathList(raw) {
  *   port: number, host: string, auth: { user: string, password: string },
  *   dataDir: string, rendersDir: string, previewsDir: string,
  *   transcodeDir: string, devMediaDir: string, registryPath: string,
- *   kitsDir: string,
+ *   kitsDir: string, themesDir: string,
  *   globalMediaPaths: string[], browseRoots: string[],
  *   llm: ProviderConfig, vision: ProviderConfig,
  *   transcription: ProviderConfig & { language: string, whisperCppBin: string,
@@ -63,6 +63,8 @@ export function getConfig() {
     registryPath: resolve(dataDir, 'registry.json'),
     // The library of brand kits: one folder a kit (BRAND-API.md § Storage)
     kitsDir: resolve(env.NEAREDIT_KITS_DIR || resolve(dataDir, 'kits')),
+    // The library of colour themes: one Design Tokens file a theme (THEMES.md § The library)
+    themesDir: resolve(env.NEAREDIT_THEMES_DIR || resolve(dataDir, 'themes')),
     devMediaDir: resolve(env.NEAREDIT_MEDIA_DIR || resolve(process.cwd(), 'media')),
     globalMediaPaths: pathList(env.GLOBAL_MEDIA_PATHS),
     browseRoots: pathList(env.BROWSE_ROOTS).length ? pathList(env.BROWSE_ROOTS) : [homedir()],

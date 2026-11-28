@@ -7,6 +7,7 @@
 
 import { cleanFonts, sameFonts } from '#utils/brand/fontTable.js';
 import { checkCutout } from '#utils/cutout/block.js';
+import { checkCredit } from '#utils/stock/credit.js';
 import { checkCaptions, checkDocumentCaptions } from './captionField.js';
 import { clipKind } from './clipKind.js';
 import { BACKGROUND_COLOR, EDL_VERSION } from './defaults.js';
@@ -98,6 +99,7 @@ export function validateEdl(edl, opts = {}) {
       if (isObject(clip)) {
         checkCaptions(clip, track, at, report);
         checkCutout(clip.cutout, `${at}.cutout`, report);
+        checkCredit(clip.credit, `${at}.credit`, report);
         if (clip.cutout !== undefined && clipKind(clip, track) !== 'video')
           report(`${at}.cutout`, 'only a clip that plays a video file has a cutout');
         clips.set(clip.clipId, { clip, at });

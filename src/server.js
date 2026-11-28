@@ -24,6 +24,7 @@ import { pickerRouter } from './api/picker.js';
 import { previewsRouter } from './api/previews.js';
 import { projectsRouter } from './api/projects.js';
 import { renderRouter } from './api/render.js';
+import { themesRouter } from './api/themes.js';
 import { transcodeRouter } from './api/transcode.js';
 import { webRouter } from './api/web.js';
 import { attachWebSocket } from './api/ws.js';
@@ -60,6 +61,7 @@ const routers = [
   musicRouter,
   cutoutRouter,
   kitsRouter,
+  themesRouter,
 ];
 for (const router of routers) app.use('/api', router);
 app.use('/api', apiNotFound);

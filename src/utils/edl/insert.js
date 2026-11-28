@@ -3,6 +3,7 @@
  * @module utils/edl/insert
  */
 
+import { creditFromSource } from '#utils/stock/credit.js';
 import { createClip, defaultText, newId } from './factory.js';
 import { timelineDuration } from './query.js';
 import { tracksOfType } from './immutable.js';
@@ -38,10 +39,11 @@ import { fontEnums } from './fontEnums.js';
  * Put a media item on the timeline. A video with sound becomes a video clip
  * plus a linked audio clip; an audio file goes to an audio track; an image
  * gets a duration of its own (5 s by default) and a source window that
- * starts at 0.
+ * starts at 0. An item that says where it came from (`source` — a found
+ * picture, STOCK.md) gives its clips their credit.
  * @param {Edl} edl
  * @param {{ filePath: string, type: string, duration?: number, hasAudio?: boolean,
- *   filename?: string }} item - A MediaItem (API.md)
+ *   filename?: string, source?: object|null }} item - A MediaItem (API.md)
  * @param {InsertMediaOptions} [opts]
  * @returns {Edl} Unchanged for items that cannot be placed (e.g. text files)
  */
@@ -79,9 +81,11 @@ export function insertMedia(edl, item, opts = {}) {
     : snap(doc, timelineDuration(targets));
   if (opts.ripple) doc = rippleInsert(doc, start, length);
   const ids = targets.map(() => newId('clip'));
+  const credit = creditFromSource(item.source);
   const items = targets.map((track, i) => ({
     trackId: track.trackId,
     clip: createClip({
+      ...(credit && { credit }),
       clipId: ids[i],
       linkedClipId: targets.length > 1 ? ids[1 - i] : '',
       sourceFile: item.filePath,

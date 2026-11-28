@@ -58,6 +58,9 @@
  * @property {import('#utils/cutout/types.js').CutoutBlock} [cutout] - Only
  *   on a clip that plays a video file: whether it is drawn through its
  *   matte, how, and the cutout file made for it (CUTOUT.md)
+ * @property {import('#utils/stock/credit.js').Credit} [credit] - What the
+ *   timeline owes for what the clip shows or plays: title, creator,
+ *   licence, where it is from (STOCK.md)
  */
 
 /**

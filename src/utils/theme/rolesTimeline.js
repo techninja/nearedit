@@ -86,15 +86,15 @@ export const TIMELINE_ROLES = [
  * audio, amber pictures. `[name, colour, label, what it is]`.
  */
 const KINDS = [
-  ['video', '#3b82f6', 'Video', 'Video clips'],
-  ['audio', '#10b981', 'Audio', 'Sound: the audio of a video, a recording, a tone'],
-  ['image', '#f59e0b', 'Picture', 'Still pictures'],
-  ['title', '#a855f7', 'Text', 'Titles and other text'],
-  ['generator', '#ec4899', 'Generator', 'Gradients, shapes, particles: pictures the editor makes'],
-  ['web', '#0891b2', 'Web', 'Recordings of a web page'],
-  ['music', '#818cf8', 'Music', 'Music written in the editor; the notes of its piano roll'],
-  ['element', '#9aa987', 'Brand element', 'Lower thirds, intros, the logo bug'],
-  ['placeholder', '#8a8a8a', 'Placeholder', 'A clip that is still to be filled'],
+  ['video', '#3b82f6', 'Video clips', 'Video'],
+  ['audio', '#10b981', 'Audio clips', 'Sound: the audio of a video, a recording, a tone'],
+  ['image', '#f59e0b', 'Picture clips', 'Still pictures'],
+  ['title', '#a855f7', 'Text clips', 'Titles and other text'],
+  ['generator', '#ec4899', 'Generator clips', 'Gradients, shapes, particles: what the editor draws'],
+  ['web', '#0891b2', 'Web clips', 'Recordings of a web page'],
+  ['music', '#818cf8', 'Music clips', 'Music written in the editor; the notes of its piano roll'],
+  ['element', '#7fb5ad', 'Brand elements', 'Lower thirds, intros, the logo bug'],
+  ['placeholder', '#8a8a8a', 'Placeholders', 'A clip that is still to be filled'],
 ];
 
 /** The ids of the roles that colour a clip. */

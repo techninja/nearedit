@@ -28,6 +28,8 @@ export default {
     lane: '#e9e6e2',
     laneAlt: '#e3e0db',
     grid: '#cfcbc5',
+    playhead: '#e23c3c',
+    selection: '#92400e',
     clipText: '#111111',
   },
 };

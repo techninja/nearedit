@@ -39,7 +39,7 @@ export default {
     clipGenerator: '#f472b6',
     clipWeb: '#22d3ee',
     clipMusic: '#a5b4fc',
-    clipElement: '#c5d1b5',
+    clipElement: '#9fd6cd',
     clipPlaceholder: '#b3b3b3',
     clipText: '#000000',
   },

@@ -30,10 +30,18 @@ export function idProblem(id) {
 }
 
 /**
- * @param {Record<string, any>} theme
- * @param {(path: string, message: string, level?: Problem['level']) => void} report
+ * What is wrong with a theme's fields as they were written — before
+ * anything is resolved or measured.
+ * @param {unknown} written
+ * @returns {Problem[]}
  */
-function checkFields(theme, report) {
+export function fieldProblems(written) {
+  /** @type {Problem[]} */
+  const problems = [];
+  /** @type {(path: string, message: string, level?: Problem['level']) => void} */
+  const report = (path, message, level = 'error') => void problems.push({ path, message, level });
+  if (!isPlainObject(written)) return (report('', 'a theme must be an object'), problems);
+  const theme = /** @type {Record<string, any>} */ (written);
   for (const key of Object.keys(theme).filter((name) => !FIELDS.includes(name))) {
     report(key, 'is not a field of a theme', 'warning');
   }
@@ -53,6 +61,7 @@ function checkFields(theme, report) {
     if (!roleOf(name)) report(`roles.${name}`, 'is not a role', 'warning');
     else if (!cleanColor(value)) report(`roles.${name}`, 'must be a colour: #rgb or #rrggbb');
   }
+  return problems;
 }
 
 /**
@@ -66,19 +75,13 @@ function checkFields(theme, report) {
  *   a problem is an error; `effective` is the theme as it would show
  */
 export function validateTheme(theme, opts = {}) {
-  /** @type {Problem[]} */
-  const problems = [];
-  /** @type {(path: string, message: string, level?: Problem['level']) => void} */
-  const report = (path, message, level = 'error') => void problems.push({ path, message, level });
-  if (isPlainObject(theme)) checkFields(/** @type {Record<string, any>} */ (theme), report);
-  else report('', 'a theme must be an object');
   const effective = effectiveTheme(normalizeTheme(theme), opts.find);
-  problems.push(...effective.problems);
+  const problems = [...fieldProblems(theme), ...effective.problems];
   // Contrast is measured on colours that are there: a theme with holes has other problems first.
   if (!effective.problems.some((problem) => problem.path.startsWith('roles.'))) {
     for (const pair of measure(effective.roles).filter((measured) => !measured.pass)) {
       const message = contrastMessage(pair, effective.roles);
-      report(`roles.${pair.ink}`, message, opts.strict ? 'error' : 'warning');
+      problems.push({ path: `roles.${pair.ink}`, message, level: opts.strict ? 'error' : 'warning' });
     }
   }
   return { valid: !problems.some((problem) => problem.level === 'error'), problems, effective };
