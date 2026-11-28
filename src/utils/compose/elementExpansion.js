@@ -34,17 +34,32 @@ const NOTHING = [];
 const kept = new WeakMap();
 
 /**
- * What laying an element out depends on beside its block and the output
- * size: the sizes of the pictures it shows, as this host has them now.
  * @param {any} element - A clip's `element` block
  * @param {import('./drawClip.js').FrameRun} run
- * @returns {string} '' for an element without pictures
+ * @returns {string[]} The paths of the pictures it shows in this frame's format
+ */
+function picturesOf(element, run) {
+  const { frame } = run;
+  return elementNeeds(element, formatOf({ width: frame.outWidth, height: frame.outHeight })).images;
+}
+
+/**
+ * @param {any} element
+ * @param {import('./drawClip.js').FrameRun} run
+ * @returns {boolean} True for an element whose layout waits for a picture's size
+ */
+export const showsPictures = (element, run) => picturesOf(element, run).length > 0;
+
+/**
+ * What laying an element out depends on beside its block and the output
+ * size: the sizes of the pictures it shows, as this host has them now.
+ * @param {any} element
+ * @param {import('./drawClip.js').FrameRun} run
+ * @returns {string} One size per picture; empty for one that has not arrived
  */
 export function pictureSizes(element, run) {
-  const { frame } = run;
-  const format = formatOf({ width: frame.outWidth, height: frame.outHeight });
-  return elementNeeds(element, format)
-    .images.map((path) => {
+  return picturesOf(element, run)
+    .map((path) => {
       const picture = pictureSize(run.compose.env.image(path));
       return picture.width > 0 ? `${picture.width}x${picture.height}` : '';
     })

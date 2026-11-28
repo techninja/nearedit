@@ -16,7 +16,7 @@
 import { isElementClip } from '#utils/brand/clip.js';
 import { elementBounds } from '#utils/brand/element/bounds.js';
 import { boxCorners, clipBox } from '#utils/preview/geometry.js';
-import { fontsReady, layoutHost, pictureSizes } from './elementExpansion.js';
+import { fontsReady, layoutHost, pictureSizes, showsPictures } from './elementExpansion.js';
 import { trackOpacity, tracksBackToFront } from './layers.js';
 
 /**
@@ -119,8 +119,10 @@ export function blocksDuring(clips, from, to, run, ctx) {
     if (!(end - start > MEET)) continue;
     const { box, ready } = restBox(clip.element, run, ctx);
     found.settled &&= ready;
-    const sizes = pictureSizes(clip.element, run);
-    if (sizes) found.pictures.push([clip.element, sizes]);
+    // A picture that has not arrived has no size yet: the answer holds until it has one.
+    if (showsPictures(clip.element, run)) {
+      found.pictures.push([clip.element, pictureSizes(clip.element, run)]);
+    }
     const rect = box && covered(run.edl, clip, box, start, end);
     if (rect) found.rects.push(rect);
   }

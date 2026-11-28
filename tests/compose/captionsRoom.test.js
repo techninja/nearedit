@@ -8,9 +8,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createEnv, renderFrame } from '../../src/api/compose/index.js';
+import { normalizeDesign } from '../../src/utils/brand/element/index.js';
 import { timelineCues } from '../../src/utils/captions/index.js';
 import { drawFrame } from '../../src/utils/compose/drawFrame.js';
 import { frameInfo } from '../../src/utils/compose/index.js';
+import { createClip } from '../../src/utils/edl/factory.js';
 import { patchCaptionStyle } from '../../src/utils/edl/index.js';
 import { WORDS } from '../captions/scenes.js';
 import { SAYING, spoken } from './cases/captions.js';
@@ -226,6 +228,32 @@ describe('what the check costs', () => {
       waiting.every((count, i) => count > steady[i]),
       'worked out anew at every frame',
     );
+  });
+});
+
+describe('an overlay whose picture is still loading', () => {
+  it('is decided again when the picture arrives and its size is known', () => {
+    // A banner as high as it is told and as wide as its picture makes it.
+    const design = normalizeDesign({
+      kind: 'overlay',
+      layers: [{ id: 'banner', type: 'image', src: '/kit/banner.png', at: 'bottom-left', h: 14 }],
+    });
+    const element = { kit: { id: 'own', key: 'k' }, id: 'banner', slots: {}, design };
+    const edl = over(createClip({ clipId: 'el', timelineStart: 0, timelineEnd: 20, element }));
+    const off = unmoved(edl);
+    let picture = null;
+    const env = { ...createEnv({ words: () => WORDS }), image: () => picture };
+    const drawn = (doc) => {
+      const ctx = env.createCanvas(SIZE.width, SIZE.height).getContext('2d');
+      drawFrame(ctx, doc, SAYING, env, frameInfo(doc, SIZE.width, SIZE.height));
+      return Buffer.from(ctx.getImageData(0, 0, SIZE.width, SIZE.height).data);
+    };
+    // Its size unknown, the banner is taken for a square in its corner: nothing in the way.
+    assert.ok(drawn(edl).equals(drawn(off)), 'while it loads');
+    // It arrives, six times as wide as it is high: now it reaches under the caption.
+    picture = env.createCanvas(1200, 200);
+    assert.ok(!drawn(edl).equals(drawn(off)), 'the same document, decided anew');
+    assert.ok(drawn(edl).equals(drawn(edl)), 'and then kept');
   });
 });
 

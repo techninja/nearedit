@@ -41,6 +41,14 @@ const TEXT_BLOCK = 40;
  */
 const OUTLINED_BLOCK = 64;
 /**
+ * …and in one on the edge of a cut-out person. The edge is pulled in by
+ * the default `shrink` (0.3 units — under a pixel on the small canvas,
+ * three on the large one), and a bright outline drawn around it makes that
+ * part of a pixel count: measured up to 16.2 levels with an outline, 7
+ * without.
+ */
+const MATTE_BLOCK = 20;
+/**
  * Cases whose modules multiply lengths by `frame.scale`: drawn with a scale
  * of 1 each must break the bounds. (Titles and noise never read the scale —
  * they draw in output pixels through the canvas transform — so they cannot
@@ -135,7 +143,8 @@ describe('resolution independence: 480 px wide vs 1920 px wide', () => {
         await save(`${name}.1920`, large, size);
         await save(`${name}.diff`, differenceImage(small, large, 8), size);
       }
-      const block = found.outlined ? OUTLINED_BLOCK : found.text ? TEXT_BLOCK : BLOCK;
+      const plain = found.name.startsWith('cutout-') ? MATTE_BLOCK : BLOCK;
+      const block = found.outlined ? OUTLINED_BLOCK : found.text ? TEXT_BLOCK : plain;
       assert.ok(d.mean <= MEAN, `mean difference ${d.mean.toFixed(3)} levels`);
       assert.ok(d.blockMax <= block, `an 8×8 block differs by ${d.blockMax.toFixed(2)} levels`);
     });
