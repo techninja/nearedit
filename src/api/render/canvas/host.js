@@ -1,7 +1,8 @@
 /**
  * The compositor host of one renderer: a single environment (and with it a
  * single scratch-surface pool), the output canvas, the stills that are
- * loaded and the footage frame each clip currently shows. One host serves
+ * loaded, the footage frame each clip currently shows and the transcripts
+ * captions are drawn from. One host serves
  * many segments in a row, so canvases are allocated once.
  *
  * Importing the Node host before any canvas exists matters: it selects the
@@ -10,6 +11,7 @@
  */
 
 import { createCanvas, createEnv, createFrameSource, loadImages } from '../../compose/index.js';
+import { wordsFrom } from '../words.js';
 import { openDecoder } from './pipes.js';
 
 /**
@@ -32,11 +34,24 @@ export function createCanvasHost() {
   const idle = new Map();
   /** @type {any} */
   let canvas = null;
-  const env = createEnv({ images, frameOf: (clip) => frames.get(clip.clipId) || null });
+  /** @type {(clip: any) => any} The transcript of a captioned clip's file */
+  let words = wordsFrom(undefined);
+  const env = createEnv({
+    images,
+    frameOf: (clip) => frames.get(clip.clipId) || null,
+    words: (clip) => words(clip),
+  });
 
   return {
     env,
     frames,
+    /**
+     * Hand over the transcripts of the job (`prepareRender`), before a frame is drawn.
+     * @param {import('../words.js').WordTable} [table]
+     */
+    useWords(table) {
+      words = wordsFrom(table);
+    },
     /**
      * The canvas frames are drawn on.
      * @param {number} width

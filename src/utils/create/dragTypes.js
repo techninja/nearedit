@@ -1,15 +1,15 @@
 /**
  * What is dragged out of the Create tab, next to `MEDIA_DRAG_TYPE` of the
- * media bin: a generator or a text style (dropped on a track of the
- * timeline, it is inserted there) and an effect (dropped on a clip, it is
- * added to that clip). The payload travels as JSON under its MIME type.
+ * media bin: a generator, a text style or a brand element (dropped on a
+ * track of the timeline, it is inserted there) and an effect (dropped on a
+ * clip, it is added to that clip). The payload travels as JSON under its MIME type.
  * A browser only reveals the types while a drag is over a target, never
  * the data, so the payload of the drag under way is also kept here for
  * the drop indicator to read.
  * @module utils/create/dragTypes
  */
 
-/** MIME type of a generator or text style dragged from the Create tab. */
+/** MIME type of a generator, text style or brand element dragged from the Create tab. */
 export const CREATE_DRAG_TYPE = 'application/x-nearedit-create';
 /** MIME type of an effect (or a chain of effects) dragged from the effect list. */
 export const EFFECT_DRAG_TYPE = 'application/x-nearedit-effect';
@@ -17,7 +17,8 @@ export const EFFECT_DRAG_TYPE = 'application/x-nearedit-effect';
 /**
  * @typedef {{ kind: 'generator', type: string, category?: string, label?: string,
  *   params?: Record<string, any>, seed?: number }
- *   | { kind: 'text', preset: string, label?: string }} CreatePayload
+ *   | { kind: 'text', preset: string, label?: string }
+ *   | { kind: 'element', element: string, label?: string }} CreatePayload
  */
 
 /** @type {{ type: string, payload: any }|null} */

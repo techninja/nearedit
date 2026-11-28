@@ -24,6 +24,7 @@ import { documentSummary } from '#utils/inspector/summary.js';
 import { trackModel } from '#utils/inspector/trackSubject.js';
 import '#atoms/app-icon/app-icon.js';
 import '#molecules/inspector-clip/inspector-clip.js';
+import '#molecules/element-inspector/element-inspector.js';
 import '#molecules/inspector-crop/inspector-crop.js';
 import '#molecules/inspector-document/inspector-document.js';
 import '#molecules/inspector-effects/inspector-effects.js';

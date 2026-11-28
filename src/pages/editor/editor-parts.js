@@ -9,6 +9,7 @@
 import { html } from 'hybrids';
 import { failureView } from '#utils/ui/editorFailure.js';
 import '#atoms/app-icon/index.js';
+import '#organisms/brand-dialog/index.js';
 import '#organisms/clip-inspector/index.js';
 import '#organisms/create-panel/index.js';
 import '#organisms/director-panel/index.js';
@@ -63,6 +64,7 @@ export function dockPanels(active) {
     </div>
     <web-editor></web-editor>
     <music-editor></music-editor>
+    <brand-dialog></brand-dialog>
   `;
 }
 

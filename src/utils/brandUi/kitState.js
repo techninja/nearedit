@@ -22,6 +22,7 @@ import { readProjectKit } from './kitApi.js';
 /**
  * @typedef {Object} KitState
  * @property {string} projectId - The project the kit belongs to; '' before one is open
+ * @property {string} adaptationId - The open adaptation: its kit is the one in force
  * @property {string} choice - A library id, `builtin:<name>`, or `project`
  * @property {any} kit - The project's own kit as stored, or the chosen kit as stored; null when unknown
  * @property {Kit} effective - Complete: what `insertElement` and `restyle` take
@@ -41,7 +42,7 @@ export const DEFAULT_CHOICE = `${BUILTIN_PREFIX}${DEFAULT_KIT}`;
 
 /** @type {(projectId: string, status: KitState['status'], error?: string) => KitState} */
 const standIn = (projectId, status, error = '') => ({
-  ...{ projectId, choice: DEFAULT_CHOICE, kit: null, effective: FALLBACK_KIT },
+  ...{ projectId, adaptationId: '', choice: DEFAULT_CHOICE, kit: null, effective: FALLBACK_KIT },
   ...{ key: kitKey(FALLBACK_KIT), chain: [DEFAULT_KIT], files: [], problems: [], status, error },
 });
 
@@ -50,6 +51,16 @@ export const kitState = createObservable(standIn('', 'fallback'));
 
 /** @returns {Kit} The effective kit of the open project */
 export const currentKit = () => kitState.get().effective;
+
+/**
+ * @returns {boolean} True once it is known which kit the open project uses
+ *   (the server's, or — when it gave none — the built-in one). Until then
+ *   nothing can be said to be out of date with it.
+ */
+export function kitSettled() {
+  const { projectId, status } = kitState.get();
+  return Boolean(projectId) && status !== 'loading';
+}
 
 /**
  * @param {any} answer - What a kit route answered
@@ -75,6 +86,7 @@ export function acceptKit(projectId, answer) {
   }
   kitState.set({
     projectId,
+    adaptationId: kitState.get().projectId === projectId ? kitState.get().adaptationId : '',
     choice: typeof answer.choice === 'string' && answer.choice ? answer.choice : DEFAULT_CHOICE,
     kit: isPlainObject(answer.kit) ? answer.kit : null,
     effective,
@@ -89,41 +101,56 @@ export function acceptKit(projectId, answer) {
 }
 
 /**
- * Read a project's kit from the server. A failure leaves the built-in kit
- * in place and is remembered in `error`; it is never thrown.
+ * Read a project's kit from the server — the kit of the open adaptation,
+ * which is the project's unless the adaptation names another. A failure
+ * leaves the built-in kit in place and is remembered in `error`; it is
+ * never thrown.
  * @param {string} projectId
+ * @param {string} [adaptationId]
  * @returns {Promise<boolean>} true when the server's kit is now in use
  */
-export async function loadProjectKit(projectId) {
+export async function loadProjectKit(projectId, adaptationId = '') {
   if (!projectId) return false;
-  if (kitState.get().projectId !== projectId) kitState.set(standIn(projectId, 'loading'));
+  const open = () => {
+    const now = kitState.get();
+    return now.projectId === projectId && now.adaptationId === adaptationId;
+  };
+  if (!open()) kitState.set({ ...standIn(projectId, 'loading'), adaptationId });
+  /** @type {(error: string) => void} */
+  const fall = (error) => kitState.set({ ...standIn(projectId, 'fallback', error), adaptationId });
   try {
-    const answer = await readProjectKit(projectId);
+    const answer = await readProjectKit(projectId, adaptationId);
     // The project was closed, or another opened, while the request was out.
-    if (kitState.get().projectId !== projectId) return false;
+    if (!open()) return false;
     if (acceptKit(projectId, answer)) return true;
-    kitState.set(standIn(projectId, 'fallback', 'The server answered without a kit'));
+    fall('The server answered without a kit');
   } catch (err) {
-    if (kitState.get().projectId !== projectId) return false;
+    if (!open()) return false;
     console.warn('[brand] no kit from the server, using the built-in one:', err.message);
-    kitState.set(standIn(projectId, 'fallback', err.message));
+    fall(err.message);
   }
   return false;
 }
 
 /** @returns {Promise<boolean>} Read the open project's kit again */
-export const reloadKit = () => loadProjectKit(kitState.get().projectId);
+export function reloadKit() {
+  const { projectId, adaptationId } = kitState.get();
+  return loadProjectKit(projectId, adaptationId);
+}
 
 /**
- * Keep the kit in step with the open project: load it when a project has
- * opened, go back to the built-in kit when it closes.
+ * Keep the kit in step with what is open: load it when a project (or
+ * another of its adaptations) has opened, go back to the built-in kit when
+ * it closes.
  * @returns {() => void} Stop watching
  */
 export function watchProjectKit() {
   const follow = (/** @type {any} */ project) => {
     const id = project?.loaded ? project.projectId : '';
-    if (id === kitState.get().projectId) return;
-    if (id) loadProjectKit(id);
+    const adaptation = id ? project.adaptationId || '' : '';
+    const now = kitState.get();
+    if (id === now.projectId && adaptation === now.adaptationId) return;
+    if (id) loadProjectKit(id, adaptation);
     else kitState.set(standIn('', 'fallback'));
   };
   follow(store.get(ProjectState));

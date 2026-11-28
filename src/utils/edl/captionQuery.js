@@ -136,6 +136,6 @@ export function captionInfo(edl, clipId) {
     carrierId: voice.clip.clipId,
     ownWords,
     file: ownWords ? '' : voice.clip.sourceFile,
-    heard: voice.on && captionVoices(edl).some(({ sound }) => sound === voice.clip),
+    heard: voice.on && captionVoices(edl).some(({ pieces }) => pieces.includes(voice.clip)),
   };
 }

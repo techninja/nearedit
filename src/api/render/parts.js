@@ -91,12 +91,12 @@ export async function renderParts(edl, segments, options, hooks) {
   const stopper = new AbortController();
   const cancel = () => stopper.abort();
   hooks.signal.addEventListener('abort', cancel, { once: true });
-  const { probes, preset, lossless } = options;
+  const { probes, preset, lossless, words } = options;
   const warnings = new Set();
   const warn = (/** @type {string} */ message) => warnings.add(message);
   const canvas = createCanvasWorkers(
     edl,
-    { probes, preset, lossless },
+    { probes, preset, lossless, words },
     { signal: stopper.signal, warn },
   );
   const done = segments.map(() => 0);

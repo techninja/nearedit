@@ -6,7 +6,8 @@
  * Back to front: the background colour; then each visible video track, last
  * first; on a track each clip covering the time, in start order. A track
  * with effects, an opacity below 1 or a blend mode is composed on a surface
- * of its own and then joins the frame as one picture.
+ * of its own and then joins the frame as one picture. Last of all, over
+ * every track, the captions of the clips that are heard.
  *
  * A frame is a pure function of the document and the time: nothing is
  * remembered from one call to the next except pooled scratch canvases.
@@ -15,6 +16,7 @@
  */
 
 import { applyEffects } from './applyEffects.js';
+import { drawCaptions } from './captionPass.js';
 import { cssColor } from './color.js';
 import { composite, drawClip } from './drawClip.js';
 import { frameInfo, timelineTime } from './frame.js';
@@ -80,6 +82,7 @@ export function drawFrame(
   ctx.fillRect(0, 0, frame.width, frame.height);
   const run = { edl, time, frame, compose };
   for (const track of tracksBackToFront(edl)) drawTrack(ctx, track, run);
+  drawCaptions(ctx, run);
   ctx.restore();
   compose.pool.end();
 }

@@ -41,6 +41,8 @@ let skipped = '';
 let env;
 /** clipId → picture standing in for its footage frame, for the case being drawn. */
 let footage = {};
+/** Source file → transcript words, for the case being drawn. */
+let words = {};
 const lines = [];
 
 /** Save an RGBA buffer as PNG. */
@@ -58,12 +60,14 @@ async function compare(t, found) {
   if (skipped) return t.skip(skipped);
   const { name, edl, time } = found;
   footage = found.footage;
+  words = found.words || {};
   // A document that is not 16:9 is drawn on a canvas of its own shape.
   const { width, height } = found.size || { width: WIDTH, height: HEIGHT };
   const canvas = renderFrame(edl, time, { width, height, env });
   const server = canvas.getContext('2d').getImageData(0, 0, width, height).data;
   const images = { [fixtures.card]: fixtures.card, [fixtures.logo]: fixtures.logo };
-  const chrome = await browser.draw({ edl, time, width, height, images, footage });
+  const job = { edl, time, width, height, images, footage, words };
+  const chrome = await browser.draw(job);
   const d = difference(server, chrome, width, height);
   lines.push(report(name, d));
   if (OUT) {
@@ -78,7 +82,11 @@ describe('compositor parity: server canvas vs Chromium', () => {
   before(async () => {
     fixtures = await writeFixtures();
     const images = await loadImages([fixtures.card, fixtures.logo]);
-    env = createEnv({ images, frameOf: (clip) => images.get(footage[clip.clipId]) || null });
+    env = createEnv({
+      images,
+      frameOf: (clip) => images.get(footage[clip.clipId]) || null,
+      words: (clip) => words[clip.sourceFile] || null,
+    });
     if (OUT) await mkdir(OUT, { recursive: true });
     try {
       browser = await openBrowser(fixtures.dir);

@@ -1,6 +1,6 @@
 /**
  * The host environment as compositor modules see it. A host (the browser
- * preview, the server render) supplies the four members of
+ * preview, the server render) supplies the members of
  * docs/app-spec/COMPOSITOR.md § The host environment; the core wraps it once
  * so that a missing optional member behaves like "nothing available" and so
  * that modules can borrow pooled scratch surfaces. Isomorphic.
@@ -24,6 +24,12 @@ import { createPool } from './pool.js';
  *   table of every frame that has one, so it must cost nothing for a table
  *   it has seen; a file that cannot be used is reported once and its text
  *   falls back to the bundled sans-serif
+ * @property {(clip: any) => any} [words] - The transcript of a captioned
+ *   clip's file, for its captions: the file's sidecar, its list of words, or
+ *   `[start, end, text]` triples in source seconds — the same object every
+ *   time until the transcript changes, since groups are remembered by it —
+ *   or null while it loads and when there is none. Not asked for a clip
+ *   that carries its own words
  */
 
 /**
@@ -36,6 +42,7 @@ import { createPool } from './pool.js';
  * @property {(clip: any, sourceTime: number) => any} frameOf
  * @property {(font: string, text: string) => boolean} fontReady
  * @property {(fonts: any[]) => void} fonts
+ * @property {(clip: any) => any} words
  * @property {(width?: number, height?: number) => import('./pool.js').Surface} scratch -
  *   A blank pooled surface `{ canvas, ctx, width, height }`, frame-sized by
  *   default. It is taken back when the module's `draw` / `apply` returns
@@ -69,6 +76,7 @@ export function composeFor(host) {
           host.frameOf ? host.frameOf(clip, sourceTime) || null : null,
         fontReady: (font, text) => (host.fontReady ? host.fontReady(font, text) !== false : true),
         fonts: (fonts) => void (host.fonts && host.fonts(fonts)),
+        words: (clip) => (host.words ? host.words(clip) || null : null),
         scratch: (width, height) => pool.lease(width, height),
       },
     };

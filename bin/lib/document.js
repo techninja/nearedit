@@ -12,6 +12,7 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 import { normalizeEdl } from '#utils/edl/normalize.js';
 import { isInside } from '../../src/api/lib/paths.js';
 import { mapMediaPaths } from '../../src/api/render/mediaPaths.js';
+import { captionFindings, isCaptionsOwn } from './captionsCheck.js';
 import { catalogFindings } from './catalogCheck.js';
 import { jsonErrorOffset, lineAndColumn } from './jsonError.js';
 import * as music from './musicClips.js';
@@ -84,9 +85,10 @@ export function loadDocument(path, options = {}) {
   const recorded = attachRecordings(normalizeEdl(raw), dir, folders);
   const { unrecorded } = recorded;
   const { edl: normal, unrendered } = music.attachRenderings(recorded.edl, dir, folders);
-  const repairs = repairFindings(raw, normal).filter((one) => !music.isSongsOwn(one, tracks));
+  const repaired = repairFindings(raw, normal);
+  const repairs = repaired.filter((one) => !music.isSongsOwn(one, tracks) && !isCaptionsOwn(one));
   /** @type {Finding[]} */
-  const findings = [...repairs, ...catalogFindings(normal)];
+  const findings = [...repairs, ...captionFindings(raw, repaired), ...catalogFindings(normal)];
   findings.push(...recipeFindings(tracks), ...unrecordedFindings(normal, unrecorded));
   findings.push(...music.songFindings(tracks), ...music.unrenderedFindings(tracks, unrendered));
   const media = new Set();
@@ -97,7 +99,12 @@ export function loadDocument(path, options = {}) {
       : [dir, ...folders].map((base) => resolve(base, name));
     const found = candidates.find((candidate) => existsSync(candidate));
     if (!found) {
-      findings.push({ path: where, level: 'error', message: `file not found: ${name}` });
+      // A font that is not there is drawn in another, as the compositor does: no reason to stop.
+      const font = /(^|\.)fonts\[\d+\]\.file$/.test(where);
+      const message = font
+        ? `font file not found: ${name} — its text is drawn in the bundled sans-serif`
+        : `file not found: ${name}`;
+      findings.push({ path: where, level: font ? 'warning' : 'error', message });
       return resolve(dir, name);
     }
     const real = realpathSync(found);

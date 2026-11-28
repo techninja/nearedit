@@ -8,11 +8,13 @@
 import { validateEdl } from '#utils/edl/validate.js';
 import { prepareRender } from '../../src/api/render/prepare.js';
 import { renderSegments } from '../../src/api/render/segments.js';
+import { wordFindings } from './captionsCheck.js';
 import { byLevel, loadDocument } from './document.js';
 
 /**
  * @typedef {import('./document.js').Loaded & { probes: Record<string, any>,
  *   capabilities: object, valid: boolean,
+ *   words: import('../../src/api/render/words.js').WordTable,
  *   segments: ReturnType<typeof renderSegments> }} Checked
  */
 
@@ -21,8 +23,9 @@ import { byLevel, loadDocument } from './document.js';
  * @param {string} path
  * @param {{ media?: string[] }} [options]
  * @returns {Promise<Checked>} `valid` is false when any finding is an error;
- *   `probes` and `capabilities` are what a render of it needs, `segments`
- *   the stretches it will be rendered in, each with its renderer
+ *   `probes`, `capabilities` and `words` (the transcripts beside the media,
+ *   for captions) are what a render of it needs, `segments` the stretches
+ *   it will be rendered in, each with its renderer
  * @throws {import('./document.js').DocumentError} When the file is not a document
  */
 export async function checkDocument(path, options = {}) {
@@ -30,13 +33,15 @@ export async function checkDocument(path, options = {}) {
   const { findings, edl } = loaded;
   const fail = (/** @type {string} */ message, where = '') =>
     void findings.push({ path: where, level: 'error', message });
-  let prepared = { probes: {}, capabilities: {} };
+  /** @type {{ probes: Record<string, any>, capabilities: object, words: any }} */
+  let prepared = { probes: {}, capabilities: {}, words: {} };
   /** @type {ReturnType<typeof renderSegments>} */
   let segments = [];
   // Nothing is probed while a path is missing or not allowed.
   if (!byLevel(findings).errors.length) {
     try {
       prepared = await prepareRender(edl);
+      findings.push(...wordFindings(edl, prepared.words));
     } catch (err) {
       fail(err.message);
     }
@@ -53,7 +58,7 @@ export async function checkDocument(path, options = {}) {
     }
     try {
       // Also refuses what a forced renderer (RENDER_ENGINE) cannot draw.
-      segments = renderSegments(edl);
+      segments = renderSegments(edl, { words: prepared.words });
     } catch (err) {
       fail(err.message);
     }

@@ -6,7 +6,7 @@
  * @module utils/brandUi/kitApi
  */
 
-import { ApiError, api } from '#utils/api/http.js';
+import { ApiError, api, query } from '#utils/api/http.js';
 
 /**
  * A kit as the list shows it.
@@ -56,17 +56,29 @@ export const writeKit = (id, kit) => api(`/kits/${enc(id)}`, { method: 'PUT', bo
 /** @param {string} id @returns {Promise<null>} */
 export const removeKit = (id) => api(`/kits/${enc(id)}`, { method: 'DELETE' });
 
-/** @param {string} projectId @returns {Promise<KitAnswer>} */
-export const readProjectKit = (projectId) => api(`/projects/${enc(projectId)}/kit`);
+/**
+ * The kit a project uses — or, with an adaptation, the kit that
+ * adaptation uses (its own choice when it has one, else the project's).
+ * @param {string} projectId
+ * @param {string} [adaptationId]
+ * @returns {Promise<KitAnswer>}
+ */
+export const readProjectKit = (projectId, adaptationId = '') =>
+  api(`/projects/${enc(projectId)}/kit${query({ adaptation: adaptationId })}`);
 
 /**
  * Choose a kit for a project: a library id, `builtin:<name>`, or `project`.
  * @param {string} projectId
- * @param {string} choice
+ * @param {string} choice - '' un-chooses
+ * @param {string} [adaptationId] - Choose for this adaptation only ('' there:
+ *   it goes with the project again)
  * @returns {Promise<KitAnswer>}
  */
-export const chooseProjectKit = (projectId, choice) =>
-  api(`/projects/${enc(projectId)}/kit`, { method: 'PUT', body: { choice } });
+export const chooseProjectKit = (projectId, choice, adaptationId = '') =>
+  api(`/projects/${enc(projectId)}/kit${query({ adaptation: adaptationId })}`, {
+    method: 'PUT',
+    body: { choice },
+  });
 
 /**
  * Write the project's own kit and choose it.

@@ -1,0 +1,71 @@
+element-inspector {
+  display: block;
+
+  & .element-inspector-what {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px var(--space-sm);
+    min-width: 0;
+    font-size: var(--text-sm);
+
+    & strong {
+      font-weight: 600;
+    }
+  }
+
+  & .element-inspector-kit {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  /* A blank that must be filled and is empty. */
+  & .field-input[aria-invalid='true'] {
+    border-color: var(--color-warning);
+  }
+
+  & .element-inspector-none,
+  & .element-inspector-current {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: var(--space-xs) var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .element-inspector-current app-icon {
+    color: var(--color-success);
+  }
+
+  & .element-inspector-stale {
+    margin-top: var(--space-xs);
+  }
+
+  & .element-inspector-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  & .element-inspector-actions {
+    display: flex;
+    padding: 0 var(--space-xs) var(--space-xs);
+
+    & .btn {
+      gap: var(--space-xs);
+      padding: var(--space-xs);
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+    }
+
+    & .btn:hover:not(:disabled),
+    & .btn:focus-visible {
+      color: var(--color-text);
+    }
+  }
+}

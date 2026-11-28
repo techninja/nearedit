@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { doc, gen, media, title } from '../../../tests/compose/build.js';
 import { createCanvas } from '../../api/compose/index.js';
+import { createClip, createTrack } from '../edl/factory.js';
 
 /** A fake `document.fonts`: one unloaded face per family, loaded on demand. */
 const face = (family) => ({
@@ -45,6 +46,12 @@ describe('preview painter', () => {
         get(url) {
           asked.push(url);
           return overrides.still || { ready: true, image: plate('#00ff00') };
+        },
+      },
+      words: {
+        get(clip) {
+          asked.push(`words of ${clip.sourceFile}`);
+          return overrides.words || null;
         },
       },
       videos: {
@@ -108,5 +115,28 @@ describe('preview painter', () => {
     for (const loaded of fonts.faces) loaded.status = 'loaded';
     painter.paint(titled, 1.2);
     assert.ok(pixel(canvas, 80, 45)[0] > 200, 'and is drawn once it is there');
+  });
+
+  it('asks for the words of captioned clips and draws their captions when they are there', () => {
+    const canvas = createCanvas(320, 180);
+    const span = { timelineStart: 0, timelineEnd: 4 };
+    const voice = createClip({ clipId: 'vo', sourceFile: '/m/talk.wav', ...span, captions: { on: true } });
+    const base = doc([[gen('g', 'solid', { color: '#3366cc' })]]);
+    const spoken = { ...base, tracks: [base.tracks[0], createTrack('audio', { clips: [voice] })] };
+    /** Whether anything but the backdrop is on the canvas. */
+    const marked = () => {
+      const { data } = canvas.getContext('2d').getImageData(0, 0, 320, 180);
+      return data.some((value, i) => i % 4 === 0 && value !== 0x33);
+    };
+    const waiting = sources();
+    createPainter(canvas, waiting).paint(spoken, 1);
+    assert.ok(waiting.asked.includes('words of /m/talk.wav'), 'the transcript is asked for');
+    assert.equal(marked(), false, 'no words yet: no caption');
+    const transcript = { transcript: [{ word: 'Hello', start: 0.5, end: 3 }] };
+    const painter = createPainter(canvas, sources({ words: transcript }));
+    painter.paint(spoken, 1);
+    assert.equal(marked(), true, 'the caption is drawn once the words are there');
+    painter.paint(spoken, 3.9);
+    assert.equal(marked(), false, 'and gone when its group has left');
   });
 });

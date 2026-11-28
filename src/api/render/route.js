@@ -31,6 +31,7 @@ export const REASONS = {
   'track-effect': 'an effect on a track',
   'track-blend': 'a blend mode on a track',
   background: 'a background colour',
+  captions: 'captions',
   forced: 'RENDER_ENGINE=canvas',
 };
 

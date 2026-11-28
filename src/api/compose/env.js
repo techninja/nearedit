@@ -1,8 +1,8 @@
 /**
  * The compositor's host environment on the server: canvases from
  * `@napi-rs/canvas` (the same Skia rasteriser Chromium draws with), the
- * bundled fonts, stills the caller has loaded, and footage frames the caller
- * supplies. Node only — nothing the browser loads may import this.
+ * bundled fonts, stills the caller has loaded, and footage frames and
+ * transcripts the caller supplies. Node only — nothing the browser loads may import this.
  * Contract: docs/app-spec/COMPOSITOR.md § The host environment.
  * @module api/compose/env
  */
@@ -49,15 +49,19 @@ export async function loadImages(paths) {
  * @param {(clip: any, sourceTime: number) => any} [options.frameOf] - The
  *   footage frame for a clip at a source time: a canvas or image holding the
  *   decoded frame, or null when there is none
+ * @param {(clip: any) => any} [options.words] - The transcript of a
+ *   captioned clip's file (a sidecar, its word list, or triples) — the same
+ *   object every time — or null when there is none
  * @returns {HostEnv}
  */
-export function createEnv({ images, frameOf } = {}) {
+export function createEnv({ images, frameOf, words } = {}) {
   registerFonts();
   return {
     createCanvas: (width, height) => createCanvas(width, height),
     image: (path) => images?.get(path) || null,
     frameOf: (clip, sourceTime) => (frameOf ? frameOf(clip, sourceTime) : null),
     fontReady: () => true,
+    words: (clip) => (words ? words(clip) : null),
     // A document's own font files: registered the first time its table is seen.
     fonts: (fonts) => void registerDocumentFonts(fonts),
   };

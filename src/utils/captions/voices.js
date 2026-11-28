@@ -11,6 +11,7 @@
  */
 
 import { activeTracks } from '#utils/edl/query.js';
+import { joinRuns } from './runs.js';
 import { wordsFromTranscript } from './transcript.js';
 import { normalizeCaptions, repairWords } from './words.js';
 
@@ -25,8 +26,11 @@ import { normalizeCaptions, repairWords } from './words.js';
  * @typedef {Object} Voice
  * @property {Clip} clip - The clip that carries `captions`: its words are the ones shown
  * @property {Clip} sound - The clip that is heard — the same one, or its
- *   linked sound: its place on the timeline and its source window time the words
+ *   linked sound: its place on the timeline and its source window time the
+ *   words. Pieces of a split clip that play on from each other are one
+ *   voice (`runs.js`): `sound` then spans them all
  * @property {any} track - The track `sound` is on
+ * @property {Clip[]} pieces - The sound clips the voice is made of: one, or a run
  */
 
 /** @type {(track: any) => Clip[]} The clips of a track, when it has a list of them */
@@ -41,7 +45,8 @@ const wordsOf = new WeakMap();
  * The captioned clips of a document that are heard, in track order (the
  * front-most first), then in time order. A clip on a muted track — or, when
  * a track is soloed, on any other — has no voice; the picture and the sound
- * of a linked pair are one voice even when both are switched on.
+ * of a linked pair are one voice even when both are switched on, and so are
+ * the pieces of a split clip while they play on from each other.
  * @param {{ tracks?: any[] }} edl
  * @returns {Voice[]} The same array for the same document
  */
@@ -72,11 +77,12 @@ export function captionVoices(edl) {
       taken.add(sound.clip);
       // Words written on the sound clip win over its picture's.
       const carrier = sound.clip.captions?.on === true ? sound.clip : clip;
-      voices.push({ clip: carrier, sound: sound.clip, track: sound.track });
+      voices.push({ clip: carrier, sound: sound.clip, track: sound.track, pieces: [sound.clip] });
     }
   }
-  voicesOf.set(edl, voices);
-  return voices;
+  const joined = joinRuns(voices);
+  voicesOf.set(edl, joined);
+  return joined;
 }
 
 /**

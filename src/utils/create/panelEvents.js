@@ -1,7 +1,8 @@
 /**
  * Behaviour of the Create tab (`<create-panel>`): sections, search, the
  * tiles (click adds at the edit cursor, hover or focus plays the
- * thumbnail, drag carries the item to the timeline) and the effect list.
+ * thumbnail, drag carries the item to the timeline), the effect list, and
+ * what the Web, Music and Brand sections ask for.
  * @module utils/create/panelEvents
  */
 
@@ -13,12 +14,13 @@ import { CREATE_DRAG_TYPE, beginDrag } from './dragTypes.js';
 import { addGeneratorItem, addTextItem, applyEffectItem } from './panelActions.js';
 import { TEXT_PRESETS } from './textPresets.js';
 import { generatorThumb, textThumb } from './thumbDoc.js';
+import { addElementItem } from '#utils/brandUi/addElement.js';
 import { addMusicClip } from '#utils/musicUi/addClip.js';
 import { addWebClip } from '#utils/webUi/addClip.js';
 
 /**
  * @typedef {Object} CreatePanelHost
- * @property {'generators'|'text'|'effects'|'web'|'music'} section
+ * @property {'generators'|'text'|'effects'|'web'|'music'|'brand'} section
  * @property {string} query - Search in the generators section
  * @property {string} hovered - Key of the tile whose thumbnail plays
  * @property {string} status - What the last action did
@@ -127,4 +129,10 @@ export function handleMusicAdd(host, event) {
   event.stopPropagation();
   const { song, label, open } = event.detail;
   host.status = addMusicClip(song, { label, open }).message;
+}
+
+/** The Brand section asks for an element of the kit: add it where its kind belongs. @param {Host} host @param {CustomEvent} event */
+export function handleBrandAdd(host, event) {
+  event.stopPropagation();
+  host.status = addElementItem(event.detail.element).message;
 }

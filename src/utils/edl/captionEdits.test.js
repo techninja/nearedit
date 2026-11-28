@@ -68,8 +68,13 @@ describe('captions follow the clip', () => {
     const [left, right] = cut.tracks[1].clips;
     assert.equal(left.captions, clipOf(start, 'talk_s').captions, 'shared, not copied');
     assert.equal(right.captions, left.captions);
-    assert.equal(captionVoices(cut).length, 2);
+    assert.equal(captionVoices(cut).length, 1, 'pieces that play on are one voice');
+    assert.deepEqual(captionVoices(cut)[0].pieces, [left, right]);
     assert.deepEqual(said(cut), said(start), 'no word lost, none said twice, none moved');
+    // Pull the right half away and it speaks for itself: the word under the cut goes with it.
+    const apart = assertValid(moveClips(cut, [right.clipId], { delta: 2 }));
+    assert.equal(captionVoices(apart).length, 2);
+    assert.deepEqual(said(apart).slice(3, 6), ['w3@4.5', 'w4@7.1', 'w5@7.5']);
     assert.equal(cut.tracks[0].clips.every((clip) => !('captions' in clip)), true);
   });
 
@@ -228,8 +233,8 @@ describe('captions in a stored document', () => {
     const unsorted = [[2, 3, 'b'], [1, 1.5, 'a']];
     assert.deepEqual(paths(withClip({ on: true, words: unsorted })), ['tracks[1].clips[0].captions']);
     const title = createClip({ clipId: 't', timelineStart: 0, timelineEnd: 2, text: { content: 'x' } });
-    const onTitle = { ...good, tracks: [{ ...good.tracks[0], clips: [{ ...title, captions: { on: true } }] }, good.tracks[1]] };
-    assert.deepEqual(paths(onTitle), ['tracks[0].clips[0].captions']);
+    const titled = { ...good.tracks[0], clips: [{ ...title, captions: { on: true } }, good.tracks[0].clips[0]] };
+    assert.deepEqual(paths({ ...good, tracks: [titled, good.tracks[1]] }), ['tracks[0].clips[0].captions']);
     assert.deepEqual(paths({ ...good, captions: { style: { preset: 'pop', size: 999 } } }), ['captions']);
     assert.deepEqual(paths({ ...good, captions: {} }), ['captions']);
   });

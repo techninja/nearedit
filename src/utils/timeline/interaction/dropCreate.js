@@ -1,10 +1,12 @@
 /**
- * Drops from the Create tab: a generator or a text style lands on the
- * video track under the pointer at the drop time; an effect lands on the
- * clip under the pointer.
+ * Drops from the Create tab: a generator, a text style or a brand element
+ * lands on the video track under the pointer at the drop time (an element
+ * where its kind belongs from there); an effect lands on the clip under
+ * the pointer.
  * @module utils/timeline/interaction/dropCreate
  */
 
+import { addElementItem } from '#utils/brandUi/addElement.js';
 import { CREATE_DRAG_TYPE, EFFECT_DRAG_TYPE, readPayload } from '#utils/create/dragTypes.js';
 import {
   addGeneratorItem,
@@ -30,7 +32,7 @@ export function effectTarget(stage, { x, y }) {
 }
 
 /**
- * Insert the generator or text style a drop carries.
+ * Insert the generator, text style or brand element a drop carries.
  * @param {DataTransfer} dataTransfer
  * @param {{ time: number, trackId: string }} target - Where it was dropped
  */
@@ -41,7 +43,8 @@ export function dropCreated(dataTransfer, target) {
   const track = getDoc().tracks.find((candidate) => candidate.trackId === target.trackId);
   const trackId = track && track.type === 'video' && !track.locked ? track.trackId : undefined;
   const at = { time: Math.max(0, target.time), trackId };
-  if (payload.kind === 'text') addTextItem(payload.preset, at);
+  if (payload.kind === 'element') addElementItem(payload.element, at);
+  else if (payload.kind === 'text') addTextItem(payload.preset, at);
   else addGeneratorItem(payload, at);
 }
 

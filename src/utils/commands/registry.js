@@ -6,6 +6,7 @@
  * @module utils/commands/registry
  */
 
+import { BRAND_COMMANDS } from '#utils/brandUi/commands.js';
 import { CLIP_COMMANDS } from './catalogClips.js';
 import { EDIT_COMMANDS } from './catalogEdit.js';
 import { EVENT_COMMANDS } from './catalogEvents.js';
@@ -40,6 +41,7 @@ export const COMMANDS = [
   ...FX_EDIT_COMMANDS,
   ...WEB_COMMANDS,
   ...MUSIC_COMMANDS,
+  ...BRAND_COMMANDS,
   ...CLIP_COMMANDS,
   ...EVENT_COMMANDS,
   ...SELECTION_COMMANDS,

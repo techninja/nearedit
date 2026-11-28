@@ -3,10 +3,12 @@
  * @module bin/lib/help
  */
 
+import { CAPTIONS_OVERVIEW, CAPTIONS_USAGE } from './captionsHelp.js';
 import { KIT_OVERVIEW, KIT_USAGE } from './kitHelp.js';
 
 export const COMMANDS = [
   ...['render', 'frame', 'validate', 'record', 'music', 'catalog'],
+  ...['captions'],
   ...['restyle', 'kit', 'help'],
 ];
 
@@ -79,6 +81,7 @@ const USAGE = {
   slots; a kit of your own is shown by: nearedit kit <kit folder>
 
   --json                The same as one JSON object`,
+  ...CAPTIONS_USAGE,
   ...KIT_USAGE,
   help: `nearedit help [command]
 
@@ -93,6 +96,7 @@ const OVERVIEW = `nearedit — author and render NearEdit timelines without the 
   nearedit record   <recipe.json> [-o out.mp4] [--fps n] [--allow host[:port]]
   nearedit music    <song.json> [-o out.wav]
   nearedit catalog  [--json]
+${CAPTIONS_OVERVIEW}
 ${KIT_OVERVIEW}
   nearedit help     [command]
 

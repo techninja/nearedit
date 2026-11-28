@@ -89,8 +89,8 @@ export async function renderCommand(argv, io) {
   };
   try {
     const partial = join(workDir, 'output.mp4');
-    const { probes, capabilities } = checked;
-    const options = { probes, capabilities, workDir, outputPath: partial, range };
+    const { probes, capabilities, words } = checked;
+    const options = { probes, capabilities, words, workDir, outputPath: partial, range };
     await encodeTimeline(
       checked.edl,
       { ...options, preset: values.preset, workers: values.workers },

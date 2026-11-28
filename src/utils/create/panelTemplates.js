@@ -1,7 +1,7 @@
 /**
  * Templates of the Create tab's sections: a tile (thumbnail and name), the
- * generator tiles by category with their search box, and the effect list
- * with a line saying what an effect would be applied to.
+ * generator tiles by category with their search box, the text styles, and
+ * the effect list with a line saying what an effect would be applied to.
  * @module utils/create/panelTemplates
  */
 
@@ -10,6 +10,7 @@ import { groupByCategory, searchItems } from './catalogView.js';
 import { endDrag } from './dragTypes.js';
 import { effectTargets } from './panelActions.js';
 import * as on from './panelEvents.js';
+import { TEXT_PRESETS } from './textPresets.js';
 
 /** @typedef {import('./panelEvents.js').CreatePanelHost} CreatePanelHost */
 /** @typedef {import('hybrids').UpdateFunctionWithMethods<CreatePanelHost>} Template */
@@ -73,6 +74,14 @@ export function generatorTiles({ query, hovered }) {
       ? html``
       : html`<div class="empty-state">No generator matches “${query}”.</div>`}
   `;
+}
+
+/** @param {CreatePanelHost} host @returns {Template} */
+export function textTiles({ hovered }) {
+  return html`<div class="field-group-title">Text styles</div>
+    <div class="create-panel-grid" role="group" aria-label="Text styles">
+      ${TEXT_PRESETS.map((preset) => tile('text', { ...preset, key: preset.id }, hovered))}
+    </div>`;
 }
 
 /** @param {CreatePanelHost} host @returns {Template} */

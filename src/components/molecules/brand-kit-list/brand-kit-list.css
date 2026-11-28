@@ -1,0 +1,102 @@
+brand-kit-list {
+  display: block;
+
+  & .brand-kit-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+    gap: var(--space-md);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .brand-kit-list-item {
+    position: relative;
+    min-width: 0;
+  }
+
+  & .brand-kit-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    width: 100%;
+    height: 100%;
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-text-muted);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+
+    /* The kit in use. */
+    &[aria-pressed='true'] {
+      border-color: var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+      box-shadow: 0 0 0 1px var(--color-primary);
+    }
+
+    &:disabled {
+      cursor: progress;
+      opacity: 0.7;
+    }
+  }
+
+  & .brand-kit-card-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-xs);
+    font-size: var(--text-sm);
+
+    & strong {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  & .brand-kit-card-inuse {
+    flex: none;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
+  & .brand-kit-card-about {
+    flex: 1;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+
+  & .brand-kit-card-foot {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .brand-kit-card-problems {
+    color: var(--color-warning);
+  }
+
+  /* Over the card's corner, so the card itself stays one button. */
+  & .brand-kit-card-remove {
+    position: absolute;
+    right: var(--space-sm);
+    bottom: var(--space-sm);
+  }
+}

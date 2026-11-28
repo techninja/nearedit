@@ -27,6 +27,8 @@ import { snapTrack } from './timing.js';
  * @property {import('./route.js').EngineChoice} [engine] - Overrides `RENDER_ENGINE`
  * @property {boolean} [lossless] - Tests only: encode canvas segments without
  *   loss (RGB), so decoded frames can be compared bit for bit
+ * @property {import('./words.js').WordTable} [words] - Transcripts of the
+ *   captioned clips' files (`prepareRender`): what the captions are drawn from
  */
 
 export const GLOBAL_ARGS = ['-hide_banner', '-nostdin', '-y', '-loglevel', 'error', '-nostats'];

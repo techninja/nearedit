@@ -1,7 +1,8 @@
 /**
  * Finished renders on disk: `<rendersDir>/<name>.mp4` with a small
- * `<name>.mp4.json` record beside it. Names taken from a request are always
- * reduced to a plain file name inside the renders directory.
+ * `<name>.mp4.json` record beside it — and, when the render was asked for
+ * subtitles, `<name>.srt` or `<name>.vtt`. Names taken from a request are
+ * always reduced to a plain file name inside the renders directory.
  * @module api/render/store
  */
 
@@ -10,8 +11,11 @@ import { basename, join } from 'node:path';
 import { getConfig } from '../lib/config.js';
 import { readJson, writeJsonAtomic } from '../lib/registry.js';
 import { RenderError } from './errors.js';
+import { SUBTITLE_FORMATS, subtitleName } from './subtitles.js';
 
 const EXT = '.mp4';
+/** What a render name may end in: the video, or the subtitle file saved beside it. */
+const SERVED = [EXT, ...SUBTITLE_FORMATS.map((format) => `.${format}`)];
 
 /** @returns {string} The renders directory (created on demand). */
 export function rendersDir() {
@@ -56,13 +60,15 @@ export function uniqueName(file) {
 }
 
 /**
- * True for a plain `.mp4` file name: no directories, not hidden.
+ * True for a plain `.mp4` file name — or that of a subtitle file beside
+ * one: no directories, not hidden.
  * @param {unknown} name
  * @returns {boolean}
  */
 export function isRenderName(name) {
   if (typeof name !== 'string' || !name || name !== basename(name)) return false;
-  return !/[/\\\0]/.test(name) && !name.startsWith('.') && name.toLowerCase().endsWith(EXT);
+  const known = SERVED.some((ext) => name.toLowerCase().endsWith(ext));
+  return !/[/\\\0]/.test(name) && !name.startsWith('.') && known;
 }
 
 /**
@@ -91,7 +97,8 @@ export function writeRecord(file, meta) {
 /**
  * List finished renders, newest first.
  * @param {string} [projectId] - Only renders of this project
- * @returns {object[]} `{ file, url, size, createdAt, projectId, adaptationId, … }`
+ * @returns {object[]} `{ file, url, size, createdAt, projectId, adaptationId, …,
+ *   subtitles? }`
  */
 export function listRenders(projectId) {
   const dir = rendersDir();
@@ -103,6 +110,8 @@ export function listRenders(projectId) {
     /** @type {any} */
     const record = readJson(join(dir, `${file}.json`), {});
     if (projectId && record.projectId !== projectId) continue;
+    // A subtitle file that was deleted on its own is no longer part of the render.
+    if (record.subtitles && !resolveRender(record.subtitles.file)) delete record.subtitles;
     renders.push({
       projectId: '',
       adaptationId: '',
@@ -115,7 +124,8 @@ export function listRenders(projectId) {
 }
 
 /**
- * Delete a render and its record.
+ * Delete a render with its record and its subtitle files — or, named by
+ * itself, one subtitle file.
  * @param {unknown} name
  * @returns {boolean} false when there is no such render
  */
@@ -123,6 +133,8 @@ export function deleteRender(name) {
   const path = resolveRender(name);
   if (!path) return false;
   rmSync(path, { force: true });
+  if (!path.toLowerCase().endsWith(EXT)) return true;
   rmSync(`${path}.json`, { force: true });
+  for (const format of SUBTITLE_FORMATS) rmSync(subtitleName(path, format), { force: true });
   return true;
 }

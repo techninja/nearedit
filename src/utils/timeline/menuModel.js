@@ -12,6 +12,7 @@ import { clearTimeSelection, hasTimeSelection } from '#utils/commands/timeSelect
 import { removeKeyframesAt } from '#utils/edl/keyframes.js';
 import { edit, getDoc } from '#utils/editor/session.js';
 import { shortcutLabel } from '#utils/keyboard/index.js';
+import { elementMenu } from './menuElement.js';
 import { fadeMenu } from './menuFades.js';
 import { CLIP_MENU, LANE_MENU, RULER_MENU } from './menuLists.js';
 import { musicMenu } from './menuMusic.js';
@@ -76,11 +77,10 @@ function keyframeMenu({ part, clipId, keyTime }) {
 export function contextMenu(hit, ui) {
   if (hit.zone !== 'ruler') {
     const onClip = hit.clipId && !hit.locked;
-    // On a web or music clip, a keyframe mark or a fade, what was pointed at comes first.
+    // On a web, music or element clip, a keyframe mark or a fade, what was pointed at comes first.
     const doc = getDoc();
-    const pointed = onClip
-      ? [...webMenu(doc, hit), ...musicMenu(doc, hit), ...keyframeMenu(hit), ...fadeMenu(doc, hit)]
-      : [];
+    const kinds = () => [...webMenu(doc, hit), ...musicMenu(doc, hit), ...elementMenu(doc, hit)];
+    const pointed = onClip ? [...kinds(), ...keyframeMenu(hit), ...fadeMenu(doc, hit)] : [];
     return [...pointed, ...build(onClip ? CLIP_MENU : LANE_MENU)];
   }
   const clear = {

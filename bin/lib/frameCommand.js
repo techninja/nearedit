@@ -48,8 +48,9 @@ export async function frameCommand(argv, io) {
     );
   // Loaded late: the canvas is only needed once the arguments are known to be good.
   const { renderStill } = await import('../../src/api/render/canvas/still.js');
-  const { probes } = checked;
-  const still = await renderStill(checked.edl, values.time, { probes, width, warn: io.err });
+  const { probes, words } = checked;
+  const options = { probes, words, width, warn: io.err };
+  const still = await renderStill(checked.edl, values.time, options);
   const stem = join(dirname(checked.file), basename(checked.file, extname(checked.file)));
   const named = values.output || `${stem}-${Number(still.time.toFixed(3))}s.png`;
   const output = resolve(extname(named) ? named : `${named}.png`);

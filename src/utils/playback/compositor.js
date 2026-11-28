@@ -19,6 +19,7 @@
 import { isElementClip } from '#utils/brand/clip.js';
 import { elementImages } from '#utils/compose/requirements.js';
 import { sourceTimeAt } from '#utils/edl/query.js';
+import { createWordSource } from '#utils/playback/captionWords.js';
 import { createImageCache } from '#utils/playback/imageCache.js';
 import { pictureUrl } from '#utils/playback/mediaUrl.js';
 import { createPainter } from '#utils/playback/paintFrame.js';
@@ -44,7 +45,8 @@ const SEEK_NUDGE = 0.001;
 export function createCompositor(canvas) {
   const videos = createVideoPool(onMedia);
   const images = createImageCache(onMedia);
-  const painter = createPainter(canvas, { videos, images, onArrive: onMedia });
+  const words = createWordSource(onMedia);
+  const painter = createPainter(canvas, { videos, images, words, onArrive: onMedia });
   /** @type {{ doc: FrameDoc, time: number }|null} The newest paused request */
   let request = null;
   let dirty = true;
@@ -84,7 +86,7 @@ export function createCompositor(canvas) {
     return true;
   }
 
-  /** A frame, a still or a font arrived: show the newest paused request with it. */
+  /** A frame, a still, a font or a transcript arrived: show the newest paused request with it. */
   function onMedia() {
     if (request && drawable(false)) paint(request.doc, request.time);
   }
@@ -139,6 +141,7 @@ export function createCompositor(canvas) {
       request = null;
       videos.destroy();
       images.clear();
+      words.destroy();
     },
   };
 }

@@ -78,6 +78,7 @@ export function clipsView(model) {
       <inspector-clip model="${model}"></inspector-clip>
       <web-inspector model="${model}"></web-inspector>
       <music-inspector model="${model}"></music-inspector>
+      <element-inspector model="${model}"></element-inspector>
       <inspector-timing model="${model}"></inspector-timing>
       <inspector-generator model="${model}"></inspector-generator>
       <inspector-text model="${model}"></inspector-text>

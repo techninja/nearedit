@@ -21,9 +21,10 @@ import { createEnv } from './env.js';
  *   the output aspect ratio
  * @param {import('./env.js').ImageSource} [options.images] - Loaded stills (`loadImages`)
  * @param {(clip: any, sourceTime: number) => any} [options.frameOf] - Footage frames
+ * @param {(clip: any) => any} [options.words] - Transcripts of captioned clips' files
  * @param {import('#utils/compose/host.js').HostEnv} [options.env] - Reuse an
  *   environment (and its pooled canvases) across many frames of one size;
- *   `images` and `frameOf` are then ignored
+ *   `images`, `frameOf` and `words` are then ignored
  * @returns {any} A canvas: `getContext('2d').getImageData()` for pixels,
  *   `toBuffer('image/png')` for a file, `data()` for the raw RGBA buffer
  */

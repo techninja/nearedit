@@ -23,6 +23,7 @@ import { buildCanvasPlan } from './plan.js';
  * @param {Record<string, any>} [options.probes] - Probe per footage file (`prepareRender`)
  * @param {number} [options.width] - Width of the picture; the document's by default
  * @param {string} [options.preset] - Whose scaling the footage gets (default "standard")
+ * @param {import('../words.js').WordTable} [options.words] - Transcripts for its captions (`prepareRender`)
  * @param {import('./host.js').CanvasHost} [options.host] - Reuse a host for many frames
  * @param {(message: string) => void} [options.warn]
  * @returns {Promise<{ canvas: any, frame: number, time: number }>} The canvas
@@ -50,6 +51,7 @@ export async function renderStill(edl, time, options = {}) {
   });
 
   const host = options.host || createCanvasHost();
+  host.useWords(options.words);
   await host.load(plan.images, plan.stills);
   const footage = createFootage(plan.footage, host, options.warn);
   try {

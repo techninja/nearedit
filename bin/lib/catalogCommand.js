@@ -1,6 +1,7 @@
 /**
  * `nearedit catalog` — what a document may name: generators and effects
- * with their parameters, blend modes, easings, text animations and fonts.
+ * with their parameters, blend modes, easings, text animations, fonts,
+ * brand kits and caption presets.
  * Read straight from the compositor, so it is never out of date.
  * @module bin/lib/catalogCommand
  */
@@ -8,12 +9,13 @@
 import { brandCatalog } from '#utils/brand/catalog.js';
 import { catalog } from '#utils/compose/index.js';
 import { parseArgs, UsageError } from './args.js';
+import { captionLines, captionsCatalog } from './captionsCatalog.js';
 
 const OPTIONS = { json: { type: /** @type {'flag'} */ ('flag') } };
 /** The parts of the catalog this command knows how to lay out. */
 const SECTIONS = [
   ...['generators', 'effects', 'effectPresets', 'blendModes'],
-  ...['easings', 'textAnimations', 'textUnits', 'fonts', 'kits'],
+  ...['easings', 'textAnimations', 'textUnits', 'fonts', 'kits', 'captions'],
 ];
 
 /**
@@ -76,7 +78,7 @@ export async function catalogCommand(argv, io) {
   const { values, rest } = parseArgs(argv, OPTIONS, 'catalog');
   if (rest.length) throw new UsageError(`catalog takes no arguments, got "${rest[0]}".`, 'catalog');
   /** @type {any} */
-  const all = { ...catalog(), kits: brandCatalog() };
+  const all = { ...catalog(), kits: brandCatalog(), captions: captionsCatalog() };
   if (values.json) {
     io.out(JSON.stringify(all, null, 2));
     return 0;
@@ -115,6 +117,7 @@ export async function catalogCommand(argv, io) {
     ...fonts,
     '',
     ...kitLines(all.kits),
+    ...captionLines(),
     ...more,
     'Every parameter is optional; a document stores only what differs from the default.',
     'The same as JSON: nearedit catalog --json',

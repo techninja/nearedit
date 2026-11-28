@@ -73,6 +73,29 @@ export function textThumb(id, like) {
   return { doc, duration, still: duration / 2 };
 }
 
+/** @type {WeakMap<object, { x: number, y: number, width: number, height: number }>} */
+const crops = new WeakMap();
+
+/**
+ * Frame a thumbnail closer: show only a part of its document's frame (a
+ * brand element sits low in a corner; its tile shows that corner).
+ * @param {any} doc - A thumbnail's document
+ * @param {{ x: number, y: number, width: number, height: number }} rect - Output
+ *   pixels, in the frame's own shape
+ * @returns {any} The same document
+ */
+export function cropThumb(doc, rect) {
+  crops.set(doc, rect);
+  return doc;
+}
+
+/**
+ * @param {any} doc
+ * @returns {{ x: number, y: number, width: number, height: number }|null} The
+ *   part of the frame its thumbnail shows; null for all of it
+ */
+export const thumbCrop = (doc) => (doc && typeof doc === 'object' && crops.get(doc)) || null;
+
 /**
  * Backing-store size of a thumbnail canvas: the output aspect ratio, as
  * large as fits a box.

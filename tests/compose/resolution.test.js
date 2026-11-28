@@ -33,17 +33,28 @@ const BLOCK = 12;
 /** …and in one that holds glyphs, which may sit half a pixel row apart. */
 const TEXT_BLOCK = 40;
 /**
+ * …and in one that holds small outlined type — captions. An outlined
+ * letter has two edges where a plain one has one (picture to outline,
+ * outline to letter), so the same half row weighs up to twice as much, at
+ * any size: measured over the sub-pixel places a caption can land on, such
+ * a block differs by up to 57 levels, a plain title's by 30.
+ */
+const OUTLINED_BLOCK = 64;
+/**
  * Cases whose modules multiply lengths by `frame.scale`: drawn with a scale
  * of 1 each must break the bounds. (Titles and noise never read the scale —
  * they draw in output pixels through the canvas transform — so they cannot
- * get it wrong this way.)
+ * get it wrong this way.) Captions measure in units of the frame, which
+ * they scale themselves: two of them stand for the outlined bound.
  */
 const CONTROLS = ['shapes', 'pattern-stripes', 'effect-blur', 'effect-glow', 'keyframes'];
+const CAPTION_CONTROLS = ['captions-clean-wide', 'captions-minimal-tall'];
 
 const OUT = process.env.RESOLUTION_OUT;
 let fixtures;
 let images;
 let footage = {};
+let words = {};
 const envs = {};
 const lines = [];
 
@@ -58,9 +69,11 @@ const smallOf = (found) =>
 /** RGBA of a frame drawn `scale` times the small size. */
 function frame(found, scale) {
   footage = found.footage;
+  words = found.words || {};
   envs[scale] ||= createEnv({
     images,
     frameOf: (clip) => images.get(footage[clip.clipId]) || null,
+    words: (clip) => words[clip.sourceFile] || null,
   });
   const small = smallOf(found);
   const size = { width: small.width * scale, height: small.height * scale };
@@ -122,24 +135,28 @@ describe('resolution independence: 480 px wide vs 1920 px wide', () => {
         await save(`${name}.1920`, large, size);
         await save(`${name}.diff`, differenceImage(small, large, 8), size);
       }
-      const block = found.text ? TEXT_BLOCK : BLOCK;
+      const block = found.outlined ? OUTLINED_BLOCK : found.text ? TEXT_BLOCK : BLOCK;
       assert.ok(d.mean <= MEAN, `mean difference ${d.mean.toFixed(3)} levels`);
       assert.ok(d.blockMax <= block, `an 8×8 block differs by ${d.blockMax.toFixed(2)} levels`);
     });
   }
 
   it('would notice a length that ignores the scale', () => {
-    for (const name of CONTROLS) {
+    for (const name of [...CONTROLS, ...CAPTION_CONTROLS]) {
       const found = referenceCases(fixtures).find((c) => c.name === name);
+      const size = smallOf(found);
       // The small frame again, but telling every module that one output
       // pixel is one canvas pixel: what forgetting `frame.scale` looks like.
-      const canvas = createCanvas(SMALL.width, SMALL.height);
+      const canvas = createCanvas(size.width, size.height);
       const ctx = canvas.getContext('2d');
-      const unscaled = { ...frameInfo(found.edl, SMALL.width, SMALL.height), scale: 1 };
-      drawFrame(ctx, found.edl, found.time, createEnv({ images }), unscaled);
-      const wrong = ctx.getImageData(0, 0, SMALL.width, SMALL.height).data;
-      const d = difference(wrong, averaged(frame(found, FACTOR)), SMALL.width, SMALL.height);
-      assert.ok(d.mean > MEAN || d.blockMax > BLOCK, `${name} passed unscaled: ${report('', d)}`);
+      const unscaled = { ...frameInfo(found.edl, size.width, size.height), scale: 1 };
+      const large = averaged(frame(found, FACTOR), size);
+      const env = createEnv({ images, words: (clip) => words[clip.sourceFile] || null });
+      drawFrame(ctx, found.edl, found.time, env, unscaled);
+      const wrong = ctx.getImageData(0, 0, size.width, size.height).data;
+      const d = difference(wrong, large, size.width, size.height);
+      const block = found.outlined ? OUTLINED_BLOCK : BLOCK;
+      assert.ok(d.mean > MEAN || d.blockMax > block, `${name} passed unscaled: ${report('', d)}`);
     }
   });
 });

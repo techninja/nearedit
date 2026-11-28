@@ -5,8 +5,9 @@
  * buffers and a waiting frame (tens of megabytes at HD), so one graph for a
  * whole film does not fit in memory. The picture is therefore rendered in
  * consecutive segments that each touch only a few clips, and joined without
- * re-encoding. A segment in which anything needs the compositor is drawn by
- * the canvas path, every other one by the filter graph (`route.js`); long
+ * re-encoding. A segment in which anything needs the compositor — a clip on
+ * screen, or a caption over it — is drawn by the canvas path, every other
+ * one by the filter graph (`route.js`); long
  * canvas segments are cut into chunks so several can be drawn at once. Pure.
  * @module api/render/segments
  */
@@ -16,6 +17,7 @@ import { createContext } from './context.js';
 import { checkEngine, clipNeeds, documentNeeds, engineChoice, trackNeeds } from './route.js';
 import { chunked, grouped } from './segmentRules.js';
 import { clipWindow } from './timing.js';
+import { spokenClips } from './words.js';
 
 /** Most layers one segment should touch (a soft limit). */
 export const MAX_LAYERS = 8;
@@ -54,6 +56,21 @@ function clipSpans(tracks, timing) {
 }
 
 /**
+ * The stretches a caption may be on screen: every sound clip whose captions
+ * are drawn, as a span of frames that needs the compositor.
+ * @param {any[]} tracks - Snapped tracks
+ * @param {import('./timing.js').Timing} timing
+ * @param {import('./words.js').WordTable} [words]
+ * @returns {{ first: number, last: number, needs: string[] }[]}
+ */
+function captionSpans(tracks, timing, words) {
+  return spokenClips(tracks, words).flatMap((clip) => {
+    const window = clipWindow(clip, timing);
+    return window ? [{ first: window.first, last: window.last, needs: ['captions'] }] : [];
+  });
+}
+
+/**
  * Cut the rendered range into segments at clip boundaries so that each
  * touches at most `maxLayers` video-track clips where that is possible, and
  * so that stretches of plain footage stay apart from stretches that need the
@@ -61,8 +78,10 @@ function clipSpans(tracks, timing) {
  * @param {any[]} tracks - Snapped tracks
  * @param {import('./timing.js').Timing} timing
  * @param {{ maxLayers?: number, minFrames?: number, chunkFrames?: number,
- *   everywhere?: string[] }} [limits] - `everywhere`: reasons that hold for the
- *   whole document; `chunkFrames`: longest canvas segment (default 4 s)
+ *   everywhere?: string[], words?: import('./words.js').WordTable }} [limits] -
+ *   `everywhere`: reasons that hold for the whole document; `chunkFrames`:
+ *   longest canvas segment (default 4 s); `words`: the transcripts that were
+ *   found — a captioned clip without words is not drawn for
  * @returns {Segment[]} In order, covering the range
  */
 export function planSegments(tracks, timing, limits = {}) {
@@ -70,11 +89,15 @@ export function planSegments(tracks, timing, limits = {}) {
   const gop = Math.max(1, Math.round(timing.fps * 2));
   const chunkFrames = limits.chunkFrames || gop * CHUNK_GOPS;
   const spans = clipSpans(tracks, timing);
-  const edges = spans.flatMap((span) => [span.first, span.last]);
+  // Captions need drawing but are no layer: they do not count against the budget.
+  const spoken = captionSpans(tracks, timing, limits.words);
+  const edges = [...spans, ...spoken].flatMap((span) => [span.first, span.last]);
   const cuts = [...new Set([timing.startFrame, timing.endFrame, ...edges])].sort((a, b) => a - b);
-  const touching = (from, to) => spans.filter((s) => s.first < to && s.last > from);
+  const within = (list, from, to) => list.filter((s) => s.first < to && s.last > from);
+  const touching = (from, to) => within(spans, from, to);
   const pieces = cuts.slice(1).map((end, i) => {
-    const needs = touching(cuts[i], end).flatMap((span) => span.needs);
+    const drawn = [...touching(cuts[i], end), ...within(spoken, cuts[i], end)];
+    const needs = drawn.flatMap((span) => span.needs);
     return { start: cuts[i], end, needs: [...new Set([...everywhere, ...needs])] };
   });
   const fits = (from, to) => touching(from, to).length <= maxLayers;

@@ -1,0 +1,117 @@
+brand-dialog {
+  display: contents;
+
+  & .dialog-body {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  & .brand-dialog-about {
+    margin: 0 0 var(--space-md);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  & .brand-dialog-offline {
+    margin: 0 0 var(--space-md);
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
+    font-size: var(--text-xs);
+  }
+
+  & .brand-dialog-choose {
+    overflow-y: auto;
+  }
+
+  & .brand-dialog-notices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+
+    /* Nothing to say: no gap either. */
+    &:empty {
+      display: none;
+    }
+
+    & .brand-stale {
+      margin: 0;
+    }
+
+    & .error-message,
+    & .success-message {
+      margin: 0;
+      font-size: var(--text-sm);
+    }
+
+    & .error-message p {
+      margin: 0;
+    }
+
+    & .error-message ul {
+      margin: var(--space-xs) 0 0;
+      padding-left: var(--space-md);
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* The form scrolls; the look stays beside it. */
+  & .brand-dialog-customise {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(18rem, 26rem) minmax(0, 1fr);
+    gap: var(--space-lg);
+    min-height: 0;
+  }
+
+  & .brand-dialog-form,
+  & .brand-dialog-look {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  & .brand-dialog-look .brand-dialog-notices {
+    margin: 0 0 var(--space-md);
+  }
+
+  & .brand-dialog-form .brand-dialog-about {
+    padding: 0 var(--space-sm);
+  }
+
+  & .brand-dialog-naming {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 12rem;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+
+    & input {
+      flex: 1;
+    }
+  }
+
+  & .dialog-footer .btn {
+    gap: var(--space-xs);
+  }
+}
+
+/* A narrow window: the look on top, the form under it, one scroll. */
+@media (width < 760px) {
+  brand-dialog .brand-dialog-customise {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--space-md);
+    overflow-y: auto;
+  }
+
+  brand-dialog .brand-dialog-form,
+  brand-dialog .brand-dialog-look {
+    flex: none;
+    overflow: visible;
+  }
+}

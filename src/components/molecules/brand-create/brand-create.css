@@ -1,0 +1,121 @@
+/* The timeline's colour for brand element clips, light and dark (read by
+   utils/timeline/palette.js as --color-clip-element). */
+:root {
+  --color-clip-element: #65a30d;
+}
+
+[data-theme='dark'] {
+  --color-clip-element: #4d7c0f;
+}
+
+/* A kit's colours as a row of dots — the Brand section, the kits of the
+   dialog and the inspector all show a kit this way. */
+.brand-swatches {
+  display: inline-flex;
+  flex: none;
+
+  & i {
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-left: -0.25rem;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--color-surface);
+  }
+
+  & i:first-child {
+    margin-left: 0;
+  }
+}
+
+/* The notice that clips are out of date with the brand, wherever it shows. */
+.brand-stale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin: 0 var(--space-sm) var(--space-xs);
+  padding: var(--space-sm);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 45%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+
+  & p {
+    margin: 0;
+  }
+
+  & .brand-stale-more {
+    color: var(--color-text-muted);
+  }
+
+  & .btn {
+    align-self: flex-start;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+}
+
+p.brand-stale-done {
+  border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+
+brand-create {
+  display: block;
+  padding-bottom: var(--space-sm);
+  container-type: inline-size;
+
+  & .brand-create-kit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin: var(--space-xs) var(--space-sm) var(--space-sm);
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+  }
+
+  & .brand-create-name {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    font-size: var(--text-sm);
+    line-height: 1.25;
+
+    & strong {
+      overflow: hidden;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    & small {
+      overflow: hidden;
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  & .brand-create-open {
+    flex: none;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  /* Elements carry words: two wide tiles across a dock, more in a wide panel. */
+  & .create-panel-grid.brand-create-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @container (width >= 34rem) {
+    & .create-panel-grid.brand-create-grid {
+      grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    }
+  }
+}

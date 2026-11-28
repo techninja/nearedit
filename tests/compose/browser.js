@@ -35,6 +35,8 @@ const PAGE = `<!doctype html><html><head><meta charset="utf-8">
  * @property {Record<string, string>} [images] - Media path → file on disk
  * @property {Record<string, string>} [footage] - clipId → media path whose
  *   picture stands in for that clip's footage frame
+ * @property {Record<string, any>} [words] - Source file → the transcript
+ *   words `env.words` hands over for a captioned clip of that file
  */
 
 /**
@@ -89,7 +91,9 @@ async function drawInPage(job) {
     await image.decode();
     state.images.set(path, image);
   }
-  for (const { font, text } of requirements(job.edl).fonts) {
+  state.words = job.words || {};
+  const wordsOf = (clip) => state.words[clip.sourceFile] || null;
+  for (const { font, text } of requirements(job.edl, wordsOf).fonts) {
     // A font file that is missing fails to load; its text falls back, as in the app.
     await document.fonts.load(font, text).catch(() => []);
   }
@@ -102,6 +106,7 @@ async function drawInPage(job) {
     frameOf: (clip) => state.images.get(state.footage[clip.clipId]) || null,
     fontReady: () => true, // every font was loaded above, before drawing
     fonts: (table) => state.fonts(table),
+    words: wordsOf,
   };
   const canvas = createCanvas(job.width, job.height);
   const ctx = canvas.getContext('2d');

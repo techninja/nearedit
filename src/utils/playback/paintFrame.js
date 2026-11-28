@@ -2,9 +2,10 @@
  * Preview painter — the browser host of the shared frame compositor
  * (`#utils/compose`). It gives `drawFrame` what only a browser can provide:
  * scratch canvases, decoded stills, the current frame of each pooled
- * `<video>` element, and fonts that are loaded the first time a title needs
- * them. What is not there yet (a still, a font) is left out of the frame and
- * `onArrive` asks for a repaint once it is.
+ * `<video>` element, fonts that are loaded the first time a title needs
+ * them, and the transcripts captions are made from. What is not there yet
+ * (a still, a font, a transcript) is left out of the frame and `onArrive`
+ * asks for a repaint once it is.
  * Contract: docs/app-spec/COMPOSITOR.md § The host environment.
  * @module utils/playback/paintFrame
  */
@@ -21,6 +22,7 @@ import { hasFrame } from '#utils/playback/videoSlot.js';
  * @typedef {Object} PainterSources
  * @property {ReturnType<typeof import('#utils/playback/videoPool.js').createVideoPool>} videos
  * @property {ReturnType<typeof import('#utils/playback/imageCache.js').createImageCache>} images
+ * @property {ReturnType<typeof import('#utils/playback/captionWords.js').createWordSource>} words
  * @property {() => void} onArrive - A still or a font became available
  */
 
@@ -30,7 +32,7 @@ import { hasFrame } from '#utils/playback/videoSlot.js';
  * @param {PainterSources} sources
  * @returns {{ paint: (doc: any, time: number) => void }}
  */
-export function createPainter(canvas, { videos, images, onArrive }) {
+export function createPainter(canvas, { videos, images, words, onArrive }) {
   const ctx = canvas.getContext('2d', { alpha: false });
   let fontReady = createFontLoader(document.fonts, onArrive);
   // A document's own fonts come from the media route, as its pictures do. When
@@ -55,6 +57,7 @@ export function createPainter(canvas, { videos, images, onArrive }) {
     },
     fontReady: (font, text) => fontReady(font, text),
     fonts: ownFonts,
+    words: (clip) => words.get(clip),
   };
   /** @type {any} The document whose fonts were last asked for */
   let warmed = null;
@@ -68,10 +71,11 @@ export function createPainter(canvas, { videos, images, onArrive }) {
     paint(doc, time) {
       if (doc !== warmed) {
         // A new document: start loading every font it uses, not just this frame's,
-        // and the pictures its element clips show (their logos).
+        // the pictures its element clips show (their logos), and — by asking
+        // for them — the transcripts of its captioned clips.
         warmed = doc;
         if (doc.fonts?.length) ownFonts(doc.fonts);
-        for (const { font, text } of requirements(doc).fonts) fontReady(font, text);
+        for (const { font, text } of requirements(doc, env.words).fonts) fontReady(font, text);
         for (const path of elementImages(doc)) images.get(pictureUrl(path));
       }
       drawFrame(ctx, doc, time, env, frameInfo(doc, canvas.width, canvas.height));

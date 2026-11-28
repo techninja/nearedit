@@ -21,6 +21,7 @@ import { mapMediaPaths, renderImages } from './mediaPaths.js';
 import { renderSources } from './plan.js';
 import { DEFAULT_PRESET, getPreset } from './presets.js';
 import { sanitizeFilename } from './store.js';
+import { SUBTITLE_FORMATS } from './subtitles.js';
 
 /**
  * @typedef {Object} RenderRequest
@@ -31,6 +32,8 @@ import { sanitizeFilename } from './store.js';
  * @property {{ start: number, end: number } | null} range
  * @property {string} filename - Sanitised `.mp4` name, '' when none was asked for
  * @property {string} name - Adaptation name, for labels and default file names
+ * @property {string} subtitles - `srt` or `vtt`: also save the captions as a
+ *   subtitle file beside the video; '' when none was asked for
  */
 
 const MAX_SIDE = 8192;
@@ -80,6 +83,9 @@ export function parseRenderRequest(body) {
     range = { start, end };
   }
   const filename = body.filename ? sanitizeFilename(body.filename) : '';
+  const subtitles = body.subtitles ?? '';
+  if (subtitles !== '' && !SUBTITLE_FORMATS.includes(subtitles))
+    throw invalid('subtitles', 'Must be one of: srt, vtt');
 
   const adaptation = projectId ? getAdaptation(projectId, adaptationId || undefined) : null;
   let edl = body.edl;
@@ -115,5 +121,6 @@ export function parseRenderRequest(body) {
     range,
     filename,
     name: adaptation?.name || '',
+    subtitles,
   };
 }

@@ -1,13 +1,14 @@
 /**
- * Requirements — the stills and fonts a document needs before every frame
- * of it can be drawn completely. The server loads all of them first; the
- * browser warms them up and draws what is ready in the meantime.
+ * Requirements — the stills, fonts and transcripts a document needs before
+ * every frame of it can be drawn completely. The server loads all of them
+ * first; the browser warms them up and draws what is ready in the meantime.
  * Isomorphic and pure. Reference: docs/app-spec/COMPOSITOR.md § The host environment.
  * @module utils/compose/requirements
  */
 
 import { elementNeeds } from '#utils/brand/element/needs.js';
 import { FORMATS } from '#utils/brand/element/vocabulary.js';
+import { captionRequirements } from './captionPass.js';
 import { effectModule, generatorModule } from './catalog.js';
 import { fontString } from './fonts.js';
 import { layerKind } from './layers.js';
@@ -20,6 +21,8 @@ import { textStyle } from './text/style.js';
  *   and every `image` parameter of a generator or effect
  * @property {{ font: string, text: string }[]} fonts - A canvas `font` value
  *   and the text drawn with it, one entry per distinct pair
+ * @property {string[]} words - The files whose transcripts the captions are
+ *   made from, each once: what `env.words` will be asked for
  */
 
 /**
@@ -37,7 +40,7 @@ function effectImages(effects) {
  * answer does not hang on the document's shape.
  * @param {any} clip - An element clip
  * @param {any[]} [table] - The document's font table
- * @returns {Requirements}
+ * @returns {Pick<Requirements, 'images'|'fonts'>}
  */
 export function elementRequirements(clip, table) {
   const images = new Set();
@@ -76,10 +79,13 @@ export function elementImages(edl) {
 
 /**
  * List what a document needs.
- * @param {{ tracks?: any[], fonts?: any[] }} edl
+ * @param {{ tracks?: any[], fonts?: any[], captions?: { style?: unknown } }} edl
+ * @param {(clip: any) => any} [wordsOf] - The transcript of a captioned
+ *   clip's file, as `env.words` gives it, when the host has it already: the
+ *   caption font is then listed with the characters it will draw
  * @returns {Requirements}
  */
-export function requirements(edl) {
+export function requirements(edl, wordsOf) {
   const images = new Set();
   /** @type {Map<string, { font: string, text: string }>} */
   const fonts = new Map();
@@ -107,5 +113,7 @@ export function requirements(edl) {
       }
     }
   }
-  return { images: [...images], fonts: [...fonts.values()] };
+  const captions = captionRequirements(edl, wordsOf);
+  for (const entry of captions.fonts) fonts.set(`${entry.font}\n${entry.text}`, entry);
+  return { images: [...images], fonts: [...fonts.values()], words: captions.words };
 }

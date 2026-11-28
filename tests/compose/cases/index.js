@@ -1,11 +1,12 @@
 /**
  * The reference documents of the compositor tests, as a flat list of cases.
  * Together they exercise every generator, text at rest and in motion, both
- * effects, every blend mode, placement, the layer pipeline, and every
- * element of every built-in brand kit.
+ * effects, every blend mode, placement, the layer pipeline, every element
+ * of every built-in brand kit, and captions.
  * @module tests/compose/cases
  */
 
+import { captionCases } from './captions.js';
 import { effectDocs } from './effects.js';
 import { elementCases } from './elements.js';
 import { generatorDocs } from './generators.js';
@@ -20,10 +21,13 @@ import { emojiDoc, textDocs } from './text.js';
  * @property {any} edl
  * @property {number} time - Timeline seconds to draw
  * @property {boolean} text - The case draws glyphs
+ * @property {boolean} [outlined] - Its glyphs are small and outlined (captions)
  * @property {Record<string, string>} footage - clipId → picture standing in
  *   for that clip's footage frame
  * @property {{ width: number, height: number }} [size] - The canvas to draw
- *   it on when the document is not 16:9; 640 × 360 by default
+ *   it on when the document is not 16:9 or wants more pixels; 640 × 360 by default
+ * @property {Record<string, any>} [words] - Source file → the transcript
+ *   words a host hands the compositor for its captions
  */
 
 /** The time the cases without motion are drawn at. */
@@ -53,6 +57,7 @@ export function referenceCases(files) {
     ...moving,
     ...particleCases(files),
     ...elementCases(files),
+    ...captionCases(files),
   ];
 }
 

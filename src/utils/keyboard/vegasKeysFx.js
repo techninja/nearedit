@@ -18,4 +18,5 @@ export const VEGAS_FX_KEYS = {
   'web.editSteps': ['Alt+W'],
   'web.record': ['Alt+R'],
   'music.edit': ['Alt+M'],
+  'brand.open': ['Alt+B'],
 };

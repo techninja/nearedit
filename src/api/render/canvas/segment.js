@@ -52,7 +52,8 @@ async function drawSegment(plan, host, { footage, encoder }, { signal, onFrame }
  * Render a segment of a document to a video file without sound.
  * @param {any} edl - A checked document: every path in it may be read
  * @param {import('../context.js').PlanOptions} options - `range` is the
- *   segment, `outputPath` the file; `probes` describe the footage
+ *   segment, `outputPath` the file; `probes` describe the footage, `words`
+ *   are what its captions say
  * @param {SegmentHooks} [hooks]
  * @returns {Promise<{ frames: number, width: number, height: number }>}
  * @throws {Error} Naming the file that could not be read or decoded; with
@@ -63,6 +64,7 @@ export async function renderCanvasSegment(edl, options, hooks = {}) {
   const host = hooks.host || createCanvasHost();
   const plan = buildCanvasPlan(edl, options);
   if (signal?.aborted) throw aborted();
+  host.useWords(options.words);
   await host.load(plan.images, plan.stills);
   const footage = createFootage(plan.footage, host, hooks.warn);
   const encoder = openEncoder(plan.encoderArgs);

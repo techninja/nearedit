@@ -1,3 +1,13 @@
+/* Brand kits: the section of this tab, the inspector's group and the Brand
+   dialog with its parts. Their styles are loaded with the tab they start in. */
+@import '../../atoms/brand-frame/brand-frame.css';
+@import '../../molecules/brand-create/brand-create.css';
+@import '../../molecules/element-inspector/element-inspector.css';
+@import '../../molecules/brand-kit-list/brand-kit-list.css';
+@import '../../molecules/brand-token-editor/brand-token-editor.css';
+@import '../../molecules/brand-preview/brand-preview.css';
+@import '../brand-dialog/brand-dialog.css';
+
 /* Fills its parent, whether that is a flex item or a grid or block cell. */
 create-panel {
   display: flex;
@@ -30,16 +40,18 @@ create-panel {
     font-size: var(--text-sm);
   }
 
-  @container (width < 26rem) {
+  @container (width < 36rem) {
     & .create-panel-sections > button app-icon {
       display: none;
     }
   }
 
-  /* Five sections in a slim panel: smaller words, no padding. */
-  @container (width < 24rem) {
+  /* Six sections in a slim panel: smaller words, no padding, and each as
+     wide as its word needs — "Generators" more than "Web". */
+  @container (width < 30rem) {
     & .create-panel-sections > button {
-      padding: 0 2px;
+      flex: 1 1 auto;
+      padding: 0 3px;
       font-size: var(--text-xs);
     }
   }

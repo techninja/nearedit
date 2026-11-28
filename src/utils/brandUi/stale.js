@@ -10,7 +10,7 @@
 
 import { restyle, staleElements } from '#utils/edl/index.js';
 import { edit, getDoc } from '#utils/editor/session.js';
-import { currentKit } from './kitState.js';
+import { currentKit, kitSettled } from './kitState.js';
 
 /**
  * @typedef {Object} StaleInfo
@@ -33,6 +33,8 @@ const NONE = { byClip: new Map(), outdated: [], locked: [], missing: [] };
  */
 export function staleInfo(doc = getDoc(), kit = currentKit()) {
   if (!doc || typeof doc !== 'object' || !kit) return NONE;
+  // Until the project's kit has been read, nothing is known to be out of date with it.
+  if (kit === currentKit() && !kitSettled()) return NONE;
   const kept = known.get(doc);
   if (kept?.kit === kit) return kept.info;
   /** @type {StaleInfo} */

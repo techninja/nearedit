@@ -1,0 +1,25 @@
+/* The frame is black in every theme, like the preview. The picture is as
+   wide as its place and keeps the shape of the timeline. */
+brand-frame {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: #000;
+  overflow: hidden;
+
+  & canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* In a row of pictures that must stay a row whatever the format: a wide
+     box, with a square or vertical picture centred in it. */
+  &.brand-frame-boxed {
+    aspect-ratio: 16 / 9;
+  }
+
+  &.brand-frame-boxed canvas {
+    height: 100%;
+    object-fit: contain;
+  }
+}

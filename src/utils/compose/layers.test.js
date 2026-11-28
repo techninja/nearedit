@@ -83,7 +83,7 @@ describe('requirements', () => {
       { font: '700 72px "Caveat", "Noto Color Emoji"', text: 'One' },
       { font: '700 90px "Caveat", "Noto Color Emoji"', text: 'One' },
     ]);
-    assert.deepEqual(requirements({}), { images: [], fonts: [] });
+    assert.deepEqual(requirements({}), { images: [], fonts: [], words: [] });
   });
 });
 
