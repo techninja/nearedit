@@ -33,7 +33,7 @@ Everything lives in `src/api/render/`; `src/api/render.js` is the thin router.
 | ------ | ---- | --- |
 | `request.js`, `mediaPaths.js` | Validate the request, normalise the EDL, check every file path | reads |
 | `scope.js` | Which clips render, which files they read, empty-timeline check | pure |
-| `prepare.js`, `probe.js`, `capabilities.js` | Probe sources, detect what this FFmpeg can do | runs ffprobe/ffmpeg |
+| `prepare.js`, `probe.js`, `capabilities.js` | Render missing music, probe sources, detect what this FFmpeg can do | runs ffprobe/ffmpeg |
 | `route.js`, `segments.js`, `segmentRules.js` | What needs the compositor; segments and their renderer | pure |
 | `plan.js`, `context.js`, `timing.js`, `sources.js`, `conform.js` | Filter-graph plan, frame arithmetic, frame choice | pure |
 | `videoGraph.js`, `layer.js`, `layerFilters.js`, `layerMotion.js`, `layerParts.js`, `placement.js`, `mediaLayer.js`, `visible.js` | Picture graph | pure |
@@ -412,6 +412,16 @@ look-ahead and the decoders) and 0.2 GB the canvas worker.
   `nearedit frame` put them in `.nearedit/web/` beside the document
   (`--allow host[:port]` for private addresses) — and `nearedit validate`
   lists them as warnings.
+- **Music clips** ([MUSIC.md](./MUSIC.md)) are rendered from the rendering
+  of their song, like any sound file — and unlike web clips they are never
+  left out: music is cheap and always the same, so nobody is asked. The
+  request points every music clip at `.nearedit/music/<songKey>.wav` in
+  the project (the data folder for a timeline without one), whatever file
+  the document names, and `prepare.js` renders the ones that are not
+  there before anything is probed — for a render job and for
+  `/render/plan`, only for tracks that sound. A song that cannot be
+  rendered fails the job with the reason. The command line does the same
+  beside the document (`nearedit render`, `frame`).
 
 ## Tests
 

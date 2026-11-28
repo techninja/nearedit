@@ -65,7 +65,8 @@ export async function runRender(request, ctx) {
   active.add(basename(workDir));
   try {
     ctx.log(`Probing ${renderSources(request.edl).length} source file(s)`);
-    const { probes, capabilities } = await prepareRender(request.edl, { signal: ctx.signal });
+    const { signal, log } = ctx;
+    const { probes, capabilities } = await prepareRender(request.edl, { signal, log });
     const partial = join(workDir, 'output.mp4');
     const plan = await encodeTimeline(
       request.edl,

@@ -14,6 +14,7 @@ import { isInside } from '../../src/api/lib/paths.js';
 import { mapMediaPaths } from '../../src/api/render/mediaPaths.js';
 import { catalogFindings } from './catalogCheck.js';
 import { jsonErrorOffset, lineAndColumn } from './jsonError.js';
+import * as music from './musicClips.js';
 import { repairFindings } from './repairs.js';
 import { attachRecordings, recipeFindings, unrecordedFindings } from './webClips.js';
 
@@ -29,6 +30,7 @@ export class DocumentError extends Error {}
  * @property {string[]} media - Every media file the document names
  * @property {string} dir - The document's folder
  * @property {import('./webClips.js').Unrecorded[]} unrecorded - Web clips without a recording
+ * @property {import('./musicClips.js').Unrendered[]} unrendered - Music clips without a rendering
  */
 
 /**
@@ -77,11 +79,16 @@ export function loadDocument(path, options = {}) {
       throw new DocumentError(`--media ${folder}: no such folder`);
     return realpathSync(folder);
   });
-  // A web clip's footage is its recording beside the document, when there is one.
-  const { edl: normal, unrecorded } = attachRecordings(normalizeEdl(raw), dir, folders);
+  // A web clip's footage is its recording beside the document, when there is one;
+  // a music clip's sound the rendering of its song.
+  const recorded = attachRecordings(normalizeEdl(raw), dir, folders);
+  const { unrecorded } = recorded;
+  const { edl: normal, unrendered } = music.attachRenderings(recorded.edl, dir, folders);
+  const repairs = repairFindings(raw, normal).filter((one) => !music.isSongsOwn(one, tracks));
   /** @type {Finding[]} */
-  const findings = [...repairFindings(raw, normal), ...catalogFindings(normal)];
+  const findings = [...repairs, ...catalogFindings(normal)];
   findings.push(...recipeFindings(tracks), ...unrecordedFindings(normal, unrecorded));
+  findings.push(...music.songFindings(tracks), ...music.unrenderedFindings(tracks, unrendered));
   const media = new Set();
   const edl = mapMediaPaths(normal, (name, where) => {
     // Relative to the document's folder; failing that, to a --media folder.
@@ -102,7 +109,7 @@ export function loadDocument(path, options = {}) {
     media.add(real);
     return real;
   });
-  return { file, dir, edl, findings, media: [...media], unrecorded };
+  return { file, dir, edl, findings, media: [...media], unrecorded, unrendered };
 }
 
 /**

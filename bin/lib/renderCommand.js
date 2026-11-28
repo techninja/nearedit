@@ -10,6 +10,7 @@ import { encodeTimeline } from '../../src/api/render/passes.js';
 import { UsageError, parseArgs, parseRange } from './args.js';
 import { checkDocument } from './check.js';
 import { byLevel, describe, DocumentError } from './document.js';
+import { renderMusicClips } from './musicMissing.js';
 import { recordWebClips } from './webMissing.js';
 
 const OPTIONS = {
@@ -56,7 +57,9 @@ export async function renderCommand(argv, io) {
   const { workers } = values;
   if (workers !== undefined && !(Number.isInteger(workers) && workers >= 1))
     throw new UsageError('--workers must be a whole number, 1 or more.', 'render');
-  // Web clips are footage like any other once recorded: record the missing ones first.
+  // Music clips are sound like any other once rendered, web clips footage once recorded:
+  // make the missing ones first.
+  if (!(await renderMusicClips(rest[0], values, io))) return 130;
   if (!(await recordWebClips(rest[0], values, io))) return 130;
   const checked = await checkDocument(rest[0], { media: values.media });
   for (const line of describe(checked.findings)) io.err(line);

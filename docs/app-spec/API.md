@@ -359,3 +359,61 @@ snapshot can be taken while the next step is still being written. Errors
 are those of a recording, as a status: `422` (recipe, or a step that
 cannot be done), `403` (a refused address), `502` (the page could not be
 loaded), `503` (no browser).
+
+## Music clips
+
+Songs played by NearEdit's own synth ([MUSIC.md](./MUSIC.md)): a song — a
+tempo, drum patterns, synth lines — is rendered into
+`<project>/.nearedit/music/<key>.wav`: 16-bit PCM, 48 kHz, stereo, exactly
+the samples the engine gives in the browser. The rendering is ordinary
+sound: it is played through `/media/file`.
+
+| Method | Route | Purpose |
+| ------ | ----- | ------- |
+| POST | `/music/render` | `{ projectId, song }` → `200 { file, key, duration, cached }`, answered when the file exists |
+| POST | `/music/import` | `{ projectId?, path }` → `{ song, warnings }` for a `.mid` / `.midi` file |
+
+**Render** is not a job: the request takes as long as the render —
+typically well under two seconds, and no time for a rendering that exists.
+
+```json
+{
+  "file": "/project/.nearedit/music/a1567cdad764efd4909d.wav",
+  "key": "a1567cdad764efd4909d", "duration": 5, "cached": false
+}
+```
+
+`key` is `songKey(song)`; `duration` is the length of the file, the song
+with its tail; `cached` is true when nothing had to be rendered. The song
+is checked with `validateSong` as it was sent: `422` with one entry per
+problem in `fields` (`"parts[0].kit": "\"707\" is not a kit: use one of
+…"`; `fields.song` for a body without a song), `400` without a
+`projectId`, `404` for an unknown project — all before anything is
+rendered.
+
+Rendering runs in a worker thread, `MUSIC_RENDER_CONCURRENCY` songs at a
+time; further requests wait their turn. Requests for one song at the same
+moment share one render (`cached: false` for each of them). A client that
+closes the connection stops its render — unless another request waits for
+the same song. A song that is not finished after ten minutes is refused:
+`422 The song is too heavy to render…` (sixteen parts of wide unison
+chords render slower than they play). `403` when the project's folder
+cannot be written, `500` when the renderer stops unexpectedly. A render
+that is cancelled or fails leaves no file, whole or partial.
+
+**Import.** `path` is absolute, or relative to the project's folder (which
+needs `projectId`). The file must pass the media allow-list (`403`), exist
+(`404`), be named `.mid` or `.midi`, be at most 5 MB and hold a MIDI
+header (each `422` with the reason in `fields.path`). The answer is
+`songFromMidi`'s: a normalised song — channel 10 as drum lanes, every other
+channel a synth part — and `warnings`, what could not be carried over.
+The file is read in a thread of its own, two at a time; one that is not a
+song after 20 seconds is refused (`422`), and a client that goes away
+stops the reading. Nothing is written.
+
+**In a render.** `POST /render` and `/render/plan` never wait for the
+editor: every music clip is pointed at the rendering of its song as it is
+now — whatever `sourceFile` and `music.key` the document holds — and what
+is missing is rendered when the job (or the plan) starts, into the
+project, or into `<data>/.nearedit/music/` for a timeline posted without a
+project. See [RENDER.md](./RENDER.md#limits-and-what-is-not-honoured).

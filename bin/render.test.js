@@ -105,7 +105,8 @@ describe('nearedit command line: frame, render', () => {
     let interrupted = false;
     child.stderr.on('data', (chunk) => {
       err += chunk;
-      if (!interrupted && /rendering 10%/.test(err)) interrupted = child.kill('SIGINT');
+      // The first tenth that is reported: a busy machine may skip from 0% to 20%.
+      if (!interrupted && /rendering [1-9]0%/.test(err)) interrupted = child.kill('SIGINT');
     });
     const code = await new Promise((resolve) => child.on('close', resolve));
     assert.equal(code, 130, err);

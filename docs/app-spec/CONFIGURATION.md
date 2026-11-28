@@ -23,6 +23,7 @@ a few provider-specific ones (marked †) are read in
 | `RENDER_WORKERS` | half the cores, 1–4 | Segments of one render drawn at once. Each worker at 1080p needs about 1 GB; set `1` on a small machine |
 | `ANALYSIS_CONCURRENCY` | `1` | Simultaneous analysis jobs |
 | `WEB_CAPTURE_CONCURRENCY` | `1` | Simultaneous web-clip recordings (each is a browser) |
+| `MUSIC_RENDER_CONCURRENCY` | `2` | Songs of music clips rendered at once, each in a thread of its own; further requests wait. See [MUSIC.md](./MUSIC.md) |
 
 ### Access and security
 

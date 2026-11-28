@@ -79,7 +79,9 @@ export function songFromMidi(midi, opts = {}) {
   const groups = new Map();
   for (const note of file.notes) {
     const key = `${note.track}:${note.channel}`;
-    groups.set(key, [...(groups.get(key) || []), note]);
+    const group = groups.get(key);
+    if (group) group.push(note);
+    else groups.set(key, [note]);
   }
   const frame = { beatsPerBar, bars: Math.min(bars, LIMITS.bars[1]), ticks };
   const steps = STEP_COUNTS.includes(opts.steps) ? opts.steps : 0;

@@ -40,7 +40,8 @@ function pathList(raw) {
  *   transcription: ProviderConfig & { language: string, whisperCppBin: string,
  *     whisperCppModelPath: string, python: string, sshHost: string, sshCommand: string,
  *     publicUrl: string },
- *   jobs: { renderConcurrency: number, analysisConcurrency: number, webConcurrency: number },
+ *   jobs: { renderConcurrency: number, analysisConcurrency: number, webConcurrency: number,
+ *     musicConcurrency: number },
  *   web: { browser: string, allow: string, noSandbox: boolean },
  * }}
  */
@@ -91,6 +92,8 @@ export function getConfig() {
       renderConcurrency: parseInt(env.RENDER_CONCURRENCY || '', 10) || 1,
       analysisConcurrency: parseInt(env.ANALYSIS_CONCURRENCY || '', 10) || 1,
       webConcurrency: parseInt(env.WEB_CAPTURE_CONCURRENCY || '', 10) || 1,
+      // Songs rendered at once, each in a thread of its own (MUSIC.md § Server)
+      musicConcurrency: parseInt(env.MUSIC_RENDER_CONCURRENCY || '', 10) || 2,
     },
     // Web clips: the recording browser and what it may reach (WEBCLIP.md § Server)
     web: {

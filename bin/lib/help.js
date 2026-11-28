@@ -3,7 +3,7 @@
  * @module bin/lib/help
  */
 
-export const COMMANDS = ['render', 'frame', 'validate', 'record', 'catalog', 'help'];
+export const COMMANDS = ['render', 'frame', 'validate', 'record', 'music', 'catalog', 'help'];
 
 const USAGE = {
   render: `nearedit render <edl.json> [-o out.mp4] [--preset draft|standard|high] [--range start:end]
@@ -19,8 +19,9 @@ const USAGE = {
   --allow <host[:port]> Let web clips be recorded from this private address (may be repeated)
   --workers <n>         Segments rendered at once (default: half the cores, at most 4)
 
-  Web clips without a recording are recorded first, into .nearedit/web/ beside the
-  document; that needs chrome-headless-shell (npm run install-browser).`,
+  Music clips without a rendering are rendered first, into .nearedit/music/ beside the
+  document. Web clips without a recording are recorded first, into .nearedit/web/;
+  that needs chrome-headless-shell (npm run install-browser).`,
   frame: `nearedit frame <edl.json> --time <seconds> [-o frame.png] [--width n]
 
   Draw the frame the render shows at that moment — footage, stills,
@@ -55,6 +56,16 @@ const USAGE = {
                         Private addresses are refused otherwise.
 
   Needs chrome-headless-shell: npm run install-browser, or WEB_CAPTURE_BROWSER.`,
+  music: `nearedit music <song.json> [-o out.wav]
+
+  Render a song — a tempo, drum patterns on a step grid, synth lines as notes
+  — with NearEdit's own synth: the sound a music clip holding it has in a
+  timeline. Writes a WAV (16-bit, 48 kHz, stereo) and prints its path;
+  problems of the song are listed with their place in it. See
+  docs/app-spec/MUSIC.md.
+
+  -o, --output <file>   Where to write (default: beside the song, <name>.wav;
+                        an existing file is replaced)`,
   catalog: `nearedit catalog [--json]
 
   List what a document may name: generators and effects with every parameter
@@ -72,6 +83,7 @@ const OVERVIEW = `nearedit — author and render NearEdit timelines without the 
   nearedit frame    <edl.json> --time <seconds> [-o frame.png] [--width n]
   nearedit validate <edl.json> [--json]
   nearedit record   <recipe.json> [-o out.mp4] [--fps n] [--allow host[:port]]
+  nearedit music    <song.json> [-o out.wav]
   nearedit catalog  [--json]
   nearedit help     [command]
 

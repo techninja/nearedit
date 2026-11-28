@@ -165,15 +165,22 @@ the mixer and the render treat it like any file.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| POST | `/music/render` | `{ projectId, song }` → `{ file, key, duration, cached }`: renders `<project>/.nearedit/music/<key>.wav` unless it exists |
-| POST | `/music/import` | `{ projectId, path }` (a `.mid` in the project) → `{ song, warnings }` |
+| POST | `/music/render` | `{ projectId, song }` → `{ file, key, duration, cached }`: answers when `<project>/.nearedit/music/<key>.wav` exists — rendered in a worker thread, at most `MUSIC_RENDER_CONCURRENCY` (2) at a time, once however many ask for the same song. A song the engine cannot finish in ten minutes is refused (422) |
+| POST | `/music/import` | `{ projectId?, path }` — a `.mid` / `.midi` of at most 5 MB inside the allowed media folders — → `{ song, warnings }` |
+
+**A render never misses its music.** When a render job starts, every music
+clip the timeline plays whose rendering is missing or out of date is
+rendered first and used; nobody has to press anything. The song decides,
+not the `sourceFile` or `key` a posted document happens to carry.
 
 ```bash
 nearedit music song.json -o song.wav
 ```
 
-`nearedit render` renders a document's missing music clips first, like its
-web clips.
+`nearedit render` and `frame` render a document's missing music clips
+first, into `.nearedit/music/` beside the document; renderings are looked
+for by key there and in every `--media` folder. `validate` reports a
+song's problems with their place.
 
 ## Limits
 

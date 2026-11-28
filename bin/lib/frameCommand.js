@@ -34,7 +34,10 @@ export async function frameCommand(argv, io) {
   if (width !== undefined && !(Number.isInteger(width) && width >= 16 && width <= 8192))
     throw new UsageError('--width must be a whole number of pixels from 16 to 8192.', 'frame');
 
-  // Loaded late too: only a document with unrecorded web clips starts a browser.
+  // Loaded late too: only a document with unrecorded web clips starts a browser. Music
+  // clips are rendered as `render` renders them, so both leave the same files behind.
+  const { renderMusicClips } = await import('./musicMissing.js');
+  if (!(await renderMusicClips(rest[0], values, io))) return 130;
   const { recordWebClips } = await import('./webMissing.js');
   if (!(await recordWebClips(rest[0], values, io))) return 130;
   const checked = await checkDocument(rest[0], { media: values.media });

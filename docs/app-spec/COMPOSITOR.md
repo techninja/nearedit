@@ -319,8 +319,8 @@ stretch; both are described under
 ## Authoring without the UI
 
 `bin/nearedit.js` is the editor without the editor: a document, a text
-editor and four commands are enough to build an edit — from generators
-alone, or with footage. It runs the server's own renderer in-process; no
+editor and a few commands are enough to build an edit — from generators
+alone, or with footage, web clips and music. It runs the server's own renderer in-process; no
 server needs to be running, and it works from any directory.
 
 ```bash
@@ -336,7 +336,12 @@ nearedit render edit.json --preset draft       # the whole edit → edit.mp4
 | `frame <edl.json> --time <seconds> [-o frame.png] [--width n]` | Draws the frame the render shows at that moment, footage included | The PNG's path on stdout |
 | `validate <edl.json> [--json]` | Normalises and checks the document | One line per problem with its path (`tracks[0].clips[2].generator.type: unknown generator …`); exit 1 when it cannot be rendered |
 | `catalog [--json]` | Lists generators and effects with every parameter (type, range, default), effect presets, blend modes, easings, text animations, fonts — read from `catalog()` | Text, or one JSON object |
+| `record <recipe.json> [-o out.mp4] [--allow host]` | Records a [web clip](./WEBCLIP.md) recipe in the headless browser | The recording's path; its track beside it |
+| `music <song.json> [-o out.wav]` | Renders a [song](./MUSIC.md) with the synth engine | The WAV's path |
 | `help [command]` | Explains | |
+
+`render` and `frame` first make whatever a document's web clips and music
+clips still lack: recordings need the browser, music needs nothing.
 
 - **A document** is one JSON file in the [EDL](./EDL.md) shape. Only what
   differs from the defaults has to be written: `fps`, `resolution`,

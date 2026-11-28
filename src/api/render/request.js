@@ -3,7 +3,8 @@
  * posted or saved. A posted EDL is untrusted: every file it names — a
  * clip's `sourceFile`, a generator's or effect's image — must sit inside an
  * allowed media root, so a request cannot make the server read arbitrary
- * files.
+ * files. A music clip names no file of its own: it plays the rendering of
+ * its song.
  * @module api/render/request
  */
 
@@ -13,7 +14,8 @@ import { parseResolution } from '#utils/edl/factory.js';
 import { normalizeEdl } from '#utils/edl/normalize.js';
 import { getConfig } from '../lib/config.js';
 import { isAllowedPath } from '../lib/paths.js';
-import { getAdaptation } from '../lib/registry.js';
+import { getAdaptation, getProjectDir } from '../lib/registry.js';
+import { attachMusic } from '../music/timeline.js';
 import { RenderError } from './errors.js';
 import { mapMediaPaths, renderImages } from './mediaPaths.js';
 import { renderSources } from './plan.js';
@@ -96,9 +98,13 @@ export function parseRenderRequest(body) {
   if (size.width < 16 || size.height < 16 || size.width > MAX_SIDE || size.height > MAX_SIDE)
     throw invalid('edl', `resolution must be between 16 and ${MAX_SIDE} pixels a side`);
 
-  const checked = checkedEdl(normal);
+  // A music clip plays the rendering of its song, in the project (without one: in the data
+  // folder). One that is not there yet is made when the render starts (prepare.js).
+  const music = attachMusic(normal, [resolve(getProjectDir(projectId) || getConfig().dataDir)]);
+  const coming = new Set(music.missing.map((song) => song.file));
+  const checked = checkedEdl(music.edl);
   for (const file of new Set([...renderSources(checked), ...renderImages(checked)])) {
-    if (!existsSync(file))
+    if (!existsSync(file) && !coming.has(file))
       throw new RenderError(422, `Source file not found: ${file}`, { detail: file });
   }
   return {

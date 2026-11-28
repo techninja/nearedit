@@ -90,8 +90,11 @@ export function parseMidi(data) {
     }
     at = end;
   }
-  if (midi.notes.length >= MAX_NOTES)
+  if (midi.notes.length >= MAX_NOTES) {
+    // A single track may run past the limit before the loop above looks again.
+    midi.notes.length = MAX_NOTES;
     midi.warnings.push(`Only the first ${MAX_NOTES} notes are read`);
+  }
   midi.notes.sort((a, b) => a.tick - b.tick || a.track - b.track || a.pitch - b.pitch);
   midi.tempos.sort((a, b) => a.tick - b.tick);
   midi.signatures.sort((a, b) => a.tick - b.tick);

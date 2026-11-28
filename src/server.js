@@ -17,6 +17,7 @@ import { getConfig } from './api/lib/config.js';
 import { apiNotFound, errorHandler } from './api/lib/httpErrors.js';
 import { installProcessHandlers, stopServer } from './api/lib/shutdown.js';
 import { mediaRouter } from './api/media.js';
+import { musicRouter } from './api/music.js';
 import { pickerRouter } from './api/picker.js';
 import { previewsRouter } from './api/previews.js';
 import { projectsRouter } from './api/projects.js';
@@ -54,6 +55,7 @@ const routers = [
   directorRouter,
   renderRouter,
   webRouter,
+  musicRouter,
 ];
 for (const router of routers) app.use('/api', router);
 app.use('/api', apiNotFound);

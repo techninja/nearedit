@@ -40,9 +40,10 @@ export async function validateCommand(argv, io) {
   if (rest.length !== 1)
     throw new UsageError('validate takes one document: an EDL JSON file.', 'validate');
   const loaded = await checkDocument(rest[0], { media: values.media });
-  // A web clip that is not recorded yet is a placeholder here; `render` records it first,
-  // so a timeline holding nothing else is not the empty one it looks like.
-  const waiting = loaded.unrecorded.length > 0;
+  // A web clip that is not recorded yet, or a music clip that is not rendered yet, is a
+  // placeholder here; `render` makes it first, so a timeline holding nothing else is not
+  // the empty one it looks like.
+  const waiting = loaded.unrecorded.length > 0 || loaded.unrendered.length > 0;
   const findings = loaded.findings.filter(
     (finding) => !(waiting && /nothing to render/.test(finding.message)),
   );
