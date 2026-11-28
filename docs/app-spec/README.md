@@ -178,6 +178,7 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 | [EFFECTS.md](./EFFECTS.md) | Every effect, the looks built from them, order and cost |
 | [PARTICLES.md](./PARTICLES.md) | The particle generator: parameters, sprites, presets |
 | [WEBCLIP.md](./WEBCLIP.md) | Web clips: scripted recordings of real web pages |
+| [MUSIC.md](./MUSIC.md) | Music clips: the song model, the synth engine, kits and presets, MIDI |
 | [VEGAS.md](./VEGAS.md) | The Vegas keymap preset and what differs from Vegas |
 | [API.md](./API.md) | HTTP + WebSocket API |
 | [CONFIGURATION.md](./CONFIGURATION.md) | Environment variables, access and security |
