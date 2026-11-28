@@ -71,10 +71,18 @@ stings). It can be zipped, shared, kept in version control.
   side. A margin of 6 is 64.8 pixels at 1920 × 1080 and the same share of
   a vertical or square frame, so one design fits every format.
 - **Colours** have roles, not names. `text` must be readable on
-  `background`, and on `primary` a design asks for `{color.onPrimary}`,
-  which is derived (black or white, whichever reads) unless the kit sets it.
+  `background`, and on `primary` or `accent` a design asks for
+  `{color.onPrimary}` / `{color.onAccent}`, which are derived (black or
+  white, whichever reads) unless the kit sets them. `{color.surface}cc`
+  adds transparency to a token.
 - **Fonts** are the bundled families or files the kit brings (`.woff2`,
-  `.woff`, `.ttf`, `.otf`).
+  `.woff`, `.ttf`, `.otf`). A font token may also say `italic`,
+  `tracking`, `lineHeight`, `upper` and `scale` (a family that runs small
+  is drawn larger everywhere).
+- **Logos** are `png`, `jpg`, `webp` or `gif` — no SVG. A kit without one
+  draws its `logo.initials` in a mark made from its colours.
+- `TOKEN_SCHEMA` (`src/utils/brand/tokenSchema.js`) is every token as
+  data — type, range, label, group — and an editor is generated from it.
 - A kit that leaves something out inherits it; the root of every chain is
   a built-in kit, so an effective kit is always complete.
 
@@ -101,17 +109,52 @@ A design with blanks. The standard set every complete kit has:
 own time; `transition` is centred on a cut and says when the frame is
 covered. A kit may define more.
 
-An element is `label`, `kind`, `duration` (and `minDuration`), `slots`, and
-`layers` from back to front — text, shapes, images and generators —
-written with token references (`{color.primary}`), slot references
-(`{slot.name}`) and unit lengths. A layer is placed by an anchor in the
-frame (inside the safe margins), may size itself to another layer (a plate
-that fits around the name it sits behind), may be left out when a slot is
-empty, and enters and leaves with a named motion — **timed from the start
-and from the end**, so a lower third held for two seconds or for twenty
-arrives and leaves the same way. `formats` adjusts layers for tall and
-square frames. The language is deliberately small; its reference is the
-module that reads it, `src/utils/brand/element/`.
+An element is `label`, `kind`, `duration` (and `minDuration`), `slots`,
+`groups` and `layers` from back to front — text, shapes, images and
+generators — written with token references (`{color.primary}`), slot
+references (`{slot.name}`) and unit lengths.
+
+```json
+{ "label": "Lower third", "kind": "overlay", "duration": 5, "minDuration": 1.5,
+  "slots": { "name": { "label": "Name" }, "role": { "label": "Role", "optional": true } },
+  "groups": { "block": { "at": "bottom-left", "align": "left", "gap": 0.7, "pad": [3.2, 2] } },
+  "layers": [
+    { "id": "plate", "type": "shape", "around": "block", "fill": "{color.surface}eb",
+      "radius": "{shape.radius}", "enter": { "motion": "wipe", "duration": 0.45 }, "exit": "fade" },
+    { "id": "name", "type": "text", "in": "block", "text": "{slot.name}", "font": "{font.heading}",
+      "size": 5.2, "color": "{color.text}", "lines": 2,
+      "enter": { "motion": "{motion.enter}", "delay": 0.2 }, "exit": "fade" },
+    { "id": "role", "type": "text", "in": "block", "when": "{slot.role}", "text": "{slot.role}",
+      "font": "{font.body}", "size": 3.2, "color": "{color.muted}" } ],
+  "formats": { "tall": { "groups": { "block": { "y": -14 } }, "layers": { "name": { "size": 6.2 } } } } }
+```
+
+- **Placement.** `in: <group>` stacks a layer in a group; `at` (+ `inside`:
+  `safe`, `frame` or another layer) anchors it; `around: <group or layer>`
+  with `pad` makes a plate that follows what it sits behind; `beside` with
+  `side`, `gap`, `thickness`, `span` makes rules and accents.
+- **Conditions.** `when` / `unless` on a slot or a token: a layer is left
+  out when a slot is empty.
+- **Motion.** `enter` and `exit`, each a name or `{ motion, delay,
+  duration, by, ease, stagger, travel, angle }`; motions are `none`,
+  `fade`, `slide-up`, `slide-down`, `slide-left`, `slide-right`, `scale`,
+  `wipe`, `type`, `blur`. Entrances are **timed from the start and exits
+  from the end**, so a lower third held for two seconds or for twenty
+  arrives and leaves the same way; an element too short for its motions
+  shortens them in proportion, and the kit's `motion.speed` scales all.
+- **Formats.** `formats.wide`, `.tall`, `.square` override groups and
+  layers for that shape of frame.
+- **Text fits.** Wrapping that respects hyphens, shrinking down to a
+  `minSize`, balanced lines, and an ellipsis as the last resort; a stack
+  too tall for its place shrinks as a whole. Drawn text is cut at 600
+  characters.
+- **Transitions.** `cover` says over which part of its length a stinger
+  hides the whole frame; `coverTime(design, duration)` gives the instant
+  to put the cut under.
+
+The language is deliberately small; its reference is the module that reads
+it, `src/utils/brand/element/index.js`. A broken or hostile design never
+throws: it draws nothing and warns.
 
 ## Element clips
 
@@ -132,21 +175,32 @@ module that reads it, `src/utils/brand/element/`.
   frame. Nothing has to be restyled to reformat.
 - Its source is unbounded, like a title's: it may last as long as it is
   made to.
+- Pieces of one element that touch on a track — an element that was
+  split — play as one: one entrance, one exit.
 - **Out of date**: `element.kit.key` differs from the key of the project's
-  effective kit (or the element is gone from it). `restyle(edl, kit)`
-  replaces the designs of every element clip, or of the clips named,
-  keeping slots and everything outside; `detachElement` turns one into
-  ordinary clips on tracks, ending its tie to the kit.
+  effective kit (`staleElements` says `outdated`), or the element is gone
+  from it (`missing`). `restyle(edl, kit)` replaces the designs of every
+  element clip, or of the clips named, keeping slots and everything
+  outside. It goes by the element's id whatever kit the clip came from —
+  which is how a timeline changes brand. `detachElement` turns one into
+  ordinary clips on tracks, ending its tie to the kit; the pieces keep the
+  clip's position, size and opacity, not its fades, effects or keyframes.
 - A document lists the fonts it needs that are not bundled:
-  `fonts: [{ family, weight, style, file }]`. Both hosts load them before
-  drawing; a file that is missing draws in the fallback family with a
-  warning.
+  `fonts: [{ family, weight, style, file }]` (kept in step by the
+  operations; absent when empty). Both hosts load them before drawing; a
+  file that is missing draws in the fallback family with a warning.
+- Logo and font files are named by path like any media, so a kit's files
+  must be reachable as media — see [BRAND-API.md](./BRAND-API.md).
 
-Operations (`src/utils/edl/elementClip.js`): `insertElement(edl, kit,
-elementId, slots, { time, duration, trackId })`, `updateElementSlots`,
-`restyle`, `detachElement`, `elementClips`, `staleElements(edl, kit)`.
-Segments are inserted with a ripple by default; a `stinger` is centred on
-the nearest cut.
+Operations (`#utils/edl/index.js`): `insertElement(edl, kit, elementId,
+slots, { time, duration, trackId, ripple, label })`, `updateElementSlots`,
+`restyle`, `detachElement`, `elementClips`, `staleElements(edl, kit)`,
+`syncFonts`. Segments are inserted with a ripple by default; a `stinger`
+is centred on the nearest cut. `updateClip` cannot write `element`.
+
+Drawing an element costs little once it has arrived: at 1920 × 1080 on
+the server, 0.1–0.6 ms a frame at rest for most, up to 8 ms for the two
+with soft shadows over gradients, and 2–18 ms while entering.
 
 ## Where kits live
 

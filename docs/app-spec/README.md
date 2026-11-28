@@ -179,6 +179,9 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 | [PARTICLES.md](./PARTICLES.md) | The particle generator: parameters, sprites, presets |
 | [WEBCLIP.md](./WEBCLIP.md) | Web clips: scripted recordings of real web pages |
 | [MUSIC.md](./MUSIC.md) | Music clips: the song model, the synth engine, kits and presets, MIDI |
+| [BRAND.md](./BRAND.md) | Brand kits: tokens, elements with slots, element clips that update to the brand |
+| [CAPTIONS.md](./CAPTIONS.md) | Captions: words on screen as they are spoken, from a clip's own transcript |
+| [CUTOUT.md](./CUTOUT.md) | Person cutout: a matte job, the cutout file, drawing a clip through its matte |
 | [VEGAS.md](./VEGAS.md) | The Vegas keymap preset and what differs from Vegas |
 | [API.md](./API.md) | HTTP + WebSocket API |
 | [CONFIGURATION.md](./CONFIGURATION.md) | Environment variables, access and security |

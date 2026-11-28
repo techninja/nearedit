@@ -49,20 +49,38 @@ One per media file and the stretch of it the timeline uses:
 
 ```text
 <project>/.nearedit/cutout/<key>.mp4    H.264: the picture on the left, its matte on the right
-<project>/.nearedit/cutout/<key>.json   { source, start, end, fps, width, height, frames, model }
+<project>/.nearedit/cutout/<key>.json   { version, key, source: { path, size, mtime },
+                                          start, end, fps, width, height, frames, model }
 ```
 
-- **Range.** The job covers every clip of the document that plays that
+- **Range.** One cutout covers every clip of the document that plays that
   file with cutout on, from the earliest frame used to the latest, with a
-  second of margin each side. Trim a clip beyond that and it is *out of
-  date* until the rest has been made; the part that exists keeps playing.
+  second of margin each side: `cutoutRanges(edl)` gives the ranges, and the
+  editor asks the server for them — the server cuts out the range it is
+  given and does not read the document. Trim a clip beyond its cutout and
+  it is *out of date* until the rest has been made (`coversClip(meta,
+  clip)`); a longer cutout already on disk is reused. At most 30 minutes.
 - **Frames.** Frame *n* of the cutout is the frame the render would show at
   `start + n / fps`, chosen by the renderer's own frame rules, so picture
   and matte are one image and can never drift apart.
+  `cutoutTime(meta, sourceTime)` gives the frame to show for a moment of
+  the source. A range past the end of the file holds the last frame.
 - **Key**: 20 hex digits of the SHA-256 of the file's identity (path, size,
-  modification time), the range, the frame rate, the model and its
-  settings. `cutoutKey(...)`.
-- Pictures taller than 1080 are reduced to 1080 in the cutout.
+  modification time), the first frame and the number of frames, the frame
+  rate, and the model with its settings. `cutoutKey(...)` — the same in the
+  browser and on the server.
+- **Picture.** The source as shown (rotation applied, square pixels),
+  fitted into 1920 × 1080, so the file is at most 3840 wide. The matte is
+  grey, white where the person is, slightly smoothed. H.264 at a quality
+  that keeps the picture within sight of the source (about 45 dB at 720p),
+  5–9 Mbit/s, a key frame every half second so that it seeks quickly. A
+  source in BT.601 colour stays so.
+- A cutout is written beside its final name and renamed when complete, so
+  a cancelled or failed job leaves nothing that looks finished. Old
+  cutouts are not removed by themselves.
+
+The pure half is `src/utils/cutout/` (`normalizeCutout`, `CUTOUT_FIELDS`,
+`cutoutRanges`, `cutoutKey`, `coversClip`, `cutoutTime`).
 
 ## The matte model
 
@@ -75,12 +93,19 @@ stdout: raw 8-bit mattes, width × height bytes each (255 = person)
 args:   --width --height --fps, and whatever the provider needs
 ```
 
+Exactly one matte for every frame, in order, and nothing else on stdout;
+an answer may come late (a network that looks ahead), the program exits
+with 0 when its input ends, and it is given up on after three minutes of
+silence.
+
 - **Built in**: `workers/person_matte.py` — Python with `onnxruntime` and
   `numpy`, running a portrait-matting network in ONNX form (MODNet, Apache
   2.0, 26 MB). It works on a reduced copy of each frame (512 on the long
-  side), steadies the matte a little from frame to frame, and returns it at
-  full size. Measured on 4 shared CPU cores: about 12 frames a second for
-  1280 × 720 — a minute of footage in about two and a half.
+  side) and returns the matte at full size. A matte flickers where the
+  network is unsure, so it is steadied — but only where the picture itself
+  did not change, which leaves no trail behind a moving person. Measured on
+  4 shared CPU cores: about 10 frames a second for 1280 × 720 and 8 for
+  1920 × 1080 — a minute of footage in three to four minutes.
 - `npm run install-cutout` downloads the model into `<data>/models/` and
   says whether the Python it will use has what it needs. NearEdit never
   downloads anything by itself.
@@ -90,7 +115,7 @@ args:   --width --height --fps, and whatever the provider needs
 | Setting | Default | |
 | ------- | ------- | --- |
 | `CUTOUT_PYTHON` | `FASTER_WHISPER_PYTHON`, else `python3` | Python with `onnxruntime` and `numpy` |
-| `CUTOUT_MODEL` | `<data>/models/modnet.onnx` | The ONNX matting model |
+| `CUTOUT_MODEL` | `<data>/models/modnet.onnx`, else NearEdit's own `data/models/` | The ONNX matting model |
 | `CUTOUT_COMMAND` | — | A matte program of your own, used instead of the built-in one |
 | `CUTOUT_CONCURRENCY` | 1 | Cutout jobs at a time |
 
@@ -101,8 +126,15 @@ missing and how to get it; everything else in NearEdit is unaffected.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| GET | `/cutout/status` | `{ available, provider, model, reason }` |
-| POST | `/cutout` | `{ projectId, path, start, end, fps }` → `202 { jobId }`; job type `cutout`, result `{ file, key, start, end, fps, width, height, frames, cached }` |
+| GET | `/cutout/status` | `{ available, provider, model, reason, … }` — `provider` is `builtin` or `command`, `model` names what makes the matte (it is part of every key), `reason` says what is missing and the command that gets it |
+| POST | `/cutout` | `{ projectId, path, start, end, fps }` → `202 { jobId }`; job type `cutout`, progress `frame n of m`, result `{ file, key, start, end, fps, width, height, frames, cached }` |
+| GET | `/cutout/meta?projectId=&key=` | The description of a finished cutout |
+
+`POST /cutout` refuses before a job exists what cannot work: a still or a
+sound file, a range that is empty or longer than 30 minutes (`422` with
+`fields`), a file outside the allowed folders (`403`), and — with the
+status reason — a server that has no matte program (`503`). The details
+are in [API.md](./API.md).
 
 A render job makes no cutouts by itself — it takes minutes, not
 milliseconds: the export dialog says which clips are waiting and offers to
@@ -133,4 +165,7 @@ side, a circle in a corner — plus a shadow and an outline.
   sometimes. Edge controls hide a little; they do not fix a wrong guess.
 - Slow next to playing a video — minutes per minute of footage on a CPU.
 - Video clips only; a still is not cut out.
-- Needs Python with `onnxruntime`, and the model file.
+- Needs Python with `onnxruntime`, and the model file; the Docker image
+  has neither yet.
+- So far tried on a photograph of a person moved over test pictures, not
+  on real camera footage.
