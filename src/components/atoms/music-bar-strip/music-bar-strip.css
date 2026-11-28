@@ -1,0 +1,35 @@
+music-bar-strip {
+  display: block;
+  min-width: 0;
+
+  & .music-bar-strip {
+    display: flex;
+    gap: 1px;
+    touch-action: none;
+  }
+
+  & button {
+    flex: 1;
+    min-width: 2px;
+    height: 1.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: var(--color-surface-3);
+    cursor: pointer;
+  }
+
+  /* Every fourth bar stands a little apart. */
+  & button[data-fourth='true'] {
+    margin-left: 2px;
+  }
+
+  & button[data-on='true'] {
+    background: var(--color-clip-music);
+  }
+
+  & button:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 1px;
+  }
+}
