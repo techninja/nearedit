@@ -46,6 +46,7 @@ it take free text), and `accept` for a `file`. Field types: `range`,
 | `execute_script` | yes | all | `scriptPath`, `tighten`, `threshold`, `padding`, `beatSync`, `autoBroll`, `naturalSound` |
 | `insert_broll` | optional | insert, append, prepend, range | `duration` (per clip), `count`, `placement` (insert, overlay), `naturalSound`, `useLlm` |
 | `motion_piece` | optional | all | `theme`, `duration`, `pacing`, `seed`, `particles`, `useLlm` — a piece of generated layers only, no media: [DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md) |
+| `site_demo` | optional | all | `url` (required), `look` (window, full), `theme`, `size`, `pacing`, `duration`, `zoom`, `captions`, `title`, `useLlm` — a recorded demo of a web page, no media: [DIRECTOR-WEB.md](./DIRECTOR-WEB.md) |
 | `remove_silence` | no | replace, range | `threshold`, `padding` |
 | `beat_sync` | no | replace, range | `every` (1, 2, 4), `maxShift`, `protectSpeech` |
 | `add_captions` | no | replace, range | `maxChars`, `maxDuration`, `position`, `size`, `background` |
@@ -437,6 +438,7 @@ injectable (`createLlmClient(cfg, { fetch })`).
 | `src/api/director/baseEdit/` | Heuristic planners |
 | `src/api/director/inplace/` | Actions on the existing timeline |
 | `src/api/director/motion/`, `src/utils/director/motion/` | The motion piece: plan, themes, vocabularies, builder ([DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md)) |
+| `src/api/director/web/`, `src/utils/director/web/` | The site demo: brief grammar, name matching, pacing, recording, framing ([DIRECTOR-WEB.md](./DIRECTOR-WEB.md)) |
 | `src/api/director/actions/`, `scripts/`, `prompts/` | Action entry points, script files, prompts |
 | `src/api/director/testing/` | Test fixtures: lavfi media projects, a fake LLM server, the fragment invariant checker |
 

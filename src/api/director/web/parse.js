@@ -20,6 +20,9 @@ import { normalizeDemoPlan } from './normalize.js';
 const ajv = new Ajv({ allErrors: true });
 const validatePlan = ajv.compile(DEMO_PLAN_SCHEMA);
 const validateStop = ajv.compile(STOP_SCHEMA);
+// As plain yes-or-no questions: a validator is typed as a guard that would narrow `any` to nothing.
+const isPlan = /** @type {(value: any) => boolean} */ (validatePlan);
+const isStop = /** @type {(value: any) => boolean} */ (validateStop);
 
 /**
  * Readable validation errors: "stops[2].do must be equal to one of the allowed values: click, …".
@@ -80,7 +83,7 @@ function candidatePlans(reply) {
  * @returns {string[]} Empty for a plan that can be played
  */
 function problems(plan) {
-  if (!validatePlan(plan)) return explain(validatePlan.errors);
+  if (!isPlan(plan)) return explain(validatePlan.errors);
   return plan.stops
     .map((/** @type {any} */ stop, /** @type {number} */ i) => [i, stopProblem(stop)])
     .filter(([, why]) => why)
@@ -111,7 +114,7 @@ export function salvageDemoPlan(reply) {
   const dropped = [];
   const stops = [];
   best.stops.forEach((/** @type {any} */ stop, /** @type {number} */ i) => {
-    const why = validateStop(stop)
+    const why = isStop(stop)
       ? stopProblem(stop)
       : explain(validateStop.errors)[0] || 'is not a stop';
     if (why) dropped.push(`stop ${i + 1}: ${why}`);

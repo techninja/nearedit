@@ -13,7 +13,7 @@ import { getAdaptation, getProjectDir } from '../lib/registry.js';
 import { DirectorError } from './errors.js';
 import { checkBrief } from './motion/brief.js';
 import { checkScriptSource } from './scripts/files.js';
-import { checkSite } from './web/check.js';
+import { checkRecorder, checkSite } from './web/check.js';
 
 /**
  * @typedef {Object} Prepared
@@ -126,4 +126,18 @@ export function prepareRequest(body, route) {
       name: adaptation?.name || 'Main Edit',
     },
   };
+}
+
+/**
+ * What can only be refused by asking, and so cannot be part of
+ * `prepareRequest`: for `site_demo`, whether there is a browser to record
+ * with. A route that awaits this after `prepareRequest` answers 422 before a
+ * job exists; the action asks the same question when its job starts.
+ * @param {Prepared} prepared
+ * @param {Parameters<typeof checkRecorder>[0]} [recorder] - Tests pass their own status
+ * @returns {Promise<void>}
+ * @throws {DirectorError} 422
+ */
+export async function precheck(prepared, recorder) {
+  if (prepared.action.id === 'site_demo') await checkRecorder(recorder);
 }

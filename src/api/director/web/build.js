@@ -109,7 +109,12 @@ export function buildDemo(parts) {
     Page: [page],
     Background: ground,
   };
-  const moves = keys['transform.scaleX'] || [];
+  const [zooms, xs, ys] = ['scaleX', 'x', 'y'].map((name) => keys[`transform.${name}`] || []);
+  // The camera arrives somewhere close each time a key is zoomed in and differs from the one before.
+  const arrives = (/** @type {any} */ key, /** @type {number} */ i) =>
+    i > 0 &&
+    key.v > stage.scale + 1e-6 &&
+    [zooms, xs, ys].some((list) => list[i].v !== list[i - 1].v);
   return {
     tracks: ROWS.map((name, index) => ({ type: 'video', index, name, clips: rows[name] })),
     // One marker per stop, where the first of its steps begins.
@@ -121,8 +126,7 @@ export function buildDemo(parts) {
     })),
     seconds: endF / fps,
     counts: {
-      // Every rise of the scale is one move closer.
-      zooms: moves.filter((key, i) => i > 0 && key.v > moves[i - 1].v + 1e-6).length,
+      zooms: zooms.filter(arrives).length,
       captions: said.clips.length,
       top: said.top,
     },

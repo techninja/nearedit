@@ -85,8 +85,8 @@ export const DOCS_PAGE = Object.freeze(read(DOCS));
  */
 export function pageAfter(recipe) {
   const steps = recipe.steps || [];
-  const went = steps.findLastIndex((step) => step.do === 'goto');
-  if (went >= 0 && /docs/.test(steps[went].url))
+  const went = steps.filter((step) => step.do === 'goto').pop();
+  if (went && /docs/.test(went.url))
     return { title: 'Tideline docs', height: 720, elements: [...DOCS_PAGE] };
   const opened = steps.some((step) => step.do === 'click' && /Watch the demo/.test(step.target));
   const closed = steps.some((step) => step.do === 'click' && /Close tour/.test(step.target));

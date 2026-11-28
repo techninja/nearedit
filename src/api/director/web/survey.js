@@ -47,7 +47,7 @@ export function createSurvey({ base, browser, signal, snapshot = takeSnapshot })
       looks++;
       const { allow, noSandbox } = getConfig().web;
       // A step that finds nothing must not end the look: the next names still need the page.
-      const recipe = { ...base, onMissing: 'skip', steps };
+      const recipe = { ...base, onMissing: 'skip', steps: [...steps] };
       try {
         return await snapshot({ recipe, browser, allow, noSandbox, signal });
       } catch (err) {

@@ -75,7 +75,9 @@ export function cameraKeys(track, stage, { clicks, recipe }) {
     // Offsets are from the window's centre, the scale starts from the window's own.
     const size = field === 'scale' ? stage.scale : 1;
     const from = field === 'scale' ? 0 : stage.offset[field];
-    const fit = (/** @type {number} */ value) => Math.round((value * size + from) * 1e4) / 1e4;
+    // A scale is rounded up, so the page never falls short of the window's edge.
+    const round = field === 'scale' ? Math.ceil : Math.round;
+    const fit = (/** @type {number} */ value) => round((value * size + from) * 1e4 - 1e-6) / 1e4;
     fitted[path] = keys[path].map((key) => ({ ...key, v: fit(key.v) }));
   }
   return fitted;

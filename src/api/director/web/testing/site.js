@@ -24,9 +24,10 @@ const KNOWN = { '/': 'index.html', '/index.html': 'index.html', '/docs.html': 'd
 
 /**
  * Start the site.
+ * @param {number} [port] - A port of one's own; any free one by default
  * @returns {Promise<DemoSite>}
  */
-export function startDemoSite() {
+export function startDemoSite(port = 0) {
   /** @type {string[]} */
   const hits = [];
   /** @type {Set<import('node:net').Socket>} */
@@ -44,10 +45,10 @@ export function startDemoSite() {
     socket.on('close', () => open.delete(socket));
   });
   return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
-      const { port } = /** @type {import('node:net').AddressInfo} */ (server.address());
+    server.listen(port, '127.0.0.1', () => {
+      const at = /** @type {import('node:net').AddressInfo} */ (server.address()).port;
       resolve({
-        ...{ url: `http://127.0.0.1:${port}`, port, allow: `127.0.0.1:${port}`, hits },
+        ...{ url: `http://127.0.0.1:${at}`, port: at, allow: `127.0.0.1:${at}`, hits },
         close: () => {
           for (const socket of open) socket.destroy();
           return new Promise((done) => server.close(() => done()));

@@ -13,7 +13,7 @@ import { RECIPE_LIMITS } from '#utils/web/limits.js';
 import { getConfig } from '../../lib/config.js';
 import { cleanHost, isAllowed, parseAllowList } from '../../web/allow.js';
 import { WebError } from '../../web/errors.js';
-import { createGate, refusalMessage } from '../../web/gate.js';
+import { refusalMessage } from '../../web/gate.js';
 import { classifyAddress, isLocalName } from '../../web/ranges.js';
 import { browserStatus } from '../../web/status.js';
 import { DirectorError } from '../errors.js';
@@ -97,23 +97,19 @@ export function asDirectorError(err) {
 }
 
 /**
- * What can only be known by asking: whether the address — once its name is
- * looked up — is one the recorder may open, and whether there is a browser.
- * @param {string} url
- * @param {{ status?: typeof browserStatus }} [deps] - Tests inject the recorder's status
- * @returns {Promise<string>} The path of the browser to record with
+ * What can only be known by asking: whether there is a browser to record
+ * with. (An address whose name has to be looked up is judged by the
+ * recorder itself, on the first look at the page.)
+ * @param {{ status?: typeof browserStatus }} [recorder] - Tests pass their own status
+ * @returns {Promise<string>} The path of the browser
  * @throws {DirectorError} 422, saying what the recorder says
  */
-export async function checkRecorder(url, deps = {}) {
-  const status = await (deps.status || browserStatus)();
-  if (!status.available)
-    throw new DirectorError(`A site demo needs a browser to record with. ${status.reason}`, {
-      status: 422,
-      detail:
-        'Web clips are recorded with chrome-headless-shell (docs/app-spec/WEBCLIP.md § Server).',
-    });
-  const { host, port } = hostAndPort(url);
-  const verdict = await createGate({ allow: getConfig().web.allow }).admit(host, port);
-  if (!verdict.ok) throw refused(refusalMessage(url, verdict.reason), verdict.reason);
-  return status.browser.path;
+export async function checkRecorder(recorder = {}) {
+  const status = await (recorder.status || browserStatus)();
+  if (status.available) return status.browser.path;
+  throw new DirectorError(`A site demo needs a browser to record with. ${status.reason}`, {
+    status: 422,
+    detail:
+      'Web clips are recorded with chrome-headless-shell (docs/app-spec/WEBCLIP.md § Server).',
+  });
 }

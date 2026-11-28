@@ -28,6 +28,8 @@ const GAP = 0.03;
 /** The plate: padding as a multiple of the font size, and how round its corners are. */
 const PADDING = 0.55;
 const ROUND = 0.5;
+/** The share of a plate that must be freer at the head for a caption to go there. */
+const CLEARLY = 0.1;
 /** Seconds a caption takes to come and go, and the shortest it is worth showing. */
 const FADE = 0.2;
 const SHORTEST = 0.4;
@@ -90,7 +92,9 @@ function plateFields(words, busy, { stage, theme, colors, measure }) {
   const x = win.x + (win.width - plate.width) / 2;
   const foot = { x, y: win.y + win.height - gap - plate.height, ...plate };
   const head = { x, y: win.y + gap, ...plate };
-  const top = overlap(foot, busy) > 0 && overlap(head, busy) < overlap(foot, busy);
+  // The head only when it is clearly the freer place: something that fills the picture is under both.
+  const worse = overlap(foot, busy) - overlap(head, busy);
+  const top = worse > CLEARLY * plate.width * plate.height;
   const at = top ? head : foot;
   const radius = Math.round(fitted.fontSize * ROUND);
   return {

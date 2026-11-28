@@ -11,12 +11,14 @@ import { timelineDuration } from '#utils/edl/query.js';
 import { baseEdit } from './actions/baseEdit.js';
 import { insertBroll } from './actions/insertBroll.js';
 import { motionPiece } from './actions/motion.js';
+import { siteDemo } from './actions/siteDemo.js';
 import { addCaptions } from './inplace/addCaptions.js';
 import { beatSync } from './inplace/beatSync.js';
 import { removeSilence } from './inplace/removeSilence.js';
 import { makeContext } from './testing/context.js';
 import { createParkProject } from './testing/park.js';
 import { clip, doc, pair, title } from './testing/timeline.js';
+import { fakeRecorder } from './web/testing/fakeRecorder.js';
 
 let park;
 let P;
@@ -90,6 +92,26 @@ test('a motion piece — generators and titles only — merges validly in every 
     else assert.equal(length, 20 + done.result.duration);
     const added = done.result.tracks.flatMap((track) => track.clips);
     assert.ok(added.length >= 5 && added.every((c) => !c.sourceFile), mode);
+  }
+});
+
+test('a site demo — a recorded web clip, zooms, captions, a ground — merges validly in every mode', async (t) => {
+  const context = { playheadPosition: 4, range: { start: 2, end: 14 } };
+  const prompt = '# Tideline\nclick Yearly | Two months free\nzoom in on the Pro plan';
+  const params = { url: 'https://tideline.test/' };
+  const demo = (/** @type {any} */ ctx) => siteDemo(ctx, fakeRecorder());
+  for (const mode of ['replace', 'append', 'prepend', 'insert', 'range']) {
+    const directive = { action: 'site_demo', mode, context, prompt, params };
+    const done = await merged(t, demo, directive, timeline());
+    if (!done) return;
+    const length = timelineDuration(done.out);
+    if (mode === 'replace') assert.equal(length, done.result.duration);
+    else if (mode === 'range') assert.equal(length, 20 - 12 + done.result.duration);
+    else assert.equal(length, 20 + done.result.duration);
+    if (mode === 'range') assert.equal(done.result.duration, 12, 'the demo fills the range');
+    const web = done.out.tracks.flatMap((track) => track.clips).filter((c) => c.web);
+    assert.equal(web.length, 1, mode);
+    assert.ok(web[0].sourceFile.startsWith(park.dir) && web[0].web.key && web[0].keyframes);
   }
 });
 

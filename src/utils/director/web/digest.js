@@ -36,7 +36,8 @@ export function pageGroups(elements, viewport) {
     // A section called what its heading says is that heading again.
     if (element.kind === 'section' && headings.has(element.name)) continue;
     const middle = element.rect.y + Math.min(element.rect.height, viewport.height) / 2;
-    const at = places.findLastIndex((place) => place.rect.y <= middle);
+    // The last place that starts above the element's middle; -1 before the first.
+    const at = places.filter((place) => place.rect.y <= middle).length - 1;
     const entry = `${element.kind} ${JSON.stringify(element.name)}`;
     if (!groups[at + 1].entries.includes(entry)) groups[at + 1].entries.push(entry);
   }

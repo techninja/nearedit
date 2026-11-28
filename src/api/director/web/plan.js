@@ -65,7 +65,7 @@ async function askLlm(ctx, seen, target, notes) {
 /**
  * A tour: down the page from heading to heading, ending on the call to action.
  * @param {import('./survey.js').Seen} seen
- * @param {{ pacing: string }} params
+ * @param {Record<string, any>} params - The directive's
  * @param {number} target - Seconds the whole recording should take, 0 for none
  * @param {string[]} notes
  * @returns {DemoPlan}

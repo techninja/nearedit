@@ -86,3 +86,52 @@ export async function recordingOf(folder, recipe, fps = 30) {
   const recording = await fakeRecorder().record({ folder, recipe: normal, fps });
   return { recording, recipe: normal };
 }
+
+/** The page each frame shape records, CSS pixels. */
+export const VIEWS = { '16:9': [1280, 720], '9:16': [390, 844], '1:1': [960, 960] };
+
+/** A demo of six stops; the fourth takes two steps (a scroll to the middle, then the click). */
+export const DEMO_STEPS = [
+  { do: 'hover', target: 'text=Get started', note: 'Start here' },
+  { do: 'scroll', to: '#features', align: 'start' },
+  { do: 'focus', target: 'svg[aria-label="Readers chart"]', note: 'Readers, week by week' },
+  {
+    do: 'scroll',
+    to: 'text=Yearly',
+    align: 'center',
+    duration: 0.7,
+    hold: 0.1,
+    note: 'Two months free',
+  },
+  { do: 'click', target: 'text=Yearly', note: 'Two months free' },
+  { do: 'type', target: 'label=Email', text: 'hello@example.com' },
+  { do: 'click', target: 'text=Create account', note: 'And you are in' },
+];
+/** Per step, the stop it belongs to; and what each stop is called. */
+export const DEMO_OWNERS = [0, 1, 2, 3, 3, 4, 5];
+export const DEMO_LABELS = [
+  'Start here',
+  'scroll “Features”',
+  'Readers',
+  'Two months free',
+  'type',
+  'In',
+];
+
+/**
+ * The demo recorded for every frame shape.
+ * @param {string} folder
+ * @returns {Promise<Record<string, Awaited<ReturnType<typeof recordingOf>>>>} By format name
+ */
+export async function demoRecordings(folder) {
+  /** @type {Record<string, any>} */
+  const made = {};
+  for (const format of FORMATS) {
+    const [width, height] = VIEWS[format.name];
+    made[format.name] = await recordingOf(folder, {
+      viewport: { width, height },
+      steps: DEMO_STEPS,
+    });
+  }
+  return made;
+}

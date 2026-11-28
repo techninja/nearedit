@@ -46,7 +46,7 @@ export async function siteDemo(ctx, recorder = {}) {
   const { fps } = format;
   const url = checkSite(directive);
   ctx.progress(12, 'Looking for a browser to record with…');
-  const browser = await checkRecorder(url, recorder);
+  const browser = await checkRecorder(recorder);
   const view = demoView(format, params.size, params.look);
   const base = {
     ...{ url, viewport: view.viewport, scale: view.scale, onMissing: 'skip' },
@@ -62,14 +62,11 @@ export async function siteDemo(ctx, recorder = {}) {
   const total = params.duration || span;
   const heading = splitCaption(params.title || '');
   // The card's length does not depend on the plan, so the plan can be given the time that is left.
+  const style = { theme: look.theme.id, format, pacing: params.pacing, seed: 1 };
   const cardOf = (/** @type {{ title?: string, subtitle?: string }} */ words) =>
-    titleCard(
-      heading.head || words.title || '',
-      heading.head ? heading.caption : words.subtitle || '',
-      {
-        ...{ theme: look.theme.id, format, pacing: params.pacing, seed: 1 },
-      },
-    );
+    heading.head
+      ? titleCard(heading.head, heading.caption, style)
+      : titleCard(words.title || '', words.subtitle || '', style);
   const spare = (/** @type {number} */ frames) => (total ? Math.max(1, total - frames / fps) : 0);
   const plan = await planDemo(ctx, seen, spare(cardOf({}).frames), notes);
   const card = cardOf(plan);
