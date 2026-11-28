@@ -101,7 +101,6 @@ export async function recordRecipe(options) {
       const { sent, discrete } = await performer.frame(n);
       // The instant the clip ends on is not in the picture; what a step does on it is done
       // all the same — its target looked for and measured — as a snapshot does it.
-      if (n === score.frames) void Promise.allSettled(sent);
       if (n === score.frames) break;
       const png = Buffer.from(await stepper.frame(true, discrete), 'base64');
       // Mouse events are answered once the frame is drawn; none is worth waiting long for.

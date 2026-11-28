@@ -67,9 +67,10 @@ director, a label on the timeline) and an `ease` for its motion (an
 | `run` | `js` | 0 | 0.2 | Run a script in the page |
 
 A target that does not show whole — outside the viewport, or cut off by a
-scrolling panel — is brought into view **during** the step's `duration`,
-while the cursor travels, by whatever scrolls it; so timing never depends
-on the page. A step with `duration: 0` happens between two frames.
+scrolling panel — is brought into view while the cursor travels to it, by
+whatever scrolls it: during the step's `duration`, or for `type` during
+the half second before the first key. So timing never depends on the page.
+A step with `duration: 0` happens between two frames.
 
 A step stores `duration` and `hold` only when they were set; otherwise the
 default applies, which for `type` follows the text. Seconds are 0..120;
@@ -244,7 +245,7 @@ clip is neither cropped nor rotated.
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
 | GET | `/web/status` | `{ available, browser: { path, version }, reason, allow: [] }`; `?fresh` looks again |
-| POST | `/web/snapshot` | `{ recipe, until?, projectId? }` → the page after the first `until` steps (default: all): `{ url, title, viewport, page: { width, height }, scrollY, image, elements, warnings }` |
+| POST | `/web/snapshot` | `{ recipe, until?, fps?, projectId? }` → the page after the first `until` steps (default: all): `{ url, title, viewport, page: { width, height }, scrollY, image, elements, warnings }` |
 | POST | `/web/record` | `{ projectId, recipe, fps? }` → `202 { jobId }`; job type `web`, result `{ file, key, duration, fps, width, height, title, track, cached }` |
 | GET | `/web/track?projectId=&key=` | The track of a recording |
 

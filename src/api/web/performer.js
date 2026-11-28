@@ -22,13 +22,17 @@ import { createScene } from './scene.js';
  * @property {(message: string) => void} warn
  * @typedef {Object} Performer
  * @property {(n: number) => Promise<{ sent: Promise<any>[], discrete: boolean }>} frame - Prepare
- *   frame `n`. `sent`: the input commands, answered once the frame is drawn; `discrete`: a
+ *   frame `n`. `sent`: the input commands, all answered once the frame is drawn; `discrete`: a
  *   button or a key was among them
  * @property {() => Promise<void>} rest - Draw the page as it stands (while a page loads)
  * @property {() => { steps: any[], cursor: number[][], scroll: number[][] }} track
  */
 
 const round = (/** @type {number} */ value) => Math.round(value * 10) / 10;
+/** Real milliseconds a step waits at most for the input before it to be handled. */
+const SETTLE = 250;
+const sleep = (/** @type {number} */ ms) =>
+  new Promise((resolve) => void setTimeout(resolve, ms).unref());
 
 /**
  * @param {Stage} stage
@@ -67,7 +71,8 @@ export function createPerformer(stage, steps = stage.score.steps.length) {
     async frame(n) {
       /** @type {Promise<any>[]} */
       const sent = [];
-      let discrete = false;
+      /** @type {Promise<any>[]} The buttons and keys among them */
+      const struck = [];
       /** Draw instant `n` with every act in play, and send the input of the acts given. */
       const play = async (/** @type {Act[]} */ cued) => {
         const { state, held } = scene.at(n, acts);
@@ -111,25 +116,29 @@ export function createPerformer(stage, steps = stage.score.steps.length) {
         }
         if (scrollTrack.at(-1)?.[1] !== seen.scrollY) scrollTrack.push([n / fps, seen.scrollY]);
         for (const [method, params] of commands) {
-          discrete ||= /** @type {any} */ (params).type !== 'mouseMoved';
-          sent.push(tab.session.send(method, params));
+          const answer = tab.session.send(method, params);
+          answer.catch(() => {}); // heard by whoever waits for it; nobody waiting is no failure
+          sent.push(answer);
+          if (/** @type {any} */ (params).type !== 'mouseMoved') struck.push(answer);
         }
       };
       // First what is already going on — a click let go, a last key — then the steps that
       // start on this frame, which see the page as those left it.
       acts = acts.filter((act) => n <= Math.max(act.E, act.A));
       await play(acts);
-      // Each plays as soon as it has begun: a step that takes no time has sent its input
-      // before the next one, which begins on the same frame, looks at the page.
+      // Each waits until the buttons and keys sent before it have been handled — they are
+      // answered at once, moves only with the frame — and plays as soon as it has begun: a
+      // step that takes no time has done its work when the next one looks at the page.
       let drawn = true;
       while (next < spans.length && spans[next].S <= n) {
+        if (struck.length) await Promise.race([Promise.allSettled(struck), sleep(SETTLE)]);
         const act = await beginStep(playing, next++);
         if (act) acts.push(act);
         if (act) await play([act]);
         drawn = !!act;
       }
       if (!drawn) await play([]);
-      return { sent, discrete };
+      return { sent, discrete: struck.length > 0 };
     },
     track: () => ({ steps: rows, cursor: cursorTrack, scroll: scrollTrack }),
   };

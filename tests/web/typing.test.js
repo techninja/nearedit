@@ -117,8 +117,20 @@ describe('web recorder: typing into fields out of sight', { skip: kit.SKIP }, ()
     assert.deepEqual([span(score, 0), span(score, 1).S], [{ S: 6, A: 6, E: 6 }, 6]);
     for (const i of [0, 2, 4, 5, 6]) {
       const { rect, point } = track.steps[i];
-      assert.ok(Math.abs(rect.y + 15 - 180) <= 1, `step ${i + 1}: in place when clicked`);
+      assert.ok(
+        rect.y >= 50 && rect.y + rect.height <= 360,
+        `step ${i + 1}: whole in the picture when clicked, at ${rect.y}`,
+      );
       assert.ok(point.y > rect.y && point.y < rect.y + rect.height, `step ${i + 1}: on the field`);
+    }
+    assert.equal(track.steps[0].rect.y + 15, 180, 'brought to the middle at once');
+    // A step that cannot begin on the very frame the one before it sent its input: the
+    // recording fails with that step, and no command to the browser is left without a hearer.
+    for (const before of [fast, { do: 'hover', target: 'label=Name', duration: 0.3, hold: 0 }]) {
+      await assert.rejects(
+        rec([before, { do: 'click', target: 'text=Nowhere' }]),
+        (err) => err.message === 'Step 2 (click): nothing on the page matches text=Nowhere',
+      );
     }
     assert.deepEqual(track.warnings, []);
   });
@@ -152,8 +164,12 @@ describe('web recorder: typing into fields out of sight', { skip: kit.SKIP }, ()
       size.rect.y >= 80 && size.rect.y + 30 <= 230,
       `in the panel's window: ${size.rect.y}`,
     );
-    const moving = track.scroll.filter(([t]) => t > plan.start).map(([t]) => t);
-    assert.ok(moving.length > 8 && moving.at(-1) <= plan.actionEnd + 1e-6, 'scrolled, then chose');
+    // The page goes down to the first list, and back up to the panel for the second.
+    for (const row of [plan, size]) {
+      const moving = track.scroll.filter(([t]) => t > row.start && t <= row.end).map(([t]) => t);
+      assert.ok(moving.length > 5, `the page scrolled over ${moving.length} frames`);
+      assert.ok(moving.at(-1) <= row.actionEnd + 1e-6, 'and stood still when the choice was made');
+    }
   });
 
   it('a snapshot after a step and a recording agree on what can be done', async () => {

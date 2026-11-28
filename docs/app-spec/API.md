@@ -207,6 +207,7 @@ edit-plan format and the track layout it produces are described in
 | `execute_script` | yes | Build the timeline from an approved script |
 | `insert_broll` | optional | Find clips matching the prompt by tags/transcript and place them |
 | `motion_piece` | optional | A title sequence built only from generated layers — backgrounds, particles, shapes, animated titles — from a few lines of text; no media ([DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md)) |
+| `site_demo` | optional | A demo of a web page from its address (`params.url`) and a few plain lines — or none, for a tour: the page is recorded as a web clip inside the job and framed with zooms, captions and a background ([DIRECTOR-WEB.md](./DIRECTOR-WEB.md)) |
 | `remove_silence` | no | Tighten clips using word timestamps or detected silences |
 | `beat_sync` | no | Move cuts onto the beats of a music clip |
 | `add_captions` | no | Title clips generated from a transcript |
@@ -285,7 +286,7 @@ it. The recording is ordinary footage: it is played through `/media/file`.
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
 | GET | `/web/status` | `{ available, browser: { path, version }, reason, allow }`. `?fresh` looks for the browser again |
-| POST | `/web/snapshot` | `{ recipe, until?, projectId? }` → the page after the first `until` steps (default: all) |
+| POST | `/web/snapshot` | `{ recipe, until?, fps?, projectId? }` → the page after the first `until` steps (default: all) |
 | POST | `/web/record` | `{ projectId, recipe, fps? }` → `202 { jobId }`, job type `web` |
 | GET | `/web/track?projectId=&key=` | The track of a recording (404 when there is none) |
 
@@ -329,10 +330,24 @@ parts of the page that were not loaded because their address is private,
 requests that never finished, dialogs that were dismissed, an HTTP error
 status of the page.
 
+A step that aims at something scrolls it into place while the pointer
+travels, and both are done when the pointer arrives: at the end of the
+action, and for `type` at the end of its approach — half a second into
+the step, however long the text. Only then is the target checked and
+pressed, and no key of a `type` step goes out before its click; a `type`
+without a target scrolls and checks nothing. What a step does on the
+instant the clip ends, which no frame shows, is done all the same.
+
 **Snapshot.** Answers directly (it takes about as long as loading the
 page): `{ url, title, viewport, page: { width, height }, scrollY, image,
-elements, warnings }`. `image` is a PNG data URL of the viewport at one
-device pixel per CSS pixel, without the recorder's pointer and marks.
+elements, warnings }`. The steps are played as a recording plays them —
+same viewport and scale, same clock, the frame rate `fps` (the
+document's, default 30) — so the first `until` steps can be done in a
+snapshot exactly when they can in a recording, and what stops one stops
+the other with the same message. The step after them is not tried:
+`until: 3` is the page before the fourth step. `image` is a PNG data URL
+of the viewport at one device pixel per CSS pixel — whatever the recipe's
+scale — without the recorder's pointer and marks.
 `elements` — at most 300, in document order — are `{ kind, name, target,
 rect, visible }`: `kind` is `link`, `button`, `input`, `heading`, `image`
 or `section`; `rect` is in page CSS pixels; `visible` says whether it

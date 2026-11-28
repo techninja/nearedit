@@ -195,7 +195,9 @@ describe('web routes and job', { skip: kit.SKIP }, () => {
       { do: 'click' },
     ];
     const shot = async (until) => {
-      const answer = await post('/web/snapshot', { recipe: recipe(steps, { scale: 3 }), until });
+      // At the clip's own scale and frame rate; the picture comes back at one pixel per pixel.
+      const body = { recipe: recipe(steps, { scale: 3 }), until, fps: 25 };
+      const answer = await post('/web/snapshot', body);
       assert.equal(answer.status, 200, await answer.clone().text());
       const snapshot = await answer.json();
       const file = join(kit.SCRATCH, `shot-${until}.png`);
@@ -260,5 +262,6 @@ describe('web routes and job', { skip: kit.SKIP }, () => {
     assert.equal(refused.status, 403);
     assert.match((await refused.json()).error, /was refused: 127\.0\.0\.1 is a private address/);
     assert.equal((await post('/web/snapshot', { recipe: recipe(), until: -1 })).status, 422);
+    assert.equal((await post('/web/snapshot', { recipe: recipe(), fps: 500 })).status, 422);
   });
 });
