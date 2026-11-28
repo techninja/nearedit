@@ -183,6 +183,8 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 | [BRAND-API.md](./BRAND-API.md) | Where kits live, the kit routes, a project's choice of kit, `nearedit restyle` and `nearedit kit` |
 | [CAPTIONS.md](./CAPTIONS.md) | Captions: words on screen as they are spoken, from a clip's own transcript |
 | [CUTOUT.md](./CUTOUT.md) | Person cutout: a matte job, the cutout file, drawing a clip through its matte |
+| [STOCK.md](./STOCK.md) | Found pictures: stock stills from open collections, licences, credits that write themselves |
+| [GENERATE.md](./GENERATE.md) | Generated clips: a prompt on the timeline, presets as workflow files, takes, the generators NearEdit talks to |
 | [VEGAS.md](./VEGAS.md) | The Vegas keymap preset and what differs from Vegas |
 | [API.md](./API.md) | HTTP + WebSocket API |
 | [CONFIGURATION.md](./CONFIGURATION.md) | Environment variables, access and security |
