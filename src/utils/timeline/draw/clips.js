@@ -8,7 +8,8 @@
 import { CLIP_INSET, RULER_H, laneY } from '#utils/timeline/layout.js';
 import { timeToX, visibleTimes } from '#utils/timeline/viewport.js';
 import { visibleSlice } from '#utils/timeline/visible.js';
-import { clipColor, drawClip } from './clipBody.js';
+import { drawClip } from './clipBody.js';
+import { clipColor } from './clipFace.js';
 import { drawCrossfade } from './fades.js';
 import { dimLane } from './lanes.js';
 

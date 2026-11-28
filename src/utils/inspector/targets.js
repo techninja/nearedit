@@ -14,7 +14,7 @@ import { findClip } from '#utils/edl/query.js';
  * @typedef {Object} SelectedClip
  * @property {any} clip
  * @property {any} track
- * @property {'video'|'audio'|'image'|'title'|'generator'|'placeholder'} kind
+ * @property {'video'|'audio'|'image'|'title'|'generator'|'element'|'placeholder'} kind
  */
 
 /**
@@ -35,9 +35,14 @@ export function selectedClips(edl, selection) {
 
 /** @type {(ref: SelectedClip) => boolean} Has a picture that can be cropped and fitted */
 const isPicture = (ref) => ref.track.type === 'video' && ['video', 'image'].includes(ref.kind);
-/** @type {(ref: SelectedClip) => boolean} Anything drawn in the frame */
+/**
+ * Anything drawn in the frame. A brand element is one layer: it moves,
+ * scales, fades and takes effects as a whole.
+ * @type {(ref: SelectedClip) => boolean}
+ */
 export const isVisual = (ref) =>
-  isPicture(ref) || (ref.track.type === 'video' && ['title', 'generator'].includes(ref.kind));
+  isPicture(ref) ||
+  (ref.track.type === 'video' && ['title', 'generator', 'element'].includes(ref.kind));
 
 /**
  * The scope of a field: which kind of clip it means anything for.

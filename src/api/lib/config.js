@@ -35,6 +35,7 @@ function pathList(raw) {
  *   port: number, host: string, auth: { user: string, password: string },
  *   dataDir: string, rendersDir: string, previewsDir: string,
  *   transcodeDir: string, devMediaDir: string, registryPath: string,
+ *   kitsDir: string,
  *   globalMediaPaths: string[], browseRoots: string[],
  *   llm: ProviderConfig, vision: ProviderConfig,
  *   transcription: ProviderConfig & { language: string, whisperCppBin: string,
@@ -60,6 +61,8 @@ export function getConfig() {
     previewsDir: resolve(dataDir, 'previews'),
     transcodeDir: resolve(dataDir, 'transcode'),
     registryPath: resolve(dataDir, 'registry.json'),
+    // The library of brand kits: one folder a kit (BRAND-API.md § Storage)
+    kitsDir: resolve(env.NEAREDIT_KITS_DIR || resolve(dataDir, 'kits')),
     devMediaDir: resolve(env.NEAREDIT_MEDIA_DIR || resolve(process.cwd(), 'media')),
     globalMediaPaths: pathList(env.GLOBAL_MEDIA_PATHS),
     browseRoots: pathList(env.BROWSE_ROOTS).length ? pathList(env.BROWSE_ROOTS) : [homedir()],

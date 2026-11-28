@@ -1,16 +1,14 @@
 /**
  * One clip: coloured body, content (filmstrip / waveform / hatching / a
- * generator's colours / a song's picture), label, the "fx" badge and keyframe marks,
- * deliberate fade ramps, fade handles and the selection outline.
+ * generator's colours / a song's picture / a brand element's chips), label,
+ * the "fx" badge and keyframe marks, deliberate fade ramps, fade handles
+ * and the selection outline.
  * Detail drops away as the clip gets narrower, so a zoomed-out timeline of
  * a thousand slivers costs a thousand rectangles.
  * @module utils/timeline/draw/clipBody
  */
 
 import { clipKind } from '#utils/edl/factory.js';
-import { generatorLabel } from '#utils/timeline/clipMarks.js';
-import { musicLabel } from '#utils/timeline/clipMarksMusic.js';
-import { webLabel } from '#utils/timeline/clipMarksWeb.js';
 import { hitSizes } from '#utils/timeline/hitTest.js';
 import { timeToX } from '#utils/timeline/viewport.js';
 import { edgeOverlaps } from '#utils/timeline/visible.js';
@@ -24,6 +22,8 @@ import {
   drawKeyMarks,
   showsBadge,
 } from './clipMarks.js';
+import { clipColor, clipLabel } from './clipFace.js';
+import { drawElementBody, drawElementMark } from './elementClip.js';
 import { drawFadeHandle, drawFadeRamp } from './fades.js';
 import { drawMusicBody, drawMusicMark } from './musicClip.js';
 import { boxPath, fitText } from './shapes.js';
@@ -39,31 +39,6 @@ const DETAIL_MIN = 10;
 const MIN_STRIP_H = 8;
 /** Narrower than this a clip has no label. */
 const LABEL_MIN = 30;
-
-/**
- * @param {import('#utils/edl/types.js').Clip} clip
- * @returns {string} The name shown on the clip
- */
-export function clipLabel(clip) {
-  if (isWebClip(clip)) return webLabel(clip);
-  if (isMusicClip(clip)) return musicLabel(clip);
-  if (clip.label) return clip.label;
-  if (clip.sourceFile) return clip.sourceFile.split(/[\\/]/).pop();
-  if (clip.generator?.type) return generatorLabel(clip.generator);
-  return clip.text?.content?.split('\n')[0] || clip.prompt || clip.intent || 'Placeholder';
-}
-
-/**
- * The colour of a clip's body.
- * @param {Scene} scene
- * @param {import('#utils/edl/types.js').Clip} clip
- * @param {import('#utils/edl/types.js').Track} track
- * @returns {string}
- */
-export function clipColor(scene, clip, track) {
-  const kind = isWebClip(clip) ? 'web' : isMusicClip(clip) ? 'music' : clipKind(clip, track);
-  return clip.color || scene.palette[kind];
-}
 
 /**
  * Draw one clip of a track.
@@ -104,13 +79,15 @@ export function drawClip(scene, track, index, lane) {
     else if (web && kind === 'placeholder') drawWebPlaceholder(scene, clip, box);
     else if (kind === 'placeholder') drawPlaceholder(scene, clip, box);
     else if (kind === 'generator') drawGeneratorSwatch(scene, clip, box, y + LABEL_H + 1);
+    else if (kind === 'element') drawElementBody(scene, clip, box);
   }
   const overlaps = edgeOverlaps(track.clips, index);
   // The label starts after a cross-fade, where the outgoing clip still shows.
   const labelFrom = Math.max(x0 + overlaps.in * vp.pps, 0) + 5;
   const badge = showsBadge(clip, { x0, x1, y, height });
   if (web && width >= DETAIL_MIN) drawStepTicks(scene, clip, { x0, x1, y, height });
-  const marker = web ? drawWebMark : music ? drawMusicMark : () => 0;
+  const brand = kind === 'element' ? drawElementMark : () => 0;
+  const marker = web ? drawWebMark : music ? drawMusicMark : brand;
   const mark = marker(scene, clip, { x0, x1, y, height }, badge ? BADGE_W : 0);
   const labelRoom = x1 - labelFrom - (badge ? BADGE_W : 0) - mark;
   if (labelRoom >= LABEL_MIN) {

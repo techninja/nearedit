@@ -22,6 +22,7 @@ const KIND_LABELS = {
   image: 'still',
   title: 'title',
   generator: 'generator',
+  element: 'brand element',
   placeholder: 'placeholder',
 };
 

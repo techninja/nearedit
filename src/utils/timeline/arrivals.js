@@ -1,10 +1,12 @@
 /**
  * Things that arrive after a frame was drawn and change what the timeline
  * shows without changing the document or the view: a filmstrip, a
- * waveform, and where the rendering of a music clip stands.
+ * waveform, where the rendering of a music clip stands, and the project's
+ * brand kit (which element clips are out of date with it).
  * @module utils/timeline/arrivals
  */
 
+import { kitState } from '#utils/brandUi/kitState.js';
 import { renderState } from '#utils/musicUi/renderState.js';
 import { onStripLoaded } from './thumbCache.js';
 import { onWaveLoaded } from './waveCache.js';
@@ -19,6 +21,7 @@ export function onArrival(listener) {
     onStripLoaded(listener),
     onWaveLoaded(listener),
     renderState.subscribe(() => listener()),
+    kitState.subscribe(() => listener()),
   ];
   return () => stops.forEach((stop) => stop());
 }

@@ -7,7 +7,8 @@ import { renderState } from '#utils/musicUi/renderState.js';
 import { musicDoc, renderingOf } from '#utils/musicUi/testkit.js';
 import { MIN_BEAT_PX } from './beats.js';
 import * as marks from './clipMarksMusic.js';
-import { clipColor, clipLabel, drawClip } from './draw/clipBody.js';
+import { drawClip } from './draw/clipBody.js';
+import { clipColor, clipLabel } from './draw/clipFace.js';
 import { musicSnapTimes } from './musicSnap.js';
 
 // Two bars at 120 BPM: 4 s of music and a 2 s tail. A kick on every beat,

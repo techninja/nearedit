@@ -14,6 +14,7 @@ const KIND_NAMES = {
   image: 'image',
   title: 'title',
   generator: 'generator',
+  element: 'brand element',
   placeholder: 'placeholder',
 };
 
@@ -45,6 +46,7 @@ export function describeSelection(refs) {
       clip.label ||
       baseName(clip.sourceFile) ||
       clip.generator?.type ||
+      clip.element?.id ||
       clip.text?.content?.split('\n')[0] ||
       'Clip';
     const tracks = refs.map((ref) => ref.track.name || ref.track.trackId).join(' + ');

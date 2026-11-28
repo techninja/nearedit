@@ -66,33 +66,7 @@ export {
 export { copyClips, duplicateClips, pasteClips } from './clipboard.js';
 export { insertMedia, insertTitle } from './insert.js';
 export { insertGenerator, updateGenerator } from './generator.js';
-export {
-  insertWebClip,
-  setWebRecording,
-  staleWebClips,
-  updateWebRecipe,
-  webClips,
-} from './webClip.js';
-export { applyWebZoom, clearWebZoom } from './webZoom.js';
-export { isStale, isWebClip, stepMarks, webDuration } from '#utils/web/clip.js';
-export {
-  insertMusicClip,
-  musicClips,
-  setMusicRendering,
-  staleMusicClips,
-  updateSong,
-} from './musicClip.js';
-export { isMusicClip, isStaleMusic, musicDuration } from '#utils/music/clip.js';
-export {
-  elementClips,
-  insertElement,
-  restyle,
-  staleElements,
-  updateElementSlots,
-} from './elementClip.js';
-export { detachElement } from './elementDetach.js';
-export { syncFonts } from './elementFonts.js';
-export { elementSpan, isElementClip } from '#utils/brand/clip.js';
+export * from './kinds.js';
 export { pasteAttributes } from './attributes.js';
 export { repairLinks } from './links.js';
 

@@ -6,7 +6,8 @@ import { setWebRecording, updateWebRecipe } from '#utils/edl/webClip.js';
 import { recipeKey } from '#utils/web/index.js';
 import { webDoc } from '#utils/webUi/testkit.js';
 import { webLabel, webMark, webTickAt, webTicks } from './clipMarksWeb.js';
-import { clipColor, clipLabel, drawClip } from './draw/clipBody.js';
+import { drawClip } from './draw/clipBody.js';
+import { clipColor, clipLabel } from './draw/clipFace.js';
 
 // lead 0.6 | click 0.7 + 0.6 | wait 1 | press 0.15 + 0.4 | tail 1 → 4.4667 s
 const STEPS = [{ do: 'click', target: 'text=Go' }, { do: 'wait' }, { do: 'press', key: 'Tab' }];

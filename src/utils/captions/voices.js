@@ -16,8 +16,8 @@ import { normalizeCaptions, repairWords } from './words.js';
 
 /**
  * @typedef {import('./types.js').Word} Word
- * @typedef {{ clipId?: string, sourceIn: number, timelineStart: number, timelineEnd: number,
- *   linkedClipId?: string, captions?: any }} Clip
+ * @typedef {{ clipId?: string, sourceFile?: string, sourceIn: number, timelineStart: number,
+ *   timelineEnd: number, linkedClipId?: string, captions?: any }} Clip
  */
 
 /**
@@ -90,6 +90,21 @@ export function voicesAt(edl, time) {
   return captionVoices(edl).filter(
     ({ sound }) => time >= sound.timelineStart && time < sound.timelineEnd,
   );
+}
+
+/**
+ * The files whose transcripts a document's captions are made from: the
+ * source file of every voice that carries no words of its own. A host
+ * loads these before it draws (the server) or while it draws (the preview).
+ * @param {{ tracks?: any[] }} edl
+ * @returns {string[]} Paths, each once
+ */
+export function voiceFiles(edl) {
+  const files = new Set();
+  for (const { clip } of captionVoices(edl)) {
+    if (!Array.isArray(clip.captions?.words) && clip.sourceFile) files.add(clip.sourceFile);
+  }
+  return [...files];
 }
 
 /**

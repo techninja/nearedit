@@ -6,6 +6,7 @@
  */
 
 import { cleanFonts, sameFonts } from '#utils/brand/fontTable.js';
+import { checkCaptions, checkDocumentCaptions } from './captionField.js';
 import { BACKGROUND_COLOR, EDL_VERSION } from './defaults.js';
 import { isObject } from './sanitize.js';
 import { checkClip, checkOverlaps, checkShape, isGain } from './validateClip.js';
@@ -72,6 +73,7 @@ export function validateEdl(edl, opts = {}) {
     report('fonts', 'must hold { family, weight, style, file }, each face once (see cleanFonts)');
   }
   const enums = fontEnums(Array.isArray(edl.fonts) ? edl.fonts : undefined);
+  checkDocumentCaptions(edl.captions, report);
   checkMarkers(edl.markers, report);
   checkRegions(edl.regions, report);
   if (!Array.isArray(edl.tracks)) return (report('tracks', 'must be an array'), done());
@@ -91,7 +93,10 @@ export function validateEdl(edl, opts = {}) {
       const at = `${path}.clips[${c}]`;
       const ok = checkClip(clip, track, at, report, { ...opts, fps: edl.fps, enums });
       if (ok && clips.has(clip.clipId)) report(`${at}.clipId`, 'is not unique');
-      if (isObject(clip)) clips.set(clip.clipId, { clip, at });
+      if (isObject(clip)) {
+        checkCaptions(clip, track, at, report);
+        clips.set(clip.clipId, { clip, at });
+      }
       return ok;
     });
     if (sound.length === track.clips.length) checkOverlaps(sound, path, report);

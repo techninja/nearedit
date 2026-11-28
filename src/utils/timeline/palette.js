@@ -18,6 +18,7 @@ const TOKENS = {
   image: '--color-clip-image',
   title: '--color-clip-title',
   generator: '--color-clip-generator',
+  element: '--color-clip-element',
   web: '--color-clip-web',
   music: '--color-clip-music',
   placeholder: '--color-clip-placeholder',

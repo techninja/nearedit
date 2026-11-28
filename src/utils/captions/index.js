@@ -28,5 +28,5 @@ export {
   WORD_MOTIONS,
 } from './style.js';
 export { wordsFromTranscript } from './transcript.js';
-export { captionVoices, voiceWords, voicesAt } from './voices.js';
+export { captionVoices, voiceFiles, voiceWords, voicesAt } from './voices.js';
 export { MAX_WORDS, MAX_WORD_CHARS, normalizeCaptions, repairWords } from './words.js';

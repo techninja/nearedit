@@ -39,7 +39,7 @@ function viewOf(source) {
  * Merge the document and the view fields into the shape that is saved
  * (`PUT /api/projects/:id/edl/:aid`). Tracks and clips are passed on as
  * they are, so everything a clip carries — effects, keyframes, generator
- * parameters — is saved with it.
+ * parameters, captions — is saved with it.
  * @param {Edl} edl
  * @param {Partial<SavedView>} [view] - e.g. the ViewState store model
  * @returns {Edl & SavedView}
@@ -47,9 +47,10 @@ function viewOf(source) {
 export function toSavedDocument(edl, view = {}) {
   const { version, fps, resolution, background, tracks, markers, regions } = edl;
   const saved = { version, fps, resolution, background: background || '#000000', tracks };
-  // The document's own fonts, when it has any.
+  // The document's own fonts and its caption style, when it has any.
   const fonts = edl.fonts?.length ? { fonts: edl.fonts } : {};
-  return { ...saved, markers: markers || [], regions: regions || [], ...fonts, ...viewOf(view) };
+  const extras = edl.captions ? { ...fonts, captions: edl.captions } : fonts;
+  return { ...saved, markers: markers || [], regions: regions || [], ...extras, ...viewOf(view) };
 }
 
 /**

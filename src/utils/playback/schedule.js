@@ -13,7 +13,7 @@ import { activeTracks } from '#utils/edl/query.js';
  * @typedef {Object} Cue
  * @property {any} clip
  * @property {any} track
- * @property {'video'|'image'|'title'|'generator'|'audio'} kind
+ * @property {'video'|'image'|'title'|'generator'|'element'|'audio'} kind
  * @property {boolean} active - Covers the time now; false = starts within the lookahead
  */
 

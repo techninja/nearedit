@@ -15,7 +15,8 @@ import { timelineDuration } from '#utils/edl/query.js';
  * @property {number} videoTracks
  * @property {number} audioTracks
  * @property {number} clips
- * @property {Record<string, number>} kinds - Clip count per kind
+ * @property {Record<string, number>} kinds - Clip count per kind (`element`
+ *   only when the document has brand elements)
  * @property {number} markers
  * @property {{ trackId: string, name: string, type: string, clips: number,
  *   muted: boolean, solo: boolean, locked: boolean }[]} tracks
@@ -32,7 +33,9 @@ export function documentSummary(edl) {
   let clips = 0;
   for (const track of tracks) {
     for (const clip of track.clips) {
-      kinds[clipKind(clip, track)]++;
+      // Kinds the list above does not name (brand elements) are counted when there are any.
+      const kind = clipKind(clip, track);
+      kinds[kind] = (kinds[kind] || 0) + 1;
       clips++;
     }
   }

@@ -15,10 +15,7 @@ const AUDIO_EXTS = ['mp3', 'wav', 'flac', 'ogg', 'aac', 'm4a'];
  * has text and a placeholder otherwise.
  * @param {object} clip
  * @param {object} [track] - Owning track, used to tell audio from video
- * @returns {'generator'|'title'|'placeholder'|'image'|'audio'|'video'} One
- *   of these — or `'element'`, which the declared type leaves out until the
- *   code that still types the six older kinds (the inspector, playback
- *   cues) has a case for it
+ * @returns {'element'|'generator'|'title'|'placeholder'|'image'|'audio'|'video'}
  */
 export function clipKind(clip, track) {
   if (isElementClip(clip)) return /** @type {any} */ ('element');

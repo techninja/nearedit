@@ -52,6 +52,9 @@
  * @property {import('#utils/brand/types.js').ElementBlock} [element] - Only
  *   on an element clip: the brand element it is an instance of, its slots
  *   and its design
+ * @property {import('#utils/captions/types.js').CaptionsBlock} [captions] -
+ *   Only on a clip that plays video or sound, and only when captions are on
+ *   or it carries words of its own (CAPTIONS.md)
  */
 
 /**
@@ -98,6 +101,8 @@
  * @property {Region[]} [regions] - Sorted by start, then end
  * @property {import('#utils/brand/fontTable.js').FontFace[]} [fonts] - Font
  *   files the document needs that are not bundled; absent when it needs none
+ * @property {{ style: Record<string, any> }} [captions] - The style every
+ *   caption is drawn with, as a preset and what differs; absent = the default
  */
 
 /**

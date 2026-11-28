@@ -6,6 +6,7 @@
  */
 
 import { cleanFonts } from '#utils/brand/fontTable.js';
+import { cleanDocumentCaptions, shareCaptions } from './captionField.js';
 import { settleFades } from './fades.js';
 import { BACKGROUND_COLOR, EDL_VERSION, createTrack, newId } from './factory.js';
 import { repairLinks } from './links.js';
@@ -81,6 +82,9 @@ function nameTracks(tracks) {
  *   duplicate); markers and regions on the frame grid, sorted;
  * - a `fonts` table of usable entries, each face once — and no `fonts`
  *   field at all when there are none; a title may name its families;
+ * - `captions.style` as `normalizeCaptionStyle` writes it — and no
+ *   `captions` field when the document names no style; clips that carry the
+ *   same caption words share one list;
  * - at least one video and one audio track, video tracks first.
  *
  * A valid v3 document comes back deep-equal to itself.
@@ -103,6 +107,7 @@ export function normalizeEdl(raw) {
     return kept;
   };
   const fonts = cleanFonts(doc.fonts);
+  const captions = cleanDocumentCaptions(doc.captions);
   const enums = fontEnums(fonts);
   const tracks = (Array.isArray(doc.tracks) ? doc.tracks : [])
     .filter(isObject)
@@ -117,9 +122,10 @@ export function normalizeEdl(raw) {
     fps,
     resolution: sized ? head.resolution : '1920x1080',
     background: colored ? head.background : '#000000',
-    tracks: nameTracks(/** @type {Track[]} */ (sortedTracks(tracks))),
+    tracks: nameTracks(/** @type {Track[]} */ (sortedTracks(shareCaptions(tracks)))),
     markers: normalizeMarkers(doc.markers, fps, unique),
     regions: normalizeRegions(doc.regions, fps, unique),
     ...(fonts.length && { fonts }),
+    ...(captions && { captions }),
   });
 }

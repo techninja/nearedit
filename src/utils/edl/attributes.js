@@ -5,6 +5,8 @@
  * @module utils/edl/attributes
  */
 
+import { captionInfo } from './captionQuery.js';
+import { setCaptions } from './captions.js';
 import { tidyKeyframes } from './clipPaths.js';
 import { NO_OVERLAP, fitFades, neighbourOverlaps } from './fades.js';
 import { idList, indexClips, mapClips } from './immutable.js';
@@ -28,6 +30,9 @@ import { fontEnums } from './fontEnums.js';
  * @property {boolean} [blendMode]
  * @property {boolean} [fades] - Fade lengths and both fade curves
  * @property {boolean} [text] - The text style; the words stay
+ * @property {boolean} [captions] - Whether captions are on — only when
+ *   asked for by name. It goes to each target's voice (`setCaptions`); the
+ *   words a clip carries stay its own
  */
 
 /** Keyframe path prefix of each block that is pasted as plain values. */
@@ -89,7 +94,7 @@ export function pasteAttributes(edl, source, clipIds, parts) {
   const ids = new Set(idList(clipIds));
   if (!from || !ids.size) return edl;
   const want = (part) => (parts ? Boolean(parts[part]) : part !== 'text' || !!from.text.content);
-  return mapClips(edl, (clip, track) => {
+  const pasted = mapClips(edl, (clip, track) => {
     if (!ids.has(clip.clipId) || clip === from) return clip;
     /** @type {any} */
     const next = { ...clip };
@@ -110,7 +115,11 @@ export function pasteAttributes(edl, source, clipIds, parts) {
         Object.entries(from.keyframes).map(([path, keys]) => [path, rebase(keys)]),
       );
     }
-    const pasted = tidyKeyframes({ ...next, keyframes });
-    return sameJson(pasted, clip) ? clip : pasted;
+    const made = tidyKeyframes({ ...next, keyframes });
+    return sameJson(made, clip) ? clip : made;
   });
+  if (!parts?.captions) return pasted;
+  const inside = typeof source === 'string';
+  const on = inside ? captionInfo(edl, source).on : from.captions?.on === true;
+  return setCaptions(pasted, inside ? [...ids].filter((id) => id !== source) : ids, on);
 }

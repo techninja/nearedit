@@ -21,6 +21,8 @@ const RELATIONS = ['linkedClipId', 'groupId'];
  * musicClip.js and elementClip.js only.
  */
 const DESCRIPTIONS = ['web', 'music', 'element'];
+/** A clip's captions are switched and written by captions.js only. */
+const SPOKEN = ['captions'];
 /** A web or music clip's recording and its window belong to those operations too. */
 const RECORDED = ['sourceFile', 'sourceIn'];
 
@@ -36,7 +38,7 @@ const RECORDED = ['sourceFile', 'sourceIn'];
 export function patchClip(clip, track, patch, enums) {
   if (!patch || typeof patch !== 'object') return clip;
   const safe = { ...patch };
-  for (const key of [...STRUCTURAL, ...RELATIONS, ...DESCRIPTIONS]) delete safe[key];
+  for (const key of [...STRUCTURAL, ...RELATIONS, ...DESCRIPTIONS, ...SPOKEN]) delete safe[key];
   for (const key of hasMadeSource(clip) ? RECORDED : []) delete safe[key];
   /** @type {any} */
   const merged = tidyKeyframes(/** @type {any} */ (mergeShape(clip, safe, enums)));
