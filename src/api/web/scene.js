@@ -32,7 +32,7 @@ export function createScene(recipe, fps) {
     .map(parseTarget)
     .filter((target) => target && target.by !== 'point')
     .map((target) => ({ by: target.by, value: target.value, index: 0 }));
-  /** @type {{ x: number, y: number, at: number }[]} */
+  /** @type {{ x: number, y: number, at: number, step: number }[]} */
   let ripples = [];
   const rippleFrames = Math.max(2, Math.round(RIPPLE_SECONDS * fps));
   const drawn = (/** @type {boolean} */ down) =>
@@ -65,7 +65,9 @@ export function createScene(recipe, fps) {
       }
       const pressing = acts.find((act) => act.down?.some(([from, to]) => n >= from && n < to));
       for (const act of acts) {
-        if (act.ripple?.includes(n)) ripples.push({ x: pointer.x, y: pointer.y, at: n });
+        const known = ripples.some((ripple) => ripple.at === n && ripple.step === act.step);
+        if (act.ripple?.includes(n) && !known)
+          ripples.push({ x: pointer.x, y: pointer.y, at: n, step: act.step });
       }
       ripples = ripples.filter((ripple) => n - ripple.at < rippleFrames);
       state.cursor = drawn(!!pressing);

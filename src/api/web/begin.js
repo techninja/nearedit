@@ -7,7 +7,7 @@
  * @module api/web/begin
  */
 
-import { parseTarget, scrollGoal } from '#utils/web/index.js';
+import { parseTarget, scrollGoal, stepKind } from '#utils/web/index.js';
 import { aimedParts } from './acts.js';
 import { WebError } from './errors.js';
 import { pressParts, typeParts } from './typing.js';
@@ -89,7 +89,8 @@ export async function beginStep(playing, i) {
     rows[i].rect = found.rect;
     return null;
   }
-  if (step.do === 'focus' && step.zoom) rows[i].zoom = step.zoom;
+  // A camera cue's own zoom goes into the track: zoom keyframes are made from the track alone.
+  if (stepKind(step.do)?.camera && typeof step.zoom === 'number') rows[i].zoom = step.zoom;
   const parts =
     step.do === 'scroll'
       ? { ease: step.ease }

@@ -21,9 +21,10 @@
     <div id="lamp"></div>
     <div id="veil"></div>
     <script>
-      document.getElementById('toggle').addEventListener('click', () => {
-        document.getElementById('lamp').classList.toggle('on');
-      });
+      // The page keeps what it needs for itself before it breaks the rest.
+      const lamp = document.getElementById('lamp');
+      const toggle = DOMTokenList.prototype.toggle.bind(lamp.classList);
+      document.getElementById('toggle').addEventListener('click', () => toggle('on'));
       // Everything a helper script might lean on, broken.
       const broken = () => { throw new Error('this page broke it'); };
       for (const name of ['map', 'filter', 'forEach', 'find', 'some', 'includes', 'slice', 'push', 'join'])

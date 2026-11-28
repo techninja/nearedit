@@ -46,8 +46,8 @@ export async function takeSnapshot({ until, signal, ...options }) {
     for (let n = 0; n <= last; n++) {
       if (signal?.aborted) throw aborted();
       studio.check();
-      const sent = await performer.frame(n);
-      await stepper.frame();
+      const { sent, discrete } = await performer.frame(n);
+      await stepper.frame(false, discrete);
       await Promise.allSettled(sent);
     }
     await tab.call('frame', {}); // nothing of the recorder's in the picture

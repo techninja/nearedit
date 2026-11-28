@@ -25,8 +25,9 @@ const sleep = (/** @type {number} */ ms) => new Promise((resolve) => setTimeout(
 
 /**
  * @typedef {Object} Stepper
- * @property {(shot?: boolean) => Promise<string>} frame - Advance one frame and draw it;
- *   with `shot`, the PNG as base64 ('' when the browser gave none)
+ * @property {(shot?: boolean, flush?: boolean) => Promise<string>} frame - Advance one frame
+ *   and draw it; with `shot`, the PNG as base64 ('' when the browser gave none). `flush`: a
+ *   button or a key was just sent (see `flushInput`)
  * @property {(drift: number) => Promise<void>} sync - Make the two clocks equal again; `drift`
  *   is how far the frame clock is ahead of the page's, as the page measured it
  * @property {() => void} arrived - A page the recorder navigated to has just been committed
@@ -98,9 +99,19 @@ export async function createStepper(session, network, { fps, warn, watchdog = WA
     await done;
   };
 
+  /**
+   * After a click or a key Chrome holds back a page's other work — the
+   * answer to a request the click started among it — until a frame has been
+   * drawn. Waiting for that request first would wait for ever: draw a frame
+   * that is not kept, a hair after the last one, and wait then.
+   */
+  const flushInput = () =>
+    session.send('HeadlessExperimental.beginFrame', { frameTimeTicks: tick + 0.1, interval }, HANG);
+
   return {
     interval,
-    async frame(shot = false) {
+    async frame(shot = false, flush = false) {
+      if (flush) await flushInput();
       await advance();
       tick += interval + behind;
       behind = 0;

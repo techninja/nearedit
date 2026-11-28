@@ -21,8 +21,9 @@ import { createScene } from './scene.js';
  * @property {(url: string, between: () => Promise<void>) => Promise<void>} load - Go to a page
  * @property {(message: string) => void} warn
  * @typedef {Object} Performer
- * @property {(n: number) => Promise<Promise<any>[]>} frame - Prepare frame `n`; resolves to the
- *   input commands sent, which are answered once the frame is drawn
+ * @property {(n: number) => Promise<{ sent: Promise<any>[], discrete: boolean }>} frame - Prepare
+ *   frame `n`. `sent`: the input commands, answered once the frame is drawn; `discrete`: a
+ *   button or a key was among them
  * @property {() => Promise<void>} rest - Draw the page as it stands (while a page loads)
  * @property {() => { steps: any[], cursor: number[][], scroll: number[][] }} track
  */
@@ -46,7 +47,7 @@ export function createPerformer(stage, steps = stage.score.steps.length) {
   const rows = score.steps.map((at) => ({ ...at, missing: false }));
   const scene = createScene(recipe, fps);
   const { pointer } = scene;
-  const sent = { x: NaN, y: NaN };
+  const sent_ = { x: NaN, y: NaN };
   /** @type {Act[]} */
   let acts = [];
   /** @type {number[][]} */
@@ -64,41 +65,60 @@ export function createPerformer(stage, steps = stage.score.steps.length) {
   return {
     rest,
     async frame(n) {
-      while (next < spans.length && spans[next].S <= n) {
-        const act = await beginStep(playing, next++);
-        if (act) acts.push(act);
-      }
-      acts = acts.filter((act) => n <= Math.max(act.E, act.A));
-      const { state, held } = scene.at(n, acts);
-      const seen = await tab.call('frame', state);
-      await stepper.sync(seen.drift);
-      if (pointer.shown && seen.x !== null) Object.assign(pointer, { x: seen.x, y: seen.y });
-      /** @type {import('./input.js').Command[]} */
-      const commands = [];
-      const inside = pointer.x >= 0 && pointer.y >= 0 && pointer.x <= width && pointer.y <= height;
-      const here = () => mouse('mouseMoved', pointer, { held });
-      if (pointer.shown && inside && (pointer.x !== sent.x || pointer.y !== sent.y)) {
-        commands.push(here());
-        Object.assign(sent, { x: pointer.x, y: pointer.y });
-        cursorTrack.push([n / fps, round(pointer.x), round(pointer.y)]);
-      }
-      for (const act of acts) {
-        const aimed = seen.aim && state.aim === act.plan;
-        if (aimed) act.aim = { x: seen.aim.x, y: seen.aim.y };
-        if (n === (act.G ?? act.A) && act.plan !== undefined) {
-          if (aimed && seen.aim.rect) rows[act.step].rect = seen.aim.rect;
-          if (act.G !== undefined)
-            rows[act.step].point = { x: round(pointer.x), y: round(pointer.y) };
-        }
-        const why = await act.check?.(n);
-        if (why) miss(act.step, why);
-        commands.push(...(act.cue?.(n, pointer) || []));
-        // A scroll moves the page under a pointer that stands still: tell the page where it is.
-        if (act.scrolls?.length && n === act.A && act.G === undefined && pointer.shown && inside)
+      /** @type {Promise<any>[]} */
+      const sent = [];
+      let discrete = false;
+      /** Draw instant `n` with every act in play, and send the input of the acts given. */
+      const play = async (/** @type {Act[]} */ cued) => {
+        const { state, held } = scene.at(n, acts);
+        const seen = await tab.call('frame', state);
+        await stepper.sync(seen.drift);
+        if (pointer.shown && seen.x !== null) Object.assign(pointer, { x: seen.x, y: seen.y });
+        /** @type {import('./input.js').Command[]} */
+        const commands = [];
+        const inside =
+          pointer.x >= 0 && pointer.y >= 0 && pointer.x <= width && pointer.y <= height;
+        const here = () => mouse('mouseMoved', pointer, { held });
+        if (pointer.shown && inside && (pointer.x !== sent_.x || pointer.y !== sent_.y)) {
           commands.push(here());
+          Object.assign(sent_, { x: pointer.x, y: pointer.y });
+          cursorTrack.push([n / fps, round(pointer.x), round(pointer.y)]);
+        }
+        for (const act of acts) {
+          const aimed = seen.aim && state.aim === act.plan;
+          if (aimed) act.aim = { x: seen.aim.x, y: seen.aim.y };
+          if (n === (act.G ?? act.A) && act.plan !== undefined) {
+            if (aimed && seen.aim.rect) rows[act.step].rect = seen.aim.rect;
+            if (act.G !== undefined)
+              rows[act.step].point = { x: round(pointer.x), y: round(pointer.y) };
+          }
+          if (!cued.includes(act)) continue;
+          const why = await act.check?.(n);
+          if (why) miss(act.step, why);
+          commands.push(...(act.cue?.(n, pointer) || []));
+          // A scroll moves the page under a pointer that stands still: tell the page where it is.
+          if (act.scrolls?.length && n === act.A && act.G === undefined && pointer.shown && inside)
+            commands.push(here());
+        }
+        if (scrollTrack.at(-1)?.[1] !== seen.scrollY) scrollTrack.push([n / fps, seen.scrollY]);
+        for (const [method, params] of commands) {
+          discrete ||= /** @type {any} */ (params).type !== 'mouseMoved';
+          sent.push(tab.session.send(method, params));
+        }
+      };
+      // First what is already going on — a click let go, a last key — then the steps that
+      // start on this frame, which see the page as those left it.
+      acts = acts.filter((act) => n <= Math.max(act.E, act.A));
+      await play(acts);
+      const fresh = [];
+      let began = false;
+      for (; next < spans.length && spans[next].S <= n; began = true) {
+        const act = await beginStep(playing, next++);
+        if (act) fresh.push(act);
       }
-      if (scrollTrack.at(-1)?.[1] !== seen.scrollY) scrollTrack.push([n / fps, seen.scrollY]);
-      return commands.map(([method, params]) => tab.session.send(method, params));
+      acts.push(...fresh);
+      if (began) await play(fresh);
+      return { sent, discrete };
     },
     track: () => ({ steps: rows, cursor: cursorTrack, scroll: scrollTrack }),
   };

@@ -103,7 +103,7 @@ describe('web recorder: steps', { skip: kit.SKIP }, () => {
     const more = [
       { do: 'run', js: 'undefinedFunction()' },
       { do: 'select', target: '#toggle', value: 'x', ...quick },
-      { do: 'move', target: 'a[href', ...quick },
+      { do: 'move', target: 'a >> b', ...quick },
       { do: 'move', target: '#next', index: 3, ...quick },
       { do: 'press', key: 'NoSuchKey' },
     ];
@@ -136,7 +136,7 @@ describe('web recorder: steps', { skip: kit.SKIP }, () => {
       /Step 4 \(run\): the script failed: ReferenceError: undefinedFunction is not/,
     );
     assert.match(said, /Step 5 \(select\): the target is not a <select>/);
-    assert.match(said, /Step 6 \(move\): "a\[href" is not a CSS selector/);
+    assert.match(said, /Step 6 \(move\): "a >> b" is not a CSS selector/);
     assert.match(said, /Step 7 \(move\): css=#next matches 1 element\(s\); there is no number 3/);
     assert.match(said, /Step 8 \(press\): there is no key called "NoSuchKey"/);
     await assert.rejects(

@@ -79,8 +79,8 @@ export async function recordRecipe(options) {
     for (let n = 0; n < score.frames; n++) {
       if (signal?.aborted) throw aborted();
       studio.check();
-      const sent = await performer.frame(n);
-      const png = Buffer.from(await stepper.frame(true), 'base64');
+      const { sent, discrete } = await performer.frame(n);
+      const png = Buffer.from(await stepper.frame(true, discrete), 'base64');
       // Mouse events are answered once the frame is drawn; none is worth waiting long for.
       await Promise.race([Promise.allSettled(sent), sleep(ACK_WAIT)]);
       if (!encoder) {
