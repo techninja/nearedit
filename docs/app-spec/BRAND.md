@@ -97,7 +97,7 @@ A design with blanks. The standard set every complete kit has:
 | ------- | ---- | ----- | ---------- |
 | `lower-third` | overlay | `name`, `role` | A name and what the person is, low in the frame |
 | `title` | overlay | `title`, `subtitle` | A heading over the picture |
-| `caption` | overlay | `text` | One line of speech or description; `add_captions` uses it |
+| `caption` | overlay | `text` | One line of description; the director's site demos use it for their step captions. (Speech is captioned word by word: [CAPTIONS.md](./CAPTIONS.md)) |
 | `quote` | overlay | `text`, `by` | A pulled quote |
 | `chapter` | segment | `title`, `number` | A card that opens a section |
 | `intro` | segment | `title`, `subtitle` | The opening bumper, with the logo |
