@@ -159,7 +159,9 @@ For each frame, back to front:
       and the surface composited with the track's opacity and `blendMode`.
 3. Over every track, the [captions](./CAPTIONS.md#drawing) of the clips
    that are heard (`captionPass.js`): the group of words on screen at this
-   moment, in the timeline's caption style.
+   moment, in the timeline's caption style — drawn clear of any brand
+   overlay (a lower third) that would be in its way, decided once per
+   group (`captionRoom.js`).
 
 Effects therefore act in frame space, after the transform: a 20-pixel blur
 is 20 output pixels however the clip is scaled, and glows and shadows can
