@@ -8,6 +8,7 @@
 
 import { BASE_EDIT, EXECUTE_SCRIPT, GENERATE_EDIT, GENERATE_SCRIPT } from './actionsGenerate.js';
 import { MOTION_PIECE } from './actionsMotion.js';
+import { SCORE } from './actionsScore.js';
 import { ADD_CAPTIONS, BEAT_SYNC_ACTION, INSERT_BROLL } from './actionsTimeline.js';
 import { REMOVE_SILENCE } from './actionsTimeline.js';
 import { SITE_DEMO } from './actionsWeb.js';
@@ -41,6 +42,7 @@ export const ACTIONS = [
   INSERT_BROLL,
   MOTION_PIECE,
   SITE_DEMO,
+  SCORE,
   REMOVE_SILENCE,
   BEAT_SYNC_ACTION,
   ADD_CAPTIONS,

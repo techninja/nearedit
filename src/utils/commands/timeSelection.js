@@ -13,6 +13,7 @@ import { getPosition, pause, seek, setLoopRange } from '#utils/playback/transpor
 import { editTime, pixelSeconds } from './context.js';
 import { editPoints, markerTimes, neighbourPoint } from './editPoints.js';
 import { extendSpan, hasLength, recalled, remembered, spanAround } from './timeSpans.js';
+import { openMusicEditor } from '#utils/musicUi/editorState.js';
 import { openWebEditor } from '#utils/webUi/editorState.js';
 
 /** @typedef {import('./timeSpans.js').Span} Span */
@@ -105,13 +106,14 @@ export function recallSelection() {
 export const canRecallSelection = () => history.length > 0;
 
 /**
- * Double-click a clip: select its span — except a web clip, which opens in
- * the web editor (what Vegas does for generated media).
+ * Double-click a clip: select its span — except a web clip or a music
+ * clip, which opens in its editor (what Vegas does for generated media).
  * @param {string} clipId
  */
 export function selectClipSpan(clipId) {
   const clip = findClip(getDoc(), clipId)?.clip;
-  if (clip && !openWebEditor(clipId)) setTimeSelection(clip.timelineStart, clip.timelineEnd);
+  if (!clip || openWebEditor(clipId) || openMusicEditor(clipId)) return;
+  setTimeSelection(clip.timelineStart, clip.timelineEnd);
 }
 
 /**

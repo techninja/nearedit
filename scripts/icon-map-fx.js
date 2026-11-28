@@ -1,6 +1,6 @@
 /**
  * Icons for the phase-2 editor (keyframes, generators, effects, Vegas
- * parity) and for web clips — lucide-static name → app-icon name. Merged with icon-map.js by
+ * parity), for web clips and for music clips — lucide-static name → app-icon name. Merged with icon-map.js by
  * build-icons.js; add an entry in either file, then run that script.
  * @module scripts/icon-map-fx
  */
@@ -71,4 +71,6 @@ export const FX_ICON_MAP = {
   globe: 'web',
   'circle-dot': 'record',
   tablet: 'tablet',
+  piano: 'piano',
+  dices: 'dice',
 };

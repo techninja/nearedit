@@ -8,6 +8,7 @@ import { baseEdit } from './actions/baseEdit.js';
 import { generateEdit } from './actions/generateEdit.js';
 import { insertBroll } from './actions/insertBroll.js';
 import { motionPiece } from './actions/motion.js';
+import { score } from './actions/score.js';
 import { executeScript, generateScripts } from './actions/scripts.js';
 import { siteDemo } from './actions/siteDemo.js';
 import { gatherMedia } from './context/gather.js';
@@ -24,6 +25,7 @@ export const HANDLERS = {
   insert_broll: insertBroll,
   motion_piece: motionPiece,
   site_demo: (ctx) => siteDemo(ctx),
+  score: (ctx) => score(ctx),
   remove_silence: removeSilence,
   beat_sync: beatSync,
   add_captions: addCaptions,

@@ -1,7 +1,8 @@
 /**
  * Pieces of the editor page's template: the dock's tabs and panels (with
- * the web editor dialog, which the Create tab, the inspector and the
- * timeline open), and the view shown when the adaptation could not be opened.
+ * the web editor and music editor dialogs, which the Create tab, the
+ * inspector and the timeline open), and the view shown when the adaptation
+ * could not be opened.
  * @module pages/editor/editor-parts
  */
 
@@ -12,6 +13,7 @@ import '#organisms/clip-inspector/index.js';
 import '#organisms/create-panel/index.js';
 import '#organisms/director-panel/index.js';
 import '#organisms/media-bin/index.js';
+import '#organisms/music-editor/index.js';
 import '#organisms/transcript-panel/index.js';
 import '#organisms/web-editor/index.js';
 
@@ -60,6 +62,7 @@ export function dockPanels(active) {
       )}
     </div>
     <web-editor></web-editor>
+    <music-editor></music-editor>
   `;
 }
 

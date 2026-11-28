@@ -17,7 +17,7 @@ import { createEdl } from '#utils/edl/factory.js';
 import { createHistory } from '#utils/edl/history.js';
 import { flushMirror, mirrorNow, mirrorSoon } from '#utils/editor/mirror.js';
 
-/** @typedef {{ transient: boolean, reason: 'edit'|'undo'|'redo'|'load'|'gesture' }} ChangeInfo */
+/** @typedef {{ transient: boolean, reason: 'edit'|'undo'|'redo'|'load'|'gesture'|'amend' }} ChangeInfo */
 
 /** @type {any} */
 let doc = createEdl();
@@ -65,12 +65,13 @@ export function loadDoc(next) {
 /**
  * Store a new document as one undoable step.
  * @param {any} next - Result of a pure operation on `getDoc()`
+ * @param {{ record?: boolean }} [opts] - `record: false` amends: no undo step, redo is kept
  * @returns {boolean} false when nothing changed
  */
-export function commit(next) {
+export function commit(next, { record = true } = {}) {
   if (!next || next === doc) return false;
-  if (gestureBase === null) history.push(doc);
-  publish(next, { transient: gestureBase !== null, reason: 'edit' });
+  if (gestureBase === null && record) history.push(doc);
+  publish(next, { transient: gestureBase !== null, reason: record ? 'edit' : 'amend' });
   pruneSelection();
   return true;
 }

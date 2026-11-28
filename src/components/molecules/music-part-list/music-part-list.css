@@ -1,0 +1,177 @@
+music-part-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-xs);
+
+  & .music-part-list-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .music-part-list-row {
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+
+    &[data-open='true'] {
+      border-color: var(--color-border);
+      background: var(--color-surface-2);
+    }
+  }
+
+  & .music-part-list-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 5.5rem auto auto;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 2px;
+  }
+
+  & .music-part-list-pick {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-width: 0;
+    height: var(--control-h);
+    padding: 0 var(--space-xs);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    text-align: left;
+    cursor: pointer;
+
+    & app-icon {
+      flex: none;
+      color: var(--color-clip-music);
+    }
+
+    & span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &[aria-current='true'] {
+      font-weight: 600;
+    }
+
+    &:hover {
+      background: var(--color-surface-3);
+    }
+  }
+
+  /* The volume of a row: a slider only. */
+  & .music-part-list-head field-number {
+    padding: 0;
+
+    & .field-input,
+    & .field-number-unit {
+      display: none;
+    }
+  }
+
+  & .music-part-list-flag {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: var(--color-warning);
+      background: var(--color-warning);
+      color: var(--color-text-inverse);
+    }
+
+    &[data-solo='true'] {
+      border-color: var(--color-info);
+      background: var(--color-info);
+    }
+  }
+
+  & .music-part-list-details {
+    padding: var(--space-xs) 0 var(--space-xs);
+    border-top: 1px solid var(--color-border);
+
+    & .field-row,
+    & field-number {
+      grid-template-columns: 3.75rem minmax(0, 1fr);
+    }
+  }
+
+  & .music-part-list-strip {
+    display: flex;
+    gap: 1px;
+    min-width: 0;
+    touch-action: none;
+
+    & button {
+      flex: 1;
+      min-width: 2px;
+      height: 1.25rem;
+      padding: 0;
+      border: 0;
+      border-radius: 2px;
+      background: var(--color-surface-3);
+      cursor: pointer;
+    }
+
+    & button[data-fourth='true'] {
+      margin-left: 2px;
+    }
+
+    & button[data-on='true'] {
+      background: var(--color-clip-music);
+    }
+
+    & button:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 1px;
+    }
+  }
+
+  & .music-part-list-tools {
+    display: flex;
+    justify-content: flex-end;
+    gap: 2px;
+    padding: var(--space-xs) var(--space-sm) 0;
+  }
+
+  & .music-part-list-empty,
+  & .music-part-list-note {
+    margin: 0;
+    padding: 0 var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: 1.45;
+  }
+
+  & .music-part-list-note {
+    color: var(--color-info);
+  }
+
+  & .music-part-list-add {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+
+    & .btn {
+      flex: 1;
+      justify-content: center;
+      padding: var(--space-xs) var(--space-sm);
+      font-size: var(--text-xs);
+      white-space: nowrap;
+    }
+  }
+}

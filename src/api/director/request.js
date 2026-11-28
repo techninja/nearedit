@@ -12,6 +12,7 @@ import { createClip, parseResolution } from '#utils/edl/factory.js';
 import { getAdaptation, getProjectDir } from '../lib/registry.js';
 import { DirectorError } from './errors.js';
 import { checkBrief } from './motion/brief.js';
+import { scoreSpan } from './score/timeline.js';
 import { checkScriptSource } from './scripts/files.js';
 import { checkRecorder, checkSite } from './web/check.js';
 
@@ -101,6 +102,8 @@ export function prepareRequest(body, route) {
   if (action.id === 'execute_script') checkScriptSource(directive);
   if (action.id === 'motion_piece') checkBrief(directive);
   if (action.id === 'site_demo') checkSite(directive);
+  if (action.id === 'score')
+    scoreSpan(edl, directive, Number(edl?.fps) || Number(adaptation?.fps) || 30);
 
   // A generated fragment that replaces a range should, by default, fill it.
   const length = action.fields.find((f) => f.key === 'duration');

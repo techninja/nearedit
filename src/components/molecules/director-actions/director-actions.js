@@ -23,6 +23,7 @@ const ICONS = {
   insert_broll: 'film',
   motion_piece: 'motion',
   site_demo: 'web',
+  score: 'music',
   remove_silence: 'split',
   beat_sync: 'beat',
   add_captions: 'captions',

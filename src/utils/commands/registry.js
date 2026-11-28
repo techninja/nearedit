@@ -11,6 +11,7 @@ import { EDIT_COMMANDS } from './catalogEdit.js';
 import { EVENT_COMMANDS } from './catalogEvents.js';
 import { FX_EDIT_COMMANDS, FX_INSERT_COMMANDS, FX_NAVIGATE_COMMANDS } from './catalogFx.js';
 import { INSERT_COMMANDS } from './catalogInsert.js';
+import { MUSIC_COMMANDS } from './catalogMusic.js';
 import { NAVIGATE_COMMANDS } from './catalogNavigate.js';
 import { SELECTION_COMMANDS } from './catalogSelection.js';
 import { TRANSPORT_COMMANDS } from './catalogTransport.js';
@@ -38,6 +39,7 @@ export const COMMANDS = [
   ...EDIT_COMMANDS,
   ...FX_EDIT_COMMANDS,
   ...WEB_COMMANDS,
+  ...MUSIC_COMMANDS,
   ...CLIP_COMMANDS,
   ...EVENT_COMMANDS,
   ...SELECTION_COMMANDS,

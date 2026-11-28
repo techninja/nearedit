@@ -1,0 +1,67 @@
+music-topbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+
+  & .music-topbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-md);
+  }
+
+  & .music-topbar-play {
+    min-width: 5.25rem;
+    justify-content: center;
+  }
+
+  & .music-topbar-loop {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+
+    & input {
+      width: 3.25rem;
+    }
+
+    & .btn {
+      padding: 0 var(--space-xs);
+      font-size: var(--text-xs);
+    }
+  }
+
+  & .music-topbar-key {
+    display: inline-flex;
+    gap: var(--space-xs);
+
+    & select {
+      width: auto;
+    }
+  }
+
+  /* Value boxes in a row: a short label, a box just wide enough. */
+  & field-number .field-input {
+    width: 5.25rem;
+  }
+
+  & field-number .field-range {
+    width: 6rem;
+  }
+
+  & field-number .field-range + .field-input {
+    width: 4.25rem;
+  }
+
+  & .music-topbar-mix {
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--color-border);
+  }
+
+  & .error-message {
+    margin: 0;
+    font-size: var(--text-xs);
+  }
+}

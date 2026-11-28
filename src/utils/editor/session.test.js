@@ -243,3 +243,46 @@ describe('edit session: data no store model declares', () => {
     );
   });
 });
+
+describe('edit session: amending outside history', () => {
+  const start = () => clipOf(session.getDoc(), 'v').timelineStart;
+  const move = (doc) => moveClips(doc, ['v'], { delta: 1 });
+  /** What a finished rendering does: a fact about the document, not an edit. */
+  const amend = (rendered) => session.commit({ ...session.getDoc(), rendered }, { record: false });
+  const now = () => [start(), session.getDoc().rendered];
+  beforeEach(() => session.loadDoc(sampleDoc()));
+
+  it('replaces the document without an undo step and tells listeners why', () => {
+    const seen = [];
+    const stop = session.onDocChange((_doc, info) => seen.push(info));
+    assert.equal(amend('a'), true);
+    stop();
+    assert.deepEqual(now(), [0, 'a']);
+    assert.equal(session.canUndo(), false, 'nothing to undo: it was not an edit');
+    assert.deepEqual(seen, [{ transient: false, reason: 'amend' }]);
+    assert.equal(session.commit(session.getDoc(), { record: false }), false);
+  });
+
+  it('keeps redo, and undo and redo walk through the edits only', () => {
+    session.edit(move);
+    session.edit(move);
+    session.undo();
+    amend('b');
+    assert.deepEqual(now(), [1, 'b']);
+    assert.equal(session.canRedo(), true, 'an amendment does not clear redo');
+    session.redo();
+    assert.deepEqual(now(), [2, undefined], 'redo is the document the second edit made');
+    session.undo();
+    assert.deepEqual(now(), [1, 'b'], 'undo returns to the amended document');
+    session.undo();
+    assert.deepEqual(now(), [0, undefined]);
+    assert.equal(session.canUndo(), false);
+  });
+
+  it('is part of a gesture when one is under way', () => {
+    session.beginGesture();
+    amend('c');
+    session.cancelGesture();
+    assert.deepEqual(now(), [0, undefined], 'a cancelled gesture takes it along: wait for idle');
+  });
+});

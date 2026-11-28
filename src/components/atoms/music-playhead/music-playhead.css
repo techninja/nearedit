@@ -1,0 +1,25 @@
+/* A line that runs along the box it sits in; that box is as wide as the loop. */
+music-playhead {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  & i {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--color-playhead);
+  }
+
+  /* As words it stands in the line of the controls around it. */
+  &[readout] {
+    position: static;
+    min-width: 2.5rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-align: center;
+  }
+}

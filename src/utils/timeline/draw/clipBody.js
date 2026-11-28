@@ -1,6 +1,6 @@
 /**
  * One clip: coloured body, content (filmstrip / waveform / hatching / a
- * generator's colours), label, the "fx" badge and keyframe marks,
+ * generator's colours / a song's picture), label, the "fx" badge and keyframe marks,
  * deliberate fade ramps, fade handles and the selection outline.
  * Detail drops away as the clip gets narrower, so a zoomed-out timeline of
  * a thousand slivers costs a thousand rectangles.
@@ -9,10 +9,12 @@
 
 import { clipKind } from '#utils/edl/factory.js';
 import { generatorLabel } from '#utils/timeline/clipMarks.js';
+import { musicLabel } from '#utils/timeline/clipMarksMusic.js';
 import { webLabel } from '#utils/timeline/clipMarksWeb.js';
 import { hitSizes } from '#utils/timeline/hitTest.js';
 import { timeToX } from '#utils/timeline/viewport.js';
 import { edgeOverlaps } from '#utils/timeline/visible.js';
+import { isMusicClip } from '#utils/music/clip.js';
 import { isWebClip } from '#utils/web/clip.js';
 import { drawFilmstrip, drawPlaceholder, drawWaveform } from './clipContent.js';
 import {
@@ -23,6 +25,7 @@ import {
   showsBadge,
 } from './clipMarks.js';
 import { drawFadeHandle, drawFadeRamp } from './fades.js';
+import { drawMusicBody, drawMusicMark } from './musicClip.js';
 import { boxPath, fitText } from './shapes.js';
 import { drawStepTicks, drawWebMark, drawWebPlaceholder } from './webClip.js';
 
@@ -43,6 +46,7 @@ const LABEL_MIN = 30;
  */
 export function clipLabel(clip) {
   if (isWebClip(clip)) return webLabel(clip);
+  if (isMusicClip(clip)) return musicLabel(clip);
   if (clip.label) return clip.label;
   if (clip.sourceFile) return clip.sourceFile.split(/[\\/]/).pop();
   if (clip.generator?.type) return generatorLabel(clip.generator);
@@ -57,7 +61,8 @@ export function clipLabel(clip) {
  * @returns {string}
  */
 export function clipColor(scene, clip, track) {
-  return clip.color || scene.palette[isWebClip(clip) ? 'web' : clipKind(clip, track)];
+  const kind = isWebClip(clip) ? 'web' : isMusicClip(clip) ? 'music' : clipKind(clip, track);
+  return clip.color || scene.palette[kind];
 }
 
 /**
@@ -77,6 +82,7 @@ export function drawClip(scene, track, index, lane) {
   const right = Math.min(Math.max(x1, x0 + 1.5), vp.width + 8);
   const kind = clipKind(clip, track);
   const web = isWebClip(clip);
+  const music = isMusicClip(clip);
   const selected = scene.selected.has(clip.clipId);
   const { y, height } = lane;
 
@@ -93,7 +99,8 @@ export function drawClip(scene, track, index, lane) {
         y: y + LABEL_H,
         height: height - LABEL_H,
       });
-    } else if (kind === 'audio') drawWaveform(scene, clip, box);
+    } else if (music) drawMusicBody(scene, clip, box, kind === 'audio');
+    else if (kind === 'audio') drawWaveform(scene, clip, box);
     else if (web && kind === 'placeholder') drawWebPlaceholder(scene, clip, box);
     else if (kind === 'placeholder') drawPlaceholder(scene, clip, box);
     else if (kind === 'generator') drawGeneratorSwatch(scene, clip, box, y + LABEL_H + 1);
@@ -103,7 +110,8 @@ export function drawClip(scene, track, index, lane) {
   const labelFrom = Math.max(x0 + overlaps.in * vp.pps, 0) + 5;
   const badge = showsBadge(clip, { x0, x1, y, height });
   if (web && width >= DETAIL_MIN) drawStepTicks(scene, clip, { x0, x1, y, height });
-  const mark = web ? drawWebMark(scene, clip, { x0, x1, y, height }, badge ? BADGE_W : 0) : 0;
+  const marker = web ? drawWebMark : music ? drawMusicMark : () => 0;
+  const mark = marker(scene, clip, { x0, x1, y, height }, badge ? BADGE_W : 0);
   const labelRoom = x1 - labelFrom - (badge ? BADGE_W : 0) - mark;
   if (labelRoom >= LABEL_MIN) {
     ctx.font = `11px ${palette.sans}`;

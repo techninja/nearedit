@@ -9,6 +9,7 @@ import { getUserPrefs } from '#store/UserPrefs.js';
 import { snapCandidates, snapTime } from '#utils/edl/index.js';
 import { regionsOf } from '#utils/edl/regions.js';
 import { beatSnapTimes } from '#utils/timeline/beats.js';
+import { musicSnapTimes } from '#utils/timeline/musicSnap.js';
 import { getDoc } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
 import { getPosition } from '#utils/playback/transport.js';
@@ -68,7 +69,7 @@ function regionEnds(doc, skipRegion) {
 /**
  * Snap candidates for a drag, built once when it starts: clip edges,
  * markers and region ends (unless "snap to markers" is off), the playhead,
- * and the beats of music on the timeline.
+ * the beats of music on the timeline, and the bars and beats of music clips.
  * @param {any} doc - Document the drag starts from
  * @param {{ exclude?: Iterable<string>, markers?: boolean, playhead?: boolean, pps?: number,
  *   skipRegion?: string }} [opts] - `pps`: pixels per second now; beats are offered when it
@@ -79,7 +80,10 @@ export function dragCandidates(doc, opts = {}) {
   const playhead = opts.playhead === false ? undefined : getPosition();
   const exclude = [...(opts.exclude || [])];
   const markers = opts.markers !== false && getUserPrefs().snapMarkers;
-  const beats = opts.pps ? beatSnapTimes(doc, opts.pps, { exclude }) : [];
+  const pps = opts.pps;
+  const beats = pps
+    ? [...beatSnapTimes(doc, pps, { exclude }), ...musicSnapTimes(doc, pps, { exclude })]
+    : [];
   const extra = markers ? [...beats, ...regionEnds(doc, opts.skipRegion)] : beats;
   return snapCandidates(doc, { exclude, markers, playhead, extra });
 }
@@ -106,7 +110,8 @@ export function snapContext(press, pps) {
  */
 export function snapPoint(time, pps, bypass = false) {
   if (!getView().snapping || bypass) return { time, guide: null };
-  const extra = [...beatSnapTimes(getDoc(), pps), ...regionEnds(getDoc())];
+  const beats = [...beatSnapTimes(getDoc(), pps), ...musicSnapTimes(getDoc(), pps)];
+  const extra = [...beats, ...regionEnds(getDoc())];
   const markers = getUserPrefs().snapMarkers;
   const hit = snapTime(getDoc(), time, { threshold: SNAP_PX / pps, extra, markers });
   return { time: hit.time, guide: hit.snapped ? hit.time : null };

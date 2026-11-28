@@ -2,7 +2,7 @@
  * The stage: the controller behind the timeline canvas. It sizes the canvas
  * (device-pixel-ratio aware), redraws it with `requestAnimationFrame` only
  * when something changed — the document, the view, the theme, the size, a
- * thumbnail or waveform arriving, a playback frame — and keeps the playhead
+ * thumbnail, waveform or rendering arriving, a playback frame — and keeps the playhead
  * on screen during playback. Pointer handling lives in `interaction/`.
  * @module utils/timeline/stage
  */
@@ -15,6 +15,7 @@ import { getDoc, onDocChange } from '#utils/editor/session.js';
 import { getView } from '#utils/editor/view.js';
 import { onLibraryChange, sourceDurations } from '#utils/media/library.js';
 import { getPosition, isPlaying, onFrame } from '#utils/playback/transport.js';
+import { onArrival } from './arrivals.js';
 import { drawScene, emptyOverlay } from './draw/scene.js';
 import { getEdgeTrim, onEdgeTrim } from './edgeTrim.js';
 import { laneHeightFor } from './laneSize.js';
@@ -23,8 +24,6 @@ import { setStageSize } from './metrics.js';
 import { readPalette, watchTheme } from './palette.js';
 import { currentViewport, revealTime } from './scroll.js';
 import { countFrame, fitCanvas, noFrames } from './surface.js';
-import { onStripLoaded } from './thumbCache.js';
-import { onWaveLoaded } from './waveCache.js';
 
 /**
  * What the stage asks of the component that hosts it.
@@ -137,8 +136,7 @@ export function createStage(canvas, ui) {
     onEdgeTrim(stage.invalidate),
     onPendingRipple(stage.invalidate),
     onLibraryChange(stage.invalidate),
-    onStripLoaded(stage.invalidate),
-    onWaveLoaded(stage.invalidate),
+    onArrival(stage.invalidate),
     onFrame(stage.invalidate),
     watchTheme(() => {
       palette = null;

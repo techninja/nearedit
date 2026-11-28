@@ -36,6 +36,7 @@ import '#molecules/inspector-timing/inspector-timing.js';
 import '#molecules/inspector-track/inspector-track.js';
 import '#molecules/inspector-transform/inspector-transform.js';
 import '#molecules/keyframe-strip/keyframe-strip.js';
+import '#molecules/music-inspector/music-inspector.js';
 import '#molecules/web-inspector/web-inspector.js';
 
 /**

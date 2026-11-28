@@ -13,11 +13,12 @@ import { CREATE_DRAG_TYPE, beginDrag } from './dragTypes.js';
 import { addGeneratorItem, addTextItem, applyEffectItem } from './panelActions.js';
 import { TEXT_PRESETS } from './textPresets.js';
 import { generatorThumb, textThumb } from './thumbDoc.js';
+import { addMusicClip } from '#utils/musicUi/addClip.js';
 import { addWebClip } from '#utils/webUi/addClip.js';
 
 /**
  * @typedef {Object} CreatePanelHost
- * @property {'generators'|'text'|'effects'|'web'} section
+ * @property {'generators'|'text'|'effects'|'web'|'music'} section
  * @property {string} query - Search in the generators section
  * @property {string} hovered - Key of the tile whose thumbnail plays
  * @property {string} status - What the last action did
@@ -119,4 +120,11 @@ export function handleEffectPick(host, event) {
 export function handleWebAdd(host, event) {
   event.stopPropagation();
   host.status = addWebClip(event.detail.address, event.detail.sizeId).message;
+}
+
+/** The Music section asks for a music clip: add it (an empty song opens in its editor). @param {Host} host @param {CustomEvent} event */
+export function handleMusicAdd(host, event) {
+  event.stopPropagation();
+  const { song, label, open } = event.detail;
+  host.status = addMusicClip(song, { label, open }).message;
 }

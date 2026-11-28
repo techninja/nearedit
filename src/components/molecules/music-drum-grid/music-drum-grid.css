@@ -1,0 +1,113 @@
+music-drum-grid {
+  --cell: 1.5rem;
+  --name: 6.25rem;
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-height: 0;
+
+  & .music-drum-grid-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+
+    & select {
+      width: auto;
+    }
+
+    & .btn {
+      padding: 0 var(--space-sm);
+      height: var(--control-h);
+      font-size: var(--text-xs);
+    }
+  }
+
+  & .music-drum-grid-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .music-drum-grid-lane {
+    margin-right: var(--space-xs);
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  & .music-drum-grid-every {
+    margin-left: var(--space-xs);
+  }
+
+  & .music-drum-grid-fill {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  & .music-drum-grid-scroll {
+    flex: 0 1 auto;
+    min-height: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    overflow: auto;
+  }
+
+  & .music-drum-grid-rows {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: max-content;
+    min-width: 100%;
+    padding: var(--space-xs);
+  }
+
+  & .music-drum-grid-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  /* The names stay put while a long pattern scrolls under them. */
+  & .music-drum-grid-name {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    flex: none;
+    width: var(--name);
+    height: var(--cell);
+    padding: 0 var(--space-xs);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-surface-3);
+    }
+  }
+
+  & .music-drum-grid-row[data-current='true'] .music-drum-grid-name {
+    font-weight: 600;
+    box-shadow: inset 3px 0 0 var(--color-clip-music);
+  }
+
+  & .music-drum-grid-steps {
+    display: grid;
+    grid-template-columns: repeat(var(--steps), var(--cell));
+    gap: 2px;
+    touch-action: pan-x pan-y;
+  }
+}
