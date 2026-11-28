@@ -1,5 +1,7 @@
 /* The loading veil over the editor: the logo, and under it what is
-   happening. The header stays in reach, so the way back always works. */
+   happening, on the page's own ground — a half-seen editor behind the
+   logo only made noise. The header stays in reach, so the way back
+   always works. */
 editor-view .editor-view-veil {
   position: absolute;
   inset: var(--header-h) 0 0;
@@ -9,7 +11,7 @@ editor-view .editor-view-veil {
   align-items: center;
   justify-content: center;
   gap: var(--space-lg);
-  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+  background: var(--color-bg);
   color: var(--color-text);
 }
 
@@ -19,11 +21,4 @@ editor-view .editor-view-veil-note {
   gap: var(--space-sm);
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-}
-
-/* A narrow screen: the wordmark never touches the edges. */
-@media (width < 480px) {
-  editor-view .editor-view-veil .app-logo {
-    --app-logo-h: 2.25rem;
-  }
 }

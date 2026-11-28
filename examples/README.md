@@ -125,8 +125,11 @@ node bin/nearedit.js restyle timeline.json --kit examples/kits/nearedit
 ```
 
 To choose it in the editor, copy the folder into the server's kit library
-(`data/kits/nearedit/`); it is then listed in the Brand dialog, and
-**Update elements to brand** restyles a timeline with it.
+(`data/kits/nearedit/`) — or start the server with
+`NEAREDIT_KITS_DIR=examples/kits`, which makes this folder the library.
+The kit is then listed in the Brand dialog (`Alt+B`); choose it, and
+**Director ▸ Apply brand** puts its intro, its outro and the logo on the
+timeline.
 
 Reference: [the document](../docs/app-spec/EDL.md),
 [the compositor](../docs/app-spec/COMPOSITOR.md),

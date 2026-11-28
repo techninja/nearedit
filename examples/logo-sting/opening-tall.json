@@ -147,7 +147,7 @@
           },
           "effects": [
             {
-              "effectId": "window",
+              "effectId": "reveal",
               "type": "mask",
               "params": {
                 "shape": "rectangle",
@@ -189,7 +189,7 @@
           },
           "effects": [
             {
-              "effectId": "window",
+              "effectId": "reveal",
               "type": "mask",
               "params": {
                 "shape": "rectangle",
@@ -231,7 +231,7 @@
           },
           "effects": [
             {
-              "effectId": "window",
+              "effectId": "reveal",
               "type": "mask",
               "params": {
                 "shape": "rectangle",

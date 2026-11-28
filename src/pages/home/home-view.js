@@ -21,7 +21,7 @@ import '#organisms/project-list/index.js';
  */
 
 /** Session key: the logo has built itself in this browser tab. */
-export const GREETED_KEY = 'nearedit_logoGreeted';
+const GREETED_KEY = 'nearedit_logoGreeted';
 
 let greeted = false;
 

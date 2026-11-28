@@ -6,8 +6,17 @@
  * @module examples/logo-sting/opening
  */
 
-import { BASELINE, CLIP, CLIPS, FONT_SIZE, INK, LETTERS, STEM, WORDMARK } from './logo.js';
-import { playheadParts } from './logo.js';
+import {
+  BASELINE,
+  CLIP,
+  CLIPS,
+  FONT_SIZE,
+  INK,
+  LETTERS,
+  STEM,
+  WORDMARK,
+  playheadParts,
+} from './logo.js';
 import { keys, layer, rectangle, space } from './sheet.js';
 
 /** One frame at 30 a second. */
@@ -56,7 +65,7 @@ export function buildOpening({ width, height }) {
   // The clips: each waits behind the playhead — a mask keeps only what is
   // right of the stem's middle — and slides out to its place.
   const mid = x + STEM / 2;
-  const window = {
+  const kept = {
     shape: 'rectangle',
     center: { x: 0.5 + s.x(mid + 45) / width, y: 0.5 },
     width: s.len(90) / width,
@@ -74,7 +83,7 @@ export function buildOpening({ width, height }) {
     ]);
     return layer(`Clip ${clip.name}`, D, {
       generator,
-      effects: [{ effectId: 'window', type: 'mask', params: window }],
+      effects: [{ effectId: 'reveal', type: 'mask', params: kept }],
       keyframes: { 'generator.params.offsetX': slide },
     });
   });

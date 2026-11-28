@@ -93,9 +93,10 @@ The letters are **outlines, not text**: no font is needed to show any of
 these files.
 
 1. "Near" and "dit" were set in Inter Bold 4.001 (SIL Open Font License;
-   the file bundled at `src/vendor/fonts/inter/inter-latin-700-normal.woff2`)
-   with a tracking of −0.035 em and the font's own kerning (HarfBuzz:
-   e–a +20 font units).
+   the file `npm install` puts at
+   `src/vendor/fonts/inter/inter-latin-700-normal.woff2`) with a tracking
+   of −0.035 em and the font's own kerning (HarfBuzz: e–a +20 font
+   units).
 2. Each glyph's outline was read with fontTools, overlapping contours were
    merged, and the quadratic curves were written as SVG path data scaled
    by 100 / 1490 (the font's cap height is 1490 of 2048 units per em),

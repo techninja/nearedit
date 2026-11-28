@@ -7,6 +7,7 @@ import { html, define } from 'hybrids';
 import { HOME_URL } from '#utils/ui/routes.js';
 import { setPageTitle } from '#utils/ui/title.js';
 import '#atoms/app-icon/index.js';
+import '#atoms/app-logo/index.js';
 import '#atoms/theme-toggle/index.js';
 
 /**
@@ -22,7 +23,7 @@ export default define({
     value: ({ path }) => html`
       <header class="app-bar">
         <a class="app-bar-brand" href="${HOME_URL}">
-          <app-icon name="clapperboard" size="md"></app-icon> NearEdit
+          <app-logo variant="wordmark"></app-logo>
         </a>
         <span class="app-bar-spacer"></span>
         <theme-toggle></theme-toggle>
