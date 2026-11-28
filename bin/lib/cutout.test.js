@@ -118,7 +118,8 @@ describe('nearedit: person cutout', () => {
     const again = cli(['cutout', file]);
     assert.deepEqual([again.code, again.out], [0, '']);
     assert.match(again.err, /every cutout is made/);
-    assert.match(cli(['cutout', fx.save('none.json', edit({}, undefined))]).err, /no clip has/);
+    const off = fx.save('off.json', edit({}, { on: false }));
+    assert.match(cli(['cutout', off]).err, /no clip has "cutout" on/);
   });
 
   it('validate, frame and render then draw the person alone', () => {
