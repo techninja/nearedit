@@ -177,6 +177,7 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 | [COMPOSITOR.md](./COMPOSITOR.md) | The shared frame compositor: generators, effects, keyframes |
 | [EFFECTS.md](./EFFECTS.md) | Every effect, the looks built from them, order and cost |
 | [PARTICLES.md](./PARTICLES.md) | The particle generator: parameters, sprites, presets |
+| [WEBCLIP.md](./WEBCLIP.md) | Web clips: scripted recordings of real web pages |
 | [VEGAS.md](./VEGAS.md) | The Vegas keymap preset and what differs from Vegas |
 | [API.md](./API.md) | HTTP + WebSocket API |
 | [CONFIGURATION.md](./CONFIGURATION.md) | Environment variables, access and security |

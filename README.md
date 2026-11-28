@@ -56,6 +56,12 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (can
   correction, blur, glow, drop shadow, vignette, grain, scanlines,
   pixelate, RGB split, mirror, chroma key, mask, wipe — and ready-made
   looks built from them.
+- **Web clips** — footage of a real web page being used, without anyone
+  recording a screen: give an address, click what should be clicked on a
+  picture of the page, set how long things take, and NearEdit plays it in
+  a headless browser frame by frame — smooth cursor, hovers, typing,
+  scrolling — and records it. Change a step and record again. Zoom in on
+  the clicks with ordinary keyframes.
 - What you see is what renders: the preview and the server draw every
   frame with the same code.
 
@@ -113,6 +119,13 @@ footage, press **Analyse project**, then open the editor and run **Base
 edit** in the Director tab. Tweak, then **Export**. Press `?` in the editor
 for the shortcuts.
 
+To record web pages (web clips) NearEdit needs one extra browser build,
+which it never downloads by itself:
+
+```bash
+npm run install-browser
+```
+
 By default the folder browser can see your home directory. To use footage
 elsewhere, set `BROWSE_ROOTS` in `.env.local`:
 
@@ -154,6 +167,12 @@ port can browse the allowed media folders and start renders.
 - To keep it to one machine, set `HOST=127.0.0.1`.
 - For access over the internet, put it behind an HTTPS reverse proxy.
 
+The browser that records web clips refuses private addresses —
+`localhost`, your LAN, cloud metadata — unless `WEB_CAPTURE_ALLOW` lists
+them, so that someone who can reach NearEdit cannot use it to look around
+your network. To record your own app in development:
+`WEB_CAPTURE_ALLOW=localhost:5173`.
+
 The server only reads inside registered project folders, their extra media
 folders and `GLOBAL_MEDIA_PATHS`. Details:
 [CONFIGURATION.md](docs/app-spec/CONFIGURATION.md#access-and-security).
@@ -179,6 +198,10 @@ NearEdit is young. Things worth knowing before you rely on it:
   their wire format. Reports from real setups are very welcome.
 - Effects are built in; there is no plugin interface for third-party
   ones, and no audio effects.
+- **Web clips** need `chrome-headless-shell` and have been exercised on
+  Linux against local pages; video and WebGL inside a page are not stepped
+  with it, a link that opens a new tab is not followed, and a site
+  reachable only through a system proxy cannot be recorded.
 
 ## Documentation
 
@@ -189,6 +212,7 @@ NearEdit is young. Things worth knowing before you rely on it:
 | [EDL](docs/app-spec/EDL.md) | The timeline document and the editing rules |
 | [Compositor](docs/app-spec/COMPOSITOR.md) | Generators, effects, keyframes and text; authoring from a shell |
 | [Effects](docs/app-spec/EFFECTS.md), [Particles](docs/app-spec/PARTICLES.md) | Every effect and the particle system |
+| [Web clips](docs/app-spec/WEBCLIP.md) | Scripted recordings of real web pages: steps, targets, the recorder, what it may load |
 | [Vegas parity](docs/app-spec/VEGAS.md) | Commands, the two keymaps, selection and ripple behaviour |
 | [API](docs/app-spec/API.md) | HTTP + WebSocket API |
 | [Configuration](docs/app-spec/CONFIGURATION.md) | Environment variables, access and security |
