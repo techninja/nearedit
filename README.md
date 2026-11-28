@@ -67,6 +67,25 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (can
   a headless browser frame by frame — smooth cursor, hovers, typing,
   scrolling — and records it. Change a step and record again. Zoom in on
   the clicks with ordinary keyframes.
+- **Captions** — the few-words-at-a-time captions of social video, in step
+  with the voice and marking the word being said. NearEdit already knows
+  when every word is spoken, so captions are switched on, not built: they
+  belong to the speech clip and stay right through every trim, split and
+  ripple. Five looks, every detail adjustable, one style for the timeline;
+  a subtitle file (.srt / .vtt) from the same words.
+- **Cut out person** — the background removal of video calls, as an edit:
+  switch it on for a clip of yourself filmed anywhere and speak over
+  another video, a slide or a web recording. A matting model runs once as
+  a background job; the preview and the render then show the same cutout.
+  One-click placements (full height at a side, a circle in a corner), a
+  shadow, a sticker outline, or keep the background and blur it.
+- **Brand kits** — set your look once and inherit it everywhere: colours,
+  fonts, logo, motion and sound as *tokens*, and designs built from them —
+  lower third, title, quote, chapter card, intro, outro, logo bug, logo
+  wipe. Adding one asks only for the words. Kits extend one another
+  (a show's kit on top of the company's), four are built in, and when the
+  brand changes one click brings a timeline up to date — the designs
+  change, your words, timing and placement stay.
 - What you see is what renders: the preview and the server draw every
   frame with the same code.
 
@@ -91,7 +110,14 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (can
   just a range.
 - **Text-based editing** — cut, keep or insert by selecting words in the
   transcript.
-- Remove silences, sync cuts to the beat, add captions, find B-roll.
+- Remove silences, sync cuts to the beat, caption the speech, find B-roll.
+- **On brand without asking** — whatever the director makes takes its
+  colours, type, motion and musical style from the project's brand kit,
+  and its plans can say "lower third: Ada Lovelace, CEO, at 0:12".
+  **Apply brand** dresses a finished edit in one step: intro, outro, the
+  logo over the piece, a lower third for each speaker you name at their
+  first word, logo wipes on the cuts at your markers, the brand's caption
+  style. Run it twice and nothing doubles.
 - **Site demo** — give an address and say what to show in plain lines
   (`click Pricing`, `type hello@example.com into Email | sign up in
   seconds`, or nothing at all for a tour): the director finds those things
@@ -113,9 +139,13 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (can
   and 1:1 versions nested under it.
 - Headless rendering as a background job, with progress, cancel and a
   browser notification when it is done.
+- A subtitle file beside the video, if you ask for one.
 - **No editor needed:** `nearedit render timeline.json` draws frames,
   checks and renders a timeline from a shell — see
   [examples](examples/README.md) for a piece made of generators alone.
+  `nearedit restyle` brings a folder of timelines up to date with a brand
+  kit, `nearedit captions` writes subtitles, `nearedit cutout` makes the
+  cutouts a timeline needs.
 
 ## Quick start
 
@@ -139,6 +169,14 @@ which it never downloads by itself:
 
 ```bash
 npm run install-browser
+```
+
+To cut people out of their background NearEdit needs a small matting model
+(26 MB) and a Python with `onnxruntime` and `numpy`; again, nothing is
+downloaded until you ask:
+
+```bash
+npm run install-cutout
 ```
 
 By default the folder browser can see your home directory. To use footage
@@ -204,9 +242,22 @@ NearEdit is young. Things worth knowing before you rely on it:
 - **Rendering** is H.264 + AAC in MP4, 8-bit; HDR sources are converted
   without tone-mapping. Long timelines render in segments. Plain footage
   goes through FFmpeg's filter graph; anything with text, generators,
-  effects or keyframes is drawn by the compositor, which is slower
+  effects, keyframes, captions, brand elements or a cutout is drawn by
+  the compositor, which is slower
   (roughly 15–25 frames per second at 1080p on four cores).
-- **Text** uses the bundled fonts only; you cannot add your own yet.
+- **Text** uses the bundled fonts, plus the fonts a brand kit brings
+  (upload them in the Brand dialog); titles outside a kit's elements
+  cannot pick an uploaded font yet.
+- **Captions** follow the timing the transcriber gave, one style per
+  timeline, always centred; they move clear of a lower third, but there is
+  no dragging them in the preview yet.
+- **Cut out person** is a best guess by a small network: hair, hands,
+  held objects and a second person go wrong sometimes, and a shot with
+  nobody in it can keep a stray patch. It takes minutes per minute of
+  footage on a CPU (about 10 frames a second for 720p on four cores), and
+  the Docker image does not include the model's Python yet.
+- **Brand kits** are edited as tokens; a new element design is written as
+  JSON. There is no zip import or export of a kit — a kit is a folder.
 - **AI providers:** faster-whisper and all FFmpeg-based analysis are
   exercised for real in development; whisper.cpp, Ollama and
   OpenAI-compatible servers are tested against local fakes that speak
@@ -232,11 +283,14 @@ NearEdit is young. Things worth knowing before you rely on it:
 | [Effects](docs/app-spec/EFFECTS.md), [Particles](docs/app-spec/PARTICLES.md) | Every effect and the particle system |
 | [Web clips](docs/app-spec/WEBCLIP.md) | Scripted recordings of real web pages: steps, targets, the recorder, what it may load |
 | [Music clips](docs/app-spec/MUSIC.md) | The song model, the synth engine, kits and presets, MIDI |
+| [Brand kits](docs/app-spec/BRAND.md), [storing and serving them](docs/app-spec/BRAND-API.md) | Tokens, elements with slots, element clips that update to the brand; the kit library, a project's kit, `nearedit restyle` |
+| [Captions](docs/app-spec/CAPTIONS.md) | Words on screen as they are spoken: the style, the grouping, subtitle files |
+| [Person cutout](docs/app-spec/CUTOUT.md) | The matte job, the cutout file, drawing a clip through its matte, your own matte program |
 | [Vegas parity](docs/app-spec/VEGAS.md) | Commands, the two keymaps, selection and ripple behaviour |
 | [API](docs/app-spec/API.md) | HTTP + WebSocket API |
 | [Configuration](docs/app-spec/CONFIGURATION.md) | Environment variables, access and security |
 | [Intelligence](docs/app-spec/INTELLIGENCE.md) | Transcription, tagging, beats, scenes |
-| [Director](docs/app-spec/DIRECTOR.md), [motion pieces](docs/app-spec/DIRECTOR-MOTION.md), [site demos](docs/app-spec/DIRECTOR-WEB.md), [scores](docs/app-spec/DIRECTOR-SCORE.md) | Director actions, edit plans, base edit; generated sequences; demos of web pages; music for a timeline |
+| [Director](docs/app-spec/DIRECTOR.md), [motion pieces](docs/app-spec/DIRECTOR-MOTION.md), [site demos](docs/app-spec/DIRECTOR-WEB.md), [scores](docs/app-spec/DIRECTOR-SCORE.md), [in the brand](docs/app-spec/DIRECTOR-BRAND.md) | Director actions, edit plans, base edit; generated sequences; demos of web pages; music for a timeline; the kit as the default look, the brand pass |
 | [Render](docs/app-spec/RENDER.md) | How a timeline becomes a file: filter graph, canvas path, segments |
 | [Clearstack](docs/clearstack/) | The no-build web-component conventions the code follows |
 
