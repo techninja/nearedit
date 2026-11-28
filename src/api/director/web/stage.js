@@ -68,7 +68,8 @@ export function stageFor(look, format, viewport, captioned = false) {
     frame,
     window,
     offset: { x: 0, y: window.y + height / 2 - frame.height / 2 },
-    scale: Math.round((width / (viewport.width * cover)) * 1e5) / 1e5,
+    // Rounded up, so the page always reaches the window's edge.
+    scale: Math.ceil((width / (viewport.width * cover)) * 1e4) / 1e4,
     band: captioned ? { x: side, y: below, width: room.width, height: frame.height - below } : null,
     short,
   };
