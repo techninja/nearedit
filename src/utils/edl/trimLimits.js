@@ -6,7 +6,7 @@
 
 import { NO_OVERLAP, neighbourOverlaps } from './fades.js';
 import { isTimed } from './immutable.js';
-import { clamp, floorToFrame, frameDuration, sourceDurationOf } from './time.js';
+import { clamp, floorToFrame, frameDuration, sourceLimit } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').ClipRef} ClipRef */
@@ -14,8 +14,8 @@ import { clamp, floorToFrame, frameDuration, sourceDurationOf } from './time.js'
 /**
  * Allowed change of one clip's edge, in seconds.
  * - `sourceIn` never goes below 0, `sourceOut` never passes a known source
- *   duration (video/audio only — the source of a generator, title, image
- *   or placeholder is unbounded).
+ *   duration (video, audio and web clips only — a web clip's is its score;
+ *   the source of a generator, title, image or placeholder is unbounded).
  * - The clip keeps at least one frame, and stays longer than the cross-fade
  *   on its other edge so a trim can never tuck it inside its neighbour.
  * - A ripple trim keeps both cross-fades intact.
@@ -37,7 +37,7 @@ export function trimRange(edl, { clip, track }, edge, opts) {
     if (timed) min = Math.max(min, -floorToFrame(edl, clip.sourceIn));
     return [min, duration - room];
   }
-  const known = timed ? sourceDurationOf(opts.sourceDurations, clip.sourceFile) : undefined;
+  const known = timed ? sourceLimit(edl, clip, opts.sourceDurations) : undefined;
   const max = known === undefined ? Infinity : floorToFrame(edl, known - clip.sourceOut);
   return [room - duration, max];
 }

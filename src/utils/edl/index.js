@@ -66,6 +66,15 @@ export {
 export { copyClips, duplicateClips, pasteClips } from './clipboard.js';
 export { insertMedia, insertTitle } from './insert.js';
 export { insertGenerator, updateGenerator } from './generator.js';
+export {
+  insertWebClip,
+  setWebRecording,
+  staleWebClips,
+  updateWebRecipe,
+  webClips,
+} from './webClip.js';
+export { applyWebZoom, clearWebZoom } from './webZoom.js';
+export { isStale, isWebClip, stepMarks, webDuration } from '#utils/web/clip.js';
 export { pasteAttributes } from './attributes.js';
 export { repairLinks } from './links.js';
 

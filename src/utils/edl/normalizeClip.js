@@ -5,6 +5,8 @@
  * @module utils/edl/normalizeClip
  */
 
+import { webDuration } from '#utils/web/clip.js';
+import { cleanWeb, fitWindow } from '#utils/web/field.js';
 import { tidyKeyframes } from './clipPaths.js';
 import { fitFades } from './fades.js';
 import { createClip } from './factory.js';
@@ -38,6 +40,9 @@ function migrateKenBurns(kenBurns, raw) {
  *   numbers are repaired (`id` is accepted for `clipId`). Generator and
  *   effect parameters are kept as bounded JSON-safe data, effect ids made
  *   unique, keyframes sorted, and keyframes that address nothing dropped.
+ *   A `web` block that holds a recipe is kept, the recipe normalised; no
+ *   other clip has the field. A web clip's source window is brought inside
+ *   its score, and a web clip written without an end lasts to the end of it.
  * - Timeline times snap to the frame grid. A missing `timelineEnd` is derived
  *   from the source range; a clip that starts before 0 is trimmed to 0.
  * - Every clip plays at speed 1 (invariant 1). Video/audio: when the
@@ -60,8 +65,10 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
   const kenBurns = migrateKenBurns(merged.transform.kenBurns, raw.transform?.kenBurns);
   /** @type {any} */
   const filled = { ...merged, transform: { ...merged.transform, kenBurns } };
+  // Only a web clip has a `web` block; no other clip gets the field.
+  const web = cleanWeb(raw.web);
   /** @type {any} */
-  const clip = tidyKeyframes(filled);
+  const clip = tidyKeyframes(web ? { ...filled, web } : filled);
   const timed = isTimed(clip, /** @type {any} */ ({ type: trackType }));
   // No genuine v1/v2 clip has a generator or keyframes: one that does was
   // written for v3 (by hand, without a version) and means its source window.
@@ -71,7 +78,10 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
   let start = toNumber(raw.timelineStart, NaN);
   const rawIn = toNumber(raw.sourceIn, 0);
   let sourceIn = timed ? Math.max(0, rawIn) : windowed ? rawIn : 0;
-  const rawOut = toNumber(raw.sourceOut, NaN);
+  // A web clip's source is its score: without an end of its own it runs to
+  // the end of that, and its window is brought inside it.
+  const limit = webDuration(clip, fps);
+  const rawOut = toNumber(raw.sourceOut, limit ?? NaN);
   const range = rawOut - (windowed ? sourceIn : Math.max(0, rawIn));
   let end = toNumber(raw.timelineEnd, start + range);
   if (timed && range > EPS) end = Math.min(end, start + range);
@@ -80,9 +90,14 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
     start = 0;
   }
   const timelineStart = snapToFrame(start, fps);
-  const timelineEnd = snapToFrame(end, fps);
+  let timelineEnd = snapToFrame(end, fps);
+  if (!(timelineEnd - timelineStart > EPS)) return null;
+  if (limit !== undefined) {
+    const fitted = fitWindow(sourceIn, timelineEnd - timelineStart, limit, fps);
+    sourceIn = fitted.sourceIn;
+    timelineEnd = snapToFrame(timelineStart + fitted.length, fps);
+  }
   const duration = timelineEnd - timelineStart;
-  if (!(duration > EPS)) return null;
 
   const exact = Math.abs(rawOut - sourceIn - duration) <= EPS;
   const sourceOut = exact ? rawOut : sourceIn + duration;

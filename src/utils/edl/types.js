@@ -45,6 +45,8 @@
  * @property {Record<string, Keyframe[]>} keyframes - By property path
  * @property {Record<string, any>} text
  * @property {Record<string, any>} transform
+ * @property {import('#utils/web/types.js').WebBlock} [web] - Only on a web
+ *   clip: its recipe, the key of its recording, the page's title
  */
 
 /**

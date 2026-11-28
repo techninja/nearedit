@@ -12,6 +12,8 @@ import { MAX_DEPTH, MAX_NODES, MAX_STRING, isPlainObject, isSafeKey } from './js
 import { MAX_KEYS, MAX_PATHS, SAME_T } from './keyList.js';
 import { RANGES } from './sanitize.js';
 
+export { checkWeb } from '#utils/web/field.js';
+
 /** @typedef {(path: string, message: string) => void} Report */
 
 /**

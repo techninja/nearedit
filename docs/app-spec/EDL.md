@@ -98,6 +98,7 @@ an audio track, joined to its picture by `linkedClipId`.
 | intent        | string   | narration, broll, sfx, music, title, transition    |
 | color         | string   | Timeline colour override (hex)                     |
 | generator     | object   | A synthetic source, see [generator](#generator)    |
+| web           | object   | Only on a web clip: its recipe and recording, see [web](#web) |
 | effects       | Effect[] | Applied in order after the clip is placed          |
 | keyframes     | object   | Animated properties, see [keyframes](#keyframes)   |
 | text          | object   | Title text block, see below                        |
@@ -106,13 +107,16 @@ an audio track, joined to its picture by `linkedClipId`.
 `clipKind(clip, track)` classifies a clip as `generator` (it names a
 `generator.type`, whatever else it carries), `video`, `audio`, `image`,
 `title` (no `sourceFile`, non-empty `text.content`) or `placeholder` (no
-`sourceFile`, empty text).
+`sourceFile`, empty text). A [web clip](#web) is not a kind of its own:
+recorded it is a `video`, until then a `placeholder` with a length —
+`isWebClip(clip)` tells.
 
 ### Source window
 
 Every clip shows a window `sourceIn … sourceOut` of its source, at speed 1.
-For video and audio the source is the file, so the window stays inside it.
-A generator, title, image or placeholder has an **unbounded** source: its
+For video and audio the source is the file, so the window stays inside it;
+the source of a [web clip](#web) is its score, recorded or not. A
+generator, title, image or other placeholder has an **unbounded** source: its
 window may start before 0 and end anywhere. Keyframes and generator motion
 are timed in this source time (`sourceIn + (time − timelineStart)`), which is
 what keeps them attached to the content: trimming a clip's start moves
@@ -125,7 +129,9 @@ the later window — in all three, what was on screen at a moment stays there.
    sourceOut - sourceIn`.
 2. **Bounds.** `timelineStart >= 0` and `timelineEnd > timelineStart`. For
    video and audio clips `sourceIn >= 0`, and `sourceOut` never exceeds the
-   source duration when it is known. Other clips have no source bounds.
+   source duration when it is known. For a web clip it always is: the
+   length of its score at the document's `fps`. Other clips have no source
+   bounds.
 3. **Fades fit.** `fadeIn >= 0`, `fadeOut >= 0`, `fadeIn + fadeOut <=
    duration`.
 4. **Overlap means cross-fade.** Two clips on one track may overlap only as
@@ -247,6 +253,41 @@ catalog (`src/utils/compose/catalog.js`); empty = the clip is not a
 generator. `seed` (0..4294967295) feeds its randomness. `params` holds only
 what differs from the generator's defaults.
 
+### web
+
+```json
+{ "recipe": { "url": "https://example.com", "steps": [] }, "key": "3fa9c1d07be24a6f8e15",
+  "title": "Example Domain" }
+```
+
+Only a **web clip** has this field — a clip whose picture is a scripted
+recording of a web page, see [WEBCLIP.md](./WEBCLIP.md). Every other clip
+has no `web` at all, so documents without web clips are unchanged.
+
+| Field  | Type   | Notes                                                        |
+| ------ | ------ | ------------------------------------------------------------ |
+| recipe | object | The page and the steps to play on it; the source of truth. Always stored normalised (`normalizeRecipe`, `src/utils/web/`): every default filled in |
+| key    | string | Key of the recording `sourceFile` points at: 20 hex digits, `''` = not recorded yet |
+| title  | string | The page's title, for labels; at most 300 characters         |
+
+- `isWebClip(clip)` is true when `web.recipe.url` is set. A block whose
+  recipe has no address yet is kept as data, and the clip is not a web clip.
+- The clip's source is the recipe's **score** — `webDuration(clip, fps)`,
+  which is also exactly how long its recording is. Its window lies inside
+  `0 … webDuration` (invariant 2), whatever a `sourceDurations` map says
+  about the file. Until it is recorded the clip is a `placeholder` of that
+  length with no `sourceFile`.
+- **Stale** (`isStale(clip, fps)`): `web.key` is not `recipeKey(web.recipe,
+  fps)` — never recorded, or the recipe or the document's `fps` changed
+  since. The old recording keeps playing until a new one is set.
+- `validateEdl` checks the block's shape and that the recipe is in
+  normalised form. Whether the recipe can be recorded — an address, steps
+  with their targets — is `validateRecipe`'s question, not the document's:
+  a recipe is saved while it is still being written.
+- `web`, and on a web clip `sourceFile` and `sourceIn`, are not written by
+  `updateClip`; they belong to the [web clip
+  operations](./EDL-OPERATIONS.md#web-clips), slip and trim.
+
 ### effects
 
 ```json
@@ -327,7 +368,10 @@ JSON-safe data: finite numbers, strings (up to 20 000 characters),
 booleans, and plain objects and arrays of those, nested at most 6 deep and
 2000 values per bag. Anything else — `null`, `NaN`, functions, class
 instances, cycles, `__proto__` / `constructor` / `prototype` keys — is
-dropped on load and refused by `validateEdl`.
+dropped on load and refused by `validateEdl`. A web clip's `web.recipe` is
+bounded differently: `normalizeRecipe` reads only the fields a recipe has,
+from plain objects, and cuts every string and list to its own limit
+([WEBCLIP.md](./WEBCLIP.md)).
 
 ## Versions, loading and saving
 
@@ -344,6 +388,10 @@ dropped on load and refused by `validateEdl`.
   to their defaults; keys without a finite `t` or a usable `v` are dropped,
   as are paths that address nothing; repeated or malformed effect ids are
   replaced; everything else is repaired as strictly as before.
+- A `web` block survives when it holds a recipe object: the recipe is
+  normalised, an unusable `key` becomes `''`, and a web clip's source
+  window is brought inside its score — a web clip written without an end
+  lasts to the end of it.
 
 `toSavedDocument(edl, view)` writes the document fields above plus the view
 fields; `fromSavedDocument(doc)` normalises and splits them again. A valid

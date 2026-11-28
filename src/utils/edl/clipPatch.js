@@ -6,6 +6,7 @@
 
 import { tidyKeyframes } from './clipPaths.js';
 import { isTimed } from './immutable.js';
+import { isWebClip } from '#utils/web/clip.js';
 import { isPlainObject, isSafeKey, mergeBag } from './jsonBag.js';
 import { mergeShape } from './sanitize.js';
 
@@ -15,6 +16,8 @@ import { mergeShape } from './sanitize.js';
 /** Fields a patch never writes: they belong to move/trim/slip/fade/link/group. */
 const STRUCTURAL = ['clipId', 'timelineStart', 'timelineEnd', 'sourceOut', 'fadeIn', 'fadeOut'];
 const RELATIONS = ['linkedClipId', 'groupId'];
+/** A web clip's recipe and recording belong to the operations in webClip.js. */
+const RECORDED = ['sourceFile', 'sourceIn'];
 
 /**
  * Deep-merge a patch into a clip (the rules are those of `updateClip`).
@@ -26,7 +29,8 @@ const RELATIONS = ['linkedClipId', 'groupId'];
 export function patchClip(clip, track, patch) {
   if (!patch || typeof patch !== 'object') return clip;
   const safe = { ...patch };
-  for (const key of [...STRUCTURAL, ...RELATIONS]) delete safe[key];
+  for (const key of [...STRUCTURAL, ...RELATIONS, 'web']) delete safe[key];
+  for (const key of isWebClip(clip) ? RECORDED : []) delete safe[key];
   /** @type {any} */
   const merged = tidyKeyframes(/** @type {any} */ (mergeShape(clip, safe)));
   if (merged === clip) return clip;

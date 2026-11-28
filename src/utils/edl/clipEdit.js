@@ -10,7 +10,7 @@ import { NO_OVERLAP, fitFades, neighbourOverlaps } from './fades.js';
 import { changeClip, indexClips, isTimed, mapClips } from './immutable.js';
 import { repairLinks } from './links.js';
 import { expandSelection } from './selection.js';
-import { EPS, clamp, finite, snap, sourceDurationOf } from './time.js';
+import { EPS, clamp, finite, snap, sourceLimit } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 
@@ -50,7 +50,7 @@ export function slipClip(edl, clipId, delta, opts = {}) {
   let max = Infinity;
   for (const { clip, track } of targets) {
     if (!isTimed(clip, track)) continue;
-    const known = sourceDurationOf(opts.sourceDurations, clip.sourceFile);
+    const known = sourceLimit(edl, clip, opts.sourceDurations);
     min = Math.max(min, -clip.sourceIn);
     if (known !== undefined) max = Math.min(max, known - clip.sourceOut);
   }

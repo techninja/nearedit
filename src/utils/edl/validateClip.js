@@ -11,8 +11,8 @@ import {
 } from './defaults.js';
 import { compareClips, isTimed } from './immutable.js';
 import { ANIMATION_ENUMS, ENUMS, isObject } from './sanitize.js';
-import { EPS, sourceDurationOf } from './time.js';
-import { checkEffects, checkGenerator, checkKeyframes } from './validateExtras.js';
+import { EPS, sourceLimit } from './time.js';
+import { checkEffects, checkGenerator, checkKeyframes, checkWeb } from './validateExtras.js';
 
 /** @typedef {(path: string, message: string) => void} Report */
 
@@ -52,7 +52,7 @@ export function checkShape(block, shape, path, report, enums = ENUMS) {
 
 /**
  * The v3 additions of one clip: blend mode, fade curves, text animation,
- * generator, effects and keyframes.
+ * generator, effects, keyframes and the `web` block of a web clip.
  * @param {any} clip
  * @param {string} path
  * @param {Report} report
@@ -66,6 +66,7 @@ function checkAdditions(clip, path, report) {
   checkGenerator(clip.generator, `${path}.generator`, report);
   checkEffects(clip.effects, `${path}.effects`, report);
   checkKeyframes(clip, path, report);
+  checkWeb(clip.web, `${path}.web`, report);
 }
 
 /**
@@ -106,7 +107,7 @@ export function checkClip(clip, track, path, report, opts) {
   // Only real media has a bounded source; every other clip may start before 0.
   if (typeof clip.sourceFile === 'string' && isTimed(clip, track)) {
     if (clip.sourceIn < -EPS) report(`${path}.sourceIn`, 'must not be negative (invariant 2)');
-    const known = sourceDurationOf(opts.sourceDurations, clip.sourceFile);
+    const known = sourceLimit(opts, clip, opts.sourceDurations);
     const slack = 0.5 / (opts.fps > 0 ? opts.fps : 30) + EPS;
     if (known !== undefined && clip.sourceOut > known + slack) {
       report(`${path}.sourceOut`, 'exceeds the source duration (invariant 2)');

@@ -4,6 +4,7 @@
  * @module utils/edl/time
  */
 
+import { webDuration } from '#utils/web/clip.js';
 import { snapToFrame } from './query.js';
 
 /** @typedef {import('./types.js').SourceDurations} SourceDurations */
@@ -77,4 +78,17 @@ export function sourceDurationOf(durations, file) {
   if (!durations || !file) return undefined;
   const value = durations instanceof Map ? durations.get(file) : durations[file];
   return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
+/**
+ * How long the source of a clip is. A web clip's source is its score — the
+ * length its recording has, known before anything is recorded — whatever
+ * the map says about the file it points at; any other clip's is looked up.
+ * @param {{ fps?: number }} edl
+ * @param {{ sourceFile?: string, web?: any }} clip
+ * @param {SourceDurations} [durations]
+ * @returns {number|undefined} Seconds, or undefined when unknown
+ */
+export function sourceLimit(edl, clip, durations) {
+  return webDuration(clip, fpsOf(edl)) ?? sourceDurationOf(durations, clip.sourceFile);
 }

@@ -35,6 +35,7 @@ then hand-tune.
 | `selection.js` | `expandSelection`, `groupClips`, `ungroupClips`, `linkClips`, `unlinkClips`, `clipsInRange`, `newClipIds` |
 | `clipboard.js`, `attributes.js` | `copyClips`, `pasteClips`, `duplicateClips`; `pasteAttributes` |
 | `insert.js`, `generator.js` | `insertMedia`, `insertTitle`; `insertGenerator`, `updateGenerator` |
+| `webClip.js`, `webZoom.js` | [Web clips](#web-clips): `insertWebClip`, `updateWebRecipe`, `setWebRecording`, `webClips`, `staleWebClips`; `applyWebZoom`, `clearWebZoom` |
 | `animate.js`, `easing.js` | Keyframe evaluation: `resolveClip`, `valueAt`, `clipLocalTime`, `getPath`, `setPath`, `EASINGS` |
 | `keyframes.js`, `autoKey.js` | `setKeyframe`, `removeKeyframe`, `moveKeyframe`, `setKeyframeEase`, `removeKeyframesAt`, `moveKeyframesAt`, `clearKeyframes`; `setValueAt`, `setAnimated` |
 | `keyframeQuery.js`, `clipPaths.js` | `isAnimated`, `keysOf`, `animatedPaths`, `listKeyframes`, `keyframeTimes`, `nextKeyframeTime`, `previousKeyframeTime`, `keyTime`; `describePath` |
@@ -50,7 +51,8 @@ Internal building blocks: `time.js`, `immutable.js`, `clipMath.js`,
 `sanitize.js`, `jsonBag.js`, `keyList.js`, `effectList.js`,
 `effectStack.js`, `keyEdit.js`, `clipPatch.js`, `normalizeClip.js`,
 `normalizeMarks.js`, `fragment.js`, `validateClip.js`, `validateExtras.js`,
-`validateMarks.js`. `types.js` holds the shared JSDoc types (`Edl`, `Track`,
+`validateMarks.js`. The `web` field as data (`cleanWeb`, `checkWeb`, the
+window fit) is `src/utils/web/field.js`. `types.js` holds the shared JSDoc types (`Edl`, `Track`,
 `Clip`, `Effect`, `Keyframe`, `Marker`, `Region`) and `testkit.js` the
 fixtures for tests (`testEdl`, `testClip`, `deepFreeze`, `assertValid`).
 
@@ -95,10 +97,35 @@ A target is `{ clipId }` or `{ trackId }` (a bare string is a clip id).
 | --------- | ------------ |
 | `insertGenerator(edl, { type, params, seed }, { time, duration, trackId, label, autoCrossfade, clip }?)` | Add a generator clip, placed like a title: on the front-most video track when it is free there, otherwise on a new top track; with `trackId` under the normal overlap rules. `clip` is an `updateClip`-style patch for its look |
 | `updateGenerator(edl, clipId, { type, seed, params })` | Merge parameters, set the seed, or switch the type (which resets the parameters and drops their keyframes) |
-| `updateClip(edl, clipId, patch)` | Also `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator`, `effects` (whole list), `keyframes` (by path) and the new `text` fields |
+| `updateClip(edl, clipId, patch)` | Also `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator`, `effects` (whole list), `keyframes` (by path) and the new `text` fields. Never `web`, nor a web clip's `sourceFile` and `sourceIn` |
 | `pasteAttributes(edl, source, clipIds, parts?)` | Copy `transform`, `effects`, `keyframes`, `blendMode`, `fades` and/or `text` style from one clip (id, clip or clipboard payload) onto others |
 | `setTrackOpacity`, `setTrackBlendMode`, `updateTrack` | Track compositing settings |
 | `gainEnvelope(track, clip, { step, from, to }?)`, `hasGainEnvelope(clip)` | A clip's gain sampled at even steps; whether it needs more than two linear ramps |
+
+## Web clips
+
+A web clip carries `web: { recipe, key, title }` ([EDL.md](./EDL.md#web),
+[WEBCLIP.md](./WEBCLIP.md)). The recipe library itself — `normalizeRecipe`,
+`validateRecipe`, `compileScore`, `recipeKey`, `zoomKeyframes` — is
+`src/utils/web/`.
+
+| Operation | What it does |
+| --------- | ------------ |
+| `insertWebClip(edl, recipe, { time, trackId, autoCrossfade, label }?)` | Add a placeholder as long as the recipe's score, carrying the normalised recipe, not recorded yet. Placed like a generator; labelled with the host of the address. Unchanged without an `http(s)` address |
+| `updateWebRecipe(edl, clipId, recipe, { autoCrossfade }?)` | Replace the recipe (a whole recipe, or a function of the current one). A clip that showed the whole score follows the new one in length; a trimmed clip keeps its window, brought inside the new score. `sourceFile` and `web.key` stay: the clip is stale, not empty |
+| `setWebRecording(edl, clipId, { file, key, duration, title })` | Point a web clip at a finished recording: `sourceFile`, `web.key`, `web.title`, `placeholder: false`. The window is fitted to `duration` by the same rule when the recording is the one the recipe asks for; a recording of an earlier recipe is shown without changing the clip's length |
+| `applyWebZoom(edl, clipId, track, options?)` | Write `zoomKeyframes(track, frame, options)` to `transform.scaleX`, `scaleY`, `x`, `y`, replacing the keys those paths had. The frame is the document's `resolution` |
+| `clearWebZoom(edl, clipId)` | Remove the keys of those four paths |
+| `webClips(edl)`, `staleWebClips(edl)` | Every web clip, and those that need recording at the document's `fps`, as `{ clip, track }` |
+| `isWebClip(clip)`, `isStale(clip, fps)`, `webDuration(clip, fps)`, `stepMarks(clip, fps)` | Queries: is it one, does it need recording, how long is its source, where its steps begin (`{ time, label, do, index }` in the clip's source time, for ticks) |
+
+A clip that grows because its recipe grew is an incoming clip like a
+trimmed one: over a neighbour it cross-fades or overwrites. Every other
+operation treats a web clip like footage whose source is its score — both
+halves of a split keep the recipe and the key, a pasted or duplicated clip
+is the same recording again, and trim, slip and slip-trim stop at `0` and
+at `webDuration`. Like every edit, these leave a clip on a locked track
+alone.
 
 ## Editing rules
 
@@ -159,9 +186,10 @@ effect ids only have to be unique within a clip, so they are kept.
 
 **Trim limits.** For video and audio, `sourceIn` never goes below 0 and
 `sourceOut` never passes the source duration when a `sourceDurations` map
-is supplied. A clip keeps at least one frame and stays longer than the
-cross-fade on its other edge. Generators, titles, images and placeholders
-trim and slip freely: their source is unbounded.
+is supplied. A web clip's source duration needs no map: it is its score
+(`sourceLimit` in `time.js`). A clip keeps at least one frame and stays
+longer than the cross-fade on its other edge. Generators, titles, images
+and other placeholders trim and slip freely: their source is unbounded.
 
 **Splits and cross-fades.** While two clips cross-fade they are fused: a
 split at a time inside the cross-fade leaves those two clips alone (a half
