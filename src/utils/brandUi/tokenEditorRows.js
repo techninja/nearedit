@@ -46,7 +46,9 @@ export function tokenRow(host, { path, spec }) {
     ></field-number>`;
     return row(host, path, label, control);
   }
-  if (type === 'select') return row(host, path, label, choice(path, label, spec.options, value));
+  if (type === 'select') {
+    return row(host, path, label, choice(path, label, spec.options, value, spec.description));
+  }
   if (type === 'boolean') return row(host, path, label, toggle(path, label, value));
   const control = html`<label class="field-row">
     <span class="field-label">${label}</span>

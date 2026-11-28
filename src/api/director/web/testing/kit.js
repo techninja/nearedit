@@ -43,7 +43,10 @@ export function scratchProject() {
  */
 export function demoContext(projectDir, directive, extra = {}) {
   const raw = { action: 'site_demo', ...directive };
-  const normal = normalizeDirective({ ...raw, params: { url: SITE, ...raw.params } });
+  // These suites are about the themes of the list: they leave the brand (the
+  // default; `siteDemoBrand.test.js`) unless a test names a theme.
+  const params = { url: SITE, theme: 'auto', ...raw.params };
+  const normal = normalizeDirective({ ...raw, params });
   if (normal.ok === false) throw new Error(`bad test directive: ${JSON.stringify(normal)}`);
   /** @type {string[]} */
   const logs = [];

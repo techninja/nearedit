@@ -17,7 +17,8 @@ const seen = (more = {}) => ({
   speech: { spans: [], spoken: 0, clips: 0, notes: [] },
   ...more,
 });
-const params = (more = {}) => ({ ...defaultParams('score'), ...more });
+// The form as it is with the style and the key left to the timeline, not to the brand.
+const params = (more = {}) => ({ ...defaultParams('score'), style: 'auto', key: 'auto', ...more });
 const decided = (plan, more = {}) =>
   decide(plan, {
     params: params(more.params),

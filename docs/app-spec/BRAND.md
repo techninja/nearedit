@@ -234,3 +234,89 @@ an adaptation may name another. With none, `builtin:clean`.
 - Elements cannot contain elements.
 - Kits are edited as tokens in the editor; a new element is written as
   JSON.
+
+## In the editor
+
+What a person does to brand a project, and where each part lives in the
+code (`src/utils/brandUi/`, the `brand-*` components, `element-inspector`).
+
+**The project's kit** is read with the project
+(`GET /projects/:id/kit?adaptation=`, [BRAND-API.md](./BRAND-API.md)) and
+again after every change; `kitState` holds it for the session and the
+Create tab, the inspector and the timeline all read it from there. Until
+it has arrived nothing is called out of date; when the server gives no kit
+(no kit routes, a failed request) the built-in `clean` kit stands in and
+the editor says so — it never goes without a kit.
+
+**Create ▸ Brand** shows the kit in use — name, colours, a **Brand…**
+button — and its elements as tiles under Overlays, Segments and
+Transitions. A tile is the element itself, drawn by the compositor with
+its sample text over a sample picture and framed closer on what it shows;
+pointing at it plays its motion.
+
+- **Click** a tile, or **drag** it onto the timeline: `insertElement`
+  places it by its kind — an overlay above the picture at the edit cursor
+  (or where it was dropped), a segment rippled in, a transition centred on
+  the nearest cut — as one undo step, selected.
+- A slot that must be filled starts with its own label ("Name"), so the
+  element shows in its look at once and nobody takes it for finished. The
+  inspector comes up with that field focused and selected: **then type**.
+  An element without text keeps the Create tab up.
+
+**On the timeline** an element clip has a colour of its own
+(`--color-clip-element`), its main slot's text as its name, and under it
+the colours of its design as chips and the element's name. A clip that is
+out of date carries an **out of date** mark (a dot when narrow; **not in
+brand** when the kit has no such element). Its context menu updates it,
+updates all, detaches it, and opens the Brand dialog.
+
+**In the preview** it moves, scales and rotates as one layer. Its box goes
+around what it shows — a lower third is grabbed by its plate — not around
+the frame: scrims and other layers that cover the frame are left out.
+
+**Inspector ▸ Brand element** says which element of which kit, and has
+the slots as fields: labels, optional slots and line counts from the kit,
+typing shown live, one undo step per visit to a field, Escape puts back.
+With several element clips selected the slots they share are edited
+together. Under them: **Matches the brand**, or **Out of date** with
+**Update to brand** (the selection) and **Update all N**; and **Detach
+from brand…**, which first says what detaching means. Everything else
+about the clip — timing, transform, effects, keyframes — is in the usual
+groups.
+
+**The Brand dialog** (the button, or `Alt+B`):
+
+- **Choosing**: every kit, built-in and of the library, as a card — a
+  live picture of its lower third, its colours, what it is like. One press
+  makes it the project's kit. A library kit can be removed there. A
+  project's own kit is listed first, also after another was chosen.
+- **Customise…**: a token editor generated from `TOKEN_SCHEMA` beside a
+  live preview of several elements that redraws as a token changes.
+  Colours carry a plain remark when text would be hard to read
+  (`contrastRatio`) — a remark, not a refusal. A font is a bundled family
+  or a font file of your own (family, weight and style are read from the
+  file's name). A logo is uploaded once: it is the mark as well — what
+  the bug, the intro, the outro and the stinger show — until the mark is
+  given a picture of its own. Each changed token has a button that lets
+  it follow its kit again. Files are sent only when saving.
+- **Save for this project** writes the project's own kit, extending the
+  kit it was made from, and uses it. **Save to library as…** makes it a
+  kit other projects can choose (the kit first, then its files, copied).
+  A kit the server refuses is not stored; its problems are listed.
+- After the kit changed, the dialog, the Create tab and the timeline say
+  how many element clips are out of date and offer **Update N elements to
+  brand**. Nothing is ever restyled without being asked; an update is one
+  undo step and keeps text, place, timing, transform and effects.
+
+**Commands** (shortcuts list, context menus): `Brand…` (`Alt+B`), `Update
+all elements to brand`, `Update selected elements to brand`.
+
+**Formats.** The same timeline in a vertical or square adaptation needs
+nothing: every element lays itself out for the frame it is drawn in, and
+the tiles and previews take the shape of the open timeline.
+
+Not in the editor yet: writing a new element (JSON, see Limits), choosing
+a kit for one adaptation only (the API has it; the editor chooses for the
+project and reads the open adaptation's), and a refresh of the main
+preview's picture when a logo is replaced under the same file name (the
+tiles and the dialog do refresh; the preview shows it after a reload).

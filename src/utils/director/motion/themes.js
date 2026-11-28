@@ -23,6 +23,7 @@ import { NIGHT_THEMES } from './themesNight.js';
  * @property {number} [lineHeight] - Multiple of the font size
  * @property {number} [tracking] - Letter spacing as a share of the font size
  * @property {string} [animation] - Subtitle only: the text animation it arrives with
+ * @property {boolean} [upper] - Set in capitals (a brand theme's font may ask for it)
  */
 
 /**
@@ -47,6 +48,8 @@ import { NIGHT_THEMES } from './themesNight.js';
  * @property {string[]} accents - The default first
  * @property {string[]} transitions - The default first
  * @property {string} look - Effect preset every scene gets, or `none`
+ * @property {number} [stroke] - Thickness of a rule, as a share of the frame's
+ *   shorter side (a brand theme takes it from the kit); 0 or absent: the usual
  */
 
 /** @type {Theme[]} In the order the form lists them. */

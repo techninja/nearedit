@@ -8,6 +8,7 @@
  */
 
 import { loadImage } from '@napi-rs/canvas';
+import { BRAND } from '#utils/director/brand/theme.js';
 import { channels, luminance } from '#utils/director/motion/color.js';
 import { AUTO, THEMES, getTheme } from '#utils/director/motion/themes.js';
 import { createCanvas } from '../../compose/index.js';
@@ -91,14 +92,20 @@ function nearest(list, colorOf, hue) {
 
 /**
  * The theme and the colour way of a demo.
- * @param {string} asked - A theme id, or `auto`
+ * @param {string} asked - A theme id, `brand` or `auto`
  * @param {Tone|null} tone - Of the page
+ * @param {{ theme: Theme, name: string }|null} [brand] - The brand theme and
+ *   the name of its kit: what `brand` means. Without it `brand` is read as `auto`
  * @returns {{ theme: Theme, colors: [string, string, string], why: string }} `why`
- *   says how `auto` chose; '' for a named theme
+ *   says how `auto` chose, or which kit the brand is; '' for a named theme
  */
-export function demoTheme(asked, tone) {
+export function demoTheme(asked, tone, brand = null) {
   const hue = tone ? tone.hue : null;
-  const named = asked === AUTO ? undefined : getTheme(asked);
+  if (asked === BRAND && brand) {
+    const colors = nearest(brand.theme.backdrops, (way) => way[2], hue);
+    return { theme: brand.theme, colors, why: `the brand kit “${brand.name}”` };
+  }
+  const named = asked === AUTO || asked === BRAND ? undefined : getTheme(asked);
   const ground = (/** @type {Theme} */ theme) => theme.backdrops[0][1];
   const dark = THEMES.filter((theme) => luminance(ground(theme)) < 0.2);
   const lit = THEMES.filter((theme) => luminance(ground(theme)) >= 0.2);

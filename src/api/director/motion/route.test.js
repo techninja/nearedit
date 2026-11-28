@@ -97,7 +97,7 @@ test('an empty brief is a 422 with the field named, and no job', async () => {
   }
   const bad = await post({ prompt: BRIEF, params: { theme: 'vaporwave', seed: 'x' } });
   assert.equal(bad.status, 422);
-  assert.match(bad.body.fields['params.theme'], /Theme must be one of: auto, midnight/);
+  assert.match(bad.body.fields['params.theme'], /Theme must be one of: brand, auto, midnight/);
   assert.match(bad.body.fields['params.seed'], /must be a number/);
 });
 

@@ -8,14 +8,12 @@
 import { confirmAction } from '#utils/ui/confirm.js';
 import { brandDialog } from './dialogState.js';
 import { slugOf } from './draftNames.js';
-import { draftState } from './draftState.js';
 import { saveToLibrary } from './saveKit.js';
 
 /** @typedef {import('./dialogEvents.js').BrandDialogHost & HTMLElement} Host */
 
 /** "Save to library as…": ask for the name. @param {Host} host */
 export function handleNaming(host) {
-  host.libraryName = host.libraryName || draftState.get().draft?.name || '';
   host.naming = true;
   requestAnimationFrame(() => {
     /** @type {HTMLInputElement|null} */ (host.querySelector('.brand-dialog-name'))?.focus();

@@ -22,6 +22,8 @@ import { directorResult } from './result.js';
  * @property {any} edl - The posted timeline document, or null
  * @property {{ fps: number, width: number, height: number, aspectRatio: string, name: string }} format
  * @property {MediaInfo[]} media - Every media file of the project
+ * @property {import('#utils/brand/types.js').Kit} [kit] - The project's
+ *   effective brand kit; `kitOf(ctx)` gives the built-in one without it
  * @property {import('./llm/client.js').LlmClient} llm
  * @property {AbortSignal} [signal]
  * @property {(percent: number, message?: string) => void} progress

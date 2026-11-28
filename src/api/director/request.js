@@ -8,8 +8,10 @@
 import { getAction } from '#utils/director/actions.js';
 import { normalizeDirective } from '#utils/director/directive.js';
 import { clamp } from '#utils/director/snap.js';
-import { createClip, parseResolution } from '#utils/edl/factory.js';
+import { parseResolution } from '#utils/edl/factory.js';
+import { projectKit } from '../kits/index.js';
 import { getAdaptation, getProjectDir } from '../lib/registry.js';
+import { checkEdl } from './checkEdl.js';
 import { DirectorError } from './errors.js';
 import { checkBrief } from './motion/brief.js';
 import { scoreSpan } from './score/timeline.js';
@@ -25,41 +27,11 @@ import { checkRecorder, checkSite } from './web/check.js';
  * @property {import('#utils/director/actions.js').ActionSchema} action
  * @property {any} edl - The posted document with complete v2 clips, or null
  * @property {import('./pipeline.js').ActionContext['format']} format
+ * @property {import('#utils/brand/types.js').Kit} kit - The effective brand
+ *   kit of the project (of the adaptation, when it chose one of its own)
  */
 
-const bad = (/** @type {string} */ why) =>
-  new DirectorError('Invalid edl', { status: 422, fields: { edl: why } });
-
-/**
- * Check the posted timeline and complete its clips with v2 defaults.
- * @param {any} edl
- * @returns {any|null} null when no document was posted
- * @throws {DirectorError} 422 for a document that cannot be worked on
- */
-export function checkEdl(edl) {
-  if (edl === undefined || edl === null) return null;
-  if (typeof edl !== 'object' || !Array.isArray(edl.tracks))
-    throw bad('edl.tracks must be an array');
-  const tracks = edl.tracks.map((/** @type {any} */ track, /** @type {number} */ t) => {
-    if (!track || !Array.isArray(track.clips)) throw bad(`tracks[${t}].clips must be an array`);
-    if (track.type !== 'video' && track.type !== 'audio')
-      throw bad(`tracks[${t}].type must be "video" or "audio"`);
-    const clips = track.clips.map((/** @type {any} */ clip, /** @type {number} */ c) => {
-      const where = `tracks[${t}].clips[${c}]`;
-      if (!clip || typeof clip.clipId !== 'string' || !clip.clipId)
-        throw bad(`${where}.clipId missing`);
-      const times = [clip.timelineStart, clip.timelineEnd, clip.sourceIn ?? 0, clip.sourceOut ?? 0];
-      if (!times.every(Number.isFinite)) throw bad(`${where} has a time that is not a number`);
-      if (clip.timelineStart < 0 || clip.timelineEnd <= clip.timelineStart)
-        throw bad(`${where} must have timelineEnd > timelineStart >= 0`);
-      if (clip.sourceFile !== undefined && typeof clip.sourceFile !== 'string')
-        throw bad(`${where}.sourceFile must be text`);
-      return createClip(clip);
-    });
-    return { ...track, clips };
-  });
-  return { ...edl, tracks };
-}
+export { checkEdl };
 
 /**
  * Validate a director request body.
@@ -114,6 +86,8 @@ export function prepareRequest(body, route) {
   }
 
   const { width, height } = parseResolution(edl?.resolution || adaptation?.resolution);
+  // Always a usable kit: a choice that is gone falls back to the built-in one.
+  const { effective: kit } = projectKit(body.projectId, adaptation?.id || '');
   return {
     projectId: body.projectId,
     projectDir,
@@ -121,6 +95,7 @@ export function prepareRequest(body, route) {
     directive,
     action,
     edl,
+    kit,
     format: {
       fps: Number(edl?.fps) || Number(adaptation?.fps) || 30,
       width,

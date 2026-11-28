@@ -45,12 +45,14 @@ function card(host, entry, kit) {
       onfocus="${on.handleHover}"
       onblur="${on.handleLeave}"
     >
-      <brand-frame
-        class="brand-frame-boxed"
-        spec="${shown ? elementThumb(kit, shown, host.like) : {}}"
-        playing="${host.hovered === entry.id}"
-        size="${384}"
-      ></brand-frame>
+      ${shown
+        ? html`<brand-frame
+            class="brand-frame-boxed"
+            spec="${elementThumb(kit, shown, host.like, { aspect: 16 / 9 })}"
+            playing="${host.hovered === entry.id}"
+            size="${384}"
+          ></brand-frame>`
+        : html`<span class="brand-kit-card-blank">${kitSwatches(entry.colors)}</span>`}
       <span class="brand-kit-card-head">
         <strong>${entry.name}</strong>
         ${inUse ? html`<span class="chip brand-kit-card-inuse">In use</span>` : html``}
@@ -93,14 +95,14 @@ export default define({
   render: {
     value: (host) => {
       const { own } = host;
-      const mine = own?.tokens && {
+      const mine = own && {
         ...{ id: 'project', name: own.name || 'This project’s own', source: 'project' },
-        ...{ description: 'Customised for this project', colors: own.tokens.color, problems: 0 },
+        ...{ description: 'Customised for this project', colors: own.colors, problems: 0 },
       };
       // Reading the pictures here redraws the list when a library kit's has arrived.
       const seen = host.pictures.byKit;
       return html`<ul class="brand-kit-list" aria-label="Brand kits">
-        ${mine ? card(host, /** @type {any} */ (mine), own) : html``}
+        ${mine ? card(host, /** @type {any} */ (mine), own.kit) : html``}
         ${host.kits.map((entry) => card(host, entry, pictureKit(entry, seen)))}
       </ul>`;
     },

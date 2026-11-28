@@ -7,8 +7,10 @@
  * @module api/director/motion/complete
  */
 
+import { BRAND } from '#utils/director/brand/theme.js';
 import { AUTO, choose, getTheme, pickTheme } from '#utils/director/motion/themes.js';
 import { NONE, PARTICLES, vocabulary } from '#utils/director/motion/vocab.js';
+import { CARD_KINDS, sceneKinds } from './kinds.js';
 
 /**
  * @typedef {Object} Scene - A scene with every choice made
@@ -22,6 +24,9 @@ import { NONE, PARTICLES, vocabulary } from '#utils/director/motion/vocab.js';
  * @property {string} by
  * @property {string} transition
  * @property {number} [duration] - Seconds, when the plan fixed it
+ * @property {string} [kind] - `intro`, `chapter` or `outro`: a card the brand
+ *   kit draws; absent for an ordinary scene
+ * @property {string} [number] - A chapter's number
  * @typedef {{ theme: string, align: 'center'|'left', scenes: Scene[] }} CompletePlan
  */
 
@@ -30,17 +35,24 @@ const ALIGNS = /** @type {const} */ (['center', 'center', 'left']);
 /**
  * Complete a plan.
  * @param {{ theme?: string, align?: string, scenes: any[] }} plan - Valid against the plan schema
- * @param {{ theme?: string, seed?: number|string, particles?: string }} [params] - The
- *   action's parameters: a theme or `auto`, the seed, and `auto`, `none` or a
- *   particle preset for every scene
+ * @param {{ theme?: string, seed?: number|string, particles?: string, bumpers?: boolean }} [params] -
+ *   The action's parameters: a theme, `brand` or `auto`, the seed, `auto`,
+ *   `none` or a particle preset for every scene, and whether a branded
+ *   piece opens and closes with the kit's intro and outro
+ * @param {import('#utils/director/motion/themes.js').Theme} [brand] - The
+ *   brand theme (`brandTheme(kit)`): what `theme: brand` means. Without it
+ *   `brand` is read as `auto`
  * @returns {{ plan: CompletePlan, notes: string[] }}
  */
-export function completePlan(plan, params = {}) {
+export function completePlan(plan, params = {}, brand) {
   const seed = params.seed ?? 1;
   const notes = [];
-  const asked = params.theme && params.theme !== AUTO ? params.theme : plan.theme;
-  const theme = pickTheme(asked, seed);
-  if (asked && asked !== AUTO && !getTheme(asked)) {
+  const branded = params.theme === BRAND && Boolean(brand);
+  const free = !params.theme || params.theme === AUTO || params.theme === BRAND;
+  const named = free ? plan.theme : params.theme;
+  const asked = named === BRAND ? undefined : named;
+  const theme = branded ? brand : pickTheme(asked, seed);
+  if (!branded && asked && asked !== AUTO && !getTheme(asked)) {
     notes.push(`Unknown theme “${asked}” — ${theme.label} was chosen instead.`);
   }
   const names = vocabulary();
@@ -74,7 +86,12 @@ export function completePlan(plan, params = {}) {
     theme.animations.find(([kind]) => kind === type)?.[1] ||
     (type === 'typewriter' ? 'char' : 'word');
 
+  const kinds = sceneKinds(plan.scenes, { branded, bumpers: params.bumpers !== false }, notes);
+  let plain = 0;
   const scenes = plan.scenes.map((scene, i) => {
+    const card = CARD_KINDS.includes(kinds[i].kind);
+    // Backgrounds take turns among the scenes that have one.
+    const turn = card ? 0 : plain++;
     /** @param {keyof ReturnType<typeof vocabulary>} field @param {string} fallback */
     const name = (field, fallback) => {
       const value = scene[field];
@@ -84,10 +101,11 @@ export function completePlan(plan, params = {}) {
       return fallback;
     };
     // Asked in the order the notes should read.
-    const background = name('background', grounds[i % grounds.length]);
-    const particles = forced || name('particles', piece.particles);
-    const accent = name('accent', piece.accent);
-    const look = name('look', piece.look);
+    const background = name('background', grounds[turn % grounds.length]);
+    // A card of the brand kit is the kit's own design: nothing is laid over it.
+    const particles = card ? NONE : forced || name('particles', piece.particles);
+    const accent = card ? NONE : name('accent', piece.accent);
+    const look = card ? NONE : name('look', piece.look);
     const textAnimation = name('textAnimation', piece.textAnimation);
     const by = name('by', textAnimation === animation ? unit : unitOf(textAnimation));
     // The piece opens from black.
@@ -105,6 +123,8 @@ export function completePlan(plan, params = {}) {
       transition,
     };
     if (scene.duration > 0) out.duration = scene.duration;
+    if (card) out.kind = kinds[i].kind;
+    if (kinds[i].number) out.number = kinds[i].number;
     return out;
   });
   if (forced && forced !== NONE && plan.scenes.some((s) => s.particles && s.particles !== forced)) {

@@ -103,24 +103,32 @@ export function elementBounds(element, frame, host = {}) {
 
 /**
  * The part of the frame a small picture of an element shows: its bounds
- * with room around them, in the frame's own shape, never closer than
- * `closest` times — so a lower third can be read on a tile and still sits
- * visibly low in a frame.
+ * with room around them, never closer than `closest` times — so a lower
+ * third can be read on a tile and still sits visibly low in a frame. The
+ * part has the frame's own shape, or the shape of the place the picture
+ * goes (`aspect`): a wide tile then shows a band of a vertical frame.
  * @param {Rect} bounds - As `elementBounds` gives them
  * @param {Size} frame
  * @param {number} [closest=2.2] - The most the picture is enlarged
+ * @param {number} [aspect] - Width over height of the part; default: the frame's
  * @returns {Rect} The whole frame for an element that fills most of it
  */
-export function framing(bounds, frame, closest = 2.2) {
+export function framing(bounds, frame, closest = 2.2, aspect = frame.width / frame.height) {
+  const filled = (bounds.width * bounds.height) / (frame.width * frame.height);
+  if (filled >= 0.8) return whole(frame);
   const room = 0.16 * Math.min(frame.width, frame.height);
+  // The largest part of that shape the frame holds, then as much of it as the element needs.
+  const most = { width: Math.min(frame.width, frame.height * aspect), height: 0 };
+  most.height = most.width / aspect;
   const share = Math.max(
-    (bounds.width + 2 * room) / frame.width,
-    (bounds.height + 2 * room) / frame.height,
+    (bounds.width + 2 * room) / most.width,
+    (bounds.height + 2 * room) / most.height,
     1 / closest,
   );
-  if (share >= 0.9) return whole(frame);
-  const width = frame.width * share;
-  const height = frame.height * share;
+  const same = Math.abs(aspect - frame.width / frame.height) < 1e-3;
+  if (share >= 0.9 && same) return whole(frame);
+  const width = most.width * Math.min(1, share);
+  const height = most.height * Math.min(1, share);
   const x = bounds.x + bounds.width / 2 - width / 2;
   const y = bounds.y + bounds.height / 2 - height / 2;
   return {

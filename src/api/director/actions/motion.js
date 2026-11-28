@@ -12,6 +12,7 @@ import { getTheme } from '#utils/director/motion/themes.js';
 import { briefScenes, checkBrief } from '../motion/brief.js';
 import { buildMotion } from '../motion/build.js';
 import { completePlan } from '../motion/complete.js';
+import { dressNotes, motionDress } from '../motion/dress.js';
 import { requestMotionPlan } from '../motion/request.js';
 import { motionPrompt } from '../prompts/motion.js';
 import { directorResult } from '../result.js';
@@ -23,16 +24,17 @@ import { directorResult } from '../result.js';
  * @param {ActionContext} ctx
  * @param {number} target - Target length in seconds, 0 for none
  * @param {string[]} notes
+ * @param {string} brand - The name of the kit the piece follows, '' for none
  * @returns {Promise<any|null>} A plan valid against the motion-plan schema
  */
-async function askLlm(ctx, target, notes) {
+async function askLlm(ctx, target, notes, brand) {
   const { directive, llm, format } = ctx;
   try {
     ctx.progress(15, `Asking ${llm.model} for a motion plan…`);
     let lastReport = 0;
     const asked = await requestMotionPlan({
       llm,
-      ...motionPrompt({ directive, format, target }),
+      ...motionPrompt({ directive, format, target, brand }),
       signal: ctx.signal,
       log: ctx.log,
       onProgress: (chars, attempt) => {
@@ -77,21 +79,20 @@ export async function motionPiece(ctx) {
   const span = mode === 'range' && context.range ? context.range.end - context.range.start : 0;
   const target = params.duration || span;
   const notes = [];
+  const dress = motionDress(ctx);
 
-  let raw = params.useLlm ? await askLlm(ctx, target, notes) : null;
+  let raw = params.useLlm ? await askLlm(ctx, target, notes, dress?.name || '') : null;
   if (!raw) {
     const read = briefScenes(directive.prompt);
     raw = { scenes: read.scenes };
     notes.push(...read.notes);
   }
-  const completed = completePlan(raw, params);
+  const completed = completePlan(raw, params, dress?.theme);
   const { plan } = completed;
-  const theme = getTheme(plan.theme);
+  const theme = dress?.theme || getTheme(plan.theme);
   const built = buildMotion(plan, {
-    format,
-    seed: params.seed,
-    pacing: params.pacing,
-    duration: target,
+    ...{ format, seed: params.seed, pacing: params.pacing, duration: target },
+    ...(dress && { theme: dress.theme, kit: dress.kit }),
   });
   // Why this theme: the editor named it, the plan did, or the variation number chose.
   let chosen = ` (variation ${params.seed})`;
@@ -99,20 +100,29 @@ export async function motionPiece(ctx) {
   else if (getTheme(raw.theme)?.id === plan.theme) chosen = ' (the LLM’s choice)';
   notes.push(
     ...completed.notes,
-    `Theme ${theme.label}${chosen}: ${theme.description.toLowerCase()}.`,
+    ...(dress
+      ? dressNotes(dress, plan.scenes)
+      : [`Theme ${theme.label}${chosen}: ${theme.description.toLowerCase()}.`]),
     `Laid out for ${format.width}×${format.height} at ${format.fps} fps; text is ` +
       `${plan.align === 'left' ? 'set against the left margin' : 'centred'}.`,
     ...built.notes,
-    'Every clip is an ordinary generator or title: change its text, colours, keyframes or ' +
+    'Every scene is ordinary generators and titles: change its text, colours, keyframes or ' +
       'effects in the inspector, or run again with another variation number for a different take.',
   );
   const count = plan.scenes.length;
   const particles = plan.scenes.map((s) => s.particles).filter((p) => p !== 'none');
+  const grounds = plan.scenes.filter((s) => !s.kind).map((s) => s.background);
+  const cards = count - grounds.length;
   const summary =
     `Motion piece “${theme.label}”: ${count} scene${count === 1 ? '' : 's'}, ` +
-    `${formatSeconds(built.seconds)} — ${listed(plan.scenes.map((s) => s.background))} ` +
-    `background${new Set(plan.scenes.map((s) => s.background)).size === 1 ? '' : 's'}` +
-    (particles.length ? `, ${listed(particles)}` : '');
+    `${formatSeconds(built.seconds)} — ` +
+    [
+      ...(grounds.length
+        ? [`${listed(grounds)} background${new Set(grounds).size === 1 ? '' : 's'}`]
+        : []),
+      ...(cards ? [`${cards} brand card${cards === 1 ? '' : 's'}`] : []),
+      ...(particles.length ? [listed(particles)] : []),
+    ].join(', ');
   const described = {
     ...plan,
     scenes: plan.scenes.map((scene, i) => ({
@@ -121,10 +131,11 @@ export async function motionPiece(ctx) {
         Math.round(((built.shots[i].endF - built.shots[i].startF) / format.fps) * 100) / 100,
     })),
   };
-  return directorResult(
+  const result = directorResult(
     { tracks: built.tracks, markers: built.markers, summary, notes, plan: described },
     directive,
     edl,
     format.fps,
   );
+  return dress?.fonts.length ? { ...result, document: { fonts: dress.fonts } } : result;
 }

@@ -72,3 +72,35 @@ export function demoNotes(facts) {
   );
   return notes;
 }
+
+/**
+ * The demo as plain JSON, for `DirectorResult.plan`.
+ * @param {Object} facts
+ * @param {{ title?: string, stops: any[] }} facts.plan
+ * @param {string} facts.title - The title on the card; '' for no card
+ * @param {{ recording: any, recipe: any, stage: { look: string }, theme: string }} facts.made
+ * @param {number[]} facts.owners - Per step of the recipe, the stop it belongs to
+ * @returns {object}
+ */
+export function describeDemo({ plan, title, made, owners }) {
+  const { recording, recipe } = made;
+  const { url, viewport, scale } = recipe;
+  return {
+    title,
+    page: { url, title: recording.title, viewport, scale },
+    look: made.stage.look,
+    theme: made.theme,
+    stops: plan.stops.map((stop, i) => {
+      // What the recording says about the stop: its last step is the stop itself.
+      const steps = recording.track.steps.filter((_, at) => owners[at] === i);
+      const main = steps[steps.length - 1];
+      return {
+        ...stop,
+        target: main.target ?? '',
+        start: steps[0].start,
+        end: main.end,
+        found: !main.missing,
+      };
+    }),
+  };
+}

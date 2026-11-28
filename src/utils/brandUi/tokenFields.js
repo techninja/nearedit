@@ -27,6 +27,7 @@ export const TOKEN_GROUPS = Object.freeze([
   { group: 'space', label: 'Spacing' },
   { group: 'motion', label: 'Motion' },
   { group: 'sound', label: 'Sound' },
+  { group: 'caption', label: 'Captions' },
 ]);
 
 /** The fields of a font token that sit behind "Fine tuning". */
@@ -40,7 +41,7 @@ export function tokenGroups() {
   const known = TOKEN_GROUPS.filter(({ group }) => Object.hasOwn(TOKEN_SCHEMA, group));
   const others = Object.keys(TOKEN_SCHEMA)
     .filter((group) => !known.some((entry) => entry.group === group))
-    .map((group) => ({ group, label: group }));
+    .map((group) => ({ group, label: group[0].toUpperCase() + group.slice(1) }));
   return [...known, ...others].map(({ group, label }) => ({
     group,
     label,

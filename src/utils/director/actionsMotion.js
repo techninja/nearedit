@@ -6,6 +6,7 @@
  * @module utils/director/actionsMotion
  */
 
+import { BRAND } from './brand/theme.js';
 import { PACING, range, select, toggle } from './fields.js';
 import { AUTO, THEMES } from './motion/themes.js';
 import { NONE, PARTICLE_PRESETS } from './motion/vocab.js';
@@ -17,6 +18,7 @@ export const MOTION_PIECE = {
   description:
     'A title sequence made only of generated layers — animated backgrounds, particles, ' +
     'shapes and titles — from a few lines of text. No media files needed.',
+  brand: 'Follows the brand kit: its colours, fonts and motion, its intro, chapter and outro.',
   llm: 'optional',
   noLlmNote: 'Builds the scenes from the lines of the brief; the language model is not available.',
   media: false,
@@ -34,13 +36,14 @@ export const MOTION_PIECE = {
       'theme',
       'Theme',
       [
-        [AUTO, 'Auto — by the variation number'],
+        [BRAND, 'Brand — the project’s brand kit: its colours, fonts and motion'],
+        [AUTO, 'Auto — one of the themes below, by the variation number'],
         ...THEMES.map(
           (theme) =>
             /** @type {[string, string]} */ ([theme.id, `${theme.label} — ${theme.description}`]),
         ),
       ],
-      AUTO,
+      BRAND,
     ),
     range(
       'duration',
@@ -70,6 +73,13 @@ export const MOTION_PIECE = {
         ),
       ],
       AUTO,
+    ),
+    toggle(
+      'bumpers',
+      'Open and close with the brand’s intro and outro',
+      true,
+      'With the Brand theme, the first scene is the kit’s intro and the last its outro. A ' +
+        'line that begins “Chapter:” is its chapter card.',
     ),
     toggle(
       'useLlm',

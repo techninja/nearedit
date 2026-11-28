@@ -16,6 +16,30 @@ import { changes } from './transitions.js';
  */
 
 /**
+ * The transitions in which the clip that fills the frame of a scene — its
+ * background, or a card of the brand kit — is the layer in front.
+ * @param {Shot} shot
+ * @param {Shot|undefined} next
+ * @param {Piece} piece
+ * @returns {ReturnType<typeof changes>}
+ */
+export function sceneChange(shot, next, piece) {
+  const { format, seed } = piece;
+  /** @param {Shot} of @returns {import('./transitions.js').Change} */
+  const arrival = (of) => ({
+    kind: of.scene.transition,
+    frames: of.inF,
+    seed: hash(seed, of.index, 5),
+  });
+  return changes({
+    lengthF: shot.endF + shot.tailF - shot.startF,
+    frame: format,
+    arrive: shot.index === 0 || shot.front ? arrival(shot) : null,
+    leave: !next ? { kind: 'fade', frames: shot.outF, seed: 0 } : shot.front ? arrival(next) : null,
+  });
+}
+
+/**
  * The background clip: it runs on under the next scene's transition, and
  * carries the transitions in which it is the layer in front.
  * @param {Shot} shot
@@ -36,18 +60,7 @@ export function backdrop(shot, next, piece, colors, grade) {
     seed: hash(seed, index, 1),
     frame: format,
   });
-  /** @param {Shot} of @returns {import('./transitions.js').Change} */
-  const arrival = (of) => ({
-    kind: of.scene.transition,
-    frames: of.inF,
-    seed: hash(seed, of.index, 5),
-  });
-  const change = changes({
-    lengthF,
-    frame: format,
-    arrive: index === 0 || shot.front ? arrival(shot) : null,
-    leave: !next ? { kind: 'fade', frames: shot.outF, seed: 0 } : shot.front ? arrival(next) : null,
-  });
+  const change = sceneChange(shot, next, piece);
   return clipAt(shot.startF, shot.startF + lengthF, format.fps, {
     generator: { type: bg.type, seed: hash(seed, index, 2), params: bg.params },
     effects: [...grade, ...change.effects],

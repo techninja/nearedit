@@ -4,7 +4,8 @@
  * when element clips on the timeline are out of date with it, and its
  * elements as tiles: overlays, segments, transitions. Each tile is the
  * element itself, drawn by the compositor with sample text and framed
- * closer on what it shows. Pressing a tile asks to add it with a bubbling
+ * closer on what it shows (in a vertical or square timeline, the band of
+ * the frame an overlay sits in). Pressing a tile asks to add it with a bubbling
  * `brand-add` event (`detail: { element }`); a tile can also be dragged
  * onto the timeline.
  * @module components/molecules/brand-create
@@ -15,14 +16,14 @@ import TimelineState from '#store/TimelineState.js';
 import { endDrag } from '#utils/create/dragTypes.js';
 import { liveDoc } from '#utils/editor/liveDoc.js';
 import * as on from '#utils/brandUi/createEvents.js';
-import { kitNote, kitSwatches, staleNotice } from '#utils/brandUi/createParts.js';
+import { kitNote, kitSwatches, kitTrouble, staleNotice } from '#utils/brandUi/createParts.js';
 import { elementGroups } from '#utils/brandUi/elementList.js';
 import { elementThumb } from '#utils/brandUi/elementThumb.js';
 import { kitState } from '#utils/brandUi/kitState.js';
 import { staleInfo } from '#utils/brandUi/stale.js';
 import { watch } from '#utils/ui/observable.js';
 import '#atoms/app-icon/app-icon.js';
-import '#atoms/create-thumb/create-thumb.js';
+import '#atoms/brand-frame/brand-frame.js';
 
 /** @typedef {import('#utils/brandUi/createEvents.js').BrandCreateHost} BrandCreateHost */
 
@@ -47,10 +48,12 @@ const tile = (item, { kit, timeline, hovered }) =>
     ondragstart="${on.handleDragStart}"
     ondragend="${endDrag}"
   >
-    <create-thumb
-      spec="${elementThumb(kit.effective, item.id, timeline)}"
+    <brand-frame
+      class="brand-frame-boxed"
+      spec="${elementThumb(kit.effective, item.id, timeline, { aspect: 16 / 9 })}"
       playing="${hovered === item.id}"
-    ></create-thumb>
+      size="${320}"
+    ></brand-frame>
     <span class="create-panel-name">${item.label}</span>
   </button>`.key(item.id);
 
@@ -82,7 +85,7 @@ export default define({
             <app-icon name="palette" size="sm"></app-icon> Brand…
           </button>
         </div>
-        ${staleNotice(staleInfo(doc, kit.effective), on.handleUpdate, said)}
+        ${kitTrouble(kit)} ${staleNotice(staleInfo(doc, kit.effective), on.handleUpdate, said)}
         ${groups.map(
           (group) => html`
             <div class="field-group-title">${group.label}</div>

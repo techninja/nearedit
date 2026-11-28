@@ -34,6 +34,13 @@ export default {
     space: { margin: 5, gap: 1.2 },
     motion: { enter: 'wipe', exit: 'wipe', by: 'block', ease: 'ease-out', speed: 1.15 },
     sound: { style: 'breakbeat', key: 'E', scale: 'minor' },
+    caption: {
+      preset: 'boxed',
+      font: 'heading',
+      highlight: 'primary',
+      size: 0,
+      position: 'preset',
+    },
   },
   elements: {
     'lower-third': lowerThird,

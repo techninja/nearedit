@@ -8,6 +8,7 @@
  */
 
 import { PACING, range, select, text, toggle } from './fields.js';
+import { BRAND } from './brand/theme.js';
 import { AUTO, THEMES } from './motion/themes.js';
 import { SIZE_CHOICES } from './web/sizes.js';
 
@@ -56,13 +57,14 @@ export const SITE_DEMO = {
       'theme',
       'Theme',
       [
+        [BRAND, 'Brand — the project’s brand kit: its colours, captions and intro'],
         [AUTO, 'Auto — a ground that suits the page'],
         ...THEMES.map(
           (theme) =>
             /** @type {[string, string]} */ ([theme.id, `${theme.label} — ${theme.description}`]),
         ),
       ],
-      AUTO,
+      BRAND,
       'Colours of the background, the captions and the title card.',
     ),
     select('size', 'Page size', [...SIZE_CHOICES], 'auto'),
@@ -92,6 +94,13 @@ export const SITE_DEMO = {
       'Title card',
       '',
       'Shown before the recording. Empty = none; a "# …" line of the brief sets it too.',
+    ),
+    toggle(
+      'finished',
+      'A finished piece: intro, outro and logo',
+      false,
+      'With the Brand theme: the kit’s intro before the recording, its outro after it and ' +
+        'its logo bug over it.',
     ),
     toggle(
       'useLlm',

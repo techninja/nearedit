@@ -27,6 +27,8 @@ const HINTS = {
   logo: 'The corner bug, the intro, the outro and the stinger show the mark. The logo you upload is the mark too, until you give a mark of its own; with no picture at all a mark is drawn from the colours.',
   space: 'Lengths are in units: hundredths of the frame’s shorter side.',
   sound: 'What the director reaches for when it writes music for this brand.',
+  caption:
+    'How word-by-word captions look in this brand: a caption style, and what the brand changes in it.',
 };
 
 /**

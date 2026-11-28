@@ -9,7 +9,7 @@
  */
 
 import { define, html } from 'hybrids';
-import { thumbSize } from '#utils/create/thumbDoc.js';
+import { thumbCrop, thumbSize } from '#utils/create/thumbDoc.js';
 import { drawThumb, onThumbAssets } from '#utils/create/thumbEnv.js';
 
 /**
@@ -67,7 +67,10 @@ export default define({
   size: 480,
   render: {
     value: ({ spec, playing, size }) => {
-      const backing = thumbSize(spec?.doc?.resolution, size, size);
+      // A picture that shows a part of its frame has the shape of that part.
+      const part = thumbCrop(spec?.doc);
+      const shape = part ? `${Math.round(part.width)}x${Math.round(part.height)}` : '';
+      const backing = thumbSize(shape || spec?.doc?.resolution, size, size);
       return html`<canvas
         width="${backing.width}"
         height="${backing.height}"

@@ -7,6 +7,7 @@
  * @module utils/brandUi/saveKit
  */
 
+import { refreshThumbFiles } from '#utils/create/thumbEnv.js';
 import { mediaFileUrl } from '#utils/playback/mediaUrl.js';
 import { brandDialog } from './dialogState.js';
 import { draftKit } from './draft.js';
@@ -15,6 +16,7 @@ import { fileUrlOf, pendingFiles } from './draftFiles.js';
 import { beginDraft, draftSaved, draftState } from './draftState.js';
 import { readKit, uploadKitFile, writeKit, writeProjectKit } from './kitApi.js';
 import { loadKits } from './kitList.js';
+import { forOpenAdaptation } from './kitLoad.js';
 import { acceptKit, kitState } from './kitState.js';
 
 /** @typedef {import('./draft.js').Draft} Draft */
@@ -73,8 +75,10 @@ export function saveForProject() {
   return saving('Saving the brand…', async () => {
     const named = withStoredNames(draft, await sendFiles({ projectId }, draft, false));
     const kit = draftKit(named, named.name || `${base.name}, customised`);
-    const answer = await writeProjectKit(projectId, kit);
+    const answer = await forOpenAdaptation(await writeProjectKit(projectId, kit));
     if (!acceptKit(projectId, answer)) throw new Error('The server answered without a kit');
+    // A file may have been replaced under the name it had: show the new one.
+    refreshThumbFiles();
     draftSaved(named);
     await beginDraft();
     return 'Saved. This project now has a brand of its own.';

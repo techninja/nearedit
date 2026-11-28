@@ -44,7 +44,10 @@ function fact(label, value) {
 function clipWords(kinds) {
   const parts = Object.entries(kinds)
     .filter(([, count]) => count > 0)
-    .map(([kind, count]) => `${count} ${KIND_LABELS[kind]}`);
+    .map(
+      ([kind, count]) =>
+        `${count} ${KIND_LABELS[kind]}${kind === 'element' && count > 1 ? 's' : ''}`,
+    );
   return parts.join(', ') || 'none yet';
 }
 

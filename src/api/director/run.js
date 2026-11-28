@@ -91,6 +91,7 @@ export async function runDirective(prepared, llm, job) {
     directive: prepared.directive,
     edl: prepared.edl,
     format: prepared.format,
+    kit: prepared.kit,
     media,
     llm,
     signal: job.signal,

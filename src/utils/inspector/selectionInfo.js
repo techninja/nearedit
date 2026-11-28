@@ -36,8 +36,9 @@ export function describeSelection(refs) {
   if (!refs.length) return { heading: '', detail: '' };
   const counts = new Map();
   for (const ref of refs) counts.set(ref.kind, (counts.get(ref.kind) || 0) + 1);
+  // The kinds read as adjectives ("2 video"); a brand element is a noun and takes its plural.
   const kinds = [...counts].map(([kind, n]) =>
-    n > 1 ? `${n} ${KIND_NAMES[kind]}` : KIND_NAMES[kind],
+    n > 1 ? `${n} ${KIND_NAMES[kind]}${kind === 'element' ? 's' : ''}` : KIND_NAMES[kind],
   );
   const [{ clip }] = refs;
   const pair = refs.length === 2 && refs[0].clip.linkedClipId === refs[1].clip.clipId;

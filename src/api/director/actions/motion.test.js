@@ -31,9 +31,17 @@ before(async () => {
 });
 after(() => fake.close());
 
-/** An ActionContext without a project: a motion piece needs no media. */
+/**
+ * An ActionContext without a project: a motion piece needs no media. This
+ * suite is about the themes of the list, so it leaves the brand (the
+ * default; `motionBrand.test.js`) unless a test names a theme.
+ */
 function ctxFor(directive, extra = {}) {
-  const normal = normalizeDirective({ action: 'motion_piece', prompt: BRIEF, ...directive });
+  const params = { theme: 'auto', ...directive.params };
+  const normal = normalizeDirective({
+    ...{ action: 'motion_piece', prompt: BRIEF, ...directive },
+    params,
+  });
   if (normal.ok === false) throw new Error(`bad test directive: ${JSON.stringify(normal)}`);
   const logs = [];
   const format = { fps: 30, width: 1920, height: 1080, aspectRatio: '16:9', name: 'Main Edit' };

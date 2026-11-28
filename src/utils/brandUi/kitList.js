@@ -15,8 +15,10 @@ import {
 } from '#utils/brand/index.js';
 import { createObservable } from '#utils/ui/observable.js';
 import { brandDialog } from './dialogState.js';
-import { chooseProjectKit, listKits, readKit, readProjectKit, removeKit } from './kitApi.js';
+import { chooseProjectKit, listKits, readKit, removeKit } from './kitApi.js';
+import { forOpenAdaptation } from './kitLoad.js';
 import { acceptKit, isKitAnswer, kitState } from './kitState.js';
+import { forgetOwnKit } from './ownKit.js';
 
 /** @typedef {import('#utils/brand/types.js').Kit} Kit */
 /** @typedef {import('./kitApi.js').KitEntry} KitEntry */
@@ -87,7 +89,8 @@ export async function loadKits() {
     brandDialog.set({ kits: await listKits(), list: 'ready' });
   } catch (err) {
     console.warn('[brand] the kits could not be listed:', err.message);
-    brandDialog.set({ kits: builtinEntries(), list: 'failed', error: err.message });
+    // The dialog says what that means; the reason is in the console.
+    brandDialog.set({ kits: builtinEntries(), list: 'failed' });
   }
 }
 
@@ -97,24 +100,19 @@ export async function loadKits() {
  * @returns {Promise<boolean>} true when it is now the project's kit
  */
 export async function chooseKit(id) {
-  const { projectId, adaptationId, choice } = kitState.get();
+  const { projectId, choice } = kitState.get();
   if (!projectId || id === choice || brandDialog.get().busy) return false;
   const entry = brandDialog.get().kits.find((kit) => kit.id === id);
   const name = entry?.name || (id === 'project' ? 'this project’s own kit' : id);
   brandDialog.set({ busy: `Choosing ${name}…`, error: '', said: '' });
   try {
-    let answer = await chooseProjectKit(projectId, id);
-    if (adaptationId) {
-      // An adaptation that named a kit of its own goes with the project again:
-      // what was chosen is what the open timeline uses.
-      const mine = await readProjectKit(projectId, adaptationId);
-      answer =
-        mine.choice === answer.choice ? mine : await chooseProjectKit(projectId, '', adaptationId);
-    }
+    const answer = await forOpenAdaptation(await chooseProjectKit(projectId, id));
     if (!acceptKit(projectId, answer)) throw new Error('The server answered without a kit');
     brandDialog.set({ busy: '', said: `${name} is now this project’s brand.` });
     return true;
   } catch (err) {
+    // The project's own kit was noted once and is gone: it is not offered again.
+    if (id === 'project' && err.status === 422) forgetOwnKit(projectId);
     brandDialog.set({ busy: '', error: `${name} could not be chosen: ${err.message}` });
     return false;
   }

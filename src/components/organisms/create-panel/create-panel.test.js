@@ -2,6 +2,7 @@ import { fixture, expect, waitUntil } from '@open-wc/testing';
 import { store } from 'hybrids';
 import ViewState from '#store/ViewState.js';
 import { GENERATORS } from '#utils/compose/catalog.js';
+import { kitState, standIn } from '#utils/brandUi/kitState.js';
 import { CREATE_DRAG_TYPE } from '#utils/create/dragTypes.js';
 import { createClip, createEdl, createTrack } from '#utils/edl/factory.js';
 import { findClip } from '#utils/edl/query.js';
@@ -143,6 +144,28 @@ describe('create-panel', () => {
     expect(clip.music.song.parts[0].kit).to.equal('acoustic');
     expect(clip.label).to.equal('Backbeat');
     expect(status()).to.contain('Added Backbeat on');
+    expect(steps()).to.equal(1);
+  });
+
+  it('has six sections; Brand lists the kit’s elements and adds one where its kind belongs', async () => {
+    kitState.set({ ...standIn('p1', 'fallback') });
+    const { el, section, status } = await mount();
+    const names = [...el.querySelectorAll('.create-panel-sections button')].map(
+      (b) => b.dataset.section,
+    );
+    expect(names).to.deep.equal(['generators', 'text', 'effects', 'web', 'music', 'brand']);
+    await section('brand');
+    await waitUntil(() => el.querySelectorAll('brand-create .create-panel-tile').length === 9);
+    el.querySelector('brand-create [data-element="lower-third"]').click();
+    await waitUntil(() => selection().length === 1);
+    const { clip, track } = findClip(getDoc(), selection()[0]);
+    expect([track.trackId, clip.timelineStart, clip.element.id]).to.deep.equal([
+      'v1',
+      2,
+      'lower-third',
+    ]);
+    expect(clip.element.slots).to.deep.equal({ name: 'Name' });
+    expect(status()).to.contain('Added Lower third on Video 1 at 00:00:02:00 — type its Name');
     expect(steps()).to.equal(1);
   });
 

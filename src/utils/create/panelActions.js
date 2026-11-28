@@ -76,8 +76,9 @@ export function addTextItem(presetId, at = {}) {
 }
 
 /**
- * The selected clips an effect can go on: those that draw in the frame, on
- * tracks that are not locked.
+ * The selected clips an effect can go on: those that draw in the frame —
+ * footage, stills, titles, generators, brand elements — on tracks that are
+ * not locked.
  * @param {string[]} [selection]
  * @returns {{ clipId: string, label: string }[]}
  */
@@ -88,7 +89,8 @@ export function effectTargets(selection = getSelection()) {
     if (!found || found.track.type !== 'video' || found.track.locked) return [];
     const kind = clipKind(found.clip, found.track);
     if (kind === 'placeholder' || kind === 'audio') return [];
-    return [{ clipId, label: found.clip.label || kind }];
+    const named = kind === 'element' ? 'brand element' : kind;
+    return [{ clipId, label: found.clip.label || named }];
   });
 }
 

@@ -1,10 +1,11 @@
 /**
  * Tokens — the values a brand kit sets once and every design refers to:
- * colours with roles, two fonts, logos, the shape language, spacing, motion
- * and sound. `TOKEN_SCHEMA` describes every one of them (type, label,
- * default, range), so an editor can be generated from it and a kit can be
- * checked against it; its defaults are the tokens of the built-in `clean`
- * kit. Lengths are in units: hundredths of the frame's shorter side.
+ * colours with roles, two fonts, logos, the shape language, spacing, motion,
+ * sound and the caption style. `TOKEN_SCHEMA` describes every one of them
+ * (type, label, default, range), so an editor can be generated from it and
+ * a kit can be checked against it; its defaults are the tokens of the
+ * built-in `clean` kit. Lengths are in units: hundredths of the frame's
+ * shorter side.
  * Isomorphic and pure. Contract: docs/app-spec/BRAND.md § A kit.
  * @module utils/brand/tokenSchema
  */
@@ -13,6 +14,7 @@ import { EASINGS } from '#utils/edl/easing.js';
 import { TEXT_UNITS } from '#utils/edl/defaults.js';
 import { KEY_NAMES } from '#utils/music/theory/names.js';
 import { SCALES } from '#utils/music/theory/scales.js';
+import { CAPTION_TOKENS } from './captionTokens.js';
 import { MOTIONS } from './element/vocabulary.js';
 
 /**
@@ -134,4 +136,5 @@ export const TOKEN_SCHEMA = Object.freeze({
     key: { type: 'select', label: 'Key', default: 'C', options: KEY_NAMES },
     scale: { type: 'select', label: 'Scale', default: 'major', options: Object.keys(SCALES) },
   },
+  caption: CAPTION_TOKENS,
 });

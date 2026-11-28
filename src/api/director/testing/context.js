@@ -12,7 +12,9 @@ import { createLlmClient } from '../llm/client.js';
  * @param {import('./fixtures.js').TestProject} project
  * @param {object} directive - Raw directive, normalised like the route does
  * @param {{ edl?: any, llmUrl?: string, provider?: string, signal?: AbortSignal,
- *   format?: Partial<import('../pipeline.js').ActionContext['format']> }} [extra]
+ *   format?: Partial<import('../pipeline.js').ActionContext['format']>,
+ *   kit?: import('#utils/brand/types.js').Kit }} [extra] - `kit`: the brand
+ *   kit to work in; without one an action uses the built-in kit
  * @returns {Promise<import('../pipeline.js').ActionContext & { logs: string[] }>}
  */
 export async function makeContext(project, directive, extra = {}) {
@@ -24,6 +26,7 @@ export async function makeContext(project, directive, extra = {}) {
     projectDir: project.dir,
     directive: normal.directive,
     edl: extra.edl || null,
+    ...(extra.kit && { kit: extra.kit }),
     format: {
       fps: 30,
       width: 1920,

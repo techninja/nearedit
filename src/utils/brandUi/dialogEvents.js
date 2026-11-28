@@ -11,7 +11,8 @@ import { refocusIfLost } from '#utils/ui/focus.js';
 import { brandDialog, closeBrandDialog } from './dialogState.js';
 import { beginDraft, draftState, endDraft } from './draftState.js';
 import { chooseKit, deleteKit, loadKits } from './kitList.js';
-import { kitState, reloadKit } from './kitState.js';
+import { reloadKit } from './kitLoad.js';
+import { kitState } from './kitState.js';
 import { elementsWord, updateToBrand } from './stale.js';
 
 /**

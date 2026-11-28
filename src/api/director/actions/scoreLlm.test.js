@@ -48,7 +48,7 @@ const ask = async (directive = {}, extra = {}) => {
     action: 'score',
     prompt: 'calm, picks up at the product reveal',
     ...directive,
-    params: { useLlm: true, ...directive.params },
+    params: { useLlm: true, style: 'auto', key: 'auto', ...directive.params },
   };
   const ctx = await makeContext(park, full, { edl, llmUrl: fake.url, ...extra });
   const result = await score(ctx, fakeRenderer());

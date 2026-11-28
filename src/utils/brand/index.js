@@ -17,6 +17,8 @@ export {
   readableOn,
   withOpacity,
 } from './color.js';
+export { captionStyleOf } from './captionStyle.js';
+export { AS_PRESET, CAPTION_FONTS, CAPTION_MARKS, CAPTION_PLACES } from './captionTokens.js';
 export { normalizeKit } from './normalize.js';
 export { validateKit } from './validate.js';
 export { KitError, kitChain, resolveKit } from './resolve.js';

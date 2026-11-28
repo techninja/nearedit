@@ -7,9 +7,10 @@
  */
 
 import { html } from 'hybrids';
-import { staleNotice } from './createParts.js';
+import { kitTrouble, staleNotice } from './createParts.js';
 import * as edits from './dialogDraftEvents.js';
 import * as on from './dialogEvents.js';
+import { ownKitOf } from './ownKit.js';
 import { staleInfo } from './stale.js';
 import { contrastNotes } from './tokenFields.js';
 
@@ -39,9 +40,24 @@ export function notices({ state, kit, doc }) {
             : html``}
         </div>`
       : html``}
+    ${kitTrouble(kit)}
     ${state.said ? html`<p class="success-message" role="status">${state.said}</p>` : html``}
     ${staleNotice(stale, on.handleUpdate)}
   </div>`;
+}
+
+/**
+ * The project's own kit as the list shows it: complete while it is the one
+ * in use, by what was noted about it once another kit is.
+ * @param {import('./kitState.js').KitState} kit
+ * @returns {import('./kitListEvents.js').OwnKit|null}
+ */
+function ownKit({ choice, effective, projectId }) {
+  if (choice === 'project') {
+    return { name: effective.name, colors: effective.tokens.color, kit: effective };
+  }
+  const noted = ownKitOf(projectId);
+  return noted && { ...noted, kit: null };
 }
 
 /** @param {BrandDialogHost} host @returns {Template} */
@@ -63,7 +79,7 @@ export function chooseBody(host) {
       data-autofocus
       kits="${state.kits}"
       current="${kit.choice}"
-      own="${kit.choice === 'project' ? kit.effective : null}"
+      own="${ownKit(kit)}"
       like="${timeline}"
       busy="${Boolean(state.busy)}"
       onkit-choose="${on.handleChoose}"

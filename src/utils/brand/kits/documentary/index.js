@@ -31,6 +31,7 @@ export default {
     space: { margin: 7, gap: 1.6 },
     motion: { enter: 'fade', exit: 'fade', by: 'line', ease: 'ease-in-out', speed: 0.85 },
     sound: { style: 'cinematic', key: 'D', scale: 'minor' },
+    caption: { preset: 'minimal', font: 'body', highlight: 'primary', size: 0, position: 'preset' },
   },
   elements: {
     'lower-third': lowerThird,

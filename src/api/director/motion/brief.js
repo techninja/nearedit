@@ -8,12 +8,15 @@
 
 import { MAX_SCENES, MAX_SUBTITLE, MAX_TITLE } from '#utils/director/motion/planSchema.js';
 import { DirectorError } from '../errors.js';
+import { kindOf } from './kinds.js';
 
 const MARKER = /^(?:[-*•·–—]+|\d{1,3}[.)]|#{1,6})\s+/;
 const SEPARATOR = /\s+\|\s+|\s*—\s*|\s+–\s+|\s+--\s+/;
 const LEADING_SEPARATOR = /^(?:\||—|–|--)\s*/;
 const ONLY_MARKS = /^[-*•·–—|#\s]*$/;
 const SENTENCE_END = /(?<=[.!?…])\s+(?=\S)/;
+/** A line that says what its scene is: `Intro: …`, `Chapter: …`, `Outro: …`. */
+const KIND = /^(intro|opening|chapter|section|outro|closing)\s*:\s+/i;
 
 /**
  * Collapse white space and cut a text that is too long at a word.
@@ -31,18 +34,25 @@ export function tidyText(text, limit) {
 }
 
 /**
- * One line of a brief as a scene's words.
+ * One line of a brief as a scene's words. A line that begins `Intro:`,
+ * `Chapter:` or `Outro:` (also `Opening:`, `Section:`, `Closing:`) names
+ * what its scene is — a card the brand kit draws when the piece follows it.
  * @param {string} line
- * @returns {{ title: string, subtitle?: string }|null} null when nothing is left to show
+ * @returns {{ title: string, subtitle?: string, kind?: string }|null} null
+ *   when nothing is left to show
  */
 export function lineScene(line) {
-  const text = line.trim().replace(MARKER, '').trim().replace(LEADING_SEPARATOR, '');
+  const marked = line.trim().replace(MARKER, '').trim().replace(LEADING_SEPARATOR, '');
+  const named = marked.match(KIND);
+  const text = named ? marked.slice(named[0].length).trim() : marked;
   if (ONLY_MARKS.test(text)) return null;
   const cut = text.match(SEPARATOR);
   const title = cut ? text.slice(0, cut.index) : text;
   const rest = cut ? text.slice(cut.index + cut[0].length) : '';
+  /** @type {{ title: string, subtitle?: string, kind?: string }} */
   const scene = { title: tidyText(title, MAX_TITLE) };
-  if (!scene.title) return rest.trim() ? { title: tidyText(rest, MAX_TITLE) } : null;
+  if (named) scene.kind = kindOf(named[1]);
+  if (!scene.title) return rest.trim() ? { ...scene, title: tidyText(rest, MAX_TITLE) } : null;
   if (rest.trim()) scene.subtitle = tidyText(rest, MAX_SUBTITLE);
   return scene;
 }
@@ -50,7 +60,7 @@ export function lineScene(line) {
 /**
  * The scenes a brief describes.
  * @param {string} brief
- * @returns {{ scenes: { title: string, subtitle?: string }[], notes: string[] }}
+ * @returns {{ scenes: { title: string, subtitle?: string, kind?: string }[], notes: string[] }}
  */
 export function briefScenes(brief) {
   const notes = [];

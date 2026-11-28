@@ -15,6 +15,7 @@ import { hostOf } from '#utils/web/index.js';
 import { background } from '../motion/backgrounds.js';
 import { clipAt, keyframes, paramKeys } from '../motion/clips.js';
 import { serverMeasure } from '../motion/measure.js';
+import { brandCaptionClips } from './brandCaptions.js';
 import { cameraKeys } from './camera.js';
 import { captionClips } from './captions.js';
 import { windowEffects } from './stage.js';
@@ -37,6 +38,8 @@ const ARRIVE = 0.4;
  * @property {number[]} owners - Per step of the recipe, the stop it belongs to
  * @property {boolean} zoom - Zoom on clicks and typing, not only on `focus` steps
  * @property {boolean} captions
+ * @property {import('#utils/brand/types.js').Kit} [kit] - The brand kit, when
+ *   the demo follows it: captions are then its `caption` element
  * @typedef {Object} BuiltDemo
  * @property {{ type: string, index: number, name: string, clips: any[] }[]} tracks
  * @property {object[]} markers
@@ -89,20 +92,12 @@ export function buildDemo(parts) {
       }),
     );
   }
-  const measure = serverMeasure();
-  const said = parts.captions
-    ? captionClips({
-        track,
-        owners: parts.owners,
-        keys,
-        stage,
-        theme,
-        colors,
-        fps,
-        startF,
-        measure,
-      })
-    : { clips: [], top: 0 };
+  const timed = { track, owners: parts.owners, keys, stage, startF };
+  let said = { clips: [], top: 0 };
+  if (parts.captions && parts.kit) said = brandCaptionClips({ ...timed, kit: parts.kit, format });
+  else if (parts.captions) {
+    said = captionClips({ ...timed, theme, colors, fps, measure: serverMeasure() });
+  }
   const rows = {
     Titles: [...card.titles, ...said.clips],
     Text: card.text,

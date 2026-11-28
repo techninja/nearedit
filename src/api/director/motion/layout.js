@@ -93,7 +93,9 @@ export function composeScene(scene, theme, frame, align, measure, accent = 'none
   const top = centreY - height / 2;
   const left = -W / 2 + W * margin;
   const xOf = (/** @type {Fitted} */ block) => (align === 'left' ? left + block.width / 2 : 0);
-  const thickness = Math.max(3, Math.round(short * 0.0055));
+  const thickness = theme.stroke
+    ? Math.max(2, Math.round(short * theme.stroke))
+    : Math.max(3, Math.round(short * 0.0055));
   return {
     align,
     title: { fitted: title, x: xOf(title), y: top + title.height / 2 },

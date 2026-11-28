@@ -7,6 +7,7 @@
  * @module utils/director/actionsScore
  */
 
+import { BRAND } from './brand/theme.js';
 import { range, select, toggle } from './fields.js';
 import { AUTO, STYLES } from './score/styles.js';
 
@@ -21,6 +22,7 @@ export const SCORE = {
     'Music written for this timeline: a song in a style, exactly as long as the picture, ' +
     'that changes at the markers, titles and cuts and steps back while someone speaks. It ' +
     'arrives as one music clip that can be opened and changed note by note.',
+  brand: 'Follows the brand kit: its musical style and key.',
   llm: 'optional',
   noLlmNote:
     'Chooses the style and the arc from the timeline and the mood words of the brief; ' +
@@ -39,13 +41,14 @@ export const SCORE = {
       'style',
       'Style',
       [
+        [BRAND, 'Brand — the musical style of the project’s brand kit'],
         [AUTO, 'Auto — by the pace of the timeline and whether someone speaks'],
         ...STYLES.map(
           (style) =>
             /** @type {[string, string]} */ ([style.id, `${style.label} — ${style.description}`]),
         ),
       ],
-      AUTO,
+      BRAND,
     ),
     range(
       'energy',
@@ -58,8 +61,12 @@ export const SCORE = {
     select(
       'key',
       'Key',
-      [[AUTO, 'Auto — one the style sits well in'], ...SCORE_KEYS],
-      AUTO,
+      [
+        [BRAND, 'Brand — the key of the project’s brand kit'],
+        [AUTO, 'Auto — one the style sits well in'],
+        ...SCORE_KEYS,
+      ],
+      BRAND,
       'Major or minor follows from the style.',
     ),
     range(

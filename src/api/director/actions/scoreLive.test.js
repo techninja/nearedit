@@ -56,7 +56,10 @@ async function post(directive, extra = {}) {
     body: JSON.stringify({
       projectId: park.projectId,
       adaptationId: park.adaptationId,
-      directive: { action: 'score', ...directive },
+      directive: {
+        ...{ action: 'score', ...directive },
+        params: { style: 'auto', key: 'auto', ...directive.params },
+      },
       edl: timeline(),
       ...extra,
     }),
@@ -146,9 +149,12 @@ test('what cannot be scored is a 422 with the field named, and no job', async ()
   const bad = await post({ mode: 'append', params: { style: 'polka', energy: 'lots', key: 'H' } });
   assert.equal(bad.status, 422);
   assert.match(bad.body.fields.mode, /mode must be one of: replace, range/);
-  assert.match(bad.body.fields['params.style'], /^Style must be one of: auto, ambient, lofi/);
+  assert.match(
+    bad.body.fields['params.style'],
+    /^Style must be one of: brand, auto, ambient, lofi/,
+  );
   assert.match(bad.body.fields['params.energy'], /must be a number/);
-  assert.match(bad.body.fields['params.key'], /^Key must be one of: auto, C, Db/);
+  assert.match(bad.body.fields['params.key'], /^Key must be one of: brand, auto, C, Db/);
   for (const answer of [none, empty, short, ranged, bad])
     assert.equal(answer.body.jobId, undefined);
 });

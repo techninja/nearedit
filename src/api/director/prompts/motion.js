@@ -6,6 +6,7 @@
  * @module api/director/prompts/motion
  */
 
+import { BRAND } from '#utils/director/brand/theme.js';
 import { MOTION_PLAN_EXAMPLE } from '#utils/director/motion/planSchema.js';
 import { THEMES } from '#utils/director/motion/themes.js';
 import { AUTO } from '#utils/director/motion/themes.js';
@@ -57,16 +58,18 @@ Rules:
   by: ${UNITS.join(', ')} (the piece of text the animation moves one by one)
   transition: ${TRANSITIONS.join(', ')} (how the scene arrives)
 - "duration" is optional: the seconds a scene stays. Leave it out and reading time decides.
+- "kind" is optional: "intro" for the opening, "chapter" for a card that opens a section, "outro" for the closing. When the piece follows the brand these are drawn by the brand's own designs.
 - Never write times, colours, sizes, positions, fonts or keyframes.`;
 }
 
 /**
  * The prompt for `motion_piece`.
  * @param {{ directive: import('#utils/director/directive.js').Directive, format: any,
- *   target?: number }} input - `target`: length in seconds, 0 for none
+ *   target?: number, brand?: string }} input - `target`: length in seconds,
+ *   0 for none; `brand`: the name of the kit a piece on brand follows
  * @returns {{ system: string, user: string }}
  */
-export function motionPrompt({ directive, format, target = 0 }) {
+export function motionPrompt({ directive, format, target = 0, brand = '' }) {
   const { params, prompt } = directive;
   const lines = ['FORMAT', formatLine(format), '', 'REQUEST'];
   if (target > 0) {
@@ -77,11 +80,19 @@ export function motionPrompt({ directive, format, target = 0 }) {
     );
   }
   lines.push(`Pacing: ${params.pacing}.`);
-  lines.push(
-    params.theme && params.theme !== AUTO
-      ? `Theme: ${params.theme} (the editor chose it; use it).`
-      : 'Theme: choose the one that suits the request.',
-  );
+  if (params.theme === BRAND && brand) {
+    lines.push(
+      `Theme: the brand kit “${brand}” decides colours, type and motion. Do not choose a ` +
+        'theme, and leave background, particles, accent, look and animation out unless the ' +
+        'request asks for one.',
+    );
+  } else {
+    lines.push(
+      params.theme && params.theme !== AUTO && params.theme !== BRAND
+        ? `Theme: ${params.theme} (the editor chose it; use it).`
+        : 'Theme: choose the one that suits the request.',
+    );
+  }
   if (params.particles && params.particles !== AUTO) {
     lines.push(`Particles: ${params.particles} in every scene (the editor chose it).`);
   }

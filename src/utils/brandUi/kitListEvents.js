@@ -8,11 +8,17 @@
 import { dispatch } from 'hybrids';
 
 /**
+ * The project's own kit: `kit` is it, complete, while it is at hand (for
+ * its picture).
+ * @typedef {{ name: string, colors: Record<string, string>,
+ *   kit: import('#utils/brand/types.js').Kit|null }} OwnKit
+ */
+
+/**
  * @typedef {Object} BrandKitListHost
  * @property {import('#utils/brandUi/kitApi.js').KitEntry[]} kits
  * @property {string} current - The kit in use: an id of the list, or `project`
- * @property {import('#utils/brand/types.js').Kit|null} own - The project's
- *   own kit, complete, when it has one: shown first
+ * @property {OwnKit|null} own - The project's own kit, when it has one: shown first
  * @property {{ resolution?: string, fps?: number }} like - The open document's shape
  * @property {boolean} busy - A choice is on its way: the cards wait
  * @property {string} hovered - The card whose picture plays

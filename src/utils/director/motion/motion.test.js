@@ -5,6 +5,7 @@ import { EFFECTS, EFFECT_PRESETS, GENERATORS, TEXT_ANIMATIONS } from '#utils/com
 import { FONT_FAMILIES, TEXT_UNITS } from '#utils/compose/index.js';
 import { coerceField } from '../directive.js';
 import { MOTION_PIECE } from '../actionsMotion.js';
+import { BRAND } from '../brand/theme.js';
 import { contrast, luminance, mix } from './color.js';
 import { MOTION_PLAN_EXAMPLE, MOTION_PLAN_SCHEMA, NAME_FIELDS } from './planSchema.js';
 import { AUTO, THEMES, choose, getTheme, pickTheme, themeIds } from './themes.js';
@@ -163,12 +164,13 @@ test('the action schema offers the themes and the particle presets', () => {
   assert.deepEqual(MOTION_PIECE.modes, ['replace', 'append', 'prepend', 'insert', 'range']);
   assert.deepEqual(
     MOTION_PIECE.fields.map((f) => f.key),
-    ['theme', 'duration', 'pacing', 'seed', 'particles', 'useLlm'],
+    ['theme', 'duration', 'pacing', 'seed', 'particles', 'bumpers', 'useLlm'],
   );
   assert.deepEqual(
     field('theme').options.map((o) => o.value),
-    [AUTO, ...themeIds()],
+    [BRAND, AUTO, ...themeIds()],
   );
+  assert.equal(field('theme').default, BRAND, 'on brand unless another theme is named');
   assert.deepEqual(
     field('particles').options.map((o) => o.value),
     [AUTO, ...vocab.PARTICLES],

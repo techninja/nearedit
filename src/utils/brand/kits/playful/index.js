@@ -31,6 +31,7 @@ export default {
     space: { margin: 6, gap: 1.4 },
     motion: { enter: 'scale', exit: 'scale', by: 'char', ease: 'back-out', speed: 1 },
     sound: { style: 'bossa', key: 'G', scale: 'major' },
+    caption: { preset: 'pop', font: 'heading', highlight: 'primary', size: 0, position: 'preset' },
   },
   elements: {
     'lower-third': lowerThird,

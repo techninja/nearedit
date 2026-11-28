@@ -166,13 +166,14 @@ test('the action schema offers what can be built', () => {
       ],
       ...[
         ['title', 'text'],
+        ['finished', 'toggle'],
         ['useLlm', 'toggle'],
       ],
     ],
   );
   const options = (key) =>
     SITE_DEMO.fields.find((field) => field.key === key).options.map((o) => o.value);
-  assert.deepEqual(options('theme'), ['auto', ...themeIds()]);
+  assert.deepEqual(options('theme'), ['brand', 'auto', ...themeIds()]);
   assert.deepEqual(options('look'), ['window', 'full']);
   assert.equal(options('size')[0], 'auto');
   const normal = normalizeDirective({
@@ -184,11 +185,11 @@ test('the action schema offers what can be built', () => {
     ...{
       url: 'https://example.com',
       look: 'window',
-      theme: 'auto',
+      theme: 'brand',
       size: 'auto',
       pacing: 'medium',
     },
-    ...{ duration: 0, zoom: true, captions: true, title: '', useLlm: false },
+    ...{ duration: 0, zoom: true, captions: true, title: '', finished: false, useLlm: false },
   });
   assert.equal(normal.directive.mode, 'replace');
   const wrong = normalizeDirective({ action: 'site_demo', params: { look: 'tv', size: 'huge' } });

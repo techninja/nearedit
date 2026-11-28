@@ -25,6 +25,8 @@ const images = new Map();
 let host = null;
 /** @type {HTMLCanvasElement|null} The off-screen frame of a thumbnail that is framed closer */
 let large = null;
+/** Goes up when the pictures are to be read afresh; part of their addresses. */
+let version = 0;
 
 /** A font or an image arrived: let every thumbnail draw again. */
 function arrived() {
@@ -37,7 +39,18 @@ function arrived() {
  * @param {string} path - A media path, or a `blob:` address
  * @returns {string}
  */
-export const fileUrl = (path) => (/^blob:/.test(path) ? path : pictureUrl(path));
+export const fileUrl = (path) =>
+  /^blob:/.test(path) ? path : `${pictureUrl(path)}${version ? `&v=${version}` : ''}`;
+
+/**
+ * Read every picture again from now on: a file may have been replaced
+ * under the name it had (a kit's logo), which nothing else would notice.
+ */
+export function refreshThumbFiles() {
+  version += 1;
+  images.clear();
+  arrived();
+}
 
 /**
  * @param {string} path - Media path
@@ -92,13 +105,12 @@ export function drawThumb(canvas, doc, time) {
   }
   // Framed closer: the whole frame at the size the part needs, then that part.
   const out = parseResolution(doc.resolution);
-  const zoom = Math.min(4, out.width / crop.width);
+  const k = Math.min(4, canvas.width / crop.width);
   large ||= document.createElement('canvas');
-  const [width, height] = [Math.round(canvas.width * zoom), Math.round(canvas.height * zoom)];
+  const [width, height] = [Math.round(out.width * k), Math.round(out.height * k)];
   if (large.width !== width || large.height !== height) Object.assign(large, { width, height });
   const frame = large.getContext('2d', { alpha: false });
   drawFrame(frame, doc, time, hostEnv(), frameInfo(doc, width, height));
-  const k = width / out.width;
   const part = [crop.x * k, crop.y * k, crop.width * k, crop.height * k];
   ctx.drawImage(large, part[0], part[1], part[2], part[3], 0, 0, canvas.width, canvas.height);
 }

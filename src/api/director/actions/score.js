@@ -51,7 +51,7 @@ export async function score(ctx, deps = {}) {
   ctx.progress(12, `Scoring ${formatSeconds(span.seconds)}: ${span.what}`);
   const notes = [];
   const planned = await planScore(ctx, seen, notes);
-  const made = decide(planned.plan, { params, prompt, seen, by: planned.by });
+  const made = decide(planned.plan, { params, prompt, seen, by: planned.by, kit: ctx.kit });
   const { style } = made;
   notes.push(...made.notes);
   ctx.signal?.throwIfAborted();

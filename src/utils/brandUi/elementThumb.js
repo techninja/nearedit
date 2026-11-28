@@ -80,11 +80,14 @@ const thumbs = new WeakMap();
  * @param {import('#utils/brand/types.js').Kit} kit - An effective kit
  * @param {string} elementId
  * @param {Like} [like] - The open document: its shape is the thumbnail's
- * @param {{ close?: boolean }} [opts] - `close: false` shows the whole frame
+ * @param {{ close?: boolean, aspect?: number }} [opts] - `close: false`
+ *   shows the whole frame; `aspect`: the shape (width over height) of the
+ *   place the picture goes, when that is not the frame's own
  * @returns {ThumbSpec} `doc` has no clip when the kit has no such element
  */
 export function elementThumb(kit, elementId, like = {}, opts = {}) {
-  const id = `${elementId}|${like.resolution}|${like.fps}|${opts.close !== false}|${kitKey(kit)}`;
+  const how = `${opts.close !== false}|${opts.aspect || ''}`;
+  const id = `${elementId}|${like.resolution}|${like.fps}|${how}|${kitKey(kit)}`;
   let known = thumbs.get(kit);
   if (!known) thumbs.set(kit, (known = new Map()));
   if (known.has(id)) return known.get(id);
@@ -101,7 +104,7 @@ export function elementThumb(kit, elementId, like = {}, opts = {}) {
   const [placed] = elementClips(doc);
   const out = parseResolution(doc.resolution);
   if (placed && opts.close !== false) {
-    cropThumb(doc, framing(elementBounds(placed.clip.element, out), out));
+    cropThumb(doc, framing(elementBounds(placed.clip.element, out), out, 2.2, opts.aspect));
   }
   const spec = { doc, duration, still: restMoment(placed?.clip.element.design, duration) };
   known.set(id, spec);

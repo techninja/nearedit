@@ -38,7 +38,10 @@ function talk(extra = {}) {
 }
 /** Run the action and merge its result into the document it was given. */
 async function scored(edl, directive = {}, renderer = fakeRenderer(), extra = {}) {
-  const ctx = await makeContext(park, { action: 'score', ...directive }, { edl, ...extra });
+  // This suite is about what the timeline and the form decide: it leaves the
+  // brand's sound (the default; `scoreBrand.test.js`) unless a test asks for it.
+  const params = { style: 'auto', key: 'auto', ...directive.params };
+  const ctx = await makeContext(park, { action: 'score', ...directive, params }, { edl, ...extra });
   const result = await score(ctx, renderer);
   assert.deepEqual(checkResult(result, { fps: 30, roots: [park.dir] }), []);
   const out = applyDirectorResult(edl, result);

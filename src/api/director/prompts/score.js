@@ -7,6 +7,7 @@
  * @module api/director/prompts/score
  */
 
+import { BRAND } from '#utils/director/brand/theme.js';
 import { SECTION_NAMES } from '#utils/director/score/arc.js';
 import { timelineDigest } from '#utils/director/score/digest.js';
 import { MOODS } from '#utils/director/score/mood.js';
@@ -51,22 +52,26 @@ Rules:
 /**
  * The prompt for `score`.
  * @param {{ directive: import('#utils/director/directive.js').Directive, format: any,
- *   seen: Parameters<typeof timelineDigest>[0] }} input - `seen`: what was
- *   read from the timeline
+ *   seen: Parameters<typeof timelineDigest>[0], sound?: string }} input - `seen`:
+ *   what was read from the timeline; `sound`: a line about the brand's
+ *   musical style, when the request leaves the style to the brand
  * @returns {{ system: string, user: string }}
  */
-export function scorePrompt({ directive, format, seen }) {
+export function scorePrompt({ directive, format, seen, sound = '' }) {
   const { params, prompt } = directive;
   const lines = ['TIMELINE', formatLine(format), timelineDigest(seen), '', 'REQUEST'];
+  const fixed = params.style && params.style !== AUTO && params.style !== BRAND;
   lines.push(
-    params.style && params.style !== AUTO
+    fixed
       ? `Style: ${params.style} (the editor chose it; use it).`
-      : 'Style: choose the one that suits the timeline and the request.',
+      : sound || 'Style: choose the one that suits the timeline and the request.',
     `Energy: the editor set ${params.energy} on a scale from 0 (a quiet bed) to 1 ` +
       '(everything the style has); your sections move around that.',
   );
   if (params.bpm > 0) lines.push(`Tempo: ${params.bpm} BPM (the editor chose it).`);
-  if (params.key && params.key !== AUTO) lines.push(`Key: ${params.key} (the editor chose it).`);
+  if (params.key && params.key !== AUTO && params.key !== BRAND) {
+    lines.push(`Key: ${params.key} (the editor chose it).`);
+  }
   lines.push(
     prompt
       ? `What the editor asked for: ${prompt}`

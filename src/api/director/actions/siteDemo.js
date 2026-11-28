@@ -16,10 +16,12 @@ import { demoView } from '#utils/director/web/sizes.js';
 import { splitCaption } from '#utils/director/web/words.js';
 import { hostOf, normalizeRecipe } from '#utils/web/index.js';
 import { directorResult } from '../result.js';
+import { brandCard, brandNotes, demoBrand } from '../web/brand.js';
 import { buildDemo } from '../web/build.js';
 import { titleCard } from '../web/card.js';
 import { checkRecorder, checkSite } from '../web/check.js';
-import { demoNotes } from '../web/notes.js';
+import { finishDemo, finishFrames } from '../web/finish.js';
+import { demoNotes, describeDemo } from '../web/notes.js';
 import { planDemo } from '../web/plan.js';
 import { recordDemo } from '../web/record.js';
 import { resolveStops } from '../web/resolve.js';
@@ -55,7 +57,9 @@ export async function siteDemo(ctx, recorder = {}) {
   const survey = createSurvey({ base, browser, signal: ctx.signal, snapshot: recorder.snapshot });
   ctx.progress(15, `Reading ${hostOf(url)}…`);
   const seen = await survey.look();
-  const look = demoTheme(params.theme, await pageTone(seen.image));
+  const brand = demoBrand(ctx);
+  const look = demoTheme(params.theme, await pageTone(seen.image), brand);
+  const finished = Boolean(brand && params.finished);
 
   const notes = [];
   const span = mode === 'range' && context.range ? context.range.end - context.range.start : 0;
@@ -63,11 +67,16 @@ export async function siteDemo(ctx, recorder = {}) {
   const heading = splitCaption(params.title || '');
   // The card's length does not depend on the plan, so the plan can be given the time that is left.
   const style = { theme: look.theme.id, format, pacing: params.pacing, seed: 1 };
+  const titled = (/** @type {{ title?: string, subtitle?: string }} */ words) => {
+    const given = heading.head ? [heading.head, heading.caption] : [words.title, words.subtitle];
+    // A finished piece always opens: with the page's own name when no title was given.
+    return [given[0] || (finished ? seen.title || hostOf(url) : ''), given[1] || ''];
+  };
   const cardOf = (/** @type {{ title?: string, subtitle?: string }} */ words) =>
-    heading.head
-      ? titleCard(heading.head, heading.caption, style)
-      : titleCard(words.title || '', words.subtitle || '', style);
-  const spare = (/** @type {number} */ frames) => (total ? Math.max(1, total - frames / fps) : 0);
+    brand ? brandCard(brand.kit, ...titled(words), format) : titleCard(...titled(words), style);
+  const tailF = finished ? finishFrames(brand.kit, fps) : 0;
+  const spare = (/** @type {number} */ frames) =>
+    total ? Math.max(1, total - (frames + tailF) / fps) : 0;
   const plan = await planDemo(ctx, seen, spare(cardOf({}).frames), notes);
   const card = cardOf(plan);
   ctx.signal?.throwIfAborted();
@@ -86,12 +95,16 @@ export async function siteDemo(ctx, recorder = {}) {
   const captioned = params.captions && track.steps.some((step) => step.note);
   const stage = stageFor(params.look, format, recipe.viewport, captioned);
   const labels = plan.stops.map((stop) => stop.say || describeStop(stop));
-  const built = buildDemo({
+  const framed = buildDemo({
     ...{ recording, recipe, stage, theme: look.theme, colors: look.colors, format, card, labels },
-    ...{ owners: found.owners, zoom: params.zoom, captions: params.captions },
+    ...{ owners: found.owners, zoom: params.zoom, captions: params.captions, kit: brand?.kit },
   });
+  const [title] = titled(plan);
+  const closing = { kit: brand?.kit, format, startF: card.frames, title, text: hostOf(url) };
+  const built = finished ? finishDemo(framed, closing) : { ...framed, finished: [] };
   notes.push(
     ...demoNotes({ plan, found, paced, recording, view, look, stage, built, card, survey, params }),
+    ...brandNotes({ brand, built, card, asked: params.finished }),
   );
   const count = plan.stops.length;
   const extras = [
@@ -107,24 +120,12 @@ export async function siteDemo(ctx, recorder = {}) {
   const summary =
     `Site demo of ${hostOf(url)}: ${count} stop${count === 1 ? '' : 's'}, ` +
     `${formatSeconds(built.seconds)} — ${extras.join(', ')}`;
-  const described = {
-    title: card.frames ? heading.head || plan.title : '',
-    page: { url, title: recording.title, viewport: recipe.viewport, scale: recipe.scale },
-    look: stage.look,
-    theme: look.theme.id,
-    stops: plan.stops.map((stop, i) => {
-      // What the recording says about the stop: its last step is the stop itself.
-      const made = track.steps.filter((_, at) => found.owners[at] === i);
-      const main = made[made.length - 1];
-      return {
-        ...stop,
-        target: main.target ?? '',
-        start: made[0].start,
-        end: main.end,
-        found: !main.missing,
-      };
-    }),
-  };
+  const described = describeDemo({
+    plan,
+    title: card.frames ? title : '',
+    made: { recording, recipe, stage, theme: look.theme.id },
+    owners: found.owners,
+  });
   return directorResult(
     { tracks: built.tracks, markers: built.markers, summary, notes, plan: described },
     directive,

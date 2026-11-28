@@ -48,6 +48,7 @@ describe('TOKEN_SCHEMA', () => {
       'space',
       'motion',
       'sound',
+      'caption',
     ]);
     for (const [group, specs] of Object.entries(TOKEN_SCHEMA)) {
       for (const [name, spec] of Object.entries(specs)) {

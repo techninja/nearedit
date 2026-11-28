@@ -78,3 +78,19 @@ export function staleNotice(stale, onUpdate, said = '') {
     ${more.map((line) => html`<p class="brand-stale-more">${line}.</p>`)}
   </div>`;
 }
+
+/**
+ * What is wrong with the project's kit, said plainly: a kit that was
+ * chosen and is gone, a chain that breaks. (Remarks — a colour that reads
+ * badly — are the dialog's to show.)
+ * @param {import('./kitState.js').KitState} kit
+ * @returns {Template}
+ */
+export function kitTrouble({ problems, effective }) {
+  const errors = problems.filter((problem) => problem.level === 'error').slice(0, 2);
+  if (!errors.length) return html``;
+  return html`<div class="error-message brand-trouble" role="alert">
+    ${errors.map((problem) => html`<p>${problem.message}</p>`)}
+    <p>Elements are made from ${effective.name} until another kit is chosen.</p>
+  </div>`;
+}

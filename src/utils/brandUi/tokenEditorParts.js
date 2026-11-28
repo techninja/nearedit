@@ -58,10 +58,11 @@ export function row(host, path, label, control) {
  * @param {string} label
  * @param {readonly string[]} options
  * @param {any} value
+ * @param {string} [about] - What the token does, as a tooltip
  * @returns {Template}
  */
-export function choice(path, label, options, value) {
-  return html`<label class="field-row">
+export function choice(path, label, options, value, about = '') {
+  return html`<label class="field-row" title="${about}">
     <span class="field-label">${label}</span>
     <select
       class="field-input"

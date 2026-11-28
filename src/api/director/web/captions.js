@@ -10,7 +10,7 @@
 
 import { clipAt } from '../motion/clips.js';
 import { fitText } from '../motion/typeset.js';
-import { shownRect } from './camera.js';
+import { CLEARLY, busyBox, captionStops, overlap } from './captionStops.js';
 
 /** @typedef {import('./stage.js').Stage} Stage */
 /** @typedef {import('./stage.js').Box} Box */
@@ -28,23 +28,8 @@ const GAP = 0.03;
 /** The plate: padding as a multiple of the font size, and how round its corners are. */
 const PADDING = 0.55;
 const ROUND = 0.5;
-/** The share of a plate that must be freer at the head for a caption to go there. */
-const CLEARLY = 0.1;
-/** Seconds a caption takes to come and go, and the shortest it is worth showing. */
+/** Seconds a caption takes to come and go. */
 const FADE = 0.2;
-const SHORTEST = 0.4;
-
-/**
- * @param {Box} a
- * @param {Box|null} b
- * @returns {number} The area two boxes share
- */
-function overlap(a, b) {
-  if (!b) return 0;
-  const width = Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x);
-  const height = Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y);
-  return width > 0 && height > 0 ? width * height : 0;
-}
 
 /**
  * A caption in the band under the window: words on the background, with
@@ -124,19 +109,8 @@ export function captionClips({ track, owners, keys, fps, startF, ...look }) {
   const { stage } = look;
   const clips = [];
   let top = 0;
-  const stops = [...new Set(owners)].map((stop) =>
-    track.steps.filter((_, i) => owners[i] === stop),
-  );
-  for (const steps of stops) {
-    const [first, last] = [steps[0], steps[steps.length - 1]];
-    const words = (steps.find((step) => step.note)?.note || '').trim();
-    const fromF = startF + Math.round(first.start * fps);
-    const toF = startF + Math.round(last.end * fps);
-    if (!words || toF - fromF < SHORTEST * fps) continue;
-    // Where the action is while the caption is read: the middle of the pause after it.
-    const moment = (last.actionEnd + last.end) / 2;
-    const seen = last.rect && !last.missing && !stage.band;
-    const busy = seen ? shownRect(last.rect, keys, track, stage, moment) : null;
+  for (const { words, fromF, toF, last } of captionStops({ track, owners, fps, startF })) {
+    const busy = stage.band ? null : busyBox(last, keys, track, stage);
     const made = stage.band
       ? { fields: bandFields(words, look), top: false }
       : plateFields(words, busy, look);

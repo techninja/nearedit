@@ -32,6 +32,14 @@ export const NAME_FIELDS = /** @type {const} */ ([
 
 const NAME = { type: 'string', minLength: 1, maxLength: 40 };
 
+/**
+ * `scene.kind`: what a scene is in the piece. `intro`, `chapter` and `outro`
+ * are drawn by the brand kit's own elements when the piece follows the
+ * brand (docs/app-spec/DIRECTOR-BRAND.md § Motion piece); a `scene` is the
+ * ordinary title over a generated background.
+ */
+export const SCENE_KINDS = ['scene', 'intro', 'chapter', 'outro'];
+
 /** One scene: its words, and whichever choices the plan wants to make. */
 export const SCENE_SCHEMA = {
   type: 'object',
@@ -40,6 +48,7 @@ export const SCENE_SCHEMA = {
     title: { type: 'string', minLength: 1, maxLength: MAX_TITLE },
     subtitle: { type: 'string', maxLength: MAX_SUBTITLE },
     ...Object.fromEntries(NAME_FIELDS.map((field) => [field, NAME])),
+    kind: NAME,
     duration: { type: 'number', exclusiveMinimum: 0, maximum: MAX_SCENE_SECONDS },
   },
 };

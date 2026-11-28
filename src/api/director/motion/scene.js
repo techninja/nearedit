@@ -6,6 +6,7 @@
 
 import { hash } from '#utils/compose/random.js';
 import { backdrop } from './backdrop.js';
+import { bumper } from './bumper.js';
 import { composeScene } from './layout.js';
 import { look } from './transitions.js';
 import { ornament, words } from './words.js';
@@ -18,6 +19,8 @@ import { ornament, words } from './words.js';
  * @property {{ fps: number, width: number, height: number }} format
  * @property {number} seed - A 32-bit integer
  * @property {import('./measure.js').Measure} measure
+ * @property {import('#utils/brand/types.js').Kit} [kit] - The brand kit, when
+ *   the piece follows it: its elements draw the opening, section and closing cards
  */
 
 /**
@@ -31,6 +34,8 @@ import { ornament, words } from './words.js';
 export function sceneClips(shot, next, piece) {
   const { theme, plan } = piece;
   const { scene, index } = shot;
+  const card = scene.kind ? bumper(shot, next, piece) : null;
+  if (card) return { rows: { [shot.front ? 'Background A' : 'Background B']: card }, fits: true };
   const colors = theme.backdrops[(hash(piece.seed, 11) + index) % theme.backdrops.length];
   const text = composeScene(scene, theme, piece.format, plan.align, piece.measure, scene.accent);
   const grade = look(scene.look);

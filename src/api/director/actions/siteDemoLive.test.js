@@ -46,7 +46,7 @@ describe('site_demo with the real recorder', { skip: kit.SKIP }, () => {
     post({
       action: 'site_demo',
       ...directive,
-      params: { url: `${site.url}/`, ...directive.params },
+      params: { url: `${site.url}/`, theme: 'auto', ...directive.params },
     });
   const finished = async (jobId) => {
     for (let i = 0; i < 2400; i++) {
@@ -161,7 +161,7 @@ describe('site_demo with the real recorder', { skip: kit.SKIP }, () => {
     const { status, body } = await post(
       {
         action: 'site_demo',
-        params: { url: `${site.url}/`, look: 'full', pacing: 'fast', duration: 9 },
+        params: { url: `${site.url}/`, theme: 'auto', look: 'full', pacing: 'fast', duration: 9 },
       },
       { edl: tall },
     );

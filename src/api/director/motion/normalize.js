@@ -23,6 +23,7 @@ const SCENE_KEYS = {
   by: ['by', 'unit', 'per'],
   transition: ['transition', 'transitionIn'],
   duration: ['duration', 'seconds', 'length'],
+  kind: ['kind', 'type', 'role', 'card'],
 };
 /** Other words for names of the director's own vocabularies. */
 const WORDS = {
@@ -79,6 +80,10 @@ function normalizeScene(raw) {
     if (field in scene) scene[field] = tidyName(scene[field], field);
   }
   if ('duration' in scene) scene.duration = toSeconds(scene.duration);
+  // A kind is a name too: `completePlan` reads it and reports what it does not know.
+  if (typeof scene.kind === 'string') scene.kind = scene.kind.trim().toLowerCase().slice(0, 40);
+  else delete scene.kind;
+  if (scene.kind === '') delete scene.kind;
   return scene;
 }
 

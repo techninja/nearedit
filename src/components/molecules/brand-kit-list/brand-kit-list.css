@@ -51,6 +51,21 @@ brand-kit-list {
     }
   }
 
+  /* A kit whose picture is not at hand: its colours stand in. */
+  & .brand-kit-card-blank {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-2);
+    transform-origin: center;
+
+    & .brand-swatches {
+      transform: scale(2);
+    }
+  }
+
   & .brand-kit-card-head {
     display: flex;
     align-items: center;
