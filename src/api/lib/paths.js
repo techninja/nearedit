@@ -2,7 +2,8 @@
  * Path safety — the server only touches files inside known roots.
  *
  * Allowed roots: every registered project directory and its mediaFolders,
- * global media paths, the dev media directory and the server data directory.
+ * global media paths, the dev media directory, the server data directory
+ * and the library of brand kits (whose logos and fonts are media too).
  * Anything else (including `..` traversal out of a root) is refused, so the
  * media endpoints cannot be used to read arbitrary files off the host.
  *
@@ -52,7 +53,8 @@ function real(path) {
 /** @returns {string[]} Every directory the server may read media from. */
 export function allowedRoots() {
   const cfg = getConfig();
-  const roots = new Set([cfg.devMediaDir, cfg.dataDir, ...cfg.globalMediaPaths]);
+  // The kit library is inside the data directory unless NEAREDIT_KITS_DIR moves it.
+  const roots = new Set([cfg.devMediaDir, cfg.dataDir, cfg.kitsDir, ...cfg.globalMediaPaths]);
   for (const entry of Object.values(loadRegistry())) {
     if (typeof entry?.path !== 'string' || !entry.path) continue;
     roots.add(resolve(entry.path));

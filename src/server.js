@@ -13,6 +13,7 @@ import { directorRouter } from './api/director.js';
 import { indexerRouter } from './api/indexer.js';
 import { intelligenceRouter } from './api/intelligence.js';
 import { jobsRouter } from './api/jobs.js';
+import { kitsRouter } from './api/kits.js';
 import { authEnabled, requireAuth } from './api/lib/auth.js';
 import { getConfig } from './api/lib/config.js';
 import { apiNotFound, errorHandler } from './api/lib/httpErrors.js';
@@ -58,6 +59,7 @@ const routers = [
   webRouter,
   musicRouter,
   cutoutRouter,
+  kitsRouter,
 ];
 for (const router of routers) app.use('/api', router);
 app.use('/api', apiNotFound);

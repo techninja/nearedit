@@ -13,11 +13,12 @@ import { HttpError } from '../lib/httpErrors.js';
 export class InvalidKit extends HttpError {
   /**
    * @param {Problem[]} problems - Errors and warnings; at least one error
+   * @param {string} [message]
    */
-  constructor(problems) {
+  constructor(problems, message = 'The kit does not validate') {
     const first = problems.find((problem) => problem.level === 'error') || problems[0];
     const detail = first ? `${first.path ? `${first.path}: ` : ''}${first.message}` : undefined;
-    super(422, 'The kit does not validate', { detail });
+    super(422, message, { detail });
     this.problems = problems;
   }
 }

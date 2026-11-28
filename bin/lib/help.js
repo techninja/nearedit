@@ -3,7 +3,12 @@
  * @module bin/lib/help
  */
 
-export const COMMANDS = ['render', 'frame', 'validate', 'record', 'music', 'catalog', 'help'];
+import { KIT_OVERVIEW, KIT_USAGE } from './kitHelp.js';
+
+export const COMMANDS = [
+  ...['render', 'frame', 'validate', 'record', 'music', 'catalog'],
+  ...['restyle', 'kit', 'help'],
+];
 
 const USAGE = {
   render: `nearedit render <edl.json> [-o out.mp4] [--preset draft|standard|high] [--range start:end]
@@ -70,8 +75,11 @@ const USAGE = {
 
   List what a document may name: generators and effects with every parameter
   (type, range, default), blend modes, easings, text animations and fonts.
+  Also the built-in brand kits (builtin:clean, …) with their elements and
+  slots; a kit of your own is shown by: nearedit kit <kit folder>
 
   --json                The same as one JSON object`,
+  ...KIT_USAGE,
   help: `nearedit help [command]
 
   Show this overview, or how to use one command.`,
@@ -85,6 +93,7 @@ const OVERVIEW = `nearedit — author and render NearEdit timelines without the 
   nearedit record   <recipe.json> [-o out.mp4] [--fps n] [--allow host[:port]]
   nearedit music    <song.json> [-o out.wav]
   nearedit catalog  [--json]
+${KIT_OVERVIEW}
   nearedit help     [command]
 
 A document is one JSON file (docs/app-spec/EDL.md). Media paths in it are

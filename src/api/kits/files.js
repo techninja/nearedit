@@ -48,9 +48,11 @@ export function listFiles(dir) {
     for (const entry of entries) {
       if (entry.name.startsWith('.') || files.length >= MAX_FILES * 4) continue;
       const name = `${prefix}${entry.name}`;
-      if (entry.isDirectory() && depth < FILE_DEPTH) walk(join(folder, entry.name), `${name}/`, depth + 1);
+      if (entry.isDirectory() && depth < FILE_DEPTH)
+        walk(join(folder, entry.name), `${name}/`, depth + 1);
       else if (entry.isFile() && fileKind(entry.name)) {
-        files.push({ name, size: statSync(join(folder, entry.name)).size });
+        const size = statSync(join(folder, entry.name), { throwIfNoEntry: false })?.size;
+        if (size !== undefined) files.push({ name, size }); // gone again: not listed
       }
     }
   };

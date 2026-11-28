@@ -482,3 +482,9 @@ renderer's own frame rule, and its matte was made from that very picture.
 A BT.601 source stays BT.601 (the file is tagged). The description is
 `{ version: 1, key, source: { path, size, mtime }, start, end, fps, width,
 height, frames, model }`, with `end = start + frames / fps`.
+
+## Brand kits
+
+`/kits`, `/kits/:id` and its `/files/:name`, `/projects/:id/kit` and its
+`/files/:name` — the library of brand kits, the kit a project uses and the
+effective kit the editor draws elements from: [BRAND-API.md](./BRAND-API.md).

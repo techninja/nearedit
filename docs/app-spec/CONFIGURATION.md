@@ -15,6 +15,7 @@ a few provider-specific ones (marked †) are read in
 | `NEAREDIT_PASSWORD` | empty (no login) | When set, every page, API route, media file and WebSocket requires it (HTTP Basic) |
 | `NEAREDIT_USER` | `nearedit` | User name that goes with the password |
 | `NEAREDIT_DATA_DIR` | `./data` | Registry, renders, preview and transcode caches |
+| `NEAREDIT_KITS_DIR` | `<NEAREDIT_DATA_DIR>/kits` | The library of brand kits, one folder a kit; its logos and fonts are served as media. Point it at a shared or version-controlled folder to keep a team's brand in one place. See [BRAND-API.md](./BRAND-API.md) |
 | `NEAREDIT_MEDIA_DIR` | `./media` | Fallback media folder when a project has none |
 | `GLOBAL_MEDIA_PATHS` | empty | Comma-separated folders shared by every project (logos, stings, music) |
 | `BROWSE_ROOTS` | home directory | Comma-separated folders the in-app folder browser may list |
@@ -39,8 +40,9 @@ browse the allowed media folders, start renders and edit projects.
 - For access over the internet, put it behind a reverse proxy that
   terminates HTTPS. Basic credentials are only as private as the connection.
 - The server only ever reads inside registered project folders, their extra
-  media folders, `GLOBAL_MEDIA_PATHS` and its own data directory, and the
-  folder browser only lists directories under `BROWSE_ROOTS`.
+  media folders, `GLOBAL_MEDIA_PATHS`, its own data directory and
+  `NEAREDIT_KITS_DIR`, and the folder browser only lists directories under
+  `BROWSE_ROOTS`.
 - The `ssh` transcription provider has the remote machine fetch media back
   over HTTP. With a password set, the remote command must send it too.
 

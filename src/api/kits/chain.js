@@ -9,7 +9,13 @@
  */
 
 import { join, resolve } from 'node:path';
-import { BUILTIN_KITS, BUILTIN_PREFIX, DEFAULT_KIT, LIMITS, builtinKit } from '#utils/brand/index.js';
+import {
+  BUILTIN_KITS,
+  BUILTIN_PREFIX,
+  DEFAULT_KIT,
+  LIMITS,
+  builtinKit,
+} from '#utils/brand/index.js';
 import { getConfig } from '../lib/config.js';
 import { readKitFolder } from './folder.js';
 import { PROJECT_CHOICE } from './limits.js';
@@ -63,7 +69,11 @@ function builtinLink(id) {
     const description = BUILTIN_KITS.find((kit) => kit.id === id)?.description || '';
     const ref = `${BUILTIN_PREFIX}${id}`;
     const [problems, refs] = [[], []];
-    builtins.set(id, { ...{ ref, dir: '', problems, refs, stamp: 'builtin' }, source: 'builtin', kit: { ...model, description } });
+    builtins.set(id, {
+      ...{ ref, dir: '', problems, refs, stamp: 'builtin' },
+      source: 'builtin',
+      kit: { ...model, description },
+    });
   }
   return builtins.get(id);
 }
@@ -86,10 +96,12 @@ export function openKit(ref, projectDir = '') {
 /**
  * Follow a kit's `extends` down to a built-in kit.
  * @param {Link} head - The kit to start from
+ * @param {(ref: KitRef) => Link|null} [open] - Where the kits it names are
+ *   looked for: the library, unless the caller keeps its kits elsewhere
  * @returns {{ links: Link[], problems: Problem[] }} The chain, child first,
  *   always ending in a built-in kit, and what had to be cut on the way
  */
-export function followChain(head) {
+export function followChain(head, open = openKit) {
   const links = [head];
   /** @type {Problem[]} */
   const problems = [];
@@ -98,7 +110,7 @@ export function followChain(head) {
     const named = at.kit.extends || FALLBACK;
     const ref = parseRef(named);
     // A project's own kit is the end of a chain, never the middle of one.
-    let next = ref && ref.ref !== PROJECT_CHOICE ? openKit(ref) : null;
+    let next = ref && ref.ref !== PROJECT_CHOICE ? open(ref) : null;
     let why = next ? '' : `extends "${named}", which was not found`;
     if (next && seen.has(next.ref)) why = `extends itself by way of "${next.ref}"`;
     else if (next && next.source !== 'builtin' && links.length >= LIMITS.depth - 1) {

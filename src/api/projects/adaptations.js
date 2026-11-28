@@ -84,6 +84,8 @@ export function addAdaptation(project, body) {
     status: wanted.status || 'draft',
     createdAt: now,
     updatedAt: now,
+    // A copy keeps the brand kit its source chose for itself (BRAND-API.md § A project's kit).
+    ...(typeof source?.kit === 'string' && source.kit && { kit: source.kit }),
     // A copy is independent of its source from here on, so it is deep-cloned.
     edl: source?.edl
       ? { ...structuredClone(source.edl), fps, resolution: frame.resolution }

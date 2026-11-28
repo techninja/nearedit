@@ -10,7 +10,7 @@
 
 import { lstatSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { kitFiles, normalizeKit, validateKit } from '#utils/brand/index.js';
+import { isId, kitFiles, normalizeKit, validateKit } from '#utils/brand/index.js';
 import { isPlainObject } from '#utils/edl/jsonBag.js';
 import { KIT_FILE, MAX_DESCRIPTION, MAX_KIT_JSON } from './limits.js';
 
@@ -22,6 +22,7 @@ import { KIT_FILE, MAX_DESCRIPTION, MAX_KIT_JSON } from './limits.js';
  * @typedef {Object} KitFolder
  * @property {string} dir - The folder
  * @property {StoredKit} kit - Normalised; its id is the one it is known by
+ * @property {string} named - The id `kit.json` gives itself; '' without a usable one
  * @property {Problem[]} problems - What is wrong with `kit.json` as it was written
  * @property {string[]} refs - The files it names, as it names them
  * @property {string} stamp - Changes whenever `kit.json` does
@@ -35,7 +36,8 @@ const cache = new Map();
  * person should hear about the rest.
  * @param {unknown} raw - A parsed `kit.json`, or the `kit` of a request
  * @param {string} id - The id the kit is known by: its folder's name, or `project`
- * @returns {{ kit: StoredKit, problems: Problem[] }}
+ * @returns {{ kit: StoredKit, problems: Problem[], named: string }} `named`:
+ *   the id it gives itself, '' without a usable one
  */
 export function readKit(raw, id) {
   const given = isPlainObject(raw) ? /** @type {Record<string, any>} */ (raw) : null;
@@ -48,7 +50,7 @@ export function readKit(raw, id) {
   const description =
     typeof given?.description === 'string' ? given.description.slice(0, MAX_DESCRIPTION) : '';
   const kit = { id, name, description, extends: rest.extends, tokens, fonts, elements, defaults };
-  return { kit, problems };
+  return { kit, problems, named: isId(given?.id) ? given.id : '' };
 }
 
 /**
@@ -93,8 +95,9 @@ export function readKitFolder(dir, id) {
   const hit = cache.get(file);
   if (hit?.stamp === stamp) return hit.folder;
   const { raw, problems: unread } = parse(file, stat.size);
-  const { kit, problems } = readKit(raw, id);
-  const folder = { dir, kit, problems: [...unread, ...problems], refs: kitFiles(kit), stamp };
+  const { kit, problems, named } = readKit(raw, id);
+  const all = [...unread, ...problems];
+  const folder = { dir, kit, named, problems: all, refs: kitFiles(kit), stamp };
   cache.set(file, { stamp, folder });
   return folder;
 }

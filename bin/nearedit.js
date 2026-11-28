@@ -11,6 +11,8 @@
  *   nearedit record <recipe.json> [-o out.mp4] [--fps n] [--allow host]
  *   nearedit music <song.json> [-o out.wav]
  *   nearedit catalog [--json]
+ *   nearedit restyle <edl.json | folder> --kit <kit folder | builtin:name>
+ *   nearedit kit <kit folder | builtin:name> [--json]
  *
  * Reference: docs/app-spec/COMPOSITOR.md § Authoring without the UI.
  * @module bin/nearedit
@@ -54,6 +56,9 @@ async function main(argv) {
     return (await import('./lib/validateCommand.js')).validateCommand(rest, io);
   if (command === 'record') return (await import('./lib/recordCommand.js')).recordCommand(rest, io);
   if (command === 'music') return (await import('./lib/musicCommand.js')).musicCommand(rest, io);
+  if (command === 'restyle')
+    return (await import('./lib/restyleCommand.js')).restyleCommand(rest, io);
+  if (command === 'kit') return (await import('./lib/kitCommand.js')).kitCommand(rest, io);
   return (await import('./lib/catalogCommand.js')).catalogCommand(rest, io);
 }
 

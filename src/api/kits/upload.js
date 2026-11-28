@@ -108,7 +108,8 @@ export async function saveFile(req, dir, rawName) {
   const count = { size: 0 };
   try {
     await pipeline(measured(req, count), createWriteStream(part, { flags: 'wx' }));
-    if (!count.size) throw new HttpError(400, 'The request has no body: send the bytes of the file');
+    if (!count.size)
+      throw new HttpError(400, 'The request has no body: send the bytes of the file');
     renameSync(part, target);
   } catch (err) {
     rmSync(part, { force: true });

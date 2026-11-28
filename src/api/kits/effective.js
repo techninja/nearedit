@@ -12,7 +12,14 @@
  * @module api/kits/effective
  */
 
-import { DEFAULT_KIT, KitError, builtinKit, kitKey, resolveKit, validateKit } from '#utils/brand/index.js';
+import {
+  DEFAULT_KIT,
+  KitError,
+  builtinKit,
+  kitKey,
+  resolveKit,
+  validateKit,
+} from '#utils/brand/index.js';
 import { FALLBACK, followChain, openKit } from './chain.js';
 import { locateFiles, withAbsoluteFiles } from './files.js';
 import { parseRef } from './names.js';
@@ -43,12 +50,13 @@ const cache = new Map();
 /**
  * Resolve the chain that starts at a kit.
  * @param {Link} head - From `openKit`, or a kit that is about to be written
- * @param {{ cache?: boolean }} [opts] - `cache: false` for a kit that is
- *   not on disk as given
+ * @param {{ cache?: boolean, open?: Parameters<typeof followChain>[1] }} [opts] -
+ *   `cache: false` for a kit that is not on disk as given; `open` to look
+ *   for the kits it extends somewhere other than the library
  * @returns {Resolved}
  */
 export function resolveFrom(head, opts = {}) {
-  const { links, problems: cut } = followChain(head);
+  const { links, problems: cut } = followChain(head, opts.open);
   const located = links.map((link) => (link.dir ? locateFiles(link.dir, link.refs) : null));
   const stamp = links.map((link, i) => `${link.ref}@${link.stamp}#${located[i]?.sig}`).join('\n');
   const slot = `${head.source}:${head.dir || head.ref}`;
@@ -69,7 +77,11 @@ export function resolveFrom(head, opts = {}) {
     effective = resolveKit(models);
   } catch (err) {
     if (!(err instanceof KitError)) throw err;
-    problems.push({ path: 'extends', message: `${err.message}: ${FALLBACK} is used`, level: 'error' });
+    problems.push({
+      path: 'extends',
+      message: `${err.message}: ${FALLBACK} is used`,
+      level: 'error',
+    });
     effective = resolveKit(builtinKit(DEFAULT_KIT));
   }
   // Only what shows once the kit is complete: contrast, families without a file.
@@ -102,5 +114,8 @@ export function effectiveKit(choice, projectDir = '') {
   if (head) return resolveFrom(head);
   const fallback = resolveFrom(openKit(parseRef(FALLBACK)));
   const message = `Kit ${JSON.stringify(wanted)} was not found: ${FALLBACK} is used`;
-  return { ...fallback, problems: [{ path: 'choice', message, level: 'error' }, ...fallback.problems] };
+  return {
+    ...fallback,
+    problems: [{ path: 'choice', message, level: 'error' }, ...fallback.problems],
+  };
 }
