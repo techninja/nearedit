@@ -36,6 +36,7 @@ then hand-tune.
 | `clipboard.js`, `attributes.js` | `copyClips`, `pasteClips`, `duplicateClips`; `pasteAttributes` |
 | `insert.js`, `generator.js` | `insertMedia`, `insertTitle`; `insertGenerator`, `updateGenerator` |
 | `webClip.js`, `webZoom.js` | [Web clips](#web-clips): `insertWebClip`, `updateWebRecipe`, `setWebRecording`, `webClips`, `staleWebClips`; `applyWebZoom`, `clearWebZoom` |
+| `musicClip.js` | [Music clips](#music-clips): `insertMusicClip`, `updateSong`, `setMusicRendering`, `musicClips`, `staleMusicClips` |
 | `animate.js`, `easing.js` | Keyframe evaluation: `resolveClip`, `valueAt`, `clipLocalTime`, `getPath`, `setPath`, `EASINGS` |
 | `keyframes.js`, `autoKey.js` | `setKeyframe`, `removeKeyframe`, `moveKeyframe`, `setKeyframeEase`, `removeKeyframesAt`, `moveKeyframesAt`, `clearKeyframes`; `setValueAt`, `setAnimated` |
 | `keyframeQuery.js`, `clipPaths.js` | `isAnimated`, `keysOf`, `animatedPaths`, `listKeyframes`, `keyframeTimes`, `nextKeyframeTime`, `previousKeyframeTime`, `keyTime`; `describePath` |
@@ -52,7 +53,8 @@ Internal building blocks: `time.js`, `immutable.js`, `clipMath.js`,
 `effectStack.js`, `keyEdit.js`, `clipPatch.js`, `normalizeClip.js`,
 `normalizeMarks.js`, `fragment.js`, `validateClip.js`, `validateExtras.js`,
 `validateMarks.js`. The `web` field as data (`cleanWeb`, `checkWeb`, the
-window fit) is `src/utils/web/field.js`. `types.js` holds the shared JSDoc types (`Edl`, `Track`,
+window fit) is `src/utils/web/field.js`, the `music` field
+`src/utils/music/field.js`. `types.js` holds the shared JSDoc types (`Edl`, `Track`,
 `Clip`, `Effect`, `Keyframe`, `Marker`, `Region`) and `testkit.js` the
 fixtures for tests (`testEdl`, `testClip`, `deepFreeze`, `assertValid`).
 
@@ -97,7 +99,7 @@ A target is `{ clipId }` or `{ trackId }` (a bare string is a clip id).
 | --------- | ------------ |
 | `insertGenerator(edl, { type, params, seed }, { time, duration, trackId, label, autoCrossfade, clip }?)` | Add a generator clip, placed like a title: on the front-most video track when it is free there, otherwise on a new top track; with `trackId` under the normal overlap rules. `clip` is an `updateClip`-style patch for its look |
 | `updateGenerator(edl, clipId, { type, seed, params })` | Merge parameters, set the seed, or switch the type (which resets the parameters and drops their keyframes) |
-| `updateClip(edl, clipId, patch)` | Also `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator`, `effects` (whole list), `keyframes` (by path) and the new `text` fields. Never `web`, nor a web clip's `sourceFile` and `sourceIn` |
+| `updateClip(edl, clipId, patch)` | Also `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator`, `effects` (whole list), `keyframes` (by path) and the new `text` fields. Never `web` or `music`, nor a web or music clip's `sourceFile` and `sourceIn` |
 | `pasteAttributes(edl, source, clipIds, parts?)` | Copy `transform`, `effects`, `keyframes`, `blendMode`, `fades` and/or `text` style from one clip (id, clip or clipboard payload) onto others |
 | `setTrackOpacity`, `setTrackBlendMode`, `updateTrack` | Track compositing settings |
 | `gainEnvelope(track, clip, { step, from, to }?)`, `hasGainEnvelope(clip)` | A clip's gain sampled at even steps; whether it needs more than two linear ramps |
@@ -126,6 +128,27 @@ halves of a split keep the recipe and the key, a pasted or duplicated clip
 is the same recording again, and trim, slip and slip-trim stop at `0` and
 at `webDuration`. Like every edit, these leave a clip on a locked track
 alone.
+
+## Music clips
+
+A music clip carries `music: { song, key }` ([EDL.md](./EDL.md#music),
+[MUSIC.md](./MUSIC.md)). The song library itself — `normalizeSong`,
+`validateSong`, `songSeconds`, `songKey`, the engine, the theory helpers,
+MIDI — is `src/utils/music/`.
+
+| Operation | What it does |
+| --------- | ------------ |
+| `insertMusicClip(edl, song, { time, trackId, autoCrossfade, label }?)` | Add a placeholder as long as the song (the whole frames of it), carrying the normalised song, not rendered yet, with `intent: 'music'`. It goes on the first unlocked audio track that is free in that span, else on a new audio track at the bottom; with `trackId` (an audio track) under the normal overlap rules. Labelled with the names of the song's parts. Anything that is not a song object is the empty song |
+| `updateSong(edl, clipId, song, { autoCrossfade }?)` | Replace the song (a whole song, or a function of the current one). A clip that showed the whole song follows the new one in length; a trimmed clip keeps its window, brought inside the new song. `sourceFile` and `music.key` stay: the clip is stale, not silent |
+| `setMusicRendering(edl, clipId, { file, key, duration })` | Point a music clip at a finished rendering: `sourceFile`, `music.key`, `placeholder: false`. The window is fitted to `duration` by the same rule when the rendering is the one the song asks for; a rendering of an earlier song is played without changing the clip's length |
+| `musicClips(edl)`, `staleMusicClips(edl)` | Every music clip, and those that need rendering, as `{ clip, track }` |
+| `isMusicClip(clip)`, `isStaleMusic(clip)`, `musicDuration(clip)` | Queries: is it one, does it need rendering, how long is its source |
+
+Everything said of web clips holds here too: a clip that grows with its
+song is an incoming clip; both halves of a split keep the song and the
+key; a pasted or duplicated clip is the same rendering again; trim, slip
+and slip-trim stop at `0` and at `musicDuration`; a clip on a locked track
+is left alone.
 
 ## Editing rules
 
@@ -186,8 +209,8 @@ effect ids only have to be unique within a clip, so they are kept.
 
 **Trim limits.** For video and audio, `sourceIn` never goes below 0 and
 `sourceOut` never passes the source duration when a `sourceDurations` map
-is supplied. A web clip's source duration needs no map: it is its score
-(`sourceLimit` in `time.js`). A clip keeps at least one frame and stays
+is supplied. A web clip's source duration needs no map: it is its score,
+and a music clip's its song (`sourceLimit` in `time.js`). A clip keeps at least one frame and stays
 longer than the cross-fade on its other edge. Generators, titles, images
 and other placeholders trim and slip freely: their source is unbounded.
 

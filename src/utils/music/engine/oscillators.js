@@ -8,8 +8,6 @@
  * @module utils/music/engine/oscillators
  */
 
-import { NOISE_SCALE, sinTurn } from './math.js';
-
 /**
  * What a band-limited unit step differs from an ideal one by.
  * @param {number} t - Samples since the step, −2 … 2
@@ -105,52 +103,4 @@ export function triangle(out, count, state, slot, inc, gain) {
     if (p >= 1) p -= 1;
   }
   state[slot] = p;
-}
-
-/**
- * A sine. With `mod`, another oscillator's samples bend its phase by up to
- * `depth` turns (phase modulation — the bell and electric-piano sound).
- * @param {Float64Array} out
- * @param {number} count
- * @param {Float64Array} state
- * @param {number} slot
- * @param {number} inc
- * @param {number} gain
- * @param {Float64Array} [mod]
- * @param {number} [depth]
- */
-export function sine(out, count, state, slot, inc, gain, mod, depth = 0) {
-  let p = state[slot];
-  for (let i = 0; i < count && !mod; i++) {
-    out[i] += sinTurn(p) * gain;
-    p += inc;
-    if (p >= 1) p -= 1;
-  }
-  for (let i = 0; i < count && mod; i++) {
-    const bent = p + depth * mod[i];
-    out[i] += sinTurn(bent - Math.floor(bent)) * gain;
-    p += inc;
-    if (p >= 1) p -= 1;
-  }
-  state[slot] = p;
-}
-
-/**
- * White noise from the voice's own generator.
- * @param {Float64Array} out
- * @param {number} count
- * @param {Int32Array} seeds
- * @param {number} slot - Where the generator's state lives
- * @param {number} gain
- */
-export function noise(out, count, seeds, slot, gain) {
-  let x = seeds[slot];
-  const scale = gain * NOISE_SCALE;
-  for (let i = 0; i < count; i++) {
-    x ^= x << 13;
-    x ^= x >>> 17;
-    x ^= x << 5;
-    out[i] += x * scale;
-  }
-  seeds[slot] = x;
 }

@@ -6,9 +6,9 @@
  * @module utils/music/engine/drums
  */
 
-import { CHOKES, DRUM_NAMES } from '../catalog/drums.js';
-import { DEFAULT_KIT, KITS } from '../catalog/kits.js';
-import { laneVelocities } from '../lanes.js';
+import { CHOKES, DRUM_NAMES } from '#utils/music/catalog/drums.js';
+import { DEFAULT_KIT, KITS } from '#utils/music/catalog/kits.js';
+import { loopEvents } from '#utils/music/unroll.js';
 import { compileDrum } from './drumPatch.js';
 import { DrumVoice } from './drumVoice.js';
 import { Cursor } from './schedule.js';
@@ -27,17 +27,11 @@ export class DrumPart {
     const size = Math.max(block, SPILL);
     /** @type {(DrumVoice|null)[]} One per drum, for the drums the part hits */
     this.voices = DRUM_NAMES.map((name) =>
-      part.lanes[name] ? new DrumVoice(compileDrum(kit.drums[name], sampleRate), sampleRate, size) : null,
+      part.lanes[name]
+        ? new DrumVoice(compileDrum(kit.drums[name], sampleRate), sampleRate, size)
+        : null,
     );
-    /** @type {number[][]} */
-    const events = [];
-    DRUM_NAMES.forEach((name, drum) => {
-      laneVelocities(part.lanes[name] || '').forEach((velocity, step) => {
-        if (velocity > 0) events.push([(step * song.beatsPerBar) / part.steps, drum, velocity]);
-      });
-    });
-    events.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-    this.cursor = new Cursor(song, part, events, sampleRate);
+    this.cursor = new Cursor(song, part, loopEvents(song, part), sampleRate);
     this.spill = new Spill();
     this.index = index;
     this.count = 0;

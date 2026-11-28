@@ -7,6 +7,9 @@
 
 import { NOISE_SCALE, sinTurn, softClip } from './math.js';
 
+/** A level this near to nothing is nothing: tiny numbers are slow numbers. */
+const TINY = 1e-12;
+
 /**
  * A tone whose pitch falls to rest and whose level dies away. State:
  * phase, level, how far above rest the pitch still is.
@@ -30,8 +33,8 @@ export function fallingTone(out, count, state, slot, tone) {
     above *= sweepCoef;
   }
   state[slot] = p;
-  state[slot + 1] = level;
-  state[slot + 2] = above;
+  state[slot + 1] = level > TINY ? level : 0;
+  state[slot + 2] = above > TINY ? above : 0;
 }
 
 /**
@@ -62,7 +65,7 @@ export function noiseBurst(out, count, seeds, state, slot, noise) {
     age++;
   }
   seeds[0] = x;
-  state[slot] = level;
+  state[slot] = level > TINY ? level : 0;
   state[slot + 1] = age;
 }
 
@@ -80,7 +83,7 @@ export function fade(buf, count, state, slot, coef) {
     buf[i] *= level;
     level *= coef;
   }
-  state[slot] = level;
+  state[slot] = level > TINY ? level : 0;
 }
 
 /**

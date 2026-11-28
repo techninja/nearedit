@@ -42,7 +42,7 @@ export class Mixer {
       });
     const beat = 60 / song.bpm;
     this.delay = new Delay(master.delay.beats * beat, master.delay.feedback, sampleRate);
-    this.reverb = new Reverb(master.reverb.size, master.reverb.decay, sampleRate);
+    this.reverb = new Reverb(master.reverb.size, master.reverb.decay, sampleRate, BLOCK);
     this.limiter = new Limiter(sampleRate);
     this.latency = this.limiter.latency;
     this.volume = master.volume;
@@ -69,8 +69,17 @@ export class Mixer {
       partL.fill(0);
       partR.fill(0);
       if (!channel.player.render(partL, partR, pos, BLOCK)) continue;
-      if (channel.reverb > 0 && !reverbFed) reverbFed = Boolean(revL.fill(0) && revR.fill(0));
-      if (channel.delay > 0 && !delayFed) delayFed = Boolean(echoL.fill(0) && echoR.fill(0));
+      // The send buses are cleared when the first part of the block feeds them.
+      if (channel.reverb > 0 && !reverbFed) {
+        revL.fill(0);
+        revR.fill(0);
+        reverbFed = true;
+      }
+      if (channel.delay > 0 && !delayFed) {
+        echoL.fill(0);
+        echoR.fill(0);
+        delayFed = true;
+      }
       for (let i = 0; i < BLOCK; i++) {
         const l = partL[i] * channel.left;
         const r = partR[i] * channel.right;

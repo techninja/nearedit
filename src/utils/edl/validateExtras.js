@@ -1,10 +1,12 @@
 /**
  * Checks behind `validateEdl` for the free-form parts of schema v3:
- * parameter bags, effect stacks, generators and keyframes. They accept
- * exactly what the normaliser produces. Isomorphic and pure.
+ * parameter bags, effect stacks, generators, keyframes and the `web` or
+ * `music` block. They accept exactly what the normaliser produces. Isomorphic and pure.
  * @module utils/edl/validateExtras
  */
 
+import { checkMusic } from '#utils/music/field.js';
+import { checkWeb } from '#utils/web/field.js';
 import { describePath, keyValue } from './clipPaths.js';
 import { EASINGS } from './easing.js';
 import { EFFECT_ID, MAX_EFFECTS, isTypeName } from './effectList.js';
@@ -12,9 +14,22 @@ import { MAX_DEPTH, MAX_NODES, MAX_STRING, isPlainObject, isSafeKey } from './js
 import { MAX_KEYS, MAX_PATHS, SAME_T } from './keyList.js';
 import { RANGES } from './sanitize.js';
 
-export { checkWeb } from '#utils/web/field.js';
-
 /** @typedef {(path: string, message: string) => void} Report */
+
+/**
+ * The description a clip's source is made from: the `web` block of a web
+ * clip, the `music` block of a music clip — never both on one clip.
+ * @param {any} clip
+ * @param {string} path - Path of the clip
+ * @param {Report} report
+ */
+export function checkMade(clip, path, report) {
+  checkWeb(clip.web, `${path}.web`, report);
+  checkMusic(clip.music, `${path}.music`, report);
+  if (clip.web !== undefined && clip.music !== undefined) {
+    report(`${path}.music`, 'a clip is a web clip or a music clip, not both');
+  }
+}
 
 /**
  * @param {any} value

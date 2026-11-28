@@ -9,10 +9,10 @@
 import { cutoffCoefficient, filterMix } from './filter.js';
 import { decayPerSample, sinTurn } from './math.js';
 
-/** @typedef {import('../catalog/kits/build.js').DrumSettings} DrumSettings */
+/** @typedef {import('#utils/music/catalog/kits/build.js').DrumSettings} DrumSettings */
 
 /** Loudness of one drum at full velocity, before the part's volume. */
-const DRUM_GAIN = 0.55;
+const DRUM_GAIN = 1;
 
 /**
  * @typedef {Object} DrumPatch

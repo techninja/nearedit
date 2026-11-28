@@ -7,7 +7,7 @@
  * @module utils/music/engine/schedule
  */
 
-import { playRanges, songFrame, swingBeat } from '../timing.js';
+import { playRanges, songFrame, swingBeat } from '#utils/music/timing.js';
 
 /**
  * One event of a part's loop: for a drum hit `[beat, drum, velocity]`, for
@@ -28,7 +28,10 @@ export class Cursor {
     this.swing = swing;
     this.perBeat = (60 / bpm) * sampleRate;
     this.loop = part.bars * beatsPerBar;
-    this.ranges = playRanges(song, part).map(([from, to]) => [from * beatsPerBar, to * beatsPerBar]);
+    this.ranges = playRanges(song, part).map(([from, to]) => [
+      from * beatsPerBar,
+      to * beatsPerBar,
+    ]);
     /** The last sample of the music: nothing is held past it. */
     this.end = this.sampleOf(bars * beatsPerBar);
     this.range = 0;

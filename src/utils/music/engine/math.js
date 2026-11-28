@@ -19,7 +19,9 @@ const S9 = (-S7 * TAU2) / 72;
 const S11 = (-S9 * TAU2) / 110;
 const LN2 = 0.6931471805599453;
 /** 1 / n! for n = 0 … 10. */
-const INVERSE_FACTORIAL = [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800].map((n) => 1 / n);
+const INVERSE_FACTORIAL = [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880, 3628800].map(
+  (n) => 1 / n,
+);
 
 /**
  * The sine of a phase given in turns.

@@ -11,7 +11,7 @@
 
 import * as read from '#utils/web/coerce.js';
 import { SONG_LIMITS as LIMITS, defaultSong } from './limits.js';
-import { normalizePart } from './normalizePart.js';
+import { normalizePart, within } from './normalizePart.js';
 import { KEY_NAMES, NOTE_NAMES, pitchClass } from './theory/names.js';
 import { SCALES } from './theory/scales.js';
 import { songFrame } from './timing.js';
@@ -60,14 +60,14 @@ function normalizeMaster(raw) {
   const reverb = read.record(read.own(from, 'reverb'));
   const delay = read.record(read.own(from, 'delay'));
   return {
-    volume: read.numberIn(read.own(from, 'volume'), base.volume, ...LIMITS.volume),
+    volume: within(read.own(from, 'volume'), base.volume, LIMITS.volume),
     reverb: {
       size: read.numberIn(read.own(reverb, 'size'), base.reverb.size, 0, 1),
       decay: read.numberIn(read.own(reverb, 'decay'), base.reverb.decay, 0, 1),
     },
     delay: {
-      beats: read.numberIn(read.own(delay, 'beats'), base.delay.beats, ...LIMITS.delayBeats),
-      feedback: read.numberIn(read.own(delay, 'feedback'), base.delay.feedback, ...LIMITS.feedback),
+      beats: within(read.own(delay, 'beats'), base.delay.beats, LIMITS.delayBeats),
+      feedback: within(read.own(delay, 'feedback'), base.delay.feedback, LIMITS.feedback),
     },
   };
 }

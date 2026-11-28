@@ -60,7 +60,8 @@ export function swingBeat(beat, swing) {
   if (!(swing > 0)) return beat;
   const pair = Math.floor(beat * 2) / 2;
   const within = beat - pair;
-  const late = within < 0.25 ? within * (1 + swing) : 0.25 * (1 + swing) + (within - 0.25) * (1 - swing);
+  const late =
+    within < 0.25 ? within * (1 + swing) : 0.25 * (1 + swing) + (within - 0.25) * (1 - swing);
   return pair + late;
 }
 

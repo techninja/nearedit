@@ -4,7 +4,8 @@
  * @module utils/edl/time
  */
 
-import { webDuration } from '#utils/web/clip.js';
+import { isMusicClip, musicDuration } from '#utils/music/clip.js';
+import { isWebClip, webDuration } from '#utils/web/clip.js';
 import { snapToFrame } from './query.js';
 
 /** @typedef {import('./types.js').SourceDurations} SourceDurations */
@@ -81,14 +82,27 @@ export function sourceDurationOf(durations, file) {
 }
 
 /**
- * How long the source of a clip is. A web clip's source is its score — the
- * length its recording has, known before anything is recorded — whatever
- * the map says about the file it points at; any other clip's is looked up.
+ * Whether a clip's source is made by NearEdit from a description the clip
+ * carries: a web clip's recording, a music clip's rendering. Such a source
+ * has its length before the file exists.
+ * @param {{ web?: any, music?: any }} clip
+ * @returns {boolean}
+ */
+export function hasMadeSource(clip) {
+  return isWebClip(clip) || isMusicClip(clip);
+}
+
+/**
+ * How long the source of a clip is. A web clip's source is its score and a
+ * music clip's its song — the length the recording or rendering has, known
+ * before anything is made — whatever the map says about the file it points
+ * at; any other clip's is looked up.
  * @param {{ fps?: number }} edl
- * @param {{ sourceFile?: string, web?: any }} clip
+ * @param {{ sourceFile?: string, web?: any, music?: any }} clip
  * @param {SourceDurations} [durations]
  * @returns {number|undefined} Seconds, or undefined when unknown
  */
 export function sourceLimit(edl, clip, durations) {
-  return webDuration(clip, fpsOf(edl)) ?? sourceDurationOf(durations, clip.sourceFile);
+  const made = webDuration(clip, fpsOf(edl)) ?? musicDuration(clip);
+  return made ?? sourceDurationOf(durations, clip.sourceFile);
 }

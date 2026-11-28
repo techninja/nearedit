@@ -8,16 +8,22 @@
  * @module utils/music/engine/spill
  */
 
-/** Samples of a fade-out: 5 ms at 48 kHz. A power of two. */
+/** Samples of a fade-out: 5 ms at 48 kHz. */
 export const SPILL = 256;
+/**
+ * Samples kept: a power of two with room for a fade-out and for the block
+ * that is being mixed while it is taken.
+ */
+const RING = 1024;
 
 export class Spill {
   constructor() {
-    this.left = new Float64Array(SPILL);
-    this.right = new Float64Array(SPILL);
+    this.left = new Float64Array(RING);
+    this.right = new Float64Array(RING);
     this.scratchLeft = new Float64Array(SPILL);
     this.scratchRight = new Float64Array(SPILL);
-    /** Sample of the song up to which something is kept. */
+    /** Samples of the song between which something is kept. */
+    this.since = 0;
     this.until = 0;
   }
 
@@ -35,10 +41,11 @@ export class Spill {
     const count = play(scratchLeft, scratchRight);
     for (let i = 0; i < count; i++) {
       const fade = 1 - (i + 1) / SPILL;
-      const slot = (now + i) & (SPILL - 1);
+      const slot = (now + i) & (RING - 1);
       this.left[slot] += scratchLeft[i] * fade;
       this.right[slot] += scratchRight[i] * fade;
     }
+    if (this.until <= this.since) this.since = now;
     if (now + count > this.until) this.until = now + count;
   }
 
@@ -51,14 +58,16 @@ export class Spill {
    * @returns {boolean} True when anything was mixed in
    */
   mix(left, right, pos, count) {
+    const start = Math.max(pos, this.since);
     const end = Math.min(pos + count, this.until);
-    for (let at = pos; at < end; at++) {
-      const slot = at & (SPILL - 1);
+    for (let at = start; at < end; at++) {
+      const slot = at & (RING - 1);
       left[at - pos] += this.left[slot];
       right[at - pos] += this.right[slot];
       this.left[slot] = 0;
       this.right[slot] = 0;
     }
-    return end > pos;
+    if (end > start) this.since = end;
+    return end > start;
   }
 }

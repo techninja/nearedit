@@ -47,6 +47,8 @@
  * @property {Record<string, any>} transform
  * @property {import('#utils/web/types.js').WebBlock} [web] - Only on a web
  *   clip: its recipe, the key of its recording, the page's title
+ * @property {import('#utils/music/types.js').MusicBlock} [music] - Only on
+ *   a music clip: its song and the key of its rendering
  */
 
 /**

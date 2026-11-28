@@ -5,7 +5,7 @@
  * @module utils/edl/normalizeClip
  */
 
-import { webDuration } from '#utils/web/clip.js';
+import { cleanMusic } from '#utils/music/field.js';
 import { cleanWeb, fitWindow } from '#utils/web/field.js';
 import { tidyKeyframes } from './clipPaths.js';
 import { fitFades } from './fades.js';
@@ -13,7 +13,7 @@ import { createClip } from './factory.js';
 import { isTimed } from './immutable.js';
 import { snapToFrame } from './query.js';
 import { isObject, mergeShape, toNumber } from './sanitize.js';
-import { EPS } from './time.js';
+import { EPS, sourceLimit } from './time.js';
 
 /** @typedef {import('./types.js').Clip} Clip */
 
@@ -40,9 +40,11 @@ function migrateKenBurns(kenBurns, raw) {
  *   numbers are repaired (`id` is accepted for `clipId`). Generator and
  *   effect parameters are kept as bounded JSON-safe data, effect ids made
  *   unique, keyframes sorted, and keyframes that address nothing dropped.
- *   A `web` block that holds a recipe is kept, the recipe normalised; no
- *   other clip has the field. A web clip's source window is brought inside
- *   its score, and a web clip written without an end lasts to the end of it.
+ *   A `web` block that holds a recipe is kept, the recipe normalised, and
+ *   so is a `music` block that holds a song (never both: `web` wins); no
+ *   other clip has those fields. Such a clip's source window is brought
+ *   inside its score or song, and one written without an end lasts to the
+ *   end of it.
  * - Timeline times snap to the frame grid. A missing `timelineEnd` is derived
  *   from the source range; a clip that starts before 0 is trimmed to 0.
  * - Every clip plays at speed 1 (invariant 1). Video/audio: when the
@@ -65,10 +67,12 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
   const kenBurns = migrateKenBurns(merged.transform.kenBurns, raw.transform?.kenBurns);
   /** @type {any} */
   const filled = { ...merged, transform: { ...merged.transform, kenBurns } };
-  // Only a web clip has a `web` block; no other clip gets the field.
+  // Only a web clip has a `web` block and only a music clip a `music` block;
+  // no other clip gets either field, and no clip both: the web block wins.
   const web = cleanWeb(raw.web);
+  const music = web ? null : cleanMusic(raw.music);
   /** @type {any} */
-  const clip = tidyKeyframes(web ? { ...filled, web } : filled);
+  const clip = tidyKeyframes(web ? { ...filled, web } : music ? { ...filled, music } : filled);
   const timed = isTimed(clip, /** @type {any} */ ({ type: trackType }));
   // No genuine v1/v2 clip has a generator or keyframes: one that does was
   // written for v3 (by hand, without a version) and means its source window.
@@ -78,9 +82,10 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
   let start = toNumber(raw.timelineStart, NaN);
   const rawIn = toNumber(raw.sourceIn, 0);
   let sourceIn = timed ? Math.max(0, rawIn) : windowed ? rawIn : 0;
-  // A web clip's source is its score: without an end of its own it runs to
-  // the end of that, and its window is brought inside it.
-  const limit = webDuration(clip, fps);
+  // A web clip's source is its score and a music clip's its song: without
+  // an end of its own it runs to the end of that, and its window is brought
+  // inside it.
+  const limit = sourceLimit({ fps }, clip);
   const rawOut = toNumber(raw.sourceOut, limit ?? NaN);
   const range = rawOut - (windowed ? sourceIn : Math.max(0, rawIn));
   let end = toNumber(raw.timelineEnd, start + range);

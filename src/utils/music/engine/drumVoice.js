@@ -8,12 +8,12 @@
 import { colour, fade, fallingTone, noiseBurst } from './drumKernels.js';
 import { FLAT, svf } from './filter.js';
 import { decayPerSample } from './math.js';
-import { pulse } from './oscillators.js';
+import { square } from './plainWaves.js';
 
 /** @typedef {import('./drumPatch.js').DrumPatch} DrumPatch */
 
-/** Below this every source counts as silent (−80 dB). */
-const SILENT = 1e-4;
+/** Below this a source counts as silent (−70 dB of its level). */
+const SILENT = 3e-4;
 /** Seconds an open hat takes to close when it is choked. */
 const CHOKE = 0.04;
 
@@ -85,20 +85,41 @@ export class DrumVoice {
    */
   render(left, right, offset, count) {
     const { patch, state, buf, side } = this;
-    const { noise, metal } = patch;
+    const { tones, noise, metal } = patch;
     buf.fill(0, 0, count);
-    patch.tones.forEach((tone, i) => fallingTone(buf, count, state, TONE + i * 3, tone));
-    if (noise) {
+    for (let i = 0; i < tones.length; i++) fallingTone(buf, count, state, TONE + i * 3, tones[i]);
+    if (noise && (state[NOISE] > 0 || state[NOISE + 1] < noise.attack)) {
       side.fill(0, 0, count);
       noiseBurst(side, count, this.seeds, state, NOISE, noise);
-      svf(side, count, state, NOISE_FILTER, noise.g, noise.k, ...noise.mix);
+      svf(
+        side,
+        count,
+        state,
+        NOISE_FILTER,
+        noise.g,
+        noise.k,
+        noise.mix[0],
+        noise.mix[1],
+        noise.mix[2],
+      );
       for (let i = 0; i < count; i++) buf[i] += side[i];
     }
-    if (metal) {
+    if (metal && state[METAL] > 0) {
       side.fill(0, 0, count);
-      metal.incs.forEach((inc, i) => pulse(side, count, state, METAL_PHASE + i, inc, 1, 0.5));
+      for (let i = 0; i < metal.incs.length; i++)
+        square(side, count, state, METAL_PHASE + i, metal.incs[i]);
       fade(side, count, state, METAL, metal.decayCoef);
-      svf(side, count, state, METAL_FILTER, metal.g, metal.k, ...metal.mix);
+      svf(
+        side,
+        count,
+        state,
+        METAL_FILTER,
+        metal.g,
+        metal.k,
+        metal.mix[0],
+        metal.mix[1],
+        metal.mix[2],
+      );
       for (let i = 0; i < count; i++) buf[i] += side[i];
     }
     colour(buf, count, state, COLOUR, patch);
@@ -117,8 +138,9 @@ export class DrumVoice {
   sounding() {
     const { patch, state } = this;
     if (state[FADE] < SILENT) return false;
-    if (patch.noise && (state[NOISE] > SILENT || state[NOISE + 1] < patch.noise.attack)) return true;
+    if (patch.noise && (state[NOISE] > SILENT || state[NOISE + 1] < patch.noise.attack))
+      return true;
     if (patch.metal && state[METAL] > SILENT) return true;
-    return patch.tones.some((tone, i) => state[TONE + i * 3 + 1] > SILENT);
+    return state[TONE + 1] > SILENT || state[TONE + 4] > SILENT;
   }
 }

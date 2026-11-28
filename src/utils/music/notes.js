@@ -22,7 +22,8 @@ const rounded = (value, digits) => Math.round(value * digits) / digits;
  * @returns {number} A whole note number; NaN when it is neither
  */
 export function pitchOf(pitch) {
-  const number = typeof pitch === 'string' && Number.isNaN(Number(pitch)) ? noteNumber(pitch) : pitch;
+  const number =
+    typeof pitch === 'string' && Number.isNaN(Number(pitch)) ? noteNumber(pitch) : pitch;
   return Math.round(toNumber(number, NaN));
 }
 
@@ -74,7 +75,9 @@ export function cleanNotes(raw, loop) {
     if (note) notes.push(note);
   }
   notes.sort((a, b) => a[0] - b[0] || a[2] - b[2] || b[1] - a[1] || b[3] - a[3]);
-  return notes.filter((note, i) => i === 0 || note[0] !== notes[i - 1][0] || note[2] !== notes[i - 1][2]);
+  return notes.filter(
+    (note, i) => i === 0 || note[0] !== notes[i - 1][0] || note[2] !== notes[i - 1][2],
+  );
 }
 
 /**

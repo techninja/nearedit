@@ -17,9 +17,10 @@ song (in the clip) ─► engine (pure JavaScript: voices, filters, effects, mix
 usual browser libraries need Web Audio, which the server does not have;
 native synthesisers would be a second implementation with a second sound.
 One engine written in plain JavaScript runs in both places and, because
-both run the same arithmetic, produces **the same samples** — measured: a
-five-part arrangement renders 51 times faster than real time in Node, and
-Chromium's output is identical to the bit.
+both run the same arithmetic, produces **the same samples**:
+`tests/music/parity.test.js` renders five songs in Node and in Chromium
+and compares their hashes. An eight-part song renders about 30 times
+faster than real time in Node; typical songs 40 to 50 times.
 
 ## The song
 
@@ -33,22 +34,24 @@ empty bars at 120 BPM.
 | `bars` | integer | 4 | Length of the song, 1..512 (and at most 20 minutes) |
 | `swing` | number | 0 | 0..0.75: how late every second 16th falls, as a share of a 16th |
 | `key`, `scale` | string | `C`, `minor` | For the editor's helpers and the director; the engine plays the notes it is given |
-| `tail` | seconds | 2 | Ring-out rendered after the last bar |
+| `tail` | seconds | 2 | Ring-out rendered after the last bar, 0..30 |
 | `master` | object | below | The mix bus |
 | `parts` | part[] | `[]` | At most 16 |
 
 `master`: `{ volume: 0.8, reverb: { size: 0.5, decay: 0.5 }, delay: { beats:
-0.75, feedback: 0.35 } }`. A soft limiter always sits last: a song cannot
-clip.
+0.75, feedback: 0.35 } }`. A limiter with a ceiling of −1 dBFS always sits
+last: a song cannot clip.
 
 ### Parts
 
 Every part has `id`, `name`, `kind` (`drums` or `synth`), `mute`, `volume`
 (0..1.5), `pan` (−1..1), `reverb` and `delay` (send amounts, 0..1),
 **`bars`** — the length of the part's own loop — and **`play`**, the bar
-ranges where it sounds (`[[0, 8], [12, 16]]`; empty = everywhere). A part
-shorter than the song repeats: a one-bar drum pattern under a four-bar
-chord progression is two parts with `bars` 1 and 4.
+ranges where it sounds (`[[0, 8], [12, 16]]`; empty = everywhere; its loop
+starts again at the start of every range). A part shorter than the song
+repeats: a one-bar drum pattern under a four-bar chord progression is two
+parts with `bars` 1 and 4. Without `bars`, a part is as long as its
+longest lane or its last note.
 
 **Drums** add `kit` and `steps` (per bar: 8, 12, 16, 24 or 32) and
 `lanes`, one string per drum, one character per step:
@@ -60,10 +63,11 @@ chord progression is two parts with `bars` 1 and 4.
              "hat":   "x.x.x.x.x.x.x.xx" } }
 ```
 
-`.` rest, `o` soft, `x` normal, `X` accent. The drums of a kit are data
-(`KITS`): kick, snare, clap, rim, closed and open hat, low / mid / high
-tom, crash, ride, cowbell, shaker. An open hat is cut off by the next
-closed one.
+`.` rest, `o` soft, `x` normal, `X` accent; spaces and bar lines may be
+written for the eye. The drums of a kit are data (`KITS`), thirteen lanes:
+`kick`, `snare`, `clap`, `rim`, `hat`, `openHat`, `tomLow`, `tomMid`,
+`tomHigh`, `crash`, `ride`, `cowbell`, `shaker`. An open hat is cut off by
+the next closed one.
 
 **Synths** add `preset`, `params` (what differs from the preset),
 `transpose` (semitones) and `notes`:
@@ -74,15 +78,18 @@ closed one.
 ```
 
 A note is `[beat, length, pitch, velocity]`: beats from the start of the
-part's loop, length in beats, pitch as a MIDI note number (60 = middle C),
-velocity 0..1. At most 4000 notes per part.
+part's loop, length in beats, pitch as a MIDI note number (60 = middle C;
+a name such as `"C4"` is accepted and stored as its number), velocity
+0..1. At most 4000 notes per part. Swing moves every note that falls on an
+off-beat 16th, not only drum steps.
 
 ### Instruments
 
 One synth design plays every preset — two oscillators (sine, triangle,
-saw, pulse, noise) with detune and a sub, a resonant filter (low-, band- or
-high-pass) with its own envelope and key tracking, an amplitude envelope,
-an LFO for vibrato or filter movement, glide, drive. Its parameters are a
+saw, pulse, noise) with detune, unison and a sub, optional FM between
+them, a resonant filter (12 or 24 dB low-pass, band- or high-pass) with
+its own envelope and key tracking, an amplitude envelope, an LFO for
+vibrato, filter movement or pulse width, glide, drive. Its parameters are a
 schema (`SYNTH_PARAMS`), like a generator's, so the editor's controls and
 the director's vocabulary come from one table. `PRESETS` name useful
 corners of it: `bass`, `sub`, `acid`, `pluck`, `keys`, `organ`, `pad`,
@@ -98,14 +105,24 @@ through filters for snares and hats — so no samples are shipped. `KITS`:
 
 - `normalizeSong(raw)`, `validateSong(song)` — like a web clip's recipe:
   never throws, bounds everything, problems come with their path.
-- `songSeconds(song)` — bars × beats × 60 / bpm, plus the tail.
-- `beatTimes(song)` / `barTimes(song)` — for the timeline's snapping.
-- `createRenderer(song, { sampleRate: 48000 })` → `{ frames, render(count)
-  }`: interleaved stereo `Float32Array` chunks, so a long song never sits
-  in memory at once; `renderSong(song)` for short ones.
-- `encodeWav(chunks, sampleRate)` — 16-bit PCM.
+- `songSeconds(song)` — bars × beats × 60 / bpm, plus the tail
+  (`musicSeconds` without it).
+- `beatTimes(song)` / `barTimes(song)` / `stepTimes(song)` — for the
+  timeline's snapping.
+- `createRenderer(song, { sampleRate: 48000 })` → `{ frames, sampleRate,
+  position, render(count) }`: interleaved stereo `Float32Array` chunks, so
+  a long song never sits in memory at once; `renderSong(song)` for short
+  ones. Chunked and whole renders give the same samples.
+- `encodeWav(chunks, sampleRate)` — 16-bit PCM; `wavHeader` and `pcm16`
+  for streaming.
 - `songKey(song)` — 20 hex digits of the SHA-256 of the engine's version
-  and the canonical song, as for web clips.
+  and the canonical song (names and the `key` / `scale` hints left out),
+  as for web clips.
+
+Speed depends on what is asked: drums alone render hundreds of times
+faster than real time, but sixteen parts of sixteen seven-voice unison
+notes each render slower than real time. Rendering therefore runs off the
+server's main thread and can be cancelled.
 
 **Deterministic:** no `Math.random`, no clocks; noise comes from a seeded
 generator; the same song gives the same samples in every run, in Node and
@@ -114,18 +131,21 @@ in the browser. `tests/music/parity.test.js` proves the last part.
 **Theory helpers** (`src/utils/music/theory/`) write notes; they are tools
 for the editor and the director, not part of what a song stores:
 `chord('Am7')`, `scaleNotes(key, scale)`, `progression(key, scale,
-'i-VI-III-VII')`, and builders that turn a chord sequence into a bass line,
-a pad, an arpeggio; `BEATS` — named drum patterns (four on the floor,
-backbeat, boom-bap, half-time, breakbeat, trap, bossa).
+'i-VI-III-VII')`, `voiceLead`, and builders that turn a chord sequence
+into parts — `bassLine`, `padNotes`, `arpeggio`, `melody` — all seeded;
+`BEATS` and `drumPart(name)` — named drum patterns with a fill (four on
+the floor, backbeat, boom-bap, half-time, breakbeat, trap, bossa).
 
 **MIDI.** `parseMidi(bytes)` reads a Standard MIDI File; `songFromMidi`
-turns it into a song (channel 10 onto the kit by the General MIDI drum map,
-programs onto the nearest preset); `songToMidi(song)` writes one.
+turns it into `{ song, warnings }` (channel 10 onto the kit by the General
+MIDI drum map, programs onto the nearest preset; tempo changes,
+controllers and pitch bend are ignored, and it says so); `songToMidi(song)`
+writes one.
 
 ## In the document
 
 ```json
-{ "sourceFile": "/project/.nearedit/music/9be1c4….wav", "sourceIn": 0, "sourceOut": 8,
+{ "sourceFile": "/project/.nearedit/music/9be1c4….wav", "sourceIn": 0, "sourceOut": 10,
   "music": { "song": { "bpm": 120, "bars": 4, "parts": [] }, "key": "9be1c4…" } }
 ```
 
@@ -133,7 +153,8 @@ Exactly the shape of a [web clip](./WEBCLIP.md#in-the-document): the song
 is the source of truth, `key` names the rendering `sourceFile` points at,
 a clip is stale when `key !== songKey(song)`, and until it is rendered it
 is a placeholder with a length. A music clip sits on an audio track; its
-source is the song (`0 … songSeconds`). Operations
+source is the song (`0 … songSeconds`, the whole frames that fit). A clip
+is never both a web clip and a music clip. Operations
 (`src/utils/edl/musicClip.js`): `insertMusicClip`, `updateSong`,
 `setMusicRendering`, `musicClips`, `staleMusicClips`.
 
@@ -145,7 +166,7 @@ the mixer and the render treat it like any file.
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
 | POST | `/music/render` | `{ projectId, song }` → `{ file, key, duration, cached }`: renders `<project>/.nearedit/music/<key>.wav` unless it exists |
-| POST | `/music/import` | `{ projectId, path }` (a `.mid` in the project) → `{ song }` |
+| POST | `/music/import` | `{ projectId, path }` (a `.mid` in the project) → `{ song, warnings }` |
 
 ```bash
 nearedit music song.json -o song.wav
@@ -162,3 +183,5 @@ web clips.
 - No audio effects on tracks or on other clips; reverb and delay exist
   inside a song only.
 - No tempo changes inside a song, and no time signatures that change.
+- The sounds were tuned by measurement — loudness, spectra, envelopes —
+  and by looking at spectrograms.

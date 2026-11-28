@@ -27,11 +27,17 @@ export const ENGINE_VERSION = 1;
  * @returns {Record<string, any>}
  */
 export function canonicalSong(song) {
-  const { key: _key, scale: _scale, parts, ...heard } = normalizeSong(song);
-  return {
-    ...heard,
-    parts: parts.map(({ id: _id, name: _name, ...part }) => part),
-  };
+  /** @type {Record<string, any>} */
+  const heard = { ...normalizeSong(song) };
+  delete heard.key;
+  delete heard.scale;
+  heard.parts = heard.parts.map((part) => {
+    const played = { ...part };
+    delete played.id;
+    delete played.name;
+    return played;
+  });
+  return heard;
 }
 
 /**

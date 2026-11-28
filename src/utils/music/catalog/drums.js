@@ -11,24 +11,30 @@
  * @property {number} gm - Its note on MIDI channel 10
  */
 
+/**
+ * @param {string} name
+ * @param {string} label
+ * @param {number} gm
+ * @returns {Drum}
+ */
+const drum = (name, label, gm) => Object.freeze({ name, label, gm });
+
 /** @type {readonly Drum[]} */
-export const DRUMS = Object.freeze(
-  [
-    ['kick', 'Kick', 36],
-    ['snare', 'Snare', 38],
-    ['clap', 'Clap', 39],
-    ['rim', 'Rim', 37],
-    ['hat', 'Closed hat', 42],
-    ['openHat', 'Open hat', 46],
-    ['tomLow', 'Low tom', 43],
-    ['tomMid', 'Mid tom', 47],
-    ['tomHigh', 'High tom', 50],
-    ['crash', 'Crash', 49],
-    ['ride', 'Ride', 51],
-    ['cowbell', 'Cowbell', 56],
-    ['shaker', 'Shaker', 70],
-  ].map(([name, label, gm]) => Object.freeze({ name, label, gm })),
-);
+export const DRUMS = Object.freeze([
+  drum('kick', 'Kick', 36),
+  drum('snare', 'Snare', 38),
+  drum('clap', 'Clap', 39),
+  drum('rim', 'Rim', 37),
+  drum('hat', 'Closed hat', 42),
+  drum('openHat', 'Open hat', 46),
+  drum('tomLow', 'Low tom', 43),
+  drum('tomMid', 'Mid tom', 47),
+  drum('tomHigh', 'High tom', 50),
+  drum('crash', 'Crash', 49),
+  drum('ride', 'Ride', 51),
+  drum('cowbell', 'Cowbell', 56),
+  drum('shaker', 'Shaker', 70),
+]);
 
 /** The lane names, in order. */
 export const DRUM_NAMES = Object.freeze(DRUMS.map((drum) => drum.name));

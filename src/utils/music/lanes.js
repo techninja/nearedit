@@ -20,7 +20,8 @@ const SEPARATORS = /[\s|]/g;
  * @returns {string}
  */
 export function fitLane(lane, length) {
-  const text = typeof lane === 'string' ? lane.slice(0, length * 2 + 64).replace(SEPARATORS, '') : '';
+  const text =
+    typeof lane === 'string' ? lane.slice(0, length * 2 + 64).replace(SEPARATORS, '') : '';
   let out = '';
   for (let i = 0; i < length; i++) out += Object.hasOwn(LANE_VELOCITIES, text[i]) ? text[i] : '.';
   return out;

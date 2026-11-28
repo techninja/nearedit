@@ -99,6 +99,7 @@ an audio track, joined to its picture by `linkedClipId`.
 | color         | string   | Timeline colour override (hex)                     |
 | generator     | object   | A synthetic source, see [generator](#generator)    |
 | web           | object   | Only on a web clip: its recipe and recording, see [web](#web) |
+| music         | object   | Only on a music clip: its song and rendering, see [music](#music) |
 | effects       | Effect[] | Applied in order after the clip is placed          |
 | keyframes     | object   | Animated properties, see [keyframes](#keyframes)   |
 | text          | object   | Title text block, see below                        |
@@ -109,13 +110,15 @@ an audio track, joined to its picture by `linkedClipId`.
 `title` (no `sourceFile`, non-empty `text.content`) or `placeholder` (no
 `sourceFile`, empty text). A [web clip](#web) is not a kind of its own:
 recorded it is a `video`, until then a `placeholder` with a length —
-`isWebClip(clip)` tells.
+`isWebClip(clip)` tells. Nor is a [music clip](#music): rendered it is an
+`audio` clip, until then a `placeholder` — `isMusicClip(clip)` tells.
 
 ### Source window
 
 Every clip shows a window `sourceIn … sourceOut` of its source, at speed 1.
 For video and audio the source is the file, so the window stays inside it;
-the source of a [web clip](#web) is its score, recorded or not. A
+the source of a [web clip](#web) is its score and of a [music clip](#music)
+its song, made or not yet. A
 generator, title, image or other placeholder has an **unbounded** source: its
 window may start before 0 and end anywhere. Keyframes and generator motion
 are timed in this source time (`sourceIn + (time − timelineStart)`), which is
@@ -130,8 +133,8 @@ the later window — in all three, what was on screen at a moment stays there.
 2. **Bounds.** `timelineStart >= 0` and `timelineEnd > timelineStart`. For
    video and audio clips `sourceIn >= 0`, and `sourceOut` never exceeds the
    source duration when it is known. For a web clip it always is: the
-   length of its score at the document's `fps`. Other clips have no source
-   bounds.
+   length of its score at the document's `fps`; for a music clip, the
+   length of its song. Other clips have no source bounds.
 3. **Fades fit.** `fadeIn >= 0`, `fadeOut >= 0`, `fadeIn + fadeOut <=
    duration`.
 4. **Overlap means cross-fade.** Two clips on one track may overlap only as
@@ -288,6 +291,39 @@ has no `web` at all, so documents without web clips are unchanged.
   `updateClip`; they belong to the [web clip
   operations](./EDL-OPERATIONS.md#web-clips), slip and trim.
 
+### music
+
+```json
+{ "song": { "bpm": 120, "bars": 4, "parts": [] }, "key": "9be1c4d07be24a6f8e15" }
+```
+
+Only a **music clip** has this field — a clip whose sound is written, not
+recorded: drum patterns and synth lines that NearEdit's own engine renders,
+see [MUSIC.md](./MUSIC.md). Every other clip has no `music` at all.
+
+| Field | Type   | Notes                                                         |
+| ----- | ------ | ------------------------------------------------------------- |
+| song  | object | Tempo, parts, mix; the source of truth. Always stored normalised (`normalizeSong`, `src/utils/music/`): every default filled in |
+| key   | string | Key of the rendering `sourceFile` points at: 20 hex digits, `''` = not rendered yet |
+
+- `isMusicClip(clip)` is true when `music.song` is an object — `{}` is a
+  song, four empty bars. A music clip sits on an audio track.
+- The clip's source is its **song**: `musicDuration(clip)` =
+  `songSeconds(song)`, bars and tail, whatever a `sourceDurations` map says
+  about the file. That is rarely a whole number of frames; a clip that
+  shows the whole song is the whole frames that fit. Until it is rendered
+  the clip is a `placeholder` of that length with no `sourceFile`.
+- **Stale** (`isStaleMusic(clip)`): `music.key` is not `songKey(music.song)`
+  — never rendered, or the song changed since. The frame rate plays no
+  part. The old rendering keeps playing until a new one is set.
+- `validateEdl` checks the block's shape and that the song is in
+  normalised form; `validateSong` says what an author got wrong.
+- `music`, and on a music clip `sourceFile` and `sourceIn`, are not written
+  by `updateClip`; they belong to the [music clip
+  operations](./EDL-OPERATIONS.md#music-clips), slip and trim.
+- A clip is a web clip or a music clip, never both: `validateEdl` refuses
+  one that carries both blocks, and on load the `web` block wins.
+
 ### effects
 
 ```json
@@ -371,7 +407,8 @@ instances, cycles, `__proto__` / `constructor` / `prototype` keys — is
 dropped on load and refused by `validateEdl`. A web clip's `web.recipe` is
 bounded differently: `normalizeRecipe` reads only the fields a recipe has,
 from plain objects, and cuts every string and list to its own limit
-([WEBCLIP.md](./WEBCLIP.md)).
+([WEBCLIP.md](./WEBCLIP.md)); `normalizeSong` does the same for a music
+clip's `music.song` ([MUSIC.md](./MUSIC.md)).
 
 ## Versions, loading and saving
 
@@ -392,6 +429,10 @@ from plain objects, and cuts every string and list to its own limit
   normalised, an unusable `key` becomes `''`, and a web clip's source
   window is brought inside its score — a web clip written without an end
   lasts to the end of it.
+- A `music` block survives when it holds a song object: the song is
+  normalised, an unusable `key` becomes `''`, and the clip's window is
+  brought inside its song in the same way. A clip with both blocks keeps
+  `web`.
 
 `toSavedDocument(edl, view)` writes the document fields above plus the view
 fields; `fromSavedDocument(doc)` normalises and splits them again. A valid

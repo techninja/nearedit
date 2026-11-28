@@ -20,7 +20,10 @@ import { SYNTH_PARAMS, WHOLE_PARAMS } from './catalog/synthParams.js';
  */
 export function paramValue(name, value, fallback) {
   const spec = SYNTH_PARAMS[name];
-  const coerced = coerceParam(fallback === undefined ? spec : { ...spec, default: fallback }, value);
+  const coerced = coerceParam(
+    fallback === undefined ? spec : { ...spec, default: fallback },
+    value,
+  );
   return WHOLE_PARAMS.includes(name) ? Math.round(coerced) : coerced;
 }
 

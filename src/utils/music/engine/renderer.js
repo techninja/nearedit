@@ -7,11 +7,11 @@
  * @module utils/music/engine/renderer
  */
 
-import { normalizeSong } from '../normalize.js';
-import { songSeconds } from '../timing.js';
+import { normalizeSong } from '#utils/music/normalize.js';
+import { songSeconds } from '#utils/music/timing.js';
 import { BLOCK, Mixer } from './mixer.js';
 
-/** @typedef {import('../types.js').Renderer} Renderer */
+/** @typedef {import('#utils/music/types.js').Renderer} Renderer */
 
 /** Sample rate of a rendering unless another is asked for. */
 export const SAMPLE_RATE = 48000;
@@ -67,12 +67,17 @@ export function createRenderer(song, opts) {
         continue;
       }
       const take = Math.min(ready, wanted - done);
-      for (let i = 0, from = BLOCK - ready; i < take; i++, position++) {
-        const left1 = frames - position;
-        const gain = left1 > fade ? 1 : (left1 - 1) / fade;
-        out[(done + i) * 2] = left[from + i] * gain;
-        out[(done + i) * 2 + 1] = right[from + i] * gain;
+      for (let i = 0, from = BLOCK - ready; i < take; i++) {
+        out[(done + i) * 2] = left[from + i];
+        out[(done + i) * 2 + 1] = right[from + i];
       }
+      // The very end of the song is faded to nothing.
+      for (let i = Math.max(0, frames - fade - position); i < take; i++) {
+        const gain = (frames - position - i - 1) / fade;
+        out[(done + i) * 2] *= gain;
+        out[(done + i) * 2 + 1] *= gain;
+      }
+      position += take;
       done += take;
       ready -= take;
     }

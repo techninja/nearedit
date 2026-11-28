@@ -8,11 +8,13 @@
  * @module utils/music/engine/synth
  */
 
+import { loopEvents } from '#utils/music/unroll.js';
 import { Cursor } from './schedule.js';
 import { SPILL, Spill } from './spill.js';
 import { TICK, compilePatch } from './synthPatch.js';
 import { Voice } from './voice.js';
-import { control, startVoice, strike } from './voiceControl.js';
+import { control } from './voiceControl.js';
+import { startVoice, strike } from './voiceStart.js';
 
 export class SynthPart {
   /**
@@ -23,8 +25,7 @@ export class SynthPart {
    */
   constructor(song, part, sampleRate, index) {
     this.patch = compilePatch(part, sampleRate);
-    const events = part.notes.map(([beat, length, pitch, velocity]) => [beat, pitch, velocity, length]);
-    this.cursor = new Cursor(song, part, events, sampleRate);
+    this.cursor = new Cursor(song, part, loopEvents(song, part), sampleRate);
     this.voices = Array.from({ length: this.patch.voices }, () => new Voice(this.patch));
     this.spill = new Spill();
     this.index = index;
@@ -83,7 +84,7 @@ export class SynthPart {
     this.last = pitch;
     this.count++;
     if (mono && voice.active) {
-      // The change is heard from the next tick on, at most a third of a millisecond later.
+      // The change is heard from the next tick on, well under a millisecond later.
       strike(voice, pitch, velocity, off, voice.gate && voice.offAt > now);
       return;
     }

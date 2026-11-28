@@ -12,7 +12,7 @@ import {
 import { compareClips, isTimed } from './immutable.js';
 import { ANIMATION_ENUMS, ENUMS, isObject } from './sanitize.js';
 import { EPS, sourceLimit } from './time.js';
-import { checkEffects, checkGenerator, checkKeyframes, checkWeb } from './validateExtras.js';
+import { checkEffects, checkGenerator, checkKeyframes, checkMade } from './validateExtras.js';
 
 /** @typedef {(path: string, message: string) => void} Report */
 
@@ -52,7 +52,7 @@ export function checkShape(block, shape, path, report, enums = ENUMS) {
 
 /**
  * The v3 additions of one clip: blend mode, fade curves, text animation,
- * generator, effects, keyframes and the `web` block of a web clip.
+ * generator, effects, keyframes and a web or music clip's own block.
  * @param {any} clip
  * @param {string} path
  * @param {Report} report
@@ -66,7 +66,7 @@ function checkAdditions(clip, path, report) {
   checkGenerator(clip.generator, `${path}.generator`, report);
   checkEffects(clip.effects, `${path}.effects`, report);
   checkKeyframes(clip, path, report);
-  checkWeb(clip.web, `${path}.web`, report);
+  checkMade(clip, path, report);
 }
 
 /**

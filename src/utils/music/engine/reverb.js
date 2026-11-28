@@ -9,68 +9,68 @@
  */
 
 import { exp } from './math.js';
+import { diffuse, feed, hadamard, line, primeFrom, tap } from './reverbParts.js';
 
-/** Line lengths in samples at 48 kHz and size 1: primes, 26 … 68 ms. */
+/** Line lengths in samples at 48 kHz, before the size scales them (0.6 … 2 times): primes. */
 const LINES = [1259, 1433, 1627, 1861, 2129, 2423, 2767, 3251];
-/** All-pass lengths in front of the lines, left and right. */
+/** All-pass lengths in front of the lines: two for the left, two for the right. */
 const DIFFUSERS = [229, 613, 241, 641];
-const DIFFUSION = 0.6;
 /** Highs above this die faster, Hz; lows below the other never get in. */
-const DAMP = 5500;
+const DAMP = 8000;
 const THIN = 140;
+/** Level of the reverberation against what was sent. */
+const WET = 0.3;
 const SILENT = 1e-7;
-const HALF = 0.35355339059327373; // 1 / √8
-
-/**
- * @param {number} n
- * @returns {number} The first prime at or above n
- */
-function primeFrom(n) {
-  for (let p = Math.max(2, Math.round(n)); ; p++) {
-    let prime = true;
-    for (let d = 2; d * d <= p && prime; d++) prime = p % d !== 0;
-    if (prime) return p;
-  }
-}
 
 export class Reverb {
   /**
    * @param {number} size - 0 (a small room) … 1 (a hall)
    * @param {number} decay - 0 (0.3 s to fall 60 dB) … 1 (8 s)
    * @param {number} sampleRate
+   * @param {number} block - The most samples one `process` is asked for
    */
-  constructor(size, decay, sampleRate) {
-    const scale = ((0.45 + 1.1 * size) * sampleRate) / 48000;
+  constructor(size, decay, sampleRate, block) {
+    const scale = ((0.6 + 1.4 * size) * sampleRate) / 48000;
     const seconds = 0.3 * exp(decay * 3.2834);
-    this.lengths = LINES.map((length, i) => primeFrom(length * scale + i));
-    this.lines = this.lengths.map((length) => new Float64Array(length));
-    this.gains = this.lengths.map((length) => exp((-6.9078 * length) / (seconds * sampleRate)));
-    this.at = new Int32Array(8);
-    this.lows = new Float64Array(8);
-    this.pads = DIFFUSERS.map((length) => new Float64Array(primeFrom((length * sampleRate) / 48000)));
-    this.padAt = new Int32Array(4);
+    const lengths = LINES.map((length, i) => primeFrom(length * scale + i));
+    this.lines = lengths.map(line);
+    this.gains = lengths.map((length) => exp((-6.9078 * length) / (seconds * sampleRate)));
+    this.pads = DIFFUSERS.map((length) => line(primeFrom((length * sampleRate) / 48000)));
+    /** The longest run: no longer than the shortest delay. */
+    this.run = Math.min(block, lengths[0], ...this.pads.map((pad) => pad.memory.length));
+    this.longest = lengths[7];
     this.damp = exp((-2 * Math.PI * DAMP) / sampleRate);
     this.thin = exp((-2 * Math.PI * THIN) / sampleRate);
-    this.inLow = new Float64Array(2);
-    this.mixed = new Float64Array(8);
+    this.lows = new Float64Array(10);
+    this.taps = lengths.map(() => new Float64Array(block));
+    this.inL = new Float64Array(block);
+    this.inR = new Float64Array(block);
+    this.scratch = new Float64Array(block);
     this.idle = true;
     this.quiet = 0;
   }
 
   /**
-   * One sample through an all-pass.
-   * @param {number} which - 0 … 3
-   * @param {number} x
-   * @returns {number}
+   * Take the lows off one side of the send and blur it.
+   * @param {Float64Array|null} send - null for silence
+   * @param {number} from
+   * @param {number} count
+   * @param {number} side - 0 left, 1 right
+   * @returns {Float64Array} What goes into that side's lines
    */
-  diffuse(which, x) {
-    const pad = this.pads[which];
-    const at = this.padAt[which];
-    const delayed = pad[at];
-    const fed = x + delayed * DIFFUSION;
-    pad[at] = fed;
-    this.padAt[which] = at + 1 === pad.length ? 0 : at + 1;
-    return delayed - fed * DIFFUSION;
+  enter(send, from, count, side) {
+    const input = side ? this.inR : this.inL;
+    const { thin, lows } = this;
+    let low = lows[8 + side];
+    for (let i = 0; i < count; i++) {
+      const dry = send ? send[from + i] : 0;
+      low = dry + (low - dry) * thin;
+      input[i] = dry - low;
+    }
+    lows[8 + side] = low;
+    diffuse(this.pads[side * 2], input, this.scratch, count);
+    diffuse(this.pads[side * 2 + 1], input, this.scratch, count);
+    return input;
   }
 
   /**
@@ -85,69 +85,50 @@ export class Reverb {
   process(sendL, sendR, outL, outR, count, fed) {
     if (!fed && this.idle) return;
     this.idle = false;
-    const { lines, lengths, gains, at, lows, damp, thin, inLow, mixed: v } = this;
+    const { lines, taps, gains, lows, damp } = this;
     let peak = 0;
-    for (let i = 0; i < count; i++) {
-      let inL = fed ? sendL[i] : 0;
-      let inR = fed ? sendR[i] : 0;
-      inLow[0] = inL + (inLow[0] - inL) * thin;
-      inLow[1] = inR + (inLow[1] - inR) * thin;
-      inL = this.diffuse(1, this.diffuse(0, inL - inLow[0]));
-      inR = this.diffuse(3, this.diffuse(2, inR - inLow[1]));
-      let wetL = 0;
-      let wetR = 0;
+    for (let from = 0; from < count; from += this.run) {
+      const run = Math.min(this.run, count - from);
+      const inputs = [this.enter(fed ? sendL : null, from, run, 0)];
+      inputs.push(this.enter(fed ? sendR : null, from, run, 1));
       for (let n = 0; n < 8; n++) {
-        const out = lines[n][at[n]];
-        lows[n] = out + (lows[n] - out) * damp;
-        v[n] = lows[n] * gains[n];
-        if (n & 1) wetR += n & 2 ? -out : out;
-        else wetL += n & 2 ? -out : out;
+        const out = n & 1 ? outR : outL;
+        const sign = n & 2 ? -WET : WET;
+        const run1 = taps[n];
+        let low = lows[n];
+        tap(lines[n], run1, run);
+        for (let i = 0; i < run; i++) {
+          const heard = run1[i];
+          out[from + i] += heard * sign;
+          if (heard > peak || -heard > peak) peak = heard < 0 ? -heard : heard;
+          low = heard + (low - heard) * damp;
+          run1[i] = low * gains[n];
+        }
+        lows[n] = low;
       }
-      hadamard(v);
+      hadamard(taps, run);
       for (let n = 0; n < 8; n++) {
-        lines[n][at[n]] = (n & 1 ? inR : inL) + v[n] * HALF;
-        at[n] = at[n] + 1 === lengths[n] ? 0 : at[n] + 1;
+        const input = inputs[n & 1];
+        const run1 = taps[n];
+        for (let i = 0; i < run; i++) run1[i] += input[i];
+        feed(lines[n], run1, run);
       }
-      outL[i] += wetL * WET;
-      outR[i] += wetR * WET;
-      const loud = (wetL < 0 ? -wetL : wetL) + (wetR < 0 ? -wetR : wetR);
-      if (loud > peak) peak = loud;
     }
     this.rest(fed || peak > SILENT, count);
   }
 
   /**
    * Once nothing has gone in or come out for as long as two trips of the
-   * longest line, forget everything (see `Delay.rest`).
+   * longest line, forget everything: numbers that only shrink would crawl
+   * towards zero for ever, and very small numbers are very slow.
    * @param {boolean} busy
    * @param {number} count
    */
   rest(busy, count) {
     this.quiet = busy ? 0 : this.quiet + count;
-    if (this.quiet < this.lengths[7] * 2) return;
-    for (const line of [...this.lines, ...this.pads]) line.fill(0);
+    if (this.quiet < this.longest * 2) return;
+    for (const { memory } of [...this.lines, ...this.pads]) memory.fill(0);
     this.lows.fill(0);
-    this.inLow.fill(0);
     this.idle = true;
-  }
-}
-
-/** Level of the reverberation against what was sent. */
-const WET = 0.3;
-
-/**
- * Mix eight values so that each ends up in all eight, in place.
- * @param {Float64Array} v
- */
-function hadamard(v) {
-  for (let span = 1; span < 8; span *= 2) {
-    for (let i = 0; i < 8; i += span * 2) {
-      for (let j = i; j < i + span; j++) {
-        const a = v[j];
-        const b = v[j + span];
-        v[j] = a + b;
-        v[j + span] = a - b;
-      }
-    }
   }
 }

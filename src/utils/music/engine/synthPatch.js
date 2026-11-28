@@ -5,12 +5,12 @@
  * @module utils/music/engine/synthPatch
  */
 
-import { partParams } from '../params.js';
+import { partParams } from '#utils/music/params.js';
 import { damping, filterMix } from './filter.js';
 import { dbGain, decayPerSample, exp, pow2, sinTurn } from './math.js';
 
 /** Samples between two updates of a voice's envelopes, LFO, pitch and filter. */
-export const TICK = 16;
+export const TICK = 32;
 /** Loudness of one voice at full level, before the part's volume. */
 const VOICE_GAIN = 0.32;
 /** Turns of phase a full `fm` bends the carrier by. */
@@ -75,12 +75,19 @@ export function compilePatch(part, sampleRate) {
     cutoff: p.cutoff,
     keyTrack: p.keyTrack,
     envOctaves: p.filterEnv,
-    filterEnv: envelope(p.filterAttack, p.filterDecay, p.filterSustain, p.filterRelease, sampleRate),
+    filterEnv: envelope(
+      p.filterAttack,
+      p.filterDecay,
+      p.filterSustain,
+      p.filterRelease,
+      sampleRate,
+    ),
     ampEnv: envelope(p.attack, p.decay, p.sustain, p.release, sampleRate),
     velocity: p.velocity,
     pre,
     post: pre ? (1 + 2 * p.drive) / pre : 1,
     gain: dbGain(p.level) * VOICE_GAIN,
+    lfoUsed: p.lfoPitch > 0 || p.lfoFilter > 0 || p.lfoAmp > 0 || p.lfoWidth > 0,
     lfoWave: p.lfoWave,
     lfoInc: p.lfoRate / sampleRate,
     lfoFade: p.lfoFade * sampleRate,

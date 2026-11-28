@@ -75,6 +75,14 @@ export {
 } from './webClip.js';
 export { applyWebZoom, clearWebZoom } from './webZoom.js';
 export { isStale, isWebClip, stepMarks, webDuration } from '#utils/web/clip.js';
+export {
+  insertMusicClip,
+  musicClips,
+  setMusicRendering,
+  staleMusicClips,
+  updateSong,
+} from './musicClip.js';
+export { isMusicClip, isStaleMusic, musicDuration } from '#utils/music/clip.js';
 export { pasteAttributes } from './attributes.js';
 export { repairLinks } from './links.js';
 

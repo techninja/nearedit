@@ -5,8 +5,8 @@
  * @module utils/edl/immutable
  */
 
-import { isWebClip } from '#utils/web/clip.js';
 import { clipKind } from './factory.js';
+import { hasMadeSource } from './time.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Clip} Clip */
@@ -127,17 +127,17 @@ export function changeClip(edl, clipId, change) {
 }
 
 /**
- * Whether a clip plays real media. Video and audio clips — and web clips,
- * recorded or not — have a bounded source: `sourceIn` cannot go below 0 or
- * `sourceOut` past its end. Generators, titles, images and placeholders
- * keep a source window too (invariant 1) but theirs is unbounded.
+ * Whether a clip plays real media. Video and audio clips — and web and
+ * music clips, made or not yet — have a bounded source: `sourceIn` cannot
+ * go below 0 or `sourceOut` past its end. Generators, titles, images and
+ * placeholders keep a source window too (invariant 1) but theirs is unbounded.
  * @param {Clip} clip
  * @param {Track} [track]
  * @returns {boolean}
  */
 export function isTimed(clip, track) {
   const kind = clipKind(clip, track);
-  return kind === 'video' || kind === 'audio' || isWebClip(clip);
+  return kind === 'video' || kind === 'audio' || hasMadeSource(clip);
 }
 
 /**

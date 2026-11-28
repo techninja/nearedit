@@ -6,9 +6,9 @@
 
 import { tidyKeyframes } from './clipPaths.js';
 import { isTimed } from './immutable.js';
-import { isWebClip } from '#utils/web/clip.js';
 import { isPlainObject, isSafeKey, mergeBag } from './jsonBag.js';
 import { mergeShape } from './sanitize.js';
+import { hasMadeSource } from './time.js';
 
 /** @typedef {import('./types.js').Clip} Clip */
 /** @typedef {import('./types.js').Track} Track */
@@ -16,7 +16,9 @@ import { mergeShape } from './sanitize.js';
 /** Fields a patch never writes: they belong to move/trim/slip/fade/link/group. */
 const STRUCTURAL = ['clipId', 'timelineStart', 'timelineEnd', 'sourceOut', 'fadeIn', 'fadeOut'];
 const RELATIONS = ['linkedClipId', 'groupId'];
-/** A web clip's recipe and recording belong to the operations in webClip.js. */
+/** The description a clip's source is made from: written by webClip.js and musicClip.js only. */
+const DESCRIPTIONS = ['web', 'music'];
+/** A web or music clip's recording and its window belong to those operations too. */
 const RECORDED = ['sourceFile', 'sourceIn'];
 
 /**
@@ -29,8 +31,8 @@ const RECORDED = ['sourceFile', 'sourceIn'];
 export function patchClip(clip, track, patch) {
   if (!patch || typeof patch !== 'object') return clip;
   const safe = { ...patch };
-  for (const key of [...STRUCTURAL, ...RELATIONS, 'web']) delete safe[key];
-  for (const key of isWebClip(clip) ? RECORDED : []) delete safe[key];
+  for (const key of [...STRUCTURAL, ...RELATIONS, ...DESCRIPTIONS]) delete safe[key];
+  for (const key of hasMadeSource(clip) ? RECORDED : []) delete safe[key];
   /** @type {any} */
   const merged = tidyKeyframes(/** @type {any} */ (mergeShape(clip, safe)));
   if (merged === clip) return clip;

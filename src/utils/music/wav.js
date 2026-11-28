@@ -38,7 +38,8 @@ export function wavHeader(frames, sampleRate) {
   const bytes = new Uint8Array(HEADER);
   const view = new DataView(bytes.buffer);
   const size = Math.max(0, Math.floor(frames)) * CHANNELS * BYTES;
-  const text = (at, word) => [...word].forEach((char, i) => view.setUint8(at + i, char.charCodeAt(0)));
+  const text = (at, word) =>
+    [...word].forEach((char, i) => view.setUint8(at + i, char.charCodeAt(0)));
   text(0, 'RIFF');
   view.setUint32(4, HEADER - 8 + size, true);
   text(8, 'WAVEfmt ');
