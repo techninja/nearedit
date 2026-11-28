@@ -159,7 +159,7 @@ describe('what the inspector shows', () => {
       one.controls.map((control) => [control.path, control.value, control.spec.unit]),
       [
         ['cutout.feather', 0.4, '%'],
-        ['cutout.shrink', 0.1, '%'],
+        ['cutout.shrink', 0.3, '%'],
       ],
     );
     assert.deepEqual(

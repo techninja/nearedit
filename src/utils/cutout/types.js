@@ -6,14 +6,19 @@
  */
 
 /**
- * The `cutout` field of a video clip.
- * @typedef {Object} CutoutBlock
+ * The settings of a clip's cutout.
+ * @typedef {Object} CutoutSettings
  * @property {boolean} on - Draw the clip through its matte
  * @property {'remove'|'blur'} mode - Remove the background, or blur it
  * @property {number} feather - Softness of the edge, units
  * @property {number} shrink - Pull the edge in (positive) or let it out, units
  * @property {number} blur - For `mode: blur`: how soft the background is, units
- * @property {CutoutMade} [made] - The cutout file that was made for the clip
+ */
+
+/**
+ * The `cutout` field of a video clip: its settings, and the cutout file
+ * that was made for it.
+ * @typedef {CutoutSettings & { made?: CutoutMade }} CutoutBlock
  */
 
 /**

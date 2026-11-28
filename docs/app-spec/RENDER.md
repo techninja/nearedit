@@ -33,6 +33,7 @@ Everything lives in `src/api/render/`; `src/api/render.js` is the thin router.
 | ------ | ---- | --- |
 | `request.js`, `mediaPaths.js` | Validate the request, normalise the EDL, check every file path | reads |
 | `words.js`, `subtitles.js` | The transcripts captions are drawn from; the subtitle file of a render | reads sidecars |
+| `cutouts.js` | Which [person cutouts](#person-cutout) a render can use, their files, and the warnings for the rest | pure |
 | `scope.js` | Which clips render, which files they read, empty-timeline check | pure |
 | `prepare.js`, `probe.js`, `capabilities.js` | Render missing music, probe sources, read the captions' words, detect what this FFmpeg can do | runs ffprobe/ffmpeg |
 | `route.js`, `segments.js`, `segmentRules.js` | What needs the compositor; segments and their renderer | pure |
@@ -76,6 +77,7 @@ compositor, and the **filter graph** otherwise (`route.js`):
 | `track-opacity` | Track opacity below 1 |
 | `background` | A document background other than black — every segment |
 | `captions` | A clip whose [captions](./CAPTIONS.md) are on, that is heard, and that has words — for as long as it sounds |
+| `cutout` | A clip drawn through its matte: [cutout](#person-cutout) on, and ready |
 
 `POST /render/plan` lists the segments with their `engine` (`ffmpeg` or
 `canvas`) and `reasons`. The filter graph refuses a range that holds any of
@@ -213,6 +215,26 @@ ffmpeg -f rawvideo -i pipe:0 -vf scale(bt709,tv),setsar=1,format=yuv420p + the p
 
 `renderStill(edl, time, { probes, words, width })` (`canvas/still.js`) draws
 one frame with the same plan and decoders; `nearedit frame` uses it.
+
+### Person cutout
+
+A clip with [cutout](./CUTOUT.md) on is drawn through its matte when the
+cutout file it remembers is **ready**: there, of the file the clip plays,
+made at the document's frame rate and covering the clip's source window
+(`cutouts.js`, run when a request is read). Such a clip sends its segment
+to the canvas path, and its frame worker decodes the cutout file in place
+of the clip's own (`cutoutDecodeArgs`): the same frame rule, seeking to
+the clip's first frame inside the cutout, the two halves cut apart and
+reduced each on its own — so neither bleeds into the other — at the size
+the clip is shown at. The cutout file is probed with the sources.
+
+Any other clip with cutout on — nothing made, trimmed beyond what was
+made, another frame rate, a file that is gone or outside the allowed
+folders — renders its plain picture on whichever path it would take
+anyway, and the job says so: `warnings` gains `Cut out person is on for
+<file>, but its cutout is not made or is out of date: …`, once per media
+file; `POST /render/plan` says the same. A render makes no cutouts.
+`RENDER_ENGINE=ffmpeg` refuses a timeline with a ready cutout.
 
 ## Sound graph
 
@@ -458,6 +480,7 @@ look-ahead and the decoders) and 0.2 GB the canvas worker.
 | `segments.test.js` | A segmented render equals the whole render frame for frame |
 | `routes.test.js`, `routesCanvas.test.js` | Every route, the job result, listing, serving, deletion, refusals (also for image parameters), cancellation and cleanup |
 | `captions.test.js`, `captionUnits.test.js` | Captions through `POST /render`: routing, the frame a word starts on, rendered frames against `renderStill`, words in every chunk, the subtitle file, a file without a transcript; words, routing and cues as units |
+| `cutout.test.js` | A clip drawn through its matte: which cutouts a render uses, routing and warnings, rendered frames equal to the compositor's byte for byte from a clip that starts mid-cutout, a cutout file reduced by FFmpeg, a stale clip rendered plain |
 
 Renders are 320×180 and a few seconds long; pixels are read back as raw RGB
 and tones with a single-bin DFT, so assertions are numeric.

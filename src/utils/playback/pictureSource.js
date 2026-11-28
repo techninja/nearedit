@@ -105,7 +105,8 @@ export function createPictureSource(videos, now = Date.now) {
     lost() {
       const failed = videos.slots().filter((slot) => slot.failed && cutouts.has(slot.url));
       for (const slot of failed) {
-        if (usable(slot.url)) console.warn('[playback] cutout file missing, showing the clip:', slot.url);
+        if (usable(slot.url))
+          console.warn('[playback] cutout file missing, showing the clip:', slot.url);
         broken.set(slot.url, now() + RETRY_MS);
       }
       return failed.length > 0;

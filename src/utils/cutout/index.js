@@ -23,6 +23,7 @@
 /**
  * @typedef {import('./types.js').CutoutBlock} CutoutBlock
  * @typedef {import('./types.js').CutoutMade} CutoutMade
+ * @typedef {import('./types.js').CutoutSettings} CutoutSettings
  * @typedef {import('./types.js').CutoutMeta} CutoutMeta
  * @typedef {import('./types.js').CutoutRange} CutoutRange
  * @typedef {import('./types.js').CutoutSource} CutoutSource

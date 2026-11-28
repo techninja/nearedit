@@ -271,6 +271,8 @@ A `render` job's result is
 job kills FFmpeg and removes the partial file.
 With `subtitles: "srt" | "vtt"` in the body the timeline's captions are saved beside the video; the
 result gains `subtitles`, `subtitlesUrl` and (always) `warnings` — [CAPTIONS.md](./CAPTIONS.md#in-a-render).
+A clip whose person cutout is not ready renders with its background and adds a line to `warnings` —
+[CUTOUT.md](./CUTOUT.md#drawing); the cutout job's result (below) is what `attachCutout` takes.
 
 Every `sourceFile` in a posted EDL, and every image a generator or an
 effect names (a particle sprite, for one), must pass the media allow-list
@@ -463,7 +465,7 @@ progress messages are `frame n of m`. The job's result:
 ```json
 {
   "file": "/project/.nearedit/cutout/0a51bd39df6c629f93d1.mp4",
-  "key": "0a51bd39df6c629f93d1", "start": 3, "end": 20, "fps": 30,
+  "key": "0a51bd39df6c629f93d1", "source": "/project/selfie.mp4", "start": 3, "end": 20, "fps": 30,
   "width": 1280, "height": 720, "frames": 510, "cached": false
 }
 ```

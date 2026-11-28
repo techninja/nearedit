@@ -21,7 +21,7 @@ const doc = (clips, more = {}) => ({ fps: 30, tracks: [{ type: 'video', clips }]
 
 describe('the cutout block', () => {
   it('has every field with its default, and the table an inspector is made from', () => {
-    const block = { on: false, mode: 'remove', feather: 0.4, shrink: 0.1, blur: 3 };
+    const block = { on: false, mode: 'remove', feather: 0.4, shrink: 0.3, blur: 3 };
     assert.deepEqual(cutout.normalizeCutout(undefined), block);
     assert.deepEqual({ ...cutout.CUTOUT_DEFAULTS }, block);
     assert.deepEqual(Object.keys(CUTOUT_FIELDS), Object.keys(block));

@@ -26,8 +26,7 @@ modified.
   "tracks": [],
   "markers": [{ "markerId": "m_1", "time": 12.5, "label": "Chorus", "color": "" }],
   "regions": [{ "regionId": "r_1", "start": 30, "end": 45, "label": "Verse", "color": "" }],
-  "playheadPosition": 0, "cursorPosition": 0,
-  "zoom": 1, "scrollX": 0
+  "playheadPosition": 0, "cursorPosition": 0, "zoom": 1, "scrollX": 0
 }
 ```
 
@@ -102,6 +101,7 @@ an audio track, joined to its picture by `linkedClipId`.
 | music         | object   | Only on a music clip: its song and rendering, see [music](#music) |
 | element       | object   | Only on an element clip: a brand element, its slots and its design, see [element](#element) |
 | captions      | object   | Only on a clip that plays video or sound, when captions are on or it carries words: `{ on, words? }`, see [CAPTIONS.md](./CAPTIONS.md#in-the-document) |
+| cutout        | object   | Only on a clip that plays a video file: the person cutout — `{ on, mode, feather, shrink, blur, made? }`, see [CUTOUT.md](./CUTOUT.md#in-the-document) |
 | effects       | Effect[] | Applied in order after the clip is placed          |
 | keyframes     | object   | Animated properties, see [keyframes](#keyframes)   |
 | text          | object   | Title text block, see below                        |

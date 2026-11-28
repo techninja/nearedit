@@ -17,7 +17,8 @@ import { renderableClips } from './scope.js';
  * @returns {any}
  */
 function unmade(clip) {
-  const { made: _made, ...settings } = clip.cutout;
+  const settings = { ...clip.cutout };
+  delete settings.made;
   return { ...clip, cutout: settings };
 }
 

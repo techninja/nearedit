@@ -22,7 +22,7 @@ import { assertValid, clipOf, deepFreeze, testClip, testEdl } from './testkit.js
 
 const KEY = '0a51bd39df6c629f93d1';
 const OTHER = 'ffffffffffffffffffff';
-const DEFAULTS = { on: false, mode: 'remove', feather: 0.4, shrink: 0.1, blur: 3 };
+const DEFAULTS = { on: false, mode: 'remove', feather: 0.4, shrink: 0.3, blur: 3 };
 const ON = { ...DEFAULTS, on: true };
 
 /** A finished job's result for `/media/me.mp4`. */
@@ -82,7 +82,7 @@ describe('setCutout', () => {
 
     const plain = setCutout(setCutout(timeline(), 'me', { on: true, shrink: 1 }), 'me', false);
     assert.deepEqual(clipOf(plain, 'me').cutout, { ...DEFAULTS, shrink: 1 });
-    const gone = assertValid(setCutout(plain, 'me', { shrink: 0.1 }));
+    const gone = assertValid(setCutout(plain, 'me', { shrink: 0.3 }));
     assert.equal('cutout' in clipOf(gone, 'me'), false);
     assert.deepEqual(gone, timeline());
   });
@@ -144,7 +144,10 @@ describe('attachCutout and cutoutState', () => {
     assert.equal(narrow, short, 'holds less of either clip than what they have');
     const whole = attachCutout(short, result({ key: OTHER }));
     assert.deepEqual(
-      ['me', 'me2'].map((id) => [clipOf(whole, id).cutout.made.key, cutoutState(clipOf(whole, id))]),
+      ['me', 'me2'].map((id) => [
+        clipOf(whole, id).cutout.made.key,
+        cutoutState(clipOf(whole, id)),
+      ]),
       Array(2).fill([OTHER, 'ready']),
     );
     assert.equal(cutoutState(clipOf(whole, 'me'), 25), 'stale', 'made at another frame rate');
@@ -165,9 +168,7 @@ describe('cutoutNeeds', () => {
     assert.deepEqual(cutoutNeeds(timeline()), []);
     const on = setCutout(timeline(), ['me', 'me2']);
     const need = { path: '/media/me.mp4', start: 1, end: 10, fps: 30, frames: 270 };
-    assert.deepEqual(cutoutNeeds(on), [
-      { ...need, clips: ['me', 'me2'], waiting: ['me', 'me2'] },
-    ]);
+    assert.deepEqual(cutoutNeeds(on), [{ ...need, clips: ['me', 'me2'], waiting: ['me', 'me2'] }]);
     const half = attachCutout(on, result({ start: 3, end: 10, frames: 210 }));
     assert.deepEqual(cutoutNeeds(half), [{ ...need, clips: ['me', 'me2'], waiting: ['me2'] }]);
     const ready = attachCutout(half, result({ key: OTHER, start: 1, end: 10, frames: 270 }));
@@ -203,10 +204,10 @@ describe('the cutout field in a document', () => {
     const cut = assertValid(splitClips(ready, 2, { clipIds: ['me'] }));
     const [right] = newClipIds(ready, cut);
     assert.equal(clipOf(cut, right).cutout, clipOf(cut, 'me').cutout, 'both halves, one block');
-    assert.deepEqual([cutoutState(clipOf(cut, 'me'), 30), cutoutState(clipOf(cut, right))], [
-      'ready',
-      'ready',
-    ]);
+    assert.deepEqual(
+      [cutoutState(clipOf(cut, 'me'), 30), cutoutState(clipOf(cut, right))],
+      ['ready', 'ready'],
+    );
     // The file holds 1…12 s; the clip plays 4…9 s of it.
     const slipped = assertValid(slipClip(ready, 'me', 2.5));
     assert.equal(cutoutState(clipOf(slipped, 'me')), 'ready', '6.5…11.5 s');

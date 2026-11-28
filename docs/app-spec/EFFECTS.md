@@ -1,7 +1,7 @@
 # Effects
 
 The effects library of the frame compositor
-([COMPOSITOR.md](./COMPOSITOR.md)): nineteen effects for clips and tracks,
+([COMPOSITOR.md](./COMPOSITOR.md)): twenty effects for clips and tracks,
 each written once and drawn by the same code in the browser preview and in
 the server render. `tests/compose/parity.test.js` draws every one of them on
 both canvases; on Linux all effect frames are **bit-identical**.
@@ -35,6 +35,7 @@ parameters that differ from the defaults below. Lengths are output pixels
 | `blur` | apply | Gaussian, or directional (motion) blur |
 | `glow` | apply | Bloom: blurred light from what is brighter than a threshold |
 | `dropShadow` | filter | Offset, blurred, coloured shadow of the layer's shape |
+| `outline` | apply (pixels) | A sticker's border round the layer's shape: a cut-out person, a title, a logo |
 | `vignette` | apply | Darkens or tints towards the frame's corners |
 | `grain` | apply | Film grain, new on every frame |
 | `scanlines` | apply | Evenly spaced lines, optionally rolling |
@@ -48,7 +49,7 @@ parameters that differ from the defaults below. Lengths are output pixels
 
 **Filter** effects are one or more CSS filter functions; neighbours in a
 stack are merged into a single pass. **Apply** effects redraw the layer with
-composite operations; three of them, marked *pixels*, read the pixels
+composite operations; four of them, marked *pixels*, read the pixels
 because no canvas operation can do the job.
 
 ## Parameters
@@ -138,6 +139,19 @@ direction.
 | `blur` ◆ | 8 | 0..200 px | Standard deviation |
 | `color` ◆ | `#000000` | colour | |
 | `opacity` ◆ | 0.6 | 0..1 | |
+
+### outline
+
+| Parameter | Default | Range | |
+| --------- | ------- | ----- | --- |
+| `color` ◆ | `#ffffff` | colour | Its alpha makes the border translucent |
+| `width` ◆ | 0.8 | 0..10 units | Hundredths of the frame's shorter side |
+| `softness` ◆ | 0 | 0..1 | The share of the width its outer edge fades over |
+
+The layer's alpha is blurred and read as a distance from the edge; a new
+hard edge is drawn `width` further out, under the layer (`matteEdge.js`,
+on a reduced copy from 6 canvas pixels of width). Server canvas, a cut-out
+person filling 1920 × 1080: 25–46 ms at 0.8, 51–74 ms at 0.3; 8 ms at 769 × 433.
 
 ### vignette
 
@@ -261,6 +275,7 @@ effect does there:
 | `blur` | **Spreads**: edges soften and reach about 3 × radius past the layer (a directional blur: radius, along its angle) |
 | `glow` | **Grows where light lands**: the halo carries only as much alpha as its brightest channel. A dark layer casts none |
 | `dropShadow` | **Grows** by the shadow, behind and beside the layer |
+| `outline` | **Grows** by `width` all round, under the layer; the layer itself is untouched |
 | `rgbSplit` | **Grows** by `distance` each way: a pixel takes the largest alpha of its three shifted channels, so even areas keep theirs |
 | `pixelate` | Pixelated with the picture: a block's alpha is the average around its middle |
 | `mirror` | Moves with the picture |
@@ -288,7 +303,8 @@ the track's clips composed together. Rules of thumb:
 3. **Then what reshapes** — `blur`, `pixelate`, `mirror`, `rgbSplit`.
 4. **Cut before you light.** `mask` then `dropShadow` gives the cut-out shape
    a shadow; `dropShadow` then `mask` cuts the shadow off with the rest.
-   `glow` after `mask` glows around the new edge.
+   `glow` after `mask` glows around the new edge; `outline` before
+   `dropShadow` makes a sticker that casts a shadow.
 5. **Frame overlays last** — `vignette`, `grain`, `scanlines`, `flicker` —
    so they are not blurred, split or masked with the picture.
 6. **A `wipe` used as a transition goes last**, so the glow and the shadow
@@ -478,5 +494,7 @@ What costs what:
 - Gradients, glows and vignettes are 8-bit: very dark, very wide ones show
   the steps any 8-bit picture would.
 
-Not in the library: an outline of the layer's alpha, kaleidoscope, zoom
-blur, a true gamma curve, luma key.
+- `outline` rounds corners, and thins out at a sharp point or round a
+  line much thinner than itself; a shape with no edge (a glow) gets none.
+
+Not in the library: kaleidoscope, zoom blur, a true gamma curve, luma key.

@@ -10,7 +10,7 @@
 import { coerceParam } from '#utils/compose/params.js';
 import { isPlainObject } from '#utils/edl/jsonBag.js';
 
-/** @typedef {import('./types.js').CutoutBlock} CutoutBlock */
+/** @typedef {import('./types.js').CutoutSettings} CutoutSettings */
 
 /** What is done with the background. */
 export const CUTOUT_MODES = ['remove', 'blur'];
@@ -18,7 +18,7 @@ export const CUTOUT_MODES = ['remove', 'blur'];
 /**
  * The fields of a `cutout` block, in the order an inspector shows them.
  * Lengths are in units: hundredths of the frame's shorter side.
- * @type {Record<keyof CutoutBlock, import('#utils/compose/params.js').ParamSpec>}
+ * @type {Record<keyof CutoutSettings, import('#utils/compose/params.js').ParamSpec>}
  */
 export const CUTOUT_FIELDS = {
   on: { type: 'boolean', default: false, label: 'Cut out person' },
@@ -28,7 +28,7 @@ export const CUTOUT_FIELDS = {
     label: 'Edge softness',
   },
   shrink: {
-    ...{ type: 'number', default: 0.1, min: -3, max: 3, step: 0.1, unit: 'u' },
+    ...{ type: 'number', default: 0.3, min: -3, max: 3, step: 0.1, unit: 'u' },
     label: 'Edge shrink',
   },
   blur: {
@@ -38,7 +38,7 @@ export const CUTOUT_FIELDS = {
   },
 };
 
-/** @type {CutoutBlock} A block with every field at its default: cutout off. */
+/** @type {CutoutSettings} Every setting at its default: cutout off. */
 export const CUTOUT_DEFAULTS = /** @type {any} */ (
   Object.freeze(
     Object.fromEntries(Object.entries(CUTOUT_FIELDS).map(([name, spec]) => [name, spec.default])),
@@ -52,7 +52,7 @@ export const CUTOUT_DEFAULTS = /** @type {any} */ (
  * holds (unknown fields, and `made`) is left out.
  * @param {any} raw - Whatever a document holds; anything but a plain object
  *   gives the defaults
- * @returns {CutoutBlock}
+ * @returns {CutoutSettings}
  */
 export function normalizeCutout(raw) {
   const stored = isPlainObject(raw) ? raw : {};
@@ -61,11 +61,11 @@ export function normalizeCutout(raw) {
   for (const [name, spec] of Object.entries(CUTOUT_FIELDS)) {
     block[name] = coerceParam(spec, Object.hasOwn(stored, name) ? stored[name] : undefined);
   }
-  return /** @type {CutoutBlock} */ (block);
+  return /** @type {CutoutSettings} */ (block);
 }
 
 /**
- * @param {{ cutout?: Partial<CutoutBlock> } | null | undefined} clip
+ * @param {{ cutout?: Partial<CutoutSettings> } | null | undefined} clip
  * @returns {boolean} True for a clip that is drawn through its matte
  */
 export function hasCutout(clip) {

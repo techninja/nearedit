@@ -23,6 +23,10 @@ drawFrame(ctx, edl, time, env, frameInfo(edl, canvas.width, canvas.height));
   — and, for captions, `words(clip)`: the transcript of a captioned clip's file.
   `image` and `frameOf` return something `drawImage` takes, or `null` while
   it is not available (the layer is then left out of that frame).
+  For a clip drawn through its matte (`cutout`, docs/app-spec/CUTOUT.md)
+  `frameOf` hands over the frame of its cutout file — the picture on the
+  left, its matte on the right — or the plain frame while that is not there:
+  the compositor tells the two apart by their shape.
 - Keep one `env` object per canvas size. Scratch canvases are pooled per
   `env`, so a steady stream of frames allocates nothing.
 - `requirements(edl)` → `{ images: [path], fonts: [{ font, text }], words: [path] }`, what
@@ -45,7 +49,9 @@ Hosts: `#utils/playback/paintFrame.js` (browser) and `src/api/compose/`
 
 `env.scratch()` lends a blank pooled surface `{ canvas, ctx, width, height }`
 (frame-sized by default) and takes it back when the module returns. Use it
-instead of `createCanvas`, which allocates.
+instead of `createCanvas`, which allocates. A surface whose pixels will be
+read back (`getImageData`) is asked for with `env.scratch(w, h, true)`: a
+browser then keeps it where reading costs nothing.
 
 Rules every module follows:
 

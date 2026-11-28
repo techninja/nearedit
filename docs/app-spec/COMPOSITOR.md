@@ -36,6 +36,7 @@ All optional; a v2 document is a valid v3 document.
 | `fadeInCurve`, `fadeOutCurve` | enum | Shape of the fades: `linear` (default), `smooth`, `fast`, `slow`, `sharp` |
 | `text` | object | Title text, extended below |
 | `element` | object | A [brand element](./BRAND.md): the clip draws its design. `clipKind` and the layer kind are `element` |
+| `cutout` | object | A [person cutout](./CUTOUT.md): footage drawn through its matte, see [the matte pass](#the-matte-pass) |
 
 Generator, title, image and placeholder clips now keep a source window like
 media does: `timelineEnd - timelineStart === sourceOut - sourceIn` for every
@@ -144,9 +145,10 @@ For each frame, back to front:
 2. For each visible video track (last first; `activeTracks` decides):
    1. For each clip covering the time, in start order, `resolveClip` it, then
       draw its **source**: a footage frame or still placed with `placeSource`
-      and `resolveTransform`; a generator or title drawn frame-sized, then
-      transformed the same way; an [element clip](#element-clips) as the
-      layers its design expands to.
+      and `resolveTransform` — footage with a cutout through
+      [its matte](#the-matte-pass) first; a generator or title drawn
+      frame-sized, then transformed the same way; an
+      [element clip](#element-clips) as the layers its design expands to.
    2. If the clip has enabled effects or a non-normal blend mode, it is drawn
       onto its own frame-sized surface first, its effects are applied in
       order, and the surface is composited with the clip's opacity
@@ -193,6 +195,33 @@ untransformed, opaque clip without blended layers skips the surface.
 
 `requirements(edl)` lists the pictures and fonts of element clips with
 everything else; `elementImages(edl)` those pictures alone.
+
+## The matte pass
+
+A footage clip with `cutout.on` and a cutout made for it
+([CUTOUT.md](./CUTOUT.md)) is drawn as the person alone. The host hands
+`frameOf` a frame of the cutout file — the picture on the left, its matte
+on the right — and `cutoutPass.js` makes the clip's picture of it:
+
+- **By its shape.** A frame twice as wide for its height as the cutout's
+  picture (`isPacked`) is a packed frame; any other is drawn as the plain
+  picture. A host hands over whichever it has, and nothing breaks while a
+  cutout is missing, out of date or still loading.
+- **At the size drawn.** Both halves are taken at the size the clip is
+  shown at (never above the frame's own), the picture keeping its
+  proportions; the matte at half or a quarter of that when its edge is
+  soft enough to lose nothing.
+- **Grey to alpha** is one pass over the matte's pixels through a table
+  (`matteCurve.js`): no canvas operation turns brightness into
+  transparency. The table also moves and re-draws the edge for `shrink`
+  and `feather` (`matteEdge.js`), after a measured blur when the matte's
+  own ramp does not reach (`blurMeasure.js`).
+- **Then a picture like any other**: placed with the clip's transform and
+  crop, faded, and — with effects or a blend mode — on the clip's surface
+  first, so a drop shadow or an [outline](./EFFECTS.md#outline) follows
+  the person. `mode: blur` puts the blurred picture underneath.
+
+Cost and exactness: [CUTOUT.md § Drawing](./CUTOUT.md#drawing).
 
 ## Module contracts
 
@@ -253,9 +282,9 @@ The only door to the outside. Compositor modules never touch `document`,
 | Member | Purpose |
 | ------ | ------- |
 | `createCanvas(width, height)` | A canvas with a 2D context |
-| `scratch(width?, height?)` | A pooled, cleared surface, taken back when the module returns |
+| `scratch(width?, height?, read?)` | A pooled, cleared surface, taken back when the module returns. `read`: its pixels will be read back, so a browser keeps it where reading is cheap |
 | `image(path)` | A decoded still or sprite for a media path, or `null` while it loads |
-| `frameOf(clip, sourceTime)` | The footage frame for a clip, or `null` when not available |
+| `frameOf(clip, sourceTime)` | The footage frame for a clip, or `null` when not available. For a clip drawn through its matte: the frame of its cutout file (`cutoutShown`), or the plain frame while that is not there |
 | `fontReady(font, text)` | Whether the font is loaded (the browser loads on demand) |
 | `fonts(table)` | Optional: make the document's own font files known. Called with `edl.fonts` on every frame that has one, so it must cost nothing for a table it has seen |
 | `words(clip)` | The transcript of a captioned clip's file — its sidecar, its word list, or `[start, end, text]` triples in source seconds — or `null` while it loads and when there is none. The same object every time until the transcript changes. Not asked for a clip that carries its own words |
@@ -295,9 +324,10 @@ reference: [PARTICLES.md](./PARTICLES.md).
 A generator module may export **presets** (`{ id, name, description,
 params, blendMode? }`); the catalog lists them with the generator.
 
-**Effects:** nineteen, on clips and on tracks — colour (`colorAdjust`,
+**Effects:** twenty, on clips and on tracks — colour (`colorAdjust`,
 `colorBalance`, `levels`, `tint`, `stylize`, `posterize`), blur and light
-(`blur`, `glow`, `dropShadow`, `vignette`, `flicker`), texture (`grain`,
+(`blur`, `glow`, `dropShadow`, `vignette`, `flicker`), a sticker's border
+round any shape (`outline`), texture (`grain`,
 `scanlines`, `pixelate`, `rgbSplit`, `mirror`) and keying (`chromaKey`,
 `mask`, `wipe` — a soft-edged reveal for transitions) — plus ten looks
 built from them (`EFFECT_PRESETS`). Parameters, order, alpha handling and
@@ -348,7 +378,8 @@ re-encoding.
 - **Routing.** A segment takes the canvas path when anything in it needs the
   compositor — a generator, a title, an enabled effect, a blend mode,
   keyframes on a visual property, a curved fade, track opacity below 1, a
-  non-black background, a caption — and the filter-graph path otherwise.
+  non-black background, a caption, a person cutout that is ready — and
+  the filter-graph path otherwise.
   `POST /render/plan` says which, and why. `RENDER_ENGINE` (`auto`, `canvas`,
   `ffmpeg`) overrides the choice; `ffmpeg` refuses a timeline that needs the
   compositor instead of drawing it wrong.
@@ -384,6 +415,7 @@ nearedit catalog                               # generators, effects, blend mode
 nearedit frame  edit.json --time 3.5           # one frame as PNG → edit-3.5s.png
 nearedit render edit.json --preset draft       # the whole edit → edit.mp4
 nearedit captions edit.json --format vtt       # its captions → edit.vtt
+nearedit cutout edit.json                      # the person cutouts it lacks
 ```
 
 | Command | Does | Output |
@@ -393,12 +425,15 @@ nearedit captions edit.json --format vtt       # its captions → edit.vtt
 | `validate <edl.json> [--json]` | Normalises and checks the document | One line per problem with its path (`tracks[0].clips[2].generator.type: unknown generator …`); exit 1 when it cannot be rendered |
 | `catalog [--json]` | Lists generators and effects with every parameter (type, range, default), effect presets, blend modes, easings, text animations, fonts, brand kits and caption presets — read from `catalog()` | Text, or one JSON object |
 | `captions <edl.json> [--format srt\|vtt] [-o file] [--as phrases\|drawn]` | Writes the timeline's [captions](./CAPTIONS.md) as a subtitle file: phrases for reading, or the groups as drawn | The file's path |
+| `cutout <edl.json> [--media dir]` | Makes the [person cutouts](./CUTOUT.md#command-line) the document lacks, into `.nearedit/cutout/` beside it | The path of each file made |
 | `record <recipe.json> [-o out.mp4] [--allow host]` | Records a [web clip](./WEBCLIP.md) recipe in the headless browser | The recording's path; its track beside it |
 | `music <song.json> [-o out.wav]` | Renders a [song](./MUSIC.md) with the synth engine | The WAV's path |
 | `help [command]` | Explains | |
 
 `render` and `frame` first make whatever a document's web clips and music
-clips still lack: recordings need the browser, music needs nothing. The
+clips still lack: recordings need the browser, music needs nothing.
+Person cutouts take minutes, so those are made only by `cutout`: without
+one a clip is drawn with its background, and a warning says so. The
 words of captions come from the sidecar beside each media file
 (`talk.mp4.nearedit.json`, written by the server's transcriber) or from
 the clip itself.
@@ -416,8 +451,8 @@ the clip itself.
   `timelineStart`, say — a broken invariant, an empty timeline) and warnings
   (a value that was repaired on the way in — `"glow" was read as "normal"` —
   an unknown field or parameter, a clip longer than its file, a captioned
-  clip without words, a font file that is missing: its text is drawn in the
-  bundled sans-serif). With `--json` it also lists the segments and the
+  clip without words, a clip whose person cutout is not made, a font file
+  that is missing: its text is drawn in the bundled sans-serif). With `--json` it also lists the segments and the
   renderer each will take.
 - **Exit codes:** 0 done, 1 the document or the render failed, 2 the command
   line was not understood (the message says what was expected), 130

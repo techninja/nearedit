@@ -12,9 +12,10 @@ import { CUTOUT_DEFAULTS, CUTOUT_FIELDS, normalizeCutout } from './fields.js';
 import { cleanMade } from './made.js';
 
 /** @typedef {import('./types.js').CutoutBlock} CutoutBlock */
+/** @typedef {import('./types.js').CutoutSettings} CutoutSettings */
 /** @typedef {(path: string, message: string) => void} Report */
 
-const NAMES = /** @type {(keyof CutoutBlock)[]} */ (Object.keys(CUTOUT_FIELDS));
+const NAMES = /** @type {(keyof CutoutSettings)[]} */ (Object.keys(CUTOUT_FIELDS));
 
 /**
  * Read a clip's `cutout` block: its settings (`normalizeCutout`) and, when
@@ -53,7 +54,7 @@ export function checkCutout(cutout, path, report) {
       report(`${path}.${name}`, 'is not a field of a cutout');
   }
   for (const [name, spec] of Object.entries(CUTOUT_FIELDS)) {
-    if (cutout[name] === normal[/** @type {keyof CutoutBlock} */ (name)]) continue;
+    if (cutout[name] === normal[/** @type {keyof CutoutSettings} */ (name)]) continue;
     const range = spec.type === 'number' ? `a number from ${spec.min} to ${spec.max}` : '';
     const choice = spec.options ? `one of: ${spec.options.join(', ')}` : 'true or false';
     report(`${path}.${name}`, `must be ${range || choice}`);

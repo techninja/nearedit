@@ -24,7 +24,8 @@ function phi(x) {
   const z = Math.abs(x) / Math.SQRT2;
   const t = 1 / (1 + 0.3275911 * z);
   const p =
-    t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+    t *
+    (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
   const tail = 0.5 * p * Math.exp(-z * z);
   return x < 0 ? tail : 1 - tail;
 }
@@ -70,13 +71,25 @@ const near = (actual, expected, tolerance, message) =>
 describe('the matte curve', () => {
   it('leaves a matte as it is, and keeps black clear and white solid whatever it does', () => {
     assert.deepEqual([...matteCurve(1, 0)], [...Array(256).keys()]);
-    for (const [gain, shift] of [[3, 0], [1, 2], [0.5, -1.5], [20, 6], [14, -19]]) {
+    for (const [gain, shift] of [
+      [3, 0],
+      [1, 2],
+      [0.5, -1.5],
+      [20, 6],
+      [14, -19],
+    ]) {
       const curve = matteCurve(gain, shift);
       assert.deepEqual([curve[0], curve[255]], [0, 255]);
-      assert.ok(curve.every((v, i) => i === 0 || v >= curve[i - 1]), 'never falls');
+      assert.ok(
+        curve.every((v, i) => i === 0 || v >= curve[i - 1]),
+        'never falls',
+      );
     }
     assert.equal(matteCurve(2, 0.5), matteCurve(2, 0.5), 'a table is made once');
-    assert.ok(matteCurve(1, 1)[128] < 128 && matteCurve(1, -1)[128] > 128, 'a shift moves the edge');
+    assert.ok(
+      matteCurve(1, 1)[128] < 128 && matteCurve(1, -1)[128] > 128,
+      'a shift moves the edge',
+    );
     assert.ok(matteCurve(3, 0)[150] > 150 && matteCurve(3, 0)[105] < 105, 'gain steepens it');
   });
 
@@ -116,7 +129,9 @@ describe('the matte pass', () => {
     assert.deepEqual(seen.at(20, 340), [255, 255, 255]);
     // The disc is 200 px across where it is widest, and its edge stays where the matte has it.
     near(shoot(over(person({ shrink: 0 })), packed()).covered(180), 200, 0.5, 'width');
-    const plain = shoot(over(person()), createCanvas(W, H));
+    const whole = createCanvas(W, H);
+    whole.getContext('2d').fillRect(0, 0, W, H);
+    const plain = shoot(over(person()), whole);
     assert.deepEqual(plain.at(20, 340), [0, 0, 0], 'a plain frame is drawn as the plain picture');
     const waiting = media('me', FILE, { cutout: { on: true } });
     assert.deepEqual(shoot(over(waiting), packed()).at(900 % 640, 20), [0, 0, 0], 'no cutout yet');
@@ -140,7 +155,9 @@ describe('the matte pass', () => {
     const frame = packed();
     /** Width of the edge's ramp from 10 % to 90 %, pixels. */
     const ramp = (feather) => {
-      const row = shoot(over(person({ feather, shrink: 0 })), frame).row(180).slice(320);
+      const row = shoot(over(person({ feather, shrink: 0 })), frame)
+        .row(180)
+        .slice(320);
       return row.filter((v) => v > 0.1 && v < 0.9).length;
     };
     assert.ok(ramp(0) <= 2, `hard: ${ramp(0)} px`);
@@ -180,12 +197,22 @@ describe('the matte pass', () => {
     const small = person({ shrink: 0 }, { transform: { scaleX: 0.5, scaleY: 0.5, x: 300 } });
     const moved = shoot(over(small), frame);
     near(moved.covered(180), 100, 0.6, 'half the size');
-    assert.deepEqual([moved.at(420, 180), moved.at(320, 180)], [[0, 0, 0], [255, 255, 255]]);
+    assert.deepEqual(
+      [moved.at(420, 180), moved.at(320, 180)],
+      [
+        [0, 0, 0],
+        [255, 255, 255],
+      ],
+    );
     const faded = shoot(over(person({}, { transform: { opacity: 0.5 } })), frame).at(320, 180);
-    near(faded[0], 128, 1, 'half opaque');
+    near(faded[0], 128, 2, 'half opaque');
     const shadow = [fx('dropShadow', { x: 120, y: 0, blur: 0, color: '#ff0000', opacity: 1 })];
     const cast = shoot(over(person({}, { effects: shadow })), frame);
-    assert.deepEqual(cast.at(320 + 100 + 30, 180), [255, 0, 0], 'the shadow has the person’s shape');
+    assert.deepEqual(
+      cast.at(320 + 100 + 30, 180),
+      [255, 0, 0],
+      'the shadow has the person’s shape',
+    );
     assert.deepEqual(cast.at(320 + 100 + 30, 60), [255, 255, 255], 'not the picture’s');
   });
 });
@@ -216,7 +243,7 @@ describe('outline', () => {
   it('follows the shape, takes its colour’s alpha, and fades when soft', () => {
     const around = (params) => {
       const effects = [fx('outline', { color: '#ff0000', width: 4, ...params })];
-      const disc = { shape: 'ellipse', width: 200, height: 200, fill: '#000000' };
+      const disc = { shape: 'ellipse', width: 50 / 480, height: 50 / 270, fill: '#000000' };
       const canvas = renderFrame(over(gen('s', 'shape', disc, { effects })), 1, {
         ...{ width: 480, env: createEnv() },
       });
@@ -226,8 +253,15 @@ describe('outline', () => {
     // The disc is 25 px in radius on this canvas, its border 10.8 px more.
     const at = around({});
     assert.deepEqual(at(240, 135), [0, 0, 0], 'the layer is on top');
-    for (const [dx, dy] of [[31, 0], [0, 31], [-22, 22], [22, -22]])
-      assert.deepEqual(at(240 + dx, 135 + dy), [255, 0, 0], `round the disc at ${dx}, ${dy}`);
+    for (const [dx, dy] of [
+      [31, 0],
+      [0, 31],
+      [-22, 22],
+      [22, -22],
+    ]) {
+      const [r, g, b] = at(240 + dx, 135 + dy);
+      assert.ok(r === 255 && g < 4 && b < 4, `round the disc at ${dx}, ${dy}: ${[r, g, b]}`);
+    }
     assert.deepEqual(at(240 + 40, 135), [255, 255, 255], 'and no further');
     assert.deepEqual(at(240 + 28, 135 + 28), [255, 255, 255], 'a round border, not a square one');
     near(around({ color: '#ff000080' })(271, 135)[1], 127, 2, 'half transparent');

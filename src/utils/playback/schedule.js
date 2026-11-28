@@ -90,7 +90,7 @@ export function videoLayers(tracks, time) {
 /**
  * The stills a layer waits for before it can be drawn: the picture of an
  * image clip, and the pictures an element clip shows (a logo).
- * @param {{ fonts?: any[] }} doc - The document, for its font table
+ * @param {{ fonts?: any[], tracks?: any[] }} doc - The document, for its font table
  * @param {Cue} cue
  * @returns {string[]} Media paths
  */

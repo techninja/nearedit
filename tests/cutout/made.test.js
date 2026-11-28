@@ -46,7 +46,10 @@ describe('what was made for a cutout', () => {
     const whole = { ...defaults, on: true, made: made() };
     assert.equal(cleanCutout(whole), whole, 'a clean block is kept as it is');
     assert.deepEqual(cleanCutout({ made: made(), extra: 1 }), { ...defaults, made: made() });
-    assert.deepEqual(cleanCutout({ on: true, made: made({ frames: 0 }) }), { ...defaults, on: true });
+    assert.deepEqual(cleanCutout({ on: true, made: made({ frames: 0 }) }), {
+      ...defaults,
+      on: true,
+    });
     const problems = [];
     const report = (path, message) => problems.push(`${path} ${message}`);
     cutout.checkCutout(whole, 'c', report);

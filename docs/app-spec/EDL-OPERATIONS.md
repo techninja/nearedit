@@ -28,6 +28,7 @@ then hand-tune.
 | `trim.js` | `trimClipStart`, `trimClipEnd` (optional ripple) |
 | `split.js` | `splitClips` |
 | `clipEdit.js` | `deleteClips`, `slipClip`, `setClipFades`, `updateClip` |
+| `cutout.js` | [Person cutout](#person-cutout): `setCutout`, `attachCutout`, `cutoutNeeds`, `canCutout`; `cutoutState` |
 | `crossfade.js` | `settle` — overlap resolution used by every operation above and below |
 | `ripple.js`, `gaps.js` | `rippleDelete`, `rippleDeleteRange`, `rippleInsert`, `closeGaps` |
 | `snap.js` | `snapTime`, `snapEdges`, `snapMove`, `snapCandidates` |
@@ -213,6 +214,29 @@ trim, slip, slide, ripple and paste need no bookkeeping. Both halves of a
 split share one block — the words are not copied — and play as one voice
 until one of them is moved, slipped or trimmed. A pasted clip is read like
 any loaded one. Loading lets clips with equal words share one list again.
+
+## Person cutout
+
+A clip that plays a video file may carry `cutout: { on, mode, feather,
+shrink, blur, made? }` ([CUTOUT.md](./CUTOUT.md#in-the-document)): its
+settings, and `made` — the cutout file a finished job made for it. The
+settings table, the ranges a timeline uses and time inside a cutout file
+are `src/utils/cutout/`.
+
+| Operation | What it does |
+| --------- | ------------ |
+| `setCutout(edl, clipIds, patch = true)` | Switch the cutout on or off and change settings for any number of clips in one step. `patch` is `true` / `false` or any of `{ on, mode, feather, shrink, blur }`; a value that cannot be used leaves its setting alone. Switched off, a clip keeps its settings and `made`; a block that says nothing (off, defaults, nothing made) is removed. Clips that cannot be cut out and clips on locked tracks are left alone |
+| `attachCutout(edl, made)` | Attach a finished `cutout` job's result — `{ file, key, source, start, end, fps, width, height, frames }`; it must name `source`, the media file — to every clip with cutout on that plays that file and is covered by it: clips of one file share one cutout, the newest wins. A clip it does not cover whole takes it when it holds more of the clip than what the clip has. Clips on locked tracks get it too. Not an edit a person made: commit it with `{ record: false }` |
+| `cutoutNeeds(edl)` | What to ask the server for: `[{ path, start, end, fps, frames, clips, waiting }]`, the ranges of `cutoutRanges(edl)` — one per media file, a second of margin each side — in which a clip is not ready. `clips` are all the clips the cutout is for, `waiting` those not ready |
+| `cutoutState(clip, fps?)` | `off`, `missing` (nothing made for the file the clip plays), `stale` (made, but the clip's source window reaches beyond it — or, with `fps` given, it was made at another rate) or `ready` |
+| `canCutout(clip, track)` | Whether a clip can be cut out: it plays a video file on a video track |
+
+`updateClip` cannot write the block, and `pasteAttributes` does not copy
+it. Every edit a clip survives, its cutout survives: split, trim, slip,
+copy and paste carry the block, both halves of a split share it, and a
+clip trimmed or slipped beyond what was made is `stale` until
+`cutoutNeeds` has been answered again. Relinking a clip to another file
+(`updateClip` with `sourceFile`) leaves its cutout `missing`.
 
 ## Editing rules
 
