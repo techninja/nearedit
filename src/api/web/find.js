@@ -9,6 +9,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { getConfig } from '../lib/config.js';
 
 /**
@@ -25,6 +26,7 @@ import { getConfig } from '../lib/config.js';
 
 /** The folder inside the data folder that `scripts/install-browser.js` fills. */
 export const INSTALL_FOLDER = 'browsers';
+const OWN_DATA = fileURLToPath(new URL('../../../data', import.meta.url));
 
 /** @param {string} platform @returns {string[]} File names of a headless shell */
 const binaryNames = (platform) =>
@@ -134,11 +136,13 @@ export function findBrowser(where = {}) {
   /** @type {[string, string, number, ((name: string) => boolean)?][]} */
   const places = [
     ['installed', join(all.dataDir, INSTALL_FOLDER), 3],
+    // The command line runs from anywhere: the copy in NearEdit's own data folder counts too.
+    ['installed', where.dataDir ? '' : join(OWN_DATA, INSTALL_FOLDER), 3],
     ['playwright', caches.playwright, 2, (name) => name.startsWith('chromium_headless_shell')],
     ['puppeteer', caches.puppeteer, 2],
   ];
   for (const [source, dir, depth, only] of places) {
-    const path = search(dir, names, depth, only);
+    const path = dir ? search(dir, names, depth, only) : '';
     if (path) return { path, source };
   }
   return null;

@@ -39,7 +39,14 @@ export async function validateCommand(argv, io) {
   const { values, rest } = parseArgs(argv, OPTIONS, 'validate');
   if (rest.length !== 1)
     throw new UsageError('validate takes one document: an EDL JSON file.', 'validate');
-  const checked = await checkDocument(rest[0], { media: values.media });
+  const loaded = await checkDocument(rest[0], { media: values.media });
+  // A web clip that is not recorded yet is a placeholder here; `render` records it first,
+  // so a timeline holding nothing else is not the empty one it looks like.
+  const waiting = loaded.unrecorded.length > 0;
+  const findings = loaded.findings.filter(
+    (finding) => !(waiting && /nothing to render/.test(finding.message)),
+  );
+  const checked = { ...loaded, findings, valid: !byLevel(findings).errors.length };
   const { errors, warnings } = byLevel(checked.findings);
   const facts = summary(checked);
   if (values.json) {

@@ -405,6 +405,13 @@ look-ahead and the decoders) and 0.2 GB the canvas worker.
 - **Surround** sources are downmixed with FFmpeg's defaults, which are
   quieter than Web Audio's. The limiter has no counterpart in the preview.
 - **Markers** are not written as chapters.
+- **Web clips** ([WEBCLIP.md](./WEBCLIP.md)) are rendered from their
+  recording, like any footage. The server never records while rendering: a
+  web clip that has no recording yet is a placeholder and is left out. The
+  command line records the missing ones first — `nearedit render` and
+  `nearedit frame` put them in `.nearedit/web/` beside the document
+  (`--allow host[:port]` for private addresses) — and `nearedit validate`
+  lists them as warnings.
 
 ## Tests
 

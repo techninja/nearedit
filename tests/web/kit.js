@@ -19,6 +19,8 @@ import { browserStatus } from '../../src/api/web/status.js';
 /** Everything of this test file lives here, browser profiles included. */
 export const SCRATCH = mkdtempSync(join(tmpdir(), 'nearedit-webtest-'));
 process.env.TMPDIR = SCRATCH;
+// Also when a suite is skipped or dies: nothing of a test run stays behind.
+process.on('exit', () => rmSync(SCRATCH, { recursive: true, force: true }));
 // Root cannot use Chrome's sandbox; the product default keeps it.
 if (process.getuid?.() === 0) process.env.WEB_CAPTURE_NO_SANDBOX ??= '1';
 

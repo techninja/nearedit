@@ -49,8 +49,12 @@ async function probe(path, noSandbox) {
       .send('HeadlessExperimental.beginFrame', frame, PROBE_TIMEOUT);
     return { version: product, reason: '' };
   } catch (err) {
+    // Ordinary Chrome may not even start on a server: say what is needed either way.
+    const hint = /headless[-_]shell/i.test(path)
+      ? ''
+      : ` Web clips need chrome-headless-shell. ${HOW}`;
     if (err instanceof WebError)
-      return { version: '', reason: `${err.message} ${err.detail}`.trim() };
+      return { version: '', reason: `${err.message} ${err.detail}`.trim() + hint };
     const reason = `${path} is not chrome-headless-shell: it has no begin-frame control (ordinary Chrome does not). ${HOW}`;
     return { version: '', reason };
   } finally {

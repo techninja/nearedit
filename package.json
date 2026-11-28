@@ -8,6 +8,7 @@
   "scripts": {
     "test": "node scripts/test.js",
     "start": "node --env-file-if-exists=.env --env-file-if-exists=.env.local src/server.js",
+    "install-browser": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/install-browser.js",
     "dev": "node --watch --env-file-if-exists=.env --env-file-if-exists=.env.local src/server.js",
     "postinstall": "node scripts/setup.js",
     "spec": "node scripts/spec.js",

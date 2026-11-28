@@ -8,6 +8,7 @@
  *   nearedit render <edl.json> [-o out.mp4] [--preset …] [--range start:end]
  *   nearedit frame <edl.json> --time <seconds> [-o frame.png] [--width n]
  *   nearedit validate <edl.json>
+ *   nearedit record <recipe.json> [-o out.mp4] [--fps n] [--allow host]
  *   nearedit catalog [--json]
  *
  * Reference: docs/app-spec/COMPOSITOR.md § Authoring without the UI.
@@ -50,6 +51,7 @@ async function main(argv) {
   if (command === 'frame') return (await import('./lib/frameCommand.js')).frameCommand(rest, io);
   if (command === 'validate')
     return (await import('./lib/validateCommand.js')).validateCommand(rest, io);
+  if (command === 'record') return (await import('./lib/recordCommand.js')).recordCommand(rest, io);
   return (await import('./lib/catalogCommand.js')).catalogCommand(rest, io);
 }
 

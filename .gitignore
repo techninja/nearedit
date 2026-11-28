@@ -8,6 +8,7 @@ data/renders/
 data/previews/
 data/transcode/
 data/tmp/
+data/browsers/
 
 # Local configuration
 .env.local

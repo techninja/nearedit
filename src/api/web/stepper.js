@@ -20,6 +20,11 @@ const LONGEST_WAIT = 60_000;
 /** After this many cut waits the clock no longer waits for the network at all. */
 const MAX_STRIKES = 3;
 const HANG = 30_000;
+/**
+ * A page that never goes idle — a loop of messages to itself — would hold its own clock for
+ * ever: after this many tasks without the clock moving, Chrome moves it on regardless.
+ */
+const STARVATION = 1000;
 const SLACK = 0.5;
 const sleep = (/** @type {number} */ ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -61,7 +66,8 @@ export async function createStepper(session, network, { fps, warn, watchdog = WA
       timeout: HANG + LONGEST_WAIT,
     });
     used.catch(() => {}); // reported through the command below when the browser is gone
-    await session.send('Emulation.setVirtualTimePolicy', { policy, budget });
+    const forced = { maxVirtualTimeTaskStarvationCount: STARVATION };
+    await session.send('Emulation.setVirtualTimePolicy', { policy, budget, ...forced });
     return used;
   };
   const waiting = () => [...network.inflight.keys()].filter((id) => !stuck.has(id));

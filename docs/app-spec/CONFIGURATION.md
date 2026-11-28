@@ -22,6 +22,7 @@ a few provider-specific ones (marked †) are read in
 | `RENDER_ENGINE` | `auto` | `auto` uses the FFmpeg filter graph for plain footage and the canvas compositor for titles, generators, effects, keyframes and blend modes; `canvas` draws everything with the compositor; `ffmpeg` refuses (422) a timeline the filter graph cannot draw. See [RENDER.md](./RENDER.md) |
 | `RENDER_WORKERS` | half the cores, 1–4 | Segments of one render drawn at once. Each worker at 1080p needs about 1 GB; set `1` on a small machine |
 | `ANALYSIS_CONCURRENCY` | `1` | Simultaneous analysis jobs |
+| `WEB_CAPTURE_CONCURRENCY` | `1` | Simultaneous web-clip recordings (each is a browser) |
 
 ### Access and security
 
@@ -40,6 +41,32 @@ browse the allowed media folders, start renders and edit projects.
   folder browser only lists directories under `BROWSE_ROOTS`.
 - The `ssh` transcription provider has the remote machine fetch media back
   over HTTP. With a password set, the remote command must send it too.
+
+## Web clips
+
+Recording web pages ([WEBCLIP.md](./WEBCLIP.md)) needs
+**chrome-headless-shell** — ordinary Chrome cannot be stepped frame by
+frame. `npm run install-browser` downloads the current stable build from
+Chrome for Testing into `<NEAREDIT_DATA_DIR>/browsers/` (about 280 MB) and
+checks that it starts; nothing is downloaded otherwise. One installed by
+Playwright (`npx playwright install chromium-headless-shell`, also for
+Linux on ARM, which Chrome for Testing does not build) or Puppeteer is
+found too. `GET /api/web/status` says what was found.
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `WEB_CAPTURE_BROWSER` | found automatically | Path of a chrome-headless-shell. When set, only this one is used. Otherwise: the installed copy, then Playwright's cache (`PLAYWRIGHT_BROWSERS_PATH`), then Puppeteer's (`PUPPETEER_CACHE_DIR`) |
+| `WEB_CAPTURE_ALLOW` | empty | Private addresses the recording browser may load, comma-separated: `localhost:5173`, `intranet.example`, `*.staging.example.com`, `192.168.1.*:8080`, `[::1]:3000`. A pattern is compared with the host (and port, when given) as the page's address names it |
+| `WEB_CAPTURE_NO_SANDBOX` | off | `1` starts Chrome without its sandbox. Needed when the server runs as root or in a container without user namespaces; leave it off elsewhere |
+
+The recording browser reaches the network only through a filter inside
+the server: every connection it asks for — the page, frames, scripts,
+requests, web sockets, workers — is resolved there and refused when the
+address is loopback, private (RFC 1918), link-local (cloud metadata
+included), carrier-grade NAT, unique-local IPv6 or otherwise not public,
+unless `WEB_CAPTURE_ALLOW` names the host. System proxy settings are not
+used. Each recording has a fresh profile, removed afterwards; downloads,
+permission requests and service workers are refused.
 
 ## Director LLM
 

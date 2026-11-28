@@ -5,28 +5,125 @@
     <title>NearEdit test site</title>
     <style>
       /* Known geometry: everything is placed by hand, in CSS pixels. */
-      body { margin: 0; font: 16px sans-serif; background: #ffffff; height: 1400px; }
-      #slider { position: absolute; top: 20px; left: 0; width: 20px; height: 20px; background: #ff0000;
-        animation: slide 2s linear infinite; }
-      @keyframes slide { from { left: 0 } to { left: 600px } }
-      #hover { position: absolute; top: 60px; left: 40px; width: 160px; height: 40px; border: 0;
-        background: rgb(0, 200, 0); transition: background-color 0.5s linear; font-size: 15px; }
-      #hover:hover { background: rgb(0, 0, 200); }
-      #toggle { position: absolute; top: 120px; left: 40px; width: 160px; height: 40px; border: 0;
-        background: #dddddd; cursor: pointer; font-size: 15px; }
-      #lamp { position: absolute; top: 120px; left: 240px; width: 40px; height: 40px; background: #000000; }
-      #lamp.on { background: #ffff00; }
-      #next { position: absolute; top: 180px; left: 40px; width: 160px; height: 40px; line-height: 40px;
-        background: #eeeeff; text-align: center; color: #1d4ed8; }
-      #open { position: absolute; top: 240px; left: 40px; width: 160px; height: 40px; }
-      #far { position: absolute; top: 1200px; left: 300px; width: 160px; height: 40px; border: 0;
-        background: #dddddd; cursor: pointer; }
-      #farlamp { position: absolute; top: 1200px; left: 500px; width: 40px; height: 40px; background: #000000; }
-      #farlamp.on { background: #00ffff; }
-      #banner { position: fixed; left: 0; right: 0; bottom: 0; height: 30px; background: #ff00ff; }
-      dialog { border: 0; padding: 24px; background: #ffffff; }
-      dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
-      @media (prefers-color-scheme: dark) { body { background: #101010; } }
+      body {
+        margin: 0;
+        font: 16px sans-serif;
+        background: #ffffff;
+        height: 1400px;
+      }
+      #slider {
+        position: absolute;
+        top: 20px;
+        left: 0;
+        width: 20px;
+        height: 20px;
+        background: #ff0000;
+        animation: slide 2s linear infinite;
+      }
+      @keyframes slide {
+        from {
+          left: 0;
+        }
+        to {
+          left: 600px;
+        }
+      }
+      #hover {
+        position: absolute;
+        top: 60px;
+        left: 40px;
+        width: 160px;
+        height: 40px;
+        border: 0;
+        background: rgb(0, 200, 0);
+        transition: background-color 0.5s linear;
+        font-size: 15px;
+      }
+      #hover:hover {
+        background: rgb(0, 0, 200);
+      }
+      #toggle {
+        position: absolute;
+        top: 120px;
+        left: 40px;
+        width: 160px;
+        height: 40px;
+        border: 0;
+        background: #dddddd;
+        cursor: pointer;
+        font-size: 15px;
+      }
+      #lamp {
+        position: absolute;
+        top: 120px;
+        left: 240px;
+        width: 40px;
+        height: 40px;
+        background: #000000;
+      }
+      #lamp.on {
+        background: #ffff00;
+      }
+      #next {
+        position: absolute;
+        top: 180px;
+        left: 40px;
+        width: 160px;
+        height: 40px;
+        line-height: 40px;
+        background: #eeeeff;
+        text-align: center;
+        color: #1d4ed8;
+      }
+      #open {
+        position: absolute;
+        top: 240px;
+        left: 40px;
+        width: 160px;
+        height: 40px;
+      }
+      #far {
+        position: absolute;
+        top: 1200px;
+        left: 300px;
+        width: 160px;
+        height: 40px;
+        border: 0;
+        background: #dddddd;
+        cursor: pointer;
+      }
+      #farlamp {
+        position: absolute;
+        top: 1200px;
+        left: 500px;
+        width: 40px;
+        height: 40px;
+        background: #000000;
+      }
+      #farlamp.on {
+        background: #00ffff;
+      }
+      #banner {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 30px;
+        background: #ff00ff;
+      }
+      dialog {
+        border: 0;
+        padding: 24px;
+        background: #ffffff;
+      }
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.5);
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #101010;
+        }
+      }
     </style>
   </head>
   <body>
@@ -39,7 +136,10 @@
     <button id="far">Far away</button>
     <div id="farlamp"></div>
     <div id="banner">We use cookies</div>
-    <dialog id="dialog"><p>A modal dialog</p><button id="close">Close it</button></dialog>
+    <dialog id="dialog">
+      <p>A modal dialog</p>
+      <button id="close">Close it</button>
+    </dialog>
     <script>
       const byId = (id) => document.getElementById(id);
       window.clicks = [];

@@ -5,15 +5,63 @@
     <title>An app with a scrolling panel</title>
     <style>
       /* The page itself never scrolls: the panel does. */
-      html, body { margin: 0; height: 100%; overflow: hidden; font: 16px sans-serif; background: #ffffff; }
-      #side { position: absolute; top: 0; left: 0; width: 120px; bottom: 0; background: #e5e7eb; }
-      #panel { position: absolute; top: 0; left: 120px; right: 0; bottom: 0; overflow: auto; }
-      #inner { position: relative; height: 2000px; }
-      .ruler { position: absolute; left: 0; width: 40px; height: 10px; background: #ff0000; top: 400px; }
-      #deep { position: absolute; top: 1500px; left: 100px; width: 160px; height: 40px; border: 0;
-        background: #dddddd; cursor: pointer; }
-      #deeplamp { position: absolute; top: 1500px; left: 300px; width: 40px; height: 40px; background: #000000; }
-      #deeplamp.on { background: #ffff00; }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        font: 16px sans-serif;
+        background: #ffffff;
+      }
+      #side {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 120px;
+        bottom: 0;
+        background: #e5e7eb;
+      }
+      #panel {
+        position: absolute;
+        top: 0;
+        left: 120px;
+        right: 0;
+        bottom: 0;
+        overflow: auto;
+      }
+      #inner {
+        position: relative;
+        height: 2000px;
+      }
+      .ruler {
+        position: absolute;
+        left: 0;
+        width: 40px;
+        height: 10px;
+        background: #ff0000;
+        top: 400px;
+      }
+      #deep {
+        position: absolute;
+        top: 1500px;
+        left: 100px;
+        width: 160px;
+        height: 40px;
+        border: 0;
+        background: #dddddd;
+        cursor: pointer;
+      }
+      #deeplamp {
+        position: absolute;
+        top: 1500px;
+        left: 300px;
+        width: 40px;
+        height: 40px;
+        background: #000000;
+      }
+      #deeplamp.on {
+        background: #ffff00;
+      }
     </style>
   </head>
   <body>

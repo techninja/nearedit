@@ -3,7 +3,7 @@
  * @module bin/lib/help
  */
 
-export const COMMANDS = ['render', 'frame', 'validate', 'catalog', 'help'];
+export const COMMANDS = ['render', 'frame', 'validate', 'record', 'catalog', 'help'];
 
 const USAGE = {
   render: `nearedit render <edl.json> [-o out.mp4] [--preset draft|standard|high] [--range start:end]
@@ -16,7 +16,11 @@ const USAGE = {
   --preset <name>       draft (half size, fast), standard (default), high
   --range <start:end>   Only this part, in seconds: 5:12.5, :10, 30:
   --media <dir>         Also allow media from this folder (may be repeated)
-  --workers <n>         Segments rendered at once (default: half the cores, at most 4)`,
+  --allow <host[:port]> Let web clips be recorded from this private address (may be repeated)
+  --workers <n>         Segments rendered at once (default: half the cores, at most 4)
+
+  Web clips without a recording are recorded first, into .nearedit/web/ beside the
+  document; that needs chrome-headless-shell (npm run install-browser).`,
   frame: `nearedit frame <edl.json> --time <seconds> [-o frame.png] [--width n]
 
   Draw the frame the render shows at that moment — footage, stills,
@@ -25,7 +29,8 @@ const USAGE = {
   -t, --time <seconds>  The moment to draw (required)
   -o, --output <file>   Where to write (default: beside the document, <name>-<time>s.png)
   -w, --width <pixels>  Width of the picture (default: the document's resolution)
-  --media <dir>         Also allow media from this folder (may be repeated)`,
+  --media <dir>         Also allow media from this folder (may be repeated)
+  --allow <host[:port]> Let web clips be recorded from this private address (may be repeated)`,
   validate: `nearedit validate <edl.json> [--json]
 
   Read the document the way a render does and list what is wrong with it
@@ -35,6 +40,21 @@ const USAGE = {
 
   --json                Machine-readable: { valid, errors, warnings, segments, … }
   --media <dir>         Also allow media from this folder (may be repeated)`,
+  record: `nearedit record <recipe.json> [-o out.mp4] [--fps n] [--allow host[:port]]
+
+  Play a web clip's recipe — an address and steps such as move, click, type
+  and scroll — in a headless browser and write the recording (H.264, no
+  sound), with its track (<name>.track.json: what happened, and where)
+  beside it. Prints the recording's path. See docs/app-spec/WEBCLIP.md.
+
+  -o, --output <file>   Where to write (default: beside the recipe, <name>.mp4;
+                        an existing file is replaced)
+  --fps <n>             Frames per second (default: 30)
+  --allow <host[:port]> Let the browser load this private address — localhost:5173,
+                        *.staging.example.com (may be repeated; WEB_CAPTURE_ALLOW adds more).
+                        Private addresses are refused otherwise.
+
+  Needs chrome-headless-shell: npm run install-browser, or WEB_CAPTURE_BROWSER.`,
   catalog: `nearedit catalog [--json]
 
   List what a document may name: generators and effects with every parameter
@@ -51,6 +71,7 @@ const OVERVIEW = `nearedit — author and render NearEdit timelines without the 
   nearedit render   <edl.json> [-o out.mp4] [--preset draft|standard|high] [--range start:end]
   nearedit frame    <edl.json> --time <seconds> [-o frame.png] [--width n]
   nearedit validate <edl.json> [--json]
+  nearedit record   <recipe.json> [-o out.mp4] [--fps n] [--allow host[:port]]
   nearedit catalog  [--json]
   nearedit help     [command]
 

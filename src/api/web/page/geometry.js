@@ -73,9 +73,13 @@ export function installGeometry(ne) {
     for (let up = el.parentElement; up; up = up.parentElement) if (scrolls(up)) boxes.push(up);
     if (!boxes.includes(root())) boxes.push(root());
     const from = places(boxes);
+    // In view: all of it — or, for something bigger than the picture, the point to aim at.
+    // (Something that is in view stays put: a sticky menu must not scroll the page to its origin.)
+    const r = el.getBoundingClientRect();
     const { x, y } = ne.point(el);
-    const margin = Math.min(64, innerHeight * 0.1);
-    const inView = x >= 0 && x <= innerWidth && y >= margin && y <= innerHeight - margin;
+    const whole = r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth;
+    const fits = r.height <= innerHeight && r.width <= innerWidth;
+    const inView = fits ? whole : x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight;
     let to = from;
     if (always || !inView) {
       el.scrollIntoView({

@@ -8,8 +8,8 @@
  * @module api/web/record
  */
 
-import { mkdirSync, renameSync, rmSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { compileScore } from '#utils/web/index.js';
 import { writeJsonAtomic } from '../lib/registry.js';
 import { pngSize, startEncoder } from './encoder.js';
@@ -24,7 +24,25 @@ import { openStudio } from './studio.js';
  */
 
 const ACK_WAIT = 250;
+/** Longer than any recording runs: a `.part` file this old belongs to nobody. */
+const STALE_MS = 60 * 60_000;
 const sleep = (/** @type {number} */ ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Remove what a process that was killed outright left half-written here.
+ * @param {string} dir
+ */
+function sweepParts(dir) {
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    try {
+      if (name.endsWith('.part') && Date.now() - statSync(path).mtimeMs > STALE_MS)
+        rmSync(path, { force: true });
+    } catch (err) {
+      console.warn(`[web] cannot clean ${path}: ${err.message}`);
+    }
+  }
+}
 
 /**
  * Say what a low-level failure means for the person who asked.
@@ -53,6 +71,7 @@ export async function recordRecipe(options) {
   const score = compileScore(recipe, fps);
   const partial = `${output}.${process.pid}-${Date.now().toString(36)}.part`;
   mkdirSync(dirname(output), { recursive: true });
+  sweepParts(dirname(output));
   if (signal?.aborted) throw aborted();
   /** @type {ReturnType<typeof startEncoder>|null} */
   let encoder = null;

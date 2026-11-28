@@ -15,6 +15,7 @@ const OPTIONS = {
   output: { short: 'o', type: /** @type {'string'} */ ('string') },
   width: { short: 'w', type: /** @type {'number'} */ ('number') },
   media: { type: /** @type {'list'} */ ('list') },
+  allow: { type: /** @type {'list'} */ ('list') },
 };
 
 /**
@@ -33,6 +34,9 @@ export async function frameCommand(argv, io) {
   if (width !== undefined && !(Number.isInteger(width) && width >= 16 && width <= 8192))
     throw new UsageError('--width must be a whole number of pixels from 16 to 8192.', 'frame');
 
+  // Loaded late too: only a document with unrecorded web clips starts a browser.
+  const { recordWebClips } = await import('./webMissing.js');
+  if (!(await recordWebClips(rest[0], values, io))) return 130;
   const checked = await checkDocument(rest[0], { media: values.media });
   for (const line of describe(checked.findings)) io.err(line);
   if (!checked.valid)

@@ -100,7 +100,7 @@ duration, score, matchCount, matches: [{ field, text, start?, end?, time? }] }`.
 
 `status`: `queued`, `running`, `complete`, `error`, `cancelled`.
 `type`: `index`, `analyze`, `transcribe`, `tag`, `beats`, `scenes`,
-`silence`, `waveform`, `director`, `script`, `render`.
+`silence`, `waveform`, `director`, `script`, `render`, `web`.
 `result` in a summary holds only the small scalar fields of the full result.
 
 ### WebSocket `/ws`
@@ -274,3 +274,71 @@ existing render is never overwritten: a second "My Cut" becomes
 `My Cut-2.mp4`. Long timelines are rendered in segments and joined without
 re-encoding. How the graph is built, the presets and the limits:
 [RENDER.md](./RENDER.md).
+
+## Web clips
+
+Scripted recordings of web pages ([WEBCLIP.md](./WEBCLIP.md)): a recipe —
+an address and steps — is played in `chrome-headless-shell` and recorded
+into `<project>/.nearedit/web/<key>.mp4`, with a track `<key>.json` beside
+it. The recording is ordinary footage: it is played through `/media/file`.
+
+| Method | Route | Purpose |
+| ------ | ----- | ------- |
+| GET | `/web/status` | `{ available, browser: { path, version }, reason, allow }`. `?fresh` looks for the browser again |
+| POST | `/web/snapshot` | `{ recipe, until?, projectId? }` → the page after the first `until` steps (default: all) |
+| POST | `/web/record` | `{ projectId, recipe, fps? }` → `202 { jobId }`, job type `web` |
+| GET | `/web/track?projectId=&key=` | The track of a recording (404 when there is none) |
+
+`reason` says why recording is not possible and what to do — no browser
+found, a browser that is not a headless shell, one that does not start —
+and is `''` when `available`. `allow` lists the `WEB_CAPTURE_ALLOW`
+patterns.
+
+**Record.** `fps` is the frame rate of the document the clip lives in
+(default 30): the recording's key is `recipeKey(recipe, fps)`, so a clip
+recorded at another rate stays stale. The recipe is checked with
+`validateRecipe` as it was sent: `422` with one entry per problem in
+`fields` (`"steps[2].target": "click needs a target…"`), `400` without a
+`projectId`, `404` for an unknown project, `403` / `404` for a
+`recipe.storage` file outside the allowed folders or missing, `503` (with
+the reason of `/web/status`) without a usable browser — all before a job
+exists. Web jobs run in their own lane, `WEB_CAPTURE_CONCURRENCY` at a
+time. Progress messages are `frame n of m`. The job's result:
+
+```json
+{
+  "file": "/project/.nearedit/web/4f6cdd866ea702323a45.mp4",
+  "key": "4f6cdd866ea702323a45", "duration": 9.5, "fps": 30,
+  "width": 2560, "height": 1440, "title": "Example Domain",
+  "track": { "version": 1, "steps": [], "cursor": [], "scroll": [], "warnings": [] },
+  "cached": false
+}
+```
+
+`duration` is the score's; `width` × `height` is viewport × scale, made
+even. `cached` is true when the recording was already there — nothing is
+recorded twice, and two requests for one key share one recording. A job
+that fails names what stopped it: `Step 3 (click): nothing on the page
+matches text=Sign in`, `https://intranet/ was refused: … is a private
+address (private network). To record it anyway, allow it:
+WEB_CAPTURE_ALLOW=intranet`. Cancelling the job ends the browser and
+FFmpeg; a failed or cancelled recording leaves no file. What did not stop
+the recording is in `track.warnings`: skipped steps (`onMissing: skip`),
+parts of the page that were not loaded because their address is private,
+requests that never finished, dialogs that were dismissed, an HTTP error
+status of the page.
+
+**Snapshot.** Answers directly (it takes about as long as loading the
+page): `{ url, title, viewport, page: { width, height }, scrollY, image,
+elements, warnings }`. `image` is a PNG data URL of the viewport at one
+device pixel per CSS pixel, without the recorder's pointer and marks.
+`elements` — at most 300, in document order — are `{ kind, name, target,
+rect, visible }`: `kind` is `link`, `button`, `input`, `heading`, `image`
+or `section`; `rect` is in page CSS pixels; `visible` says whether it is
+inside the viewport now; `target` finds exactly that element when used in
+a step (its text or label when no other element shares it, otherwise a
+CSS selector). Only the steps that are played have to be complete, so a
+snapshot can be taken while the next step is still being written. Errors
+are those of a recording, as a status: `422` (recipe, or a step that
+cannot be done), `403` (a refused address), `502` (the page could not be
+loaded), `503` (no browser).

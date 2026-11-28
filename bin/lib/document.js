@@ -15,6 +15,7 @@ import { mapMediaPaths } from '../../src/api/render/mediaPaths.js';
 import { catalogFindings } from './catalogCheck.js';
 import { jsonErrorOffset, lineAndColumn } from './jsonError.js';
 import { repairFindings } from './repairs.js';
+import { attachRecordings, recipeFindings, unrecordedFindings } from './webClips.js';
 
 /** A document that cannot be used (exit code 1). */
 export class DocumentError extends Error {}
@@ -26,6 +27,8 @@ export class DocumentError extends Error {}
  * @property {any} edl - Normalised, with absolute media paths
  * @property {Finding[]} findings - Errors and warnings, in document order
  * @property {string[]} media - Every media file the document names
+ * @property {string} dir - The document's folder
+ * @property {import('./webClips.js').Unrecorded[]} unrecorded - Web clips without a recording
  */
 
 /**
@@ -33,7 +36,7 @@ export class DocumentError extends Error {}
  * @returns {any} The parsed JSON
  * @throws {DocumentError} When the file cannot be read or is not JSON
  */
-function parse(file) {
+export function parseFile(file) {
   let text;
   try {
     text = readFileSync(file, 'utf8');
@@ -64,7 +67,7 @@ function parse(file) {
  */
 export function loadDocument(path, options = {}) {
   const file = resolve(path);
-  const raw = parse(file);
+  const raw = parseFile(file);
   const tracks = Array.isArray(raw) ? raw : raw?.tracks;
   if (!Array.isArray(tracks))
     throw new DocumentError(`${file} is not a timeline document: it needs a "tracks" array`);
@@ -74,9 +77,11 @@ export function loadDocument(path, options = {}) {
       throw new DocumentError(`--media ${folder}: no such folder`);
     return realpathSync(folder);
   });
-  const normal = normalizeEdl(raw);
+  // A web clip's footage is its recording beside the document, when there is one.
+  const { edl: normal, unrecorded } = attachRecordings(normalizeEdl(raw), dir);
   /** @type {Finding[]} */
   const findings = [...repairFindings(raw, normal), ...catalogFindings(normal)];
+  findings.push(...recipeFindings(tracks), ...unrecordedFindings(normal, unrecorded));
   const media = new Set();
   const edl = mapMediaPaths(normal, (name, where) => {
     // Relative to the document's folder; failing that, to a --media folder.
@@ -97,7 +102,7 @@ export function loadDocument(path, options = {}) {
     media.add(real);
     return real;
   });
-  return { file, edl, findings, media: [...media] };
+  return { file, dir, edl, findings, media: [...media], unrecorded };
 }
 
 /**

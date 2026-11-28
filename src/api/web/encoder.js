@@ -1,10 +1,13 @@
 /**
  * FFmpeg at the end of the recorder: PNG frames in, one H.264 MP4 out.
  *
- * The settings are chosen for pages, which are mostly text: constant
- * quality 16 keeps small type crisp (see the measurements in the tests'
- * notes), `veryfast` keeps the encoder ahead of the browser, and a key
- * frame every half second lets the editor scrub the clip. The stream is
+ * The settings are chosen for pages, which are mostly text. Constant
+ * quality 16 keeps 11 px type as crisp as the frame it was made from
+ * (about 44 dB against the browser's own picture, half a decibel short of
+ * what 4:2:0 colour allows; a page of text and gradients then takes about
+ * 1 Mbit/s at 1280 × 720 and 2 Mbit/s at twice that). `veryfast` costs
+ * nothing visible at that quality and keeps the encoder out of the
+ * browser's way. A key frame every half second lets the editor scrub. The stream is
  * yuv420p, BT.709, limited range, square pixels — what browsers play and
  * what the renderer's own segments use.
  * @module api/web/encoder

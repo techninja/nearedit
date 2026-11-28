@@ -42,7 +42,10 @@ export function parseAllowPattern(text) {
   const bracketed = /^\[([^\]]+)\](?::(\d+|\*))?$/.exec(whole);
   // More than one colon and no brackets: a bare IPv6 address, which has no port.
   const plain = /^([^:]+)(?::(\d+|\*))?$/.exec(whole);
-  const match = bracketed || plain || (whole.includes(':') ? [whole, whole, undefined] : null);
+  const bare = /^[0-9a-f*]*:[0-9a-f:.*]*:[0-9a-f.*]*$/i.test(whole)
+    ? [whole, whole, undefined]
+    : null;
+  const match = bracketed || plain || bare;
   if (!match || !match[1]) return null;
   const port = match[2] && match[2] !== '*' ? Number(match[2]) : null;
   if (port !== null && !(port >= 1 && port <= 65535)) return null;

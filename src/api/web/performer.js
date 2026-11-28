@@ -47,7 +47,7 @@ export function createPerformer(stage, steps = stage.score.steps.length) {
   const rows = score.steps.map((at) => ({ ...at, missing: false }));
   const scene = createScene(recipe, fps);
   const { pointer } = scene;
-  const sent_ = { x: NaN, y: NaN };
+  const moved = { x: NaN, y: NaN };
   /** @type {Act[]} */
   let acts = [];
   /** @type {number[][]} */
@@ -79,9 +79,9 @@ export function createPerformer(stage, steps = stage.score.steps.length) {
         const inside =
           pointer.x >= 0 && pointer.y >= 0 && pointer.x <= width && pointer.y <= height;
         const here = () => mouse('mouseMoved', pointer, { held });
-        if (pointer.shown && inside && (pointer.x !== sent_.x || pointer.y !== sent_.y)) {
+        if (pointer.shown && inside && (pointer.x !== moved.x || pointer.y !== moved.y)) {
           commands.push(here());
-          Object.assign(sent_, { x: pointer.x, y: pointer.y });
+          Object.assign(moved, { x: pointer.x, y: pointer.y });
           cursorTrack.push([n / fps, round(pointer.x), round(pointer.y)]);
         }
         for (const act of acts) {

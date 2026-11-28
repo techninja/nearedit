@@ -159,7 +159,8 @@ describe('web recorder: steps', { skip: kit.SKIP }, () => {
     const { frames, score, track } = await rec({ url: `${site.url}/`, steps });
     assert.equal(frames.count, score.frames);
     const click = span(score, 0);
-    const arrive = click.A + 5;
+    // The button comes up four frames after the press; the page it leads to is there at once.
+    const arrive = click.A + 4;
     assert.ok(
       near(frames.at(click.A + 3, 600, 300), [255, 255, 255]),
       'the first page until the release',
@@ -248,10 +249,10 @@ describe('web recorder: steps', { skip: kit.SKIP }, () => {
     });
     const click = span(slow.score, 0);
     const lamp = (shot, n) => shot.frames.at(n, 260, 80);
-    assert.ok(near(lamp(slow, click.A + 4), [0, 0, 0]), 'asked on the release frame');
+    assert.ok(near(lamp(slow, click.A + 3), [0, 0, 0]), 'not asked while the button is down');
     assert.ok(
-      near(lamp(slow, click.A + 5), [0, 255, 0]),
-      'answered on the next: 400 ms took no time',
+      near(lamp(slow, click.A + 4), [0, 255, 0]),
+      'asked and answered on the frame it comes up: 400 ms took no time',
     );
     for (let n = 0; n < slow.frames.count; n++) {
       const off = Math.abs(slow.frames.box(n, isRed)[0] - ((300 + 10 * n) % 600));
@@ -279,5 +280,17 @@ describe('web recorder: steps', { skip: kit.SKIP }, () => {
       never.track.warnings[0],
       /\/api\/never did not finish loading; the clock stopped waiting/,
     );
+
+    // A page that never goes idle — it keeps posting messages to itself — is stepped all the same.
+    const spin =
+      'const c = new MessageChannel(); c.port1.onmessage = () => c.port2.postMessage(0); c.port2.postMessage(0)';
+    const busy = await rec({
+      url: `${site.url}/slow.html`,
+      steps: [{ do: 'run', js: spin, hold: 0.5 }],
+    });
+    for (let n = 0; n < busy.frames.count; n++) {
+      const off = Math.abs(busy.frames.box(n, isRed)[0] - ((300 + 10 * n) % 600));
+      assert.ok(Math.min(off, 600 - off) <= 1, `frame ${n} of a busy page`);
+    }
   });
 });
