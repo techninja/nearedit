@@ -1,16 +1,3 @@
-/* Brand kits: the section of this tab, the inspector's group and the Brand
-   dialog with its parts. Their styles are loaded with the tab they start in. */
-@import '../../atoms/brand-frame/brand-frame.css';
-@import '../../molecules/brand-create/brand-create.css';
-@import '../../molecules/element-inspector/element-inspector.css';
-@import '../../molecules/brand-kit-list/brand-kit-list.css';
-@import '../../molecules/brand-token-editor/brand-token-editor.css';
-@import '../../molecules/brand-preview/brand-preview.css';
-@import '../brand-dialog/brand-dialog.css';
-
-/* The entry for captions under Text. */
-@import '../../molecules/captions-create/captions-create.css';
-
 /* Fills its parent, whether that is a flex item or a grid or block cell. */
 create-panel {
   display: flex;

@@ -60,6 +60,7 @@
   --color-clip-generator: #db2777;
   --color-clip-web: #0891b2;
   --color-clip-music: #4f46e5;
+  --color-clip-element: #65a30d;
   --color-clip-placeholder: #64748b;
   --color-clip-text: #fff;
   --color-playhead: #ef4444;
@@ -114,6 +115,7 @@
   --color-clip-generator: #be185d;
   --color-clip-web: #0b7b98;
   --color-clip-music: #4338ca;
+  --color-clip-element: #4d7c0f;
   --color-clip-placeholder: #56657d;
   --color-cursor: #e2e8f0;
   --color-loop: rgb(96 165 250 / 20%);

@@ -1,7 +1,24 @@
 /* Component styles aggregator — the Create tab and the preview overlay.
-   (The inspector's generator, effect and keyframe groups are in
+   (The inspector's generator, effect, keyframe and caption groups are in
    components-panels.css.) */
 @import '../components/atoms/create-thumb/create-thumb.css';
+
+/* Brand kits: the Create tab's section, the inspector group and the Brand
+   dialog with its parts. Listed before the panel itself, the order these
+   have always loaded in. */
+@import '../components/atoms/brand-frame/brand-frame.css';
+@import '../components/molecules/brand-create/brand-create.css';
+@import '../components/molecules/element-inspector/element-inspector.css';
+@import '../components/molecules/brand-kit-list/brand-kit-list.css';
+@import '../components/molecules/brand-token-editor/brand-token-editor.css';
+@import '../components/molecules/brand-preview/brand-preview.css';
+@import '../components/organisms/brand-dialog/brand-dialog.css';
+
+/* Captions: the entry under Text (the style editor and the inspector group
+   are in components-panels.css). */
+@import '../components/molecules/captions-create/captions-create.css';
+
+/* The panel and the preview overlay. */
 @import '../components/organisms/create-panel/create-panel.css';
 @import '../components/molecules/preview-overlay/preview-overlay.css';
 

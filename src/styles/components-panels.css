@@ -26,6 +26,14 @@
 @import '../components/molecules/effect-card/effect-card.css';
 @import '../components/molecules/inspector-effects/inspector-effects.css';
 @import '../components/molecules/keyframe-strip/keyframe-strip.css';
+
+/* Captions: the style tiles, the style editor of the document's view and the
+   inspector's Captions group. */
+@import '../components/atoms/caption-tile/caption-tile.css';
+@import '../components/molecules/captions-style/captions-style.css';
+@import '../components/molecules/captions-inspector/captions-inspector.css';
+
+/* The document's view, the inspector and the transcript. */
 @import '../components/molecules/inspector-document/inspector-document.css';
 @import '../components/organisms/clip-inspector/clip-inspector.css';
 @import '../components/molecules/transcript-find/transcript-find.css';

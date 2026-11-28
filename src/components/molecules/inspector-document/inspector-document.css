@@ -1,9 +1,3 @@
-/* Captions of the timeline are part of the document's view; their styles,
-   and those of the inspector's Captions group, load with it. */
-@import '../../atoms/caption-tile/caption-tile.css';
-@import '../captions-style/captions-style.css';
-@import '../captions-inspector/captions-inspector.css';
-
 inspector-document {
   display: block;
 

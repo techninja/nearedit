@@ -1,13 +1,3 @@
-/* The timeline's colour for brand element clips, light and dark (read by
-   utils/timeline/palette.js as --color-clip-element). */
-:root {
-  --color-clip-element: #65a30d;
-}
-
-[data-theme='dark'] {
-  --color-clip-element: #4d7c0f;
-}
-
 /* A kit's colours as a row of dots — the Brand section, the kits of the
    dialog and the inspector all show a kit this way. */
 .brand-swatches {
