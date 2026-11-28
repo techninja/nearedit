@@ -16,6 +16,7 @@ import {
 import { createObservable } from '#utils/ui/observable.js';
 import { brandDialog } from './dialogState.js';
 import { chooseProjectKit, listKits, readKit, removeKit } from './kitApi.js';
+import { refreshPictures } from './kitFiles.js';
 import { forOpenAdaptation } from './kitLoad.js';
 import { acceptKit, isKitAnswer, kitState } from './kitState.js';
 import { forgetOwnKit } from './ownKit.js';
@@ -126,7 +127,12 @@ export async function chooseKit(id) {
 export async function deleteKit(id) {
   brandDialog.set({ busy: 'Removing the kit…', error: '', said: '' });
   try {
+    const shown = Object.entries(kitPictures.get().byKit).filter(([slot]) =>
+      slot.startsWith(`${id}|`),
+    );
     await removeKit(id);
+    // Its files went with it: what the preview had decoded of them is forgotten.
+    for (const [, kit] of shown) refreshPictures(kit);
     brandDialog.set({ busy: '', said: 'The kit was removed from the library.' });
     await loadKits();
     return true;

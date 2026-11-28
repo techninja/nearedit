@@ -94,7 +94,8 @@
  *
  * Reading: `normalizeElement`, `normalizeDesign` (`normalize.js`,
  * `fields.js`). Checking: `validateDesign` (`validate.js`). From element to
- * design: `resolveElement`. From design to clips: `expandElement`.
+ * design: `resolveElement`. From design to clips: `expandElement`. Where an
+ * element is in its frame at rest: `elementBounds`.
  * Isomorphic and pure.
  * @module utils/brand/element
  */
@@ -109,6 +110,7 @@ export {
   SIDES,
   formatOf,
 } from './vocabulary.js';
+export { elementBounds } from './bounds.js';
 export { GROUP_FIELDS, LAYER_FIELDS } from './fields.js';
 export { normalizeDesign, normalizeElement } from './normalize.js';
 export { resolveElement } from './resolve.js';

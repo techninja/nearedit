@@ -177,6 +177,9 @@ throws: it draws nothing and warns.
   made to.
 - Pieces of one element that touch on a track — an element that was
   split — play as one: one entrance, one exit.
+- Word-by-word captions make room for an overlay element: a group that a
+  lower third would be in the way of is drawn clear of it
+  ([CAPTIONS.md](./CAPTIONS.md#drawing)).
 - **Out of date**: `element.kit.key` differs from the key of the project's
   effective kit (`staleElements` says `outdated`), or the element is gone
   from it (`missing`). `restyle(edl, kit)` replaces the designs of every
@@ -242,7 +245,8 @@ an adaptation may name another. With none, `builtin:clean`.
   sets both.
 - A kit's revision covers the names of its files, not their contents:
   replacing a logo under the same name changes the picture without making
-  any clip out of date (and the preview shows the old one until reload).
+  any clip out of date. Saved from the Brand dialog, the new picture shows
+  in the preview at once; replaced any other way, after a reload.
 - A kit is chosen for the project; choosing one clears an adaptation's own
   choice. There is no zip import or export of kits yet — a kit is a folder.
 
@@ -326,8 +330,6 @@ all elements to brand`, `Update selected elements to brand`.
 nothing: every element lays itself out for the frame it is drawn in, and
 the tiles and previews take the shape of the open timeline.
 
-Not in the editor yet: writing a new element (JSON, see Limits), choosing
-a kit for one adaptation only (the API has it; the editor chooses for the
-project and reads the open adaptation's), and a refresh of the main
-preview's picture when a logo is replaced under the same file name (the
-tiles and the dialog do refresh; the preview shows it after a reload).
+Not in the editor yet: writing a new element (JSON, see Limits), and
+choosing a kit for one adaptation only (the API has it; the editor chooses
+for the project and reads the open adaptation's).

@@ -101,6 +101,8 @@ export const CAPTION_STYLE = Object.freeze({
 
   'position.anchor': pick('Position', 'Placed at the', ANCHORS, 'bottom'),
   'position.offset': num('Position', 'In from that edge', 12, 0, 90, 0.5, 'u'),
+  // A group is drawn clear of a brand overlay that would be in its way (`room.js`).
+  avoid: { type: 'boolean', group: 'Position', label: 'Clear of overlays', default: true },
 
   'motion.in': pick('Motion', 'A group arrives', GROUP_MOTIONS, 'pop'),
   'motion.word': pick('Motion', 'The mark arrives', WORD_MOTIONS, 'pop'),

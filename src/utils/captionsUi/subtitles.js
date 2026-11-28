@@ -10,7 +10,7 @@
 
 import { store } from 'hybrids';
 import ProjectState from '#store/ProjectState.js';
-import { SUBTITLE_GROUP, formatSrt, formatVtt, timelineCues } from '#utils/captions/cues.js';
+import { SUBTITLE_FORMATS, formatSubtitles, phraseCues } from '#utils/captions/cues.js';
 import { voiceFiles } from '#utils/captions/voices.js';
 import { getDoc } from '#utils/editor/session.js';
 import { downloadBytes } from '#utils/musicUi/midiFiles.js';
@@ -18,22 +18,17 @@ import { defaultFilename } from '#utils/ui/exportPlan.js';
 import { showToast } from '#utils/ui/toast.js';
 import { wordBook } from './words.js';
 
-export const SUBTITLE_FORMATS = ['srt', 'vtt'];
+export { SUBTITLE_FORMATS };
 const TYPES = { srt: 'application/x-subrip', vtt: 'text/vtt' };
 
 /**
- * The cues a subtitle file of a document holds.
+ * The cues a subtitle file of a document holds: its phrases for reading,
+ * as the library defines them for every writer of such a file.
  * @param {any} doc
  * @param {(clip: any) => unknown} wordsOf - The transcript of a clip's file
  * @returns {import('#utils/captions/types.js').Cue[]}
  */
-export function subtitleCues(doc, wordsOf) {
-  const stored = doc?.captions?.style;
-  const base = stored !== null && typeof stored === 'object' ? stored : { preset: stored };
-  // A design may shout or drop its commas; a file that is read keeps the text as it is.
-  const reading = { ...base, case: 'as-is', punctuation: 'keep' };
-  return timelineCues(doc, wordsOf, { style: reading, group: SUBTITLE_GROUP });
-}
+export const subtitleCues = (doc, wordsOf) => phraseCues(doc, wordsOf);
 
 /**
  * The text of a subtitle file.
@@ -41,8 +36,7 @@ export function subtitleCues(doc, wordsOf) {
  * @param {string} format - `srt` or `vtt`
  * @returns {string}
  */
-export const subtitleText = (cues, format) =>
-  format === 'vtt' ? formatVtt(cues) : formatSrt(cues);
+export const subtitleText = (cues, format) => formatSubtitles(cues, format);
 
 /**
  * Write the subtitle file of the timeline on screen and save it. Every

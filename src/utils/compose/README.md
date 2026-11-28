@@ -179,6 +179,8 @@ values. Do not name a parameter `seed`.
 | `frame.js`, `color.js`, `random.js`, `fonts.js` | Time and size, colours, randomness, bundled fonts              |
 | `text/`                                         | Titles: style, wrapping, layout, animation, drawing            |
 | `elementLayer.js`, `elementExpansion.js`        | Brand element clips: expanded into layers, kept between frames |
+| `captionPass.js`, `captionRoom.js`              | Captions over every track; a group's place, decided once       |
+| `overlayBlocks.js`                              | What brand overlays keep of the frame: captions go clear of it |
 | `fontFaces.js`, `fontRegistrar.js`              | A document's own fonts, as data and as faces in the browser    |
 | `generators/`, `effects/`                       | One module each, listed in their `index.js`                    |
 

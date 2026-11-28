@@ -6,10 +6,10 @@
  * @module api/render/subtitles
  */
 
-import { SUBTITLE_GROUP, formatSrt, formatVtt, timelineCues } from '#utils/captions/cues.js';
+import { formatSubtitles, phraseCues, timelineCues } from '#utils/captions/cues.js';
 import { wordsFrom } from './words.js';
 
-export const SUBTITLE_FORMATS = ['srt', 'vtt'];
+export { SUBTITLE_FORMATS } from '#utils/captions/cues.js';
 /**
  * `phrases`: two-line phrases for reading, with the capitals and the
  * punctuation the words were written with, whatever the style does to them
@@ -27,12 +27,8 @@ export const SUBTITLE_SHAPES = ['phrases', 'drawn'];
  * @returns {import('#utils/captions/types.js').Cue[]}
  */
 export function subtitleCues(edl, words, options = {}) {
-  const stored = edl?.captions?.style;
-  const base = stored !== null && typeof stored === 'object' ? stored : { preset: stored };
-  // A design may shout or drop its commas; a file that is read keeps the text as it is.
-  const reading = { ...base, case: 'as-is', punctuation: 'keep' };
-  const shaped = options.as === 'drawn' ? {} : { style: reading, group: SUBTITLE_GROUP };
-  const cues = timelineCues(edl, wordsFrom(words), shaped);
+  const wordsOf = wordsFrom(words);
+  const cues = options.as === 'drawn' ? timelineCues(edl, wordsOf) : phraseCues(edl, wordsOf);
   const { range } = options;
   if (!range) return cues;
   const [from, to] = [range.start, Number.isFinite(range.end) ? range.end : Infinity];
@@ -52,7 +48,7 @@ export function subtitleCues(edl, words, options = {}) {
  * @returns {string}
  */
 export function subtitleText(cues, format) {
-  return format === 'vtt' ? formatVtt(cues) : formatSrt(cues);
+  return formatSubtitles(cues, format);
 }
 
 /**

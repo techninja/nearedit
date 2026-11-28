@@ -15,6 +15,7 @@ import { captionGroups } from '#utils/captions/groups.js';
 import { resolveCaptionStyle } from '#utils/captions/resolve.js';
 import { captionVoices, voiceFiles, voiceWords, voicesAt } from '#utils/captions/voices.js';
 import { runModule } from './applyEffects.js';
+import { captionLift } from './captionRoom.js';
 
 /** What a font is warmed up with when a voice's words are not known yet. */
 const SAMPLE = 'Aa0';
@@ -33,7 +34,9 @@ function wordsFor(voice, wordsOf) {
 
 /**
  * Draw the captions of a frame. Voices that sound together stack: the
- * first with words takes the style's place, the next sits clear of it.
+ * first with words takes the style's place, the next sits clear of it. A
+ * group that a brand overlay would be in the way of is drawn clear of it,
+ * in one place for as long as it is on screen (`captionRoom.js`).
  * @param {any} ctx - The frame, after every track
  * @param {import('./drawClip.js').FrameRun} run
  */
@@ -42,17 +45,31 @@ export function drawCaptions(ctx, run) {
   const voices = voicesAt(edl, time);
   if (!voices.length) return;
   const style = resolveCaptionStyle(edl.captions?.style);
+  const upward = style.position.anchor === 'bottom';
   let lane = 0;
+  let moved = 0;
   for (const voice of voices) {
     const words = wordsFor(voice, compose.env.words);
     if (!words.length) continue;
     const mine = lane++;
     const found = captionAt(captionGroups(words, style), time);
     if (!found) continue;
+    const { group } = found;
     // Until its font is there a caption is left out rather than drawn in another.
-    if (!compose.env.fontReady(captionFont(style, frame), found.group.text)) continue;
+    if (!compose.env.fontReady(captionFont(style, frame), group.text)) continue;
+    if (style.avoid) {
+      const when = {
+        lane: mine,
+        from: group.start,
+        to: Math.min(group.until, voice.sound.timelineEnd),
+      };
+      const own = captionLift(group, when, style, run, ctx);
+      // A voice stacked on another goes at least as far as the one it sits on.
+      moved = mine === 0 ? own : upward ? Math.min(own, moved) : Math.max(own, moved);
+    }
+    const lift = moved;
     runModule('captions', ctx, compose.pool, () =>
-      drawCaptionAt(ctx, words, time, style, frame, mine),
+      drawCaptionAt(ctx, words, time, style, frame, mine, lift),
     );
   }
 }

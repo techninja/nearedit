@@ -14,6 +14,7 @@ import { draftKit } from './draft.js';
 import { filesOf, slugOf, withStoredNames } from './draftNames.js';
 import { fileUrlOf, pendingFiles } from './draftFiles.js';
 import { beginDraft, draftSaved, draftState } from './draftState.js';
+import { refreshPictures } from './kitFiles.js';
 import { readKit, uploadKitFile, writeKit, writeProjectKit } from './kitApi.js';
 import { loadKits } from './kitList.js';
 import { forOpenAdaptation } from './kitLoad.js';
@@ -73,12 +74,15 @@ export function saveForProject() {
   const { draft, base } = draftState.get();
   if (!draft || !projectId) return Promise.resolve(false);
   return saving('Saving the brand…', async () => {
-    const named = withStoredNames(draft, await sendFiles({ projectId }, draft, false));
+    const stored = await sendFiles({ projectId }, draft, false);
+    const named = withStoredNames(draft, stored);
     const kit = draftKit(named, named.name || `${base.name}, customised`);
     const answer = await forOpenAdaptation(await writeProjectKit(projectId, kit));
     if (!acceptKit(projectId, answer)) throw new Error('The server answered without a kit');
-    // A file may have been replaced under the name it had: show the new one.
+    // A file may have been replaced under the name it had: show the new one —
+    // on the tiles and in the dialog, and in the preview of the timeline.
     refreshThumbFiles();
+    refreshPictures(answer.effective, stored.values());
     draftSaved(named);
     await beginDraft();
     return 'Saved. This project now has a brand of its own.';
@@ -104,7 +108,9 @@ export function saveToLibrary(name) {
     const stored = await sendFiles({ kitId: id }, draft, true);
     const renamed = [...stored].some(([from, to]) => from !== to);
     if (renamed) await writeKit(id, draftKit(withStoredNames(draft, stored), name));
-    const { problems } = await readKit(id);
+    const { problems, effective } = await readKit(id);
+    // A kit of that name may have been there, with other pictures under these names.
+    refreshPictures(effective, stored.values());
     await loadKits();
     brandDialog.set({ problems: (problems || []).filter((problem) => problem.level === 'error') });
     return `Saved to the library as “${name}”. Other projects can choose it; this project keeps the kit it has.`;

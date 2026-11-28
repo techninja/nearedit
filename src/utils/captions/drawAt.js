@@ -8,6 +8,7 @@
 
 import { captionAt } from './at.js';
 import { drawCaption } from './draw.js';
+import { placeWords } from './geometry.js';
 import { fontOf } from './metrics.js';
 import { captionGroups } from './groups.js';
 import { layoutCaption } from './layout.js';
@@ -49,6 +50,44 @@ export function captionFontNeed(words, style, fonts) {
 }
 
 /**
+ * Run something that measures text in a style's font on a context.
+ * @template T
+ * @param {any} ctx - A Canvas 2D context; it is left as it was
+ * @param {import('./types.js').CaptionStyle} style - Resolved
+ * @param {import('./types.js').CaptionFrame} frame
+ * @param {(measure: (text: string) => number) => T} use
+ * @returns {T}
+ */
+function measuring(ctx, style, frame, use) {
+  ctx.save();
+  ctx.textRendering = 'geometricPrecision';
+  ctx.letterSpacing = '0px';
+  ctx.font = fontOf(style, frame);
+  const result = use((text) => ctx.measureText(text).width);
+  ctx.restore();
+  return result;
+}
+
+/**
+ * Where a group sits at rest in a frame, measured with a context: what a
+ * compositor asks before it decides whether the group has to make room for
+ * something (`room.js`). Give it a frame of the output's own size and the
+ * answer is the same on a small preview and on the render.
+ * @param {any} ctx - A Canvas 2D context (browser or server); it is left as it was
+ * @param {import('./types.js').CaptionGroup} group - From `captionGroups`
+ * @param {unknown} style - The timeline's caption style, stored or resolved
+ * @param {import('./types.js').CaptionFrame} frame
+ * @param {number} [lane=0]
+ * @returns {ReturnType<typeof placeWords>}
+ */
+export function placeCaption(ctx, group, style, frame, lane = 0) {
+  const resolved = resolveCaptionStyle(style);
+  return measuring(ctx, resolved, frame, (measure) =>
+    placeWords(group, resolved, frame, measure, lane),
+  );
+}
+
+/**
  * Draw the caption of one voice at a time: find the group on screen, lay
  * it out measuring with the context, and draw it. Deterministic, and
  * nothing is kept between frames but the groups.
@@ -59,19 +98,17 @@ export function captionFontNeed(words, style, fonts) {
  * @param {import('./types.js').CaptionFrame} frame - The canvas being drawn
  * @param {number} [lane=0] - 0 for the first voice sounding at this
  *   moment, 1 for a second one, which is then stacked clear of the first
+ * @param {number} [lift=0] - Units the group sits lower by (negative:
+ *   higher) to be clear of something in its way (`liftFor`)
  * @returns {boolean} True when a caption was drawn
  */
-export function drawCaptionAt(ctx, words, time, style, frame, lane = 0) {
+export function drawCaptionAt(ctx, words, time, style, frame, lane = 0, lift = 0) {
   const resolved = resolveCaptionStyle(style);
   const found = captionAt(captionGroups(words, resolved), time);
   if (!found || !(frame?.width > 0 && frame?.height > 0)) return false;
-  ctx.save();
-  ctx.textRendering = 'geometricPrecision';
-  ctx.letterSpacing = '0px';
-  ctx.font = fontOf(resolved, frame);
-  const measure = (/** @type {string} */ text) => ctx.measureText(text).width;
-  const laid = layoutCaption(found.group, { ...found, lane }, resolved, frame, measure);
-  ctx.restore();
+  const laid = measuring(ctx, resolved, frame, (measure) =>
+    layoutCaption(found.group, { ...found, lane, lift }, resolved, frame, measure),
+  );
   drawCaption(ctx, laid, resolved, frame);
   return Boolean(laid);
 }

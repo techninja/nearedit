@@ -26,11 +26,14 @@ import { isRtl } from './text.js';
  *   `fontOf(style, frame)`, canvas pixels
  * @param {number} [lane=0] - Voices at once: lane 1 sits one caption
  *   further from the anchored edge than lane 0
+ * @param {number} [lift=0] - Units to sit lower by (negative: higher), for
+ *   a group that is drawn clear of something in its way (`room.js`)
  * @returns {{ unit: number, size: number, font: string, rtl: boolean, box: Rect, room:
- *   ReturnType<typeof roomOf>, words: { text: string, x: number, y: number, cy: number,
- *   width: number, line: number }[] }}
+ *   ReturnType<typeof roomOf>, step: number, words: { text: string, x: number, y: number,
+ *   cy: number, width: number, line: number }[] }} `step`: how far the lane put it from
+ *   the first voice's place
  */
-export function placeWords(group, style, frame, measure, lane = 0) {
+export function placeWords(group, style, frame, measure, lane = 0, lift = 0) {
   const unit = unitOf(frame);
   const full = fontSize(style.size * unit);
   const space = measure(' ');
@@ -70,6 +73,8 @@ export function placeWords(group, style, frame, measure, lane = 0) {
   if (anchor === 'top') top = reachOf(offset, frame, 'top') + step;
   if (anchor === 'bottom') top = frame.height - reachOf(offset, frame) - height - step;
   top = Math.max(low, Math.min(high, top));
+  // Moved clear of what is in its way — by the same amount for as long as the group is read.
+  if (lift) top = Math.max(low, Math.min(high, top + lift * unit));
   const rtl = isRtl(group.text);
   const words = [];
   rows.forEach((row, line) => {
@@ -83,5 +88,5 @@ export function placeWords(group, style, frame, measure, lane = 0) {
     });
   });
   const box = { x: (frame.width - widest * fit) / 2, y: top, width: widest * fit, height };
-  return { unit, size, font: fontOf(style, frame, size), rtl, box, room, words };
+  return { unit, size, font: fontOf(style, frame, size), rtl, box, room, step, words };
 }

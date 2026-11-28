@@ -103,7 +103,8 @@ export function layoutCaption(group, state, style, frame, measure) {
   at.word = Math.min(group.words.length - 1, Math.round(at.word));
   at.lane = Math.min(8, Math.round(at.lane));
   at.wordProgress = Math.min(1, at.wordProgress);
-  const placed = placeWords(group, resolved, frame, measure, at.lane);
+  const lift = Number.isFinite(given.lift) ? given.lift : 0;
+  const placed = placeWords(group, resolved, frame, measure, at.lane, lift);
   const { size, box, room } = placed;
   const paints = paintWords(resolved, placed.words.length, at);
   const words = placed.words.map((word, i) => ({

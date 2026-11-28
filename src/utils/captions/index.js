@@ -8,14 +8,24 @@
  */
 
 export { TIME_GIVE, captionAt } from './at.js';
-export { SUBTITLE_GROUP, formatSrt, formatTimestamp, formatVtt, timelineCues } from './cues.js';
+export {
+  SUBTITLE_FORMATS,
+  SUBTITLE_GROUP,
+  formatSrt,
+  formatSubtitles,
+  formatTimestamp,
+  formatVtt,
+  phraseCues,
+  timelineCues,
+} from './cues.js';
 export { drawCaption } from './draw.js';
-export { captionFont, captionFontNeed, drawCaptionAt } from './drawAt.js';
+export { captionFont, captionFontNeed, drawCaptionAt, placeCaption } from './drawAt.js';
 export { SAFE, reachOf, unitOf } from './metrics.js';
 export { captionGroups } from './groups.js';
 export { layoutCaption } from './layout.js';
 export { CAPTION_PRESETS } from './presets.js';
 export { flatCaptionStyle, normalizeCaptionStyle, resolveCaptionStyle } from './resolve.js';
+export { ROOM, clearOf, liftFor, restRect } from './room.js';
 export {
   ANCHORS,
   CAPTION_STYLE,

@@ -34,6 +34,67 @@ const NOTHING = [];
 const kept = new WeakMap();
 
 /**
+ * What laying an element out depends on beside its block and the output
+ * size: the sizes of the pictures it shows, as this host has them now.
+ * @param {any} element - A clip's `element` block
+ * @param {import('./drawClip.js').FrameRun} run
+ * @returns {string} '' for an element without pictures
+ */
+export function pictureSizes(element, run) {
+  const { frame } = run;
+  const format = formatOf({ width: frame.outWidth, height: frame.outHeight });
+  return elementNeeds(element, format)
+    .images.map((path) => {
+      const picture = pictureSize(run.compose.env.image(path));
+      return picture.width > 0 ? `${picture.width}x${picture.height}` : '';
+    })
+    .join(',');
+}
+
+/**
+ * Whether every font an element's text is set in has arrived: a layout
+ * measured with a fallback font would stay wrong.
+ * @param {any} element
+ * @param {import('./drawClip.js').FrameRun} run
+ * @returns {boolean}
+ */
+export function fontsReady(element, run) {
+  const { frame } = run;
+  const format = formatOf({ width: frame.outWidth, height: frame.outHeight });
+  return elementNeeds(element, format).texts.every((text) =>
+    run.compose.env.fontReady(
+      fontString({ ...text, fontSize: 72, fonts: frame.fonts }, 1),
+      text.text,
+    ),
+  );
+}
+
+/**
+ * How this host measures for an element's layout: text with the canvas's
+ * own fonts, pictures by the size they were decoded at.
+ * @param {import('./drawClip.js').FrameRun} run
+ * @param {any} ctx - Any context of this host
+ * @returns {{ measure: (text: string, style: any) => number,
+ *   sizeOf: (path: string) => { width: number, height: number }|null }}
+ */
+export function layoutHost(run, ctx) {
+  const { frame } = run;
+  return {
+    measure(text, style) {
+      ctx.save();
+      setFont(ctx, /** @type {any} */ ({ ...style, fonts: frame.fonts }));
+      const { width } = ctx.measureText(text);
+      ctx.restore();
+      return width;
+    },
+    sizeOf(path) {
+      const picture = pictureSize(run.compose.env.image(path));
+      return picture.width > 0 && picture.height > 0 ? picture : null;
+    },
+  };
+}
+
+/**
  * The layers of an element clip for a length and this frame, back to front.
  * @param {any} element - The clip's `element` block
  * @param {number} duration - Seconds the element plays for (its run)
@@ -44,35 +105,16 @@ const kept = new WeakMap();
  */
 export function expansionOf(element, duration, run, ctx) {
   const { frame } = run;
-  const { env } = run.compose;
   const size = { width: frame.outWidth, height: frame.outHeight };
-  const needs = elementNeeds(element, formatOf(size));
-  const sizes = needs.images.map((path) => {
-    const picture = pictureSize(env.image(path));
-    return picture.width > 0 ? `${picture.width}x${picture.height}` : '';
-  });
-  const key = `${duration.toFixed(6)}|${size.width}x${size.height}|${sizes.join(',')}`;
+  const key = `${duration.toFixed(6)}|${size.width}x${size.height}|${pictureSizes(element, run)}`;
   let known = kept.get(element);
   const found = known?.get(key);
   if (found && found.fonts === frame.fonts) return found.layers;
-  const ready = needs.texts.every((text) =>
-    env.fontReady(fontString({ ...text, fontSize: 72, fonts: frame.fonts }, 1), text.text),
-  );
-  if (!ready) return NOTHING;
+  if (!fontsReady(element, run)) return NOTHING;
   const clips = expandElement(element.design, element.slots, {
     duration,
     frame: size,
-    measure(text, style) {
-      ctx.save();
-      setFont(ctx, /** @type {any} */ ({ ...style, fonts: frame.fonts }));
-      const { width } = ctx.measureText(text);
-      ctx.restore();
-      return width;
-    },
-    sizeOf(path) {
-      const picture = pictureSize(env.image(path));
-      return picture.width > 0 && picture.height > 0 ? picture : null;
-    },
+    ...layoutHost(run, ctx),
     warn: (message) => warnOnce(`element:${message}`, message),
   });
   /** @type {ElementLayer[]} */

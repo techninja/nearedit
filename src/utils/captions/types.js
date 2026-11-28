@@ -36,6 +36,7 @@
  * @property {{ words: number, chars: number, lines: number, pause: number }} group
  * @property {number} hold - Seconds a group stays after its last word
  * @property {{ anchor: 'top'|'middle'|'bottom', offset: number }} position
+ * @property {boolean} avoid - A group moves clear of a brand overlay that is in its way
  * @property {{ in: 'none'|'fade'|'pop'|'slide', word: 'none'|'pop'|'glide'|'fill', seconds: number }} motion
  */
 
@@ -71,6 +72,8 @@
  * @property {number} wordProgress - 0..1 through that word's own length
  * @property {number} [lane] - 0 for the first voice; a second voice at the
  *   same moment is laid out one lane further from the anchored edge
+ * @property {number} [lift] - Units the group sits lower by (negative:
+ *   higher) to be clear of something in its way; the same for the whole group
  */
 
 /**

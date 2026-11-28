@@ -86,6 +86,7 @@ square frames alike.
 | `group` | `{ words: 3, chars: 18, lines: 1, pause: 0.5 }` | At most this many words and characters per group, on one line or two; a pause this long, or the end of a sentence, starts a new group |
 | `punctuation` | `keep` | `keep` or `strip` |
 | `position` | `{ anchor: 'bottom', offset: 12 }` | `top`, `middle` or `bottom`, and how far in from that edge |
+| `avoid` | `true` | A group is drawn clear of a brand overlay — a lower third, a bug — that would be in its way ([Drawing](#drawing)); `false` keeps every caption where `position` says |
 | `motion` | `{ in: 'pop', word: 'pop', seconds: 0.12 }` | How a group arrives (`none`, `fade`, `pop`, `slide`) and how the said word reacts (`none`, `pop`, `glide`, `fill`) |
 | `hold` | 0.3 | Seconds a group stays after its last word, unless the next one starts |
 
@@ -131,8 +132,11 @@ then goes with the piece that plays most of it.
 The same groups make subtitle files: `timelineCues(edl, wordsOf)` walks the
 timeline's captioned clips and returns cues in timeline time, which
 `formatSrt` / `formatVtt` write out. By default the cues are the groups as
-drawn; `{ group: SUBTITLE_GROUP }` gives two-line phrases instead, for a
-file meant to be read by a player. A render saves one beside the video
+drawn; `phraseCues(edl, wordsOf)` gives two-line phrases instead
+(`SUBTITLE_GROUP`, with the capitals and punctuation the words were
+written with), for a file meant to be read by a player — the one
+definition the render, the editor and the command line share, so their
+files are the same bytes. A render saves one beside the video
 when asked ([below](#in-a-render)); `nearedit captions` writes one on its
 own.
 
@@ -156,11 +160,49 @@ own words. `requirements(edl, wordsOf?)` lists the files that will be
 asked for (`words`) and the caption font with the characters it draws.
 A voice whose words or font have not arrived draws nothing.
 
-The server and the browser draw the same pixels: 22 documents — every
-preset in wide, tall and square over footage, two voices, a caption over
-an element and a title, a split clip, words written on the clip, a
-slipped clip, a top anchor, a font of the document's own — are compared
-by `tests/compose/parity.test.js` and differ in no channel.
+**Room for a lower third.** A lower third, a logo bug, a brand caption —
+any [overlay element](./BRAND.md#elements) — is put in the frame by
+NearEdit as captions are, and often in the same place. While one would be
+in a caption group's way the group is drawn clear of it: above it for
+captions at the bottom, below it for captions at the top, the shorter way
+for captions in the middle, and never sideways (`avoid` in the style turns
+this off). The rule is `src/utils/captions/room.js`; the compositor
+applies it in `captionRoom.js` and `overlayBlocks.js`.
+
+- **What is in the way.** An overlay element clip on a track that is
+  seen, by its box at rest — the brand model's own layout for the frame's
+  format (`elementBounds`) — under the clip's own transform, keyframes
+  included: a lower third dragged elsewhere is where it was put. It is in
+  the way when it comes nearer than 6 units beside the caption or 2 units
+  above or below it; a bug in the top corner does not move a caption at
+  the bottom, nor a short lower third on the left a short caption in the
+  middle. Hidden tracks, an element at no opacity, and segments and
+  transitions (they fill the frame) do not count; nor do titles and
+  footage.
+- **Decided once for a group.** Whatever is in the way at any moment the
+  group is on screen counts for all of it, so a caption never moves while
+  it is being read: a group that begins under a lower third stays up when
+  the lower third leaves, and the next group is back in its place. Two
+  voices move as the stack they are.
+- **The same on every canvas.** The decision is made in output pixels
+  with the host's own text measure, so a small preview, the render, the
+  server canvas and Chromium move a group by the same share of the frame.
+  A caption with nothing in its way is drawn pixel for pixel as it was.
+- **No room.** A group that would leave the safe margins goes the other
+  way; when there is no room there either it stays where it is.
+- **Cost.** A decision takes about 0.03 ms (a few milliseconds for the
+  first of a session, which lays the element out); every later frame of
+  the group 0.0001 ms. A document without overlay elements is not looked
+  at. Subtitle files are not affected.
+
+The server and the browser draw the same pixels: 44 documents — every
+preset in wide, tall and square over footage, and again over a lower
+third that is in its way; two voices, a caption over an element and a
+title, a split clip, words written on the clip, a slipped clip, a top
+anchor, a font of the document's own; a group that begins after the lower
+third has left and one that outlasts it, the switch off, a brand caption,
+a lower third that was dragged and one that travels — are compared by
+`tests/compose/parity.test.js` and differ in no channel.
 
 ## In the preview
 
@@ -295,8 +337,10 @@ remembered on this computer) is the render's `subtitles`
 finished render names the file with a link to download it.
 
 **The director** — `add_captions` switches captions on (`as: words`, its
-default) in a look read from the request, or makes title clips
-(`as: phrases`): [DIRECTOR.md](./DIRECTOR.md#working-on-the-existing-timeline).
+default) in a look read from the request — with none asked for, the
+timeline keeps its own style or, having none, takes the brand kit's — or
+makes title clips (`as: phrases`):
+[DIRECTOR.md](./DIRECTOR.md#working-on-the-existing-timeline).
 
 ## Limits
 
@@ -313,7 +357,12 @@ default) in a look read from the request, or makes title clips
 - A picture clip without a linked sound clip can be captioned, though
   nothing is heard from it; "caption all speech" leaves such clips alone.
 - When one of two voices stops, the other's caption moves down to the
-  first place.
+  first place; and a second voice goes at least as far out of an
+  overlay's way as the first, so it moves when the first one's next group
+  is put elsewhere.
+- Captions make room for brand overlays only, and by their box: an
+  overlay hidden behind another clip still counts, a title or a picture
+  never does.
 - Glyphs sit on whole pixel rows of the canvas they are drawn on, so a
   line of a small preview may sit half a pixel from where the render has
   it — as for titles.

@@ -2,11 +2,13 @@
  * The reference documents of the compositor tests, as a flat list of cases.
  * Together they exercise every generator, text at rest and in motion, both
  * effects, every blend mode, placement, the layer pipeline, every element
- * of every built-in brand kit, captions, and the person cutout.
+ * of every built-in brand kit, captions, the person cutout, and captions
+ * that make room for a brand overlay.
  * @module tests/compose/cases
  */
 
 import { captionCases } from './captions.js';
+import { roomCases } from './captionsRoom.js';
 import { cutoutCases, outlineDocs } from './cutout.js';
 import { effectDocs } from './effects.js';
 import { elementCases } from './elements.js';
@@ -64,6 +66,7 @@ export function referenceCases(files) {
     ...elementCases(files),
     ...captionCases(files),
     ...cutoutCases(files),
+    ...roomCases(files),
   ];
 }
 
