@@ -1,0 +1,72 @@
+captions-inspector {
+  display: block;
+
+  & .captions-inspector-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    min-width: 0;
+    font-size: var(--text-sm);
+  }
+
+  & .captions-inspector-line > span {
+    flex: 1 1 8rem;
+    min-width: 0;
+  }
+
+  & .captions-inspector-line[data-tone='muted'] > span {
+    color: var(--color-text-muted);
+  }
+
+  & .captions-inspector-line[data-tone='warn'] > span {
+    color: var(--color-warning);
+  }
+
+  & .captions-inspector-line .btn {
+    flex: none;
+    height: var(--control-h);
+    padding: 0 var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  & .captions-inspector-progress {
+    margin: var(--space-xs) var(--space-sm);
+  }
+
+  & .captions-inspector-why {
+    margin: 0 var(--space-sm) var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .captions-inspector-why summary {
+    width: fit-content;
+    color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  & .captions-inspector-why p {
+    margin: var(--space-xs) 0 0;
+    overflow-wrap: anywhere;
+  }
+
+  & .captions-inspector-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  & .captions-inspector-actions .btn {
+    height: var(--control-h);
+    padding: 0 var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  /* The style, unfolded under the clip's own captions. */
+  & captions-style {
+    margin-top: var(--space-xs);
+    border-top: 1px solid var(--color-border);
+  }
+}

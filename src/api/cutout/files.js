@@ -18,6 +18,7 @@ import { readJson } from '../lib/registry.js';
  * @typedef {Object} Cutout - The result of a `cutout` job (CUTOUT.md § Server)
  * @property {string} file - The MP4: picture left, matte right
  * @property {string} key
+ * @property {string} source - The media file it was cut out of
  * @property {number} start - Seconds into the source of its first frame
  * @property {number} end
  * @property {number} fps
@@ -84,9 +85,9 @@ export function readMeta(folder, key) {
  * @param {CutoutMeta} meta
  * @returns {Cutout}
  */
-const asCutout = (folder, { key, start, end, fps, width, height, frames }) => {
+const asCutout = (folder, { key, source, start, end, fps, width, height, frames }) => {
   const { file } = cutoutPaths(folder, key);
-  return { file, key, start, end, fps, width, height, frames, cached: true };
+  return { file, key, source: source.path, start, end, fps, width, height, frames, cached: true };
 };
 
 /**
@@ -106,7 +107,9 @@ export function readCutout(folder, key) {
  * covering the range — a longer one made earlier serves a shorter request.
  * @param {string} folder
  * @param {CutoutSource} source
- * @param {{ start: number, end: number, fps: number, model: string }} range
+ * @param {{ start: number, end: number, fps: number, model?: string }} range -
+ *   Without a `model`, whatever made the matte will do (a document read
+ *   from the command line draws the cutouts that are there)
  * @returns {Cutout|null} The shortest such cutout
  */
 export function findCutout(folder, source, range) {
@@ -122,7 +125,8 @@ export function findCutout(folder, source, range) {
   for (const name of names) {
     const key = name.endsWith('.json') ? name.slice(0, -5) : '';
     const meta = KEY_PATTERN.test(key) ? readMeta(folder, key) : null;
-    if (!meta || meta.model !== range.model || cutoutFps(meta.fps) !== want.fps) continue;
+    const made = range.model === undefined || meta?.model === range.model;
+    if (!meta || !made || cutoutFps(meta.fps) !== want.fps) continue;
     const { path, size, mtime } = cutoutSource(meta.source);
     if (path !== source.path || size !== source.size || mtime !== source.mtime) continue;
     const has = frameRange(meta.start, meta.end, meta.fps);

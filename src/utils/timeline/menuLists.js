@@ -20,6 +20,8 @@ export const CLIP_MENU = [
   ...['clip.showEffects', 'clip.bypassEffects', 'edit.pasteAttributes'],
   ...['keyframe.add', 'keyframe.remove', 'keyframe.clear'],
   '-',
+  'captions.toggle',
+  '-',
   ...['ripple.postTracks', 'ripple.postMarks', 'ripple.postAll'],
 ];
 
@@ -28,7 +30,7 @@ export const LANE_MENU = [
   '-',
   ...['ripple.postTracks', 'ripple.postMarks', 'ripple.postAll'],
   '-',
-  ...['marker.add', 'region.add', 'title.add', 'generator.addLast'],
+  ...['marker.add', 'region.add', 'title.add', 'generator.addLast', 'captions.all'],
   '-',
   'select.all',
   'select.none',

@@ -152,11 +152,77 @@ the timeline. A segment with a cutout clip is rendered by the compositor.
 
 ## In the editor
 
-The inspector of a video clip has **Cut out person**: switching it on
-starts the job (progress on the clip and in the job tray) and the picture
-changes when it is done. With it: edge softness and shrink, remove or
-blur, and one-click placements for the usual uses — full height at one
-side, a circle in a corner — plus a shadow and an outline.
+Select footage on a video track and the inspector shows **Cut out
+person** (not for stills, titles, generators, sound or web recordings).
+The command *Cut out person* (`Alt+P`, `cutout.toggle`) switches it for the
+selection and opens the inspector; *Make all missing cutouts*
+(`cutout.makeAll`) retries whatever is held up. The interface is
+`src/utils/cutoutUi/` with `<cutout-inspector>`, `<cutout-place>` and
+`<cutout-watch>`.
+
+**The switch** sets `cutout.on` on every selected clip that can be cut
+out — one undo step. Nothing else is needed: the editor then keeps the
+cutouts made.
+
+**Making them.** While the editor is open, `<cutout-watch>` compares what
+the document needs (`cutoutNeeds`) with what is under way:
+
+- It looks 600 ms after the document last changed, and never during a
+  drag: trimming starts no job until the trim has ended.
+- One request for each media file, never two at once for one file. A
+  request that no longer covers what is needed — a clip was trimmed past
+  it, another clip of the file was switched on — is cancelled and replaced
+  by one for the whole stretch; one that nothing needs any more is
+  cancelled.
+- A finished cutout is attached with `attachCutout` and committed without
+  an undo step: undo steps over it, redo keeps it.
+- A cutout that already exists costs one request (`cached`). A job for
+  the file that is already running — the page was reloaded — is followed
+  instead of started again; cutouts finished by other jobs of the project
+  are attached too. Leaving the editor cancels nothing.
+
+| The inspector says | Timeline badge | What can be done |
+| ------------------ | -------------- | ---------------- |
+| Starting… / Waiting for its turn… | `Cutout…` (busy) | Cancel |
+| Making the cutout — frame *n* of *m*, with a bar | `Cutout 40%` (busy) | Cancel |
+| The person is cut out | `Cutout` (on) | |
+| Making the rest — … (out of date: the made part keeps playing) | `Cutout 40%` (busy) | Cancel |
+| Failed — the server's reason; also a toast | `Cutout !` (warn) | Try again |
+| Cancelled | `Cutout !` (warn) | Make it |
+| This server cannot make cutouts | `Cutout !` (warn) | Check again |
+
+What failed, was cancelled or cannot be made is not asked for again by
+itself — only on the button, or when the stretch that is needed changes.
+When `GET /cutout/status` says there is no matte program, the group shows
+the server's `reason` and `npm run install-cutout` whether or not the
+switch is on; *Check again* asks with `?fresh`. A cutout that took real
+time ends with a toast (a desktop notification in a hidden tab).
+
+**Settings**, for all selected clips, live: *Background* — Remove or Blur —
+*Edge softness*, *Edge shrink* and, for Blur, *Background blur*. Lengths
+show as % of the frame's shorter side (the document's units). Dragging a
+slider is one undo step.
+
+**Place** — seven buttons, each one edit of the transform (so the clip can
+be adjusted by hand afterwards). The person is taken to be in the middle
+of their picture; rotation, crop, pan and zoom and transform keyframes are
+cleared. The button of the placement a clip is in is lit.
+
+| Placement | Writes |
+| --------- | ------ |
+| Fill the frame | `fit: cover`, no offset, scale 1 |
+| Full height, left / right | `fit: contain`, as tall as the frame, its middle a quarter in from the side |
+| Lower left / right corner | half the frame's height, standing on the bottom edge |
+| Circle, lower left / right | a round window, 30 % of the frame's shorter side: a `mask` effect (id `cutout-circle`) put before `outline`, `dropShadow` and `glow`, the picture scaled to cover it |
+
+**Finish** — *Shadow* and *Outline* add or remove a `dropShadow` (soft,
+below right, scaled to the frame) and an `outline` effect, the outline
+before the shadow; their settings are in the effect stack below.
+
+**Export.** While clips wait for a cutout the export dialog names them,
+says that they would render with their background, shows the progress or
+the reason, and offers to make first what is held up (or, without a matte
+program, to check again).
 
 ## Limits
 

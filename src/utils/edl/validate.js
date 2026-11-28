@@ -6,7 +6,9 @@
  */
 
 import { cleanFonts, sameFonts } from '#utils/brand/fontTable.js';
+import { checkCutout } from '#utils/cutout/block.js';
 import { checkCaptions, checkDocumentCaptions } from './captionField.js';
+import { clipKind } from './clipKind.js';
 import { BACKGROUND_COLOR, EDL_VERSION } from './defaults.js';
 import { isObject } from './sanitize.js';
 import { checkClip, checkOverlaps, checkShape, isGain } from './validateClip.js';
@@ -95,6 +97,9 @@ export function validateEdl(edl, opts = {}) {
       if (ok && clips.has(clip.clipId)) report(`${at}.clipId`, 'is not unique');
       if (isObject(clip)) {
         checkCaptions(clip, track, at, report);
+        checkCutout(clip.cutout, `${at}.cutout`, report);
+        if (clip.cutout !== undefined && clipKind(clip, track) !== 'video')
+          report(`${at}.cutout`, 'only a clip that plays a video file has a cutout');
         clips.set(clip.clipId, { clip, at });
       }
       return ok;

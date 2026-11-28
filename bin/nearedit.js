@@ -12,6 +12,7 @@
  *   nearedit music <song.json> [-o out.wav]
  *   nearedit catalog [--json]
  *   nearedit captions <edl.json> [--format srt|vtt] [-o file] [--as phrases|drawn]
+ *   nearedit cutout <edl.json> [--media dir]
  *   nearedit restyle <edl.json | folder> --kit <kit folder | builtin:name>
  *   nearedit kit <kit folder | builtin:name> [--json]
  *
@@ -59,6 +60,7 @@ async function main(argv) {
   if (command === 'music') return (await import('./lib/musicCommand.js')).musicCommand(rest, io);
   if (command === 'captions')
     return (await import('./lib/captionsCommand.js')).captionsCommand(rest, io);
+  if (command === 'cutout') return (await import('./lib/cutoutCommand.js')).cutoutCommand(rest, io);
   if (command === 'restyle')
     return (await import('./lib/restyleCommand.js')).restyleCommand(rest, io);
   if (command === 'kit') return (await import('./lib/kitCommand.js')).kitCommand(rest, io);

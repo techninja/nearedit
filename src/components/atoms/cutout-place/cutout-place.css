@@ -1,0 +1,93 @@
+/* A small picture of the frame; the shape in it is where the person goes. */
+cutout-place {
+  display: block;
+  width: 2.5rem;
+  max-width: 100%;
+
+  & button {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    overflow: hidden;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: var(--color-text-muted);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 1px;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &[aria-pressed='true'] {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 1px var(--color-primary);
+    }
+  }
+
+  /* Head and shoulders, standing on the bottom edge. */
+  & i {
+    position: absolute;
+    bottom: 0;
+    left: 27%;
+    width: 46%;
+    height: 82%;
+    border-radius: 45% 45% 0 0 / 55% 55% 0 0;
+    background: var(--color-text-muted);
+  }
+
+  & [aria-pressed='true'] i {
+    background: var(--color-primary);
+  }
+
+  & [data-place='left'] i {
+    left: 4%;
+    width: 42%;
+  }
+
+  & [data-place='right'] i {
+    left: 54%;
+    width: 42%;
+  }
+
+  & [data-place^='corner'] i {
+    width: 26%;
+    height: 50%;
+  }
+
+  & [data-place^='circle'] i {
+    bottom: 12%;
+    width: auto;
+    height: 46%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+  }
+
+  & [data-place$='-left'] i {
+    left: 7%;
+  }
+
+  & [data-place$='-right'] i {
+    right: 7%;
+    left: auto;
+  }
+}
+
+/* Touch screens: as tall as a finger needs, like the fields around it. */
+@media (pointer: coarse) {
+  cutout-place button {
+    height: var(--control-h, 2.25rem);
+    aspect-ratio: auto;
+  }
+}

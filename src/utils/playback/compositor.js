@@ -16,22 +16,18 @@
  * @module utils/playback/compositor
  */
 
-import { isElementClip } from '#utils/brand/clip.js';
-import { elementImages } from '#utils/compose/requirements.js';
 import { sourceTimeAt } from '#utils/edl/query.js';
 import { createWordSource } from '#utils/playback/captionWords.js';
 import { createImageCache } from '#utils/playback/imageCache.js';
 import { pictureUrl } from '#utils/playback/mediaUrl.js';
 import { createPainter } from '#utils/playback/paintFrame.js';
-import { videoCues, videoLayers } from '#utils/playback/schedule.js';
+import { createPictureSource } from '#utils/playback/pictureSource.js';
+import { cueStills, videoCues, videoLayers } from '#utils/playback/schedule.js';
 import { createVideoPool } from '#utils/playback/videoPool.js';
-import { aimSlot, driveSlot, hasFrame, isSettled } from '#utils/playback/videoSlot.js';
+import { hasFrame, isSettled } from '#utils/playback/videoSlot.js';
 
 /** Seconds before a clip is due that its video is loaded and parked. */
 export const VIDEO_PREROLL = 1.5;
-
-/** Seek just inside the frame, so float error never lands on the one before. */
-const SEEK_NUDGE = 0.001;
 
 /**
  * @typedef {{ tracks: any[], resolution: string }} FrameDoc
@@ -44,6 +40,8 @@ const SEEK_NUDGE = 0.001;
  */
 export function createCompositor(canvas) {
   const videos = createVideoPool(onMedia);
+  // A clip drawn through its matte plays its cutout file in place of its own.
+  const pictures = createPictureSource(videos);
   const images = createImageCache(onMedia);
   const words = createWordSource(onMedia);
   const painter = createPainter(canvas, { videos, images, words, onArrive: onMedia });
@@ -69,13 +67,7 @@ export function createCompositor(canvas) {
    */
   function drawable(exact) {
     for (const cue of videoLayers(request.doc.tracks, request.time)) {
-      // An element clip waits for its pictures (a logo) like a still does.
-      const stills = isElementClip(cue.clip)
-        ? elementImages({ ...request.doc, tracks: [{ clips: [cue.clip] }] })
-        : cue.kind === 'image'
-          ? [cue.clip.sourceFile]
-          : [];
-      for (const path of stills) {
+      for (const path of cueStills(request.doc, cue)) {
         const still = images.get(pictureUrl(path));
         if (!still.ready && !still.failed) return false;
       }
@@ -88,7 +80,27 @@ export function createCompositor(canvas) {
 
   /** A frame, a still, a font or a transcript arrived: show the newest paused request with it. */
   function onMedia() {
-    if (request && drawable(false)) paint(request.doc, request.time);
+    if (!request) return;
+    // A cutout file that cannot be loaded: its clip shows its own file instead.
+    if (pictures.lost()) return aim(request.doc, request.time);
+    if (drawable(false)) paint(request.doc, request.time);
+  }
+
+  /**
+   * Point a paused element per visible clip at the frame of `time`, and
+   * paint when every one of them shows it.
+   * @param {FrameDoc} doc
+   * @param {number} time
+   */
+  function aim(doc, time) {
+    const wanted = new Set();
+    for (const { clip, kind } of videoLayers(doc.tracks, time)) {
+      if (kind !== 'video') continue;
+      wanted.add(clip.clipId);
+      pictures.park(clip, sourceTimeAt(clip, time));
+    }
+    videos.retain(wanted);
+    if (drawable(true)) paint(doc, time);
   }
 
   return {
@@ -101,15 +113,7 @@ export function createCompositor(canvas) {
       if (request && request.doc === doc && request.time === time && !dirty) return;
       request = { doc, time };
       dirty = false;
-      const wanted = new Set();
-      for (const { clip, kind } of videoLayers(doc.tracks, time)) {
-        if (kind !== 'video') continue;
-        wanted.add(clip.clipId);
-        const slot = videos.acquire(clip.clipId, pictureUrl(clip.sourceFile));
-        aimSlot(slot, sourceTimeAt(clip, time) + SEEK_NUDGE);
-      }
-      videos.retain(wanted);
-      if (drawable(true)) paint(doc, time);
+      aim(doc, time);
     },
 
     /** Playing: keep videos on the clock, prepare what is coming, paint. */
@@ -122,9 +126,8 @@ export function createCompositor(canvas) {
         if (kind === 'image') images.get(pictureUrl(clip.sourceFile));
         if (kind !== 'video') continue;
         wanted.add(clip.clipId);
-        const slot = videos.acquire(clip.clipId, pictureUrl(clip.sourceFile));
-        if (active) driveSlot(slot, sourceTimeAt(clip, time), nowMs);
-        else aimSlot(slot, clip.sourceIn + SEEK_NUDGE);
+        if (active) pictures.play(clip, sourceTimeAt(clip, time), nowMs);
+        else pictures.park(clip, clip.sourceIn);
       }
       videos.retain(wanted);
       paint(doc, time);

@@ -1,6 +1,7 @@
 /**
  * FFmpeg arguments that turn a file into the raw RGBA frames the compositor
- * is handed: footage frame by frame, a still once. Rotation metadata is
+ * is handed: footage frame by frame, a cutout file as its packed frames, a
+ * still once. Rotation metadata is
  * applied by FFmpeg, non-square pixels are squared by the scale, and colour
  * is converted from the source's own matrix. Pure.
  * @module api/render/canvas/decodeArgs
@@ -47,6 +48,32 @@ export function decodeArgs(file, window, size, source, ctx) {
     ...toRgba(size, source, preset),
   ];
   return [...QUIET, ...args, '-map', '0:v:0', '-vf', chain.join(','), ...RAW];
+}
+
+/**
+ * Decode a clip's part of its cutout file — the picture on the left, its
+ * matte on the right — as the frames the output shows. The two halves are
+ * cut apart, reduced each on its own and put side by side again, so that
+ * no pixel of the matte is ever mixed into the picture's edge, or of the
+ * picture into the matte's.
+ * @param {string} file - The cutout file
+ * @param {{ seek: number, count: number }} window - `seek` in the cutout file's own time
+ * @param {{ width: number, height: number }} size - Decoded size of the
+ *   picture: the frames are twice as wide
+ * @param {import('../sources.js').SourceInfo} source - Of the cutout file
+ * @param {import('../videoGraph.js').GraphContext} ctx
+ * @returns {string[]} Writes `count` RGBA frames, `2 × width` by `height`, to stdout
+ */
+export function cutoutDecodeArgs(file, window, size, source, ctx) {
+  const { timing, preset } = ctx;
+  const { args, lead } = openInput(file, false, window, timing.fps);
+  const picked = [...conformFilters({ lead }, timing), ...holdFilters(window.count, timing.fps)];
+  const [scale, squared] = toRgba(size, source, preset);
+  const side = (/** @type {string} */ x) => `crop=iw/2:ih:${x}:0,${scale},${squared}`;
+  const graph =
+    `${picked.join(',')},split[a][b];[a]${side('0')}[left];[b]${side('iw/2')}[right];` +
+    '[left][right]hstack=inputs=2,format=rgba';
+  return [...QUIET, ...args, '-map', '0:v:0', '-vf', graph, ...RAW];
 }
 
 /**

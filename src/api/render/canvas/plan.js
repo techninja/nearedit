@@ -1,7 +1,8 @@
 /**
  * The plan of one canvas segment: the document as the compositor will see
  * it, the footage to decode (one FFmpeg per clip, at the size it is shown
- * at), the stills to load — large ones reduced by FFmpeg first — and the
+ * at; the cutout file of a clip drawn through its matte in place of its
+ * own), the stills to load — large ones reduced by FFmpeg first — and the
  * encoder to pipe frames into. No I/O
  * happens here, and the result is plain data. Pure.
  * Reference: docs/app-spec/RENDER.md § The canvas path.
@@ -10,10 +11,11 @@
 
 import { layerKind } from '#utils/compose/layers.js';
 import { requirements } from '#utils/compose/requirements.js';
+import { cutoutState } from '#utils/cutout/index.js';
 import { activeTracks } from '#utils/edl/query.js';
 import { createContext } from '../context.js';
 import { clipWindow } from '../timing.js';
-import { decodeArgs, stillArgs } from './decodeArgs.js';
+import { cutoutDecodeArgs, decodeArgs, stillArgs } from './decodeArgs.js';
 import { encodeArgs } from './encodeArgs.js';
 import { decodeSize } from './sizes.js';
 
@@ -46,6 +48,27 @@ import { decodeSize } from './sizes.js';
  */
 
 /**
+ * The frames of a clip that is drawn through its matte: its cutout file,
+ * decoded as packed frames — the picture at the size the clip is shown at,
+ * its matte beside it — from the frame that belongs to the clip's first.
+ * @param {any} clip - Snapped; its cutout is ready
+ * @param {import('../videoGraph.js').GraphContext} ctx
+ * @param {{ width: number, height: number }} out - Canvas size
+ * @returns {Footage}
+ */
+function cutoutFootage(clip, ctx, out) {
+  const { made } = clip.cutout;
+  const packed = ctx.source(made.file);
+  const picture = { width: packed.width / 2, height: packed.height };
+  const size = decodeSize(clip, picture, ctx.frame, out);
+  const { first, count, seek } = clipWindow(clip, ctx.timing);
+  const window = { count, seek: Math.max(0, seek - made.start) };
+  const args = cutoutDecodeArgs(made.file, window, size, packed, ctx);
+  const frame = { width: size.width * 2, height: size.height };
+  return { clipId: clip.clipId, file: made.file, first, count, ...frame, args };
+}
+
+/**
  * @param {any[]} tracks - Snapped tracks
  * @param {import('../videoGraph.js').GraphContext} ctx
  * @param {{ width: number, height: number }} out - Canvas size
@@ -65,6 +88,12 @@ function segmentMedia(tracks, ctx, out, probed) {
     for (const clip of clips) {
       const kind = layerKind(clip, track);
       const file = clip.sourceFile;
+      // A clip whose cutout is ready plays its cutout file; any other, its own.
+      const matted = kind === 'video' && cutoutState(clip, ctx.timing.fps) === 'ready';
+      if (matted && probed(clip.cutout.made.file)) {
+        footage.push(cutoutFootage(clip, ctx, out));
+        continue;
+      }
       // Footage must have been probed; a still without a probe is simply not reduced.
       const wanted = kind === 'video' || (kind === 'image' && probed(file));
       const source = wanted ? ctx.source(file) : null;

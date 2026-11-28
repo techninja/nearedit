@@ -23,7 +23,7 @@ function frame(found, time = found.time ?? 1, options = {}) {
 describe('determinism', () => {
   before(async () => {
     fixtures = await writeFixtures();
-    const images = await loadImages([fixtures.card, fixtures.logo]);
+    const images = await loadImages([fixtures.card, fixtures.logo, fixtures.packed]);
     env = createEnv({ images, frameOf: (clip) => images.get(footage[clip.clipId]) || null });
     cases = referenceCases(fixtures);
   });

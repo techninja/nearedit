@@ -23,6 +23,8 @@ import { inspectorModel } from '#utils/inspector/model.js';
 import { documentSummary } from '#utils/inspector/summary.js';
 import { trackModel } from '#utils/inspector/trackSubject.js';
 import '#atoms/app-icon/app-icon.js';
+import '#molecules/captions-inspector/captions-inspector.js';
+import '#molecules/cutout-inspector/cutout-inspector.js';
 import '#molecules/inspector-clip/inspector-clip.js';
 import '#molecules/element-inspector/element-inspector.js';
 import '#molecules/inspector-crop/inspector-crop.js';

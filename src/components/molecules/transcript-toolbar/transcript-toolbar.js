@@ -1,13 +1,15 @@
 /**
  * Transcript panel toolbar: which file's transcript is shown (follow the
- * selection, or pin a file from the library), find, remove silences, copy
- * and export as SRT, VTT or text. Holds no state — it reports with
- * bubbling events: `transcript-pin` (`{ path }`) and `transcript-tool`
- * (`{ tool: 'silence' | 'copy' }`); the find box reports by itself.
+ * selection, or pin a file from the library), find, remove silences, show
+ * the words as captions on the timeline ("CC"), copy and export as SRT,
+ * VTT or text. Holds no state — it reports with bubbling events:
+ * `transcript-pin` (`{ path }`) and `transcript-tool`
+ * (`{ tool: 'silence' | 'captions' | 'copy' }`); the find box reports by itself.
  * @module components/molecules/transcript-toolbar
  */
 
 import { define, dispatch, html } from 'hybrids';
+import { exportLinks, findBox } from '#utils/transcript/toolbarParts.js';
 import '#atoms/app-icon/app-icon.js';
 import '#molecules/transcript-find/transcript-find.js';
 
@@ -21,16 +23,14 @@ import '#molecules/transcript-find/transcript-find.js';
  * @property {number} hitCount - Number of search hits
  * @property {number} hitIndex - The hit being visited, -1 for none
  * @property {boolean} silence - The remove-silences form is open
+ * @property {string} captions - `on` / `off`: whether the clips that play the
+ *   file show captions; '' when it is not on the timeline (nothing to switch)
  */
 
 /** @typedef {TranscriptToolbarHost & HTMLElement} Host */
 
 /** @param {string} path @returns {string} */
 const baseName = (path) => path.split(/[\\/]/).pop();
-
-/** @param {string} path @param {string} format @returns {string} */
-const exportUrl = (path, format) =>
-  `/api/intelligence/transcript?path=${encodeURIComponent(path)}&format=${format}&download=1`;
 
 /** @param {Host} host @param {Event} event */
 function handlePin(host, event) {
@@ -55,8 +55,9 @@ export default define({
   hitCount: 0,
   hitIndex: -1,
   silence: false,
+  captions: '',
   render: {
-    value: ({ file, pinned, files, ready, query, hitCount, hitIndex, silence }) => html`
+    value: ({ file, pinned, files, ready, query, hitCount, hitIndex, silence, captions }) => html`
       <select
         class="field-input transcript-toolbar-file"
         aria-label="Transcript of"
@@ -76,12 +77,7 @@ export default define({
         !files.some((item) => item.filePath === file) &&
         html`<option value="${file}" selected>${baseName(file)}</option>`}
       </select>
-      <transcript-find
-        query="${query}"
-        hitCount="${hitCount}"
-        hitIndex="${hitIndex}"
-        disabled="${!ready}"
-      ></transcript-find>
+      ${findBox(query, hitCount, hitIndex, !ready)}
       <span class="toolbar-group">
         <button
           type="button"
@@ -96,6 +92,19 @@ export default define({
         </button>
         <button
           type="button"
+          class="icon-btn transcript-toolbar-captions"
+          data-tool="captions"
+          aria-pressed="${captions === 'on' ? 'true' : 'false'}"
+          title="${captions
+            ? 'Show these words on screen as they are spoken (captions)'
+            : 'Captions: put this file on the timeline first'}"
+          disabled="${!captions}"
+          onclick="${handleTool}"
+        >
+          <app-icon name="captions" size="sm"></app-icon> CC
+        </button>
+        <button
+          type="button"
           class="icon-btn"
           data-tool="copy"
           title="Copy the transcript (or the selected words) as text"
@@ -106,20 +115,7 @@ export default define({
           <app-icon name="copy" size="sm"></app-icon>
         </button>
       </span>
-      ${ready &&
-      html`<span class="toolbar-group transcript-toolbar-export" role="group" aria-label="Export">
-        <app-icon name="file-down" size="sm"></app-icon>
-        ${['srt', 'vtt', 'txt'].map(
-          (format) =>
-            html`<a
-              class="icon-btn"
-              href="${exportUrl(file, format)}"
-              download
-              title="Export as .${format}"
-              >${format.toUpperCase()}</a
-            >`,
-        )}
-      </span>`}
+      ${ready ? exportLinks(file) : html``}
     `,
     shadow: false,
   },

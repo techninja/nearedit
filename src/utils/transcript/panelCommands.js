@@ -7,6 +7,7 @@
  */
 
 import { cutUnits, keepUnits, tighten } from './actions.js';
+import { toggleCaptions } from './panelCaptions.js';
 import { copyToClipboard } from './clipboard.js';
 import { transcriptText as plainText } from './paragraphs.js';
 import { panelContext } from './panelContext.js';
@@ -62,6 +63,7 @@ export function handleAction(host, event) {
 /** @param {Host} host @param {CustomEvent} event - `transcript-tool` */
 export function handleTool(host, event) {
   if (event.detail.tool === 'silence') host.silence = !host.silence;
+  else if (event.detail.tool === 'captions') toggleCaptions(host);
   else runAction(host, 'copy');
 }
 

@@ -7,6 +7,8 @@
  */
 
 import { BRAND_COMMANDS } from '#utils/brandUi/commands.js';
+import { CAPTION_COMMANDS } from '#utils/captionsUi/commands.js';
+import { CUTOUT_COMMANDS } from '#utils/cutoutUi/commands.js';
 import { CLIP_COMMANDS } from './catalogClips.js';
 import { EDIT_COMMANDS } from './catalogEdit.js';
 import { EVENT_COMMANDS } from './catalogEvents.js';
@@ -42,6 +44,8 @@ export const COMMANDS = [
   ...WEB_COMMANDS,
   ...MUSIC_COMMANDS,
   ...BRAND_COMMANDS,
+  ...CAPTION_COMMANDS,
+  ...CUTOUT_COMMANDS,
   ...CLIP_COMMANDS,
   ...EVENT_COMMANDS,
   ...SELECTION_COMMANDS,

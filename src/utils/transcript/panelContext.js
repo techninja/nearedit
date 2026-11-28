@@ -30,7 +30,8 @@ import { searchUnits } from './search.js';
  * @property {boolean} silence - The remove-silences form is open
  * @property {number} threshold
  * @property {number} padding
- * @property {Record<string, any>} job - Running transcription
+ * @property {import('#utils/captionsUi/transcribe.js').TranscribeState} jobs - Transcriptions
+ *   under way, by file (started here or from the inspector's Captions group)
  * @property {Record<string, any>} status - GET /intelligence/status
  * @property {string} message - Short feedback line (copied, saved, failed…)
  */

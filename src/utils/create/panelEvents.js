@@ -2,7 +2,7 @@
  * Behaviour of the Create tab (`<create-panel>`): sections, search, the
  * tiles (click adds at the edit cursor, hover or focus plays the
  * thumbnail, drag carries the item to the timeline), the effect list, and
- * what the Web, Music and Brand sections ask for.
+ * what the Web, Music and Brand sections and the captions entry ask for.
  * @module utils/create/panelEvents
  */
 
@@ -135,4 +135,10 @@ export function handleMusicAdd(host, event) {
 export function handleBrandAdd(host, event) {
   event.stopPropagation();
   host.status = addElementItem(event.detail.element).message;
+}
+
+/** The captions entry says what it did. @param {Host} host @param {CustomEvent} event */
+export function handleCaptionsStatus(host, event) {
+  event.stopPropagation();
+  host.status = event.detail.message;
 }

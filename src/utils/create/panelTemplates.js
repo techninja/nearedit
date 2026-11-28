@@ -1,7 +1,8 @@
 /**
  * Templates of the Create tab's sections: a tile (thumbnail and name), the
- * generator tiles by category with their search box, the text styles, and
- * the effect list with a line saying what an effect would be applied to.
+ * generator tiles by category with their search box, the text styles (and,
+ * with them, the entry for captions), and the effect list with a line
+ * saying what an effect would be applied to.
  * @module utils/create/panelTemplates
  */
 
@@ -81,7 +82,8 @@ export function textTiles({ hovered }) {
   return html`<div class="field-group-title">Text styles</div>
     <div class="create-panel-grid" role="group" aria-label="Text styles">
       ${TEXT_PRESETS.map((preset) => tile('text', { ...preset, key: preset.id }, hovered))}
-    </div>`;
+    </div>
+    <captions-create oncaptions-status="${on.handleCaptionsStatus}"></captions-create>`;
 }
 
 /** @param {CreatePanelHost} host @returns {Template} */

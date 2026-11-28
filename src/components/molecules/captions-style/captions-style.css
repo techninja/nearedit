@@ -1,0 +1,148 @@
+captions-style {
+  display: block;
+
+  & .captions-style-state {
+    margin: 0;
+    padding: 2px var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  & .captions-style-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  /* Buttons as small as the inspector's own. */
+  & .captions-style-actions .btn,
+  & .captions-style-missing .btn {
+    flex: none;
+    height: var(--control-h);
+    padding: 0 var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  & .captions-style-save {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  & .captions-style-save-label {
+    margin-right: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  & .captions-style-missing {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    padding: 2px var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  & .captions-style-missing-text {
+    flex: 1 1 10rem;
+    min-width: 0;
+    color: var(--color-text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  /* Captions are on with nothing to show: that needs attention. */
+  & .captions-style-missing[data-tone='warn'] .captions-style-missing-text {
+    color: var(--color-warning);
+  }
+
+  & .captions-style-progress,
+  & .captions-style-missing .error-message {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+
+  & .captions-style-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding-right: var(--space-xs);
+  }
+
+  & .captions-style-back {
+    height: 1.25rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  /* Two tiles across a narrow panel, more when there is room. */
+  & .captions-style-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  & .captions-style-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 3px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  & .captions-style-tile:hover {
+    border-color: var(--color-text-muted);
+    color: var(--color-text);
+  }
+
+  & .captions-style-tile[aria-pressed='true'] {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+    color: var(--color-text);
+  }
+
+  & .captions-style-tile:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  & .captions-style-name {
+    padding: 0 2px 1px;
+    font-weight: 600;
+  }
+
+  & .captions-style-about {
+    margin: 0;
+    padding: 0 var(--space-sm) var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  /* Nothing here can be keyframed: no gutter for a keyframe button. */
+  & .keyed-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  & .keyed-row > span:empty {
+    display: none;
+  }
+
+  /* The table's labels are sentences ("A pause starts a new group"). */
+  & .field-number-label,
+  & .field-label {
+    white-space: normal;
+  }
+}

@@ -1,6 +1,7 @@
 /**
  * The part of the EDL library's public surface that belongs to clips of a
- * special kind — web clips, music clips, brand elements — and to captions.
+ * special kind — web clips, music clips, brand elements — and to captions
+ * and the person cutout.
  * Re-exported whole by `index.js`; import from there.
  * @module utils/edl/kinds
  */
@@ -38,3 +39,7 @@ export { captionAllSpeech, setCaptionWords, setCaptions } from './captions.js';
 export { patchCaptionStyle, setCaptionStyle } from './captionStyle.js';
 export { canCaption, captionInfo, captionedClips, captionsWithoutWords } from './captionQuery.js';
 export { captionVoices, voiceFiles, voicesAt } from '#utils/captions/voices.js';
+
+// The person cutout: a clip's switch and settings, the file made for it, what is still to make
+export { attachCutout, canCutout, cutoutNeeds, setCutout } from './cutout.js';
+export { cutoutState } from '#utils/cutout/made.js';

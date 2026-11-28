@@ -1,9 +1,9 @@
 /**
  * Create tab — what can be made without media: generators (each tile is a
  * live thumbnail drawn by the frame compositor; hover plays it), ready
- * text styles, effects, web clips (a recording of a web page being used),
- * music (a drum machine and a synth) and the elements of the project's
- * brand kit. Pressing a generator or a text style adds it at the edit
+ * text styles (and, with them, captions for the speech on the timeline),
+ * effects, web clips (a recording of a web page being used), music (a drum
+ * machine and a synth) and the elements of the project's brand kit. Pressing a generator or a text style adds it at the edit
  * cursor — backgrounds behind the picture, everything else in front — and
  * selects it; pressing an effect applies it to the selected clips; a web
  * clip is added from its address and opens in the web editor; a beat or a
@@ -24,6 +24,7 @@ import { containTyping } from '#utils/inspector/fieldEvents.js';
 import '#atoms/app-icon/app-icon.js';
 import '#atoms/create-thumb/create-thumb.js';
 import '#molecules/brand-create/brand-create.js';
+import '#molecules/captions-create/captions-create.js';
 import '#molecules/effect-catalog/effect-catalog.js';
 import '#molecules/music-create/music-create.js';
 import '#molecules/web-create/web-create.js';
@@ -40,6 +41,7 @@ const SECTIONS = [
 ];
 
 const HINTS = {
+  text: 'Click a text style to add it at the edit cursor; captions follow the speech',
   effects: 'Effects apply to the selected clips',
   web: 'A web clip is added at the edit cursor and opens for its steps',
   music: 'Music is added at the edit cursor, on an audio track',

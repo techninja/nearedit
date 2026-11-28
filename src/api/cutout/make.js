@@ -120,7 +120,7 @@ export async function makeCutout({ folder, path, start, end, fps, signal, onProg
         const { start: from, end: to } = range;
         const meta = { version: META_VERSION, key, source, start: from, end: to, ...size, model };
         writeJsonAtomic(metaPath, meta);
-        return { file, key, start: from, end: to, ...size, cached: false };
+        return { file, key, source: path, start: from, end: to, ...size, cached: false };
       } catch (err) {
         // A picture without its description is not a cutout: nothing stays.
         rmSync(moved ? file : partial, { force: true });

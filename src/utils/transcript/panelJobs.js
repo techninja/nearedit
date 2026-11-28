@@ -2,41 +2,28 @@
  * The transcript panel's talks with the server: transcribing the file on
  * screen as a background job with live progress, and saving a corrected
  * word back to its sidecar. These act on the `<transcript-panel>` host.
+ * The job itself is the editor's one transcription of a file
+ * (`#utils/captionsUi/transcribe.js`): started here or from the inspector's
+ * Captions group, both show the same progress.
  * @module utils/transcript/panelJobs
  */
 
-import { transcribeMedia } from '#utils/media/analyze.js';
-import { forgetSidecars, saveSidecar } from '#utils/media/sidecars.js';
+import { cancelTranscribe, transcribeFile } from '#utils/captionsUi/transcribe.js';
+import { saveSidecar } from '#utils/media/sidecars.js';
 import { correctionPatch } from './correct.js';
 import { panelContext } from './panelContext.js';
 
 /** @typedef {import('./panelContext.js').Host} Host */
 
-/** @type {AbortController|null} */
-let transcribing = null;
-
 /** @param {Host} host - `transcript-transcribe` */
 export function handleTranscribe(host) {
-  const file = host.file;
-  transcribing = new AbortController();
-  Object.assign(host, {
-    job: { active: true, label: 'Starting transcription…', progress: 0 },
-    message: '',
-  });
-  transcribeMedia(file, {
-    signal: transcribing.signal,
-    onUpdate: ({ label, progress, log }) =>
-      host.file === file &&
-      (host.job = { active: true, label, progress, detail: log?.[log.length - 1] || '' }),
-  })
-    .then(() => forgetSidecars(file))
-    .catch((err) => (host.message = [err.message, err.body?.detail].filter(Boolean).join(' — ')))
-    .finally(() => (host.job = {}));
+  host.message = '';
+  void transcribeFile(host.file);
 }
 
-/** `transcript-cancel` */
-export function handleCancelTranscribe() {
-  transcribing?.abort();
+/** @param {Host} host - `transcript-cancel` */
+export function handleCancelTranscribe(host) {
+  cancelTranscribe(host.file);
 }
 
 /**

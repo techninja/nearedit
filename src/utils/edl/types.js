@@ -55,6 +55,9 @@
  * @property {import('#utils/captions/types.js').CaptionsBlock} [captions] -
  *   Only on a clip that plays video or sound, and only when captions are on
  *   or it carries words of its own (CAPTIONS.md)
+ * @property {import('#utils/cutout/types.js').CutoutBlock} [cutout] - Only
+ *   on a clip that plays a video file: whether it is drawn through its
+ *   matte, how, and the cutout file made for it (CUTOUT.md)
  */
 
 /**

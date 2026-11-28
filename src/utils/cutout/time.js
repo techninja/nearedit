@@ -62,12 +62,15 @@ export function frameRange(start, end, fps) {
 /**
  * Whether a cutout file holds everything a clip plays: it is of the clip's
  * file, and its range covers the clip's source window.
- * @param {Pick<CutoutMeta, 'source'|'start'|'end'|'fps'>|null|undefined} meta
+ * @param {{ source: string | { path: string }, start: number, end: number,
+ *   fps: number }|null|undefined} meta - A description (`source.path`), or
+ *   what a clip remembers of its cutout (`source` is the path)
  * @param {{ sourceFile?: string, sourceIn: number, sourceOut: number }} clip
  * @returns {boolean} False without a description
  */
 export function coversClip(meta, clip) {
-  if (!meta || !clip || meta.source?.path !== clip.sourceFile) return false;
+  const path = typeof meta?.source === 'string' ? meta.source : meta?.source?.path;
+  if (!meta || !clip || !path || path !== clip.sourceFile) return false;
   // A render moves a clip's window with its snapped start: by half a frame at most.
   const slack = 0.5 / cutoutFps(meta.fps) + NEAR;
   return meta.start <= clip.sourceIn + slack && clip.sourceOut <= meta.end + slack;

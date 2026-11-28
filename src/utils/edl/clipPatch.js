@@ -21,8 +21,8 @@ const RELATIONS = ['linkedClipId', 'groupId'];
  * musicClip.js and elementClip.js only.
  */
 const DESCRIPTIONS = ['web', 'music', 'element'];
-/** A clip's captions are switched and written by captions.js only. */
-const SPOKEN = ['captions'];
+/** A clip's captions are switched and written by captions.js only, its cutout by cutout.js. */
+const SPOKEN = ['captions', 'cutout'];
 /** A web or music clip's recording and its window belong to those operations too. */
 const RECORDED = ['sourceFile', 'sourceIn'];
 

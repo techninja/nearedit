@@ -1,0 +1,28 @@
+captions-create {
+  display: block;
+
+  /* A tile as wide as two of the others, and what it does beside it. */
+  & .captions-create-entry {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-xs) var(--space-sm);
+    padding: 0 var(--space-sm) var(--space-sm);
+  }
+
+  & .captions-create-tile {
+    flex: 0 1 11rem;
+  }
+
+  & .captions-create-tile[aria-busy='true'] {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  & .captions-create-about {
+    flex: 1 1 9rem;
+    margin: 3px 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+}

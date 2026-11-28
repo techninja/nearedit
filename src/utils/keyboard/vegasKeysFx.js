@@ -19,4 +19,7 @@ export const VEGAS_FX_KEYS = {
   'web.record': ['Alt+R'],
   'music.edit': ['Alt+M'],
   'brand.open': ['Alt+B'],
+  'captions.toggle': ['Alt+C'],
+  'captions.all': ['Alt+Shift+C'],
+  'cutout.toggle': ['Alt+P'],
 };

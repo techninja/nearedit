@@ -14,6 +14,7 @@ import { isInside } from '../../src/api/lib/paths.js';
 import { mapMediaPaths } from '../../src/api/render/mediaPaths.js';
 import { captionFindings, isCaptionsOwn } from './captionsCheck.js';
 import { catalogFindings } from './catalogCheck.js';
+import { attachCutouts, isCutoutFile, uncutFindings } from './cutoutClips.js';
 import { jsonErrorOffset, lineAndColumn } from './jsonError.js';
 import * as music from './musicClips.js';
 import { repairFindings } from './repairs.js';
@@ -32,6 +33,7 @@ export class DocumentError extends Error {}
  * @property {string} dir - The document's folder
  * @property {import('./webClips.js').Unrecorded[]} unrecorded - Web clips without a recording
  * @property {import('./musicClips.js').Unrendered[]} unrendered - Music clips without a rendering
+ * @property {import('./cutoutClips.js').Uncut[]} uncut - Person cutouts that are not made
  */
 
 /**
@@ -44,13 +46,8 @@ export function parseFile(file) {
   try {
     text = readFileSync(file, 'utf8');
   } catch (err) {
-    const why =
-      err.code === 'ENOENT'
-        ? 'no such file'
-        : err.code === 'EISDIR'
-          ? 'it is a folder'
-          : err.message;
-    throw new DocumentError(`Cannot read ${file}: ${why}`);
+    const known = { ENOENT: 'no such file', EISDIR: 'it is a folder' };
+    throw new DocumentError(`Cannot read ${file}: ${known[err.code] || err.message}`);
   }
   try {
     return JSON.parse(text);
@@ -98,7 +95,10 @@ export function loadDocument(path, options = {}) {
       ? [name]
       : [dir, ...folders].map((base) => resolve(base, name));
     const found = candidates.find((candidate) => existsSync(candidate));
+    // A cutout file that is not there (or not ours to read) is looked for on disk instead.
+    const derived = isCutoutFile(where);
     if (!found) {
+      if (derived) return '';
       // A font that is not there is drawn in another, as the compositor does: no reason to stop.
       const font = /(^|\.)fonts\[\d+\]\.file$/.test(where);
       const message = font
@@ -109,14 +109,19 @@ export function loadDocument(path, options = {}) {
     }
     const real = realpathSync(found);
     if (![dir, ...folders].some((root) => isInside(root, real))) {
+      if (derived) return '';
       const message = `${name} is outside the document's folder — allow its folder with --media <dir>`;
       findings.push({ path: where, level: 'error', message });
       return resolve(dir, name);
     }
-    media.add(real);
+    if (!derived) media.add(real);
     return real;
   });
-  return { file, dir, edl, findings, media: [...media], unrecorded, unrendered };
+  // A clip with cutout on is drawn through the cutout file found for it; without one, plain.
+  const cut = attachCutouts(edl, [dir, ...folders]);
+  findings.push(...uncutFindings(cut.edl, cut.uncut));
+  const made = { unrecorded, unrendered, uncut: cut.uncut };
+  return { file, dir, edl: cut.edl, findings, media: [...media], ...made };
 }
 
 /**

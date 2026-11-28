@@ -94,6 +94,18 @@ describe('create-panel', () => {
     expect(getDoc().tracks.length).to.equal(4);
   });
 
+  it('has an entry for captions under Text, which captions the speech on the timeline', async () => {
+    const { el, section, status } = await mount();
+    await section('text');
+    const entry = el.querySelector('captions-create');
+    expect(entry.querySelector('.field-group-title').textContent).to.equal('Captions');
+    expect(entry.querySelector('caption-tile canvas')).to.exist;
+    entry.querySelector('.captions-create-tile').click();
+    // Nothing on this timeline has sound of its own to caption: the panel says so.
+    await waitUntil(() => /No speech on the timeline|Nothing to caption/.test(status()));
+    expect(steps()).to.equal(0);
+  });
+
   it('plays a thumbnail under the pointer and narrows the tiles by search', async () => {
     const { el } = await mount();
     const tile = el.querySelector('.create-panel-tile[data-key="noise"]');

@@ -4,11 +4,13 @@
  */
 
 import { CAPTIONS_OVERVIEW, CAPTIONS_USAGE } from './captionsHelp.js';
+import { CUTOUT_OVERVIEW, CUTOUT_USAGE } from './cutoutHelp.js';
 import { KIT_OVERVIEW, KIT_USAGE } from './kitHelp.js';
 
 export const COMMANDS = [
   ...['render', 'frame', 'validate', 'record', 'music', 'catalog'],
   ...['captions'],
+  ...['cutout'],
   ...['restyle', 'kit', 'help'],
 ];
 
@@ -82,6 +84,7 @@ const USAGE = {
 
   --json                The same as one JSON object`,
   ...CAPTIONS_USAGE,
+  ...CUTOUT_USAGE,
   ...KIT_USAGE,
   help: `nearedit help [command]
 
@@ -97,6 +100,7 @@ const OVERVIEW = `nearedit — author and render NearEdit timelines without the 
   nearedit music    <song.json> [-o out.wav]
   nearedit catalog  [--json]
 ${CAPTIONS_OVERVIEW}
+${CUTOUT_OVERVIEW}
 ${KIT_OVERVIEW}
   nearedit help     [command]
 

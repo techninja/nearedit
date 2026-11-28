@@ -53,6 +53,17 @@ export-options {
     min-width: 0;
   }
 
+  /* Short choices side by side (the subtitle file). */
+  & .export-options-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  & .export-options-row .export-options-choice {
+    flex: 1 1 7rem;
+  }
+
   & .export-options-off {
     cursor: default;
     opacity: 0.65;

@@ -8,6 +8,9 @@
 @import '../../molecules/brand-preview/brand-preview.css';
 @import '../brand-dialog/brand-dialog.css';
 
+/* The entry for captions under Text. */
+@import '../../molecules/captions-create/captions-create.css';
+
 /* Fills its parent, whether that is a flex item or a grid or block cell. */
 create-panel {
   display: flex;

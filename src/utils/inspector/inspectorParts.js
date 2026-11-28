@@ -79,11 +79,13 @@ export function clipsView(model) {
       <web-inspector model="${model}"></web-inspector>
       <music-inspector model="${model}"></music-inspector>
       <element-inspector model="${model}"></element-inspector>
+      <captions-inspector model="${model}"></captions-inspector>
       <inspector-timing model="${model}"></inspector-timing>
       <inspector-generator model="${model}"></inspector-generator>
       <inspector-text model="${model}"></inspector-text>
       <inspector-text-style model="${model}"></inspector-text-style>
       <inspector-text-motion model="${model}"></inspector-text-motion>
+      <cutout-inspector model="${model}"></cutout-inspector>
       <inspector-transform model="${model}"></inspector-transform>
       <inspector-crop model="${model}"></inspector-crop>
       <inspector-motion model="${model}"></inspector-motion>

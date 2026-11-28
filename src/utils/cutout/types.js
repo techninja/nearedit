@@ -13,6 +13,22 @@
  * @property {number} feather - Softness of the edge, units
  * @property {number} shrink - Pull the edge in (positive) or let it out, units
  * @property {number} blur - For `mode: blur`: how soft the background is, units
+ * @property {CutoutMade} [made] - The cutout file that was made for the clip
+ */
+
+/**
+ * What a clip remembers of the cutout made for it (`cutout.made`): the
+ * result of a finished `cutout` job.
+ * @typedef {Object} CutoutMade
+ * @property {string} file - The cutout file, absolute: `<project>/.nearedit/cutout/<key>.mp4`
+ * @property {string} key
+ * @property {string} source - The media file it was cut out of, absolute
+ * @property {number} start - Seconds into the source of its first frame
+ * @property {number} end - Seconds into the source it ends on
+ * @property {number} fps - The rate it was made at
+ * @property {number} width - Of the picture: the video is twice as wide
+ * @property {number} height
+ * @property {number} frames
  */
 
 /**

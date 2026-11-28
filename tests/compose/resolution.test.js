@@ -113,7 +113,7 @@ async function save(name, rgba, size = SMALL) {
 describe('resolution independence: 480 px wide vs 1920 px wide', () => {
   before(async () => {
     fixtures = await writeFixtures();
-    images = await loadImages([fixtures.card, fixtures.logo]);
+    images = await loadImages([fixtures.card, fixtures.logo, fixtures.packed]);
     if (OUT) await mkdir(OUT, { recursive: true });
   });
 

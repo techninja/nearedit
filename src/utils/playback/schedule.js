@@ -6,6 +6,8 @@
  * @module utils/playback/schedule
  */
 
+import { isElementClip } from '#utils/brand/clip.js';
+import { elementImages } from '#utils/compose/requirements.js';
 import { clipKind } from '#utils/edl/factory.js';
 import { activeTracks } from '#utils/edl/query.js';
 
@@ -83,6 +85,18 @@ export function videoCues(tracks, time, lookahead = 0) {
  */
 export function videoLayers(tracks, time) {
   return videoCues(tracks, time, 0);
+}
+
+/**
+ * The stills a layer waits for before it can be drawn: the picture of an
+ * image clip, and the pictures an element clip shows (a logo).
+ * @param {{ fonts?: any[] }} doc - The document, for its font table
+ * @param {Cue} cue
+ * @returns {string[]} Media paths
+ */
+export function cueStills(doc, cue) {
+  if (isElementClip(cue.clip)) return elementImages({ ...doc, tracks: [{ clips: [cue.clip] }] });
+  return cue.kind === 'image' ? [cue.clip.sourceFile] : [];
 }
 
 /** @type {WeakMap<object, number>} */

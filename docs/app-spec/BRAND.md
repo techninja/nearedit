@@ -223,6 +223,8 @@ an adaptation may name another. With none, `builtin:clean`.
   otherwise, and its plans can name elements — "lower third: Ada, CEO, at
   0:12" — instead of inventing a look. A brand pass adds the intro, the
   outro and the bug, and names the speakers.
+  All of it: [DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md), which also describes the `caption`
+  tokens — the timeline's caption style, by role (`captionStyleOf(kit)`).
 - **The command line**: `nearedit restyle timeline.json --kit <folder>`
   brings a document up to date with a kit — one timeline or a folder of
   them.

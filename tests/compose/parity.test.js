@@ -65,7 +65,9 @@ async function compare(t, found) {
   const { width, height } = found.size || { width: WIDTH, height: HEIGHT };
   const canvas = renderFrame(edl, time, { width, height, env });
   const server = canvas.getContext('2d').getImageData(0, 0, width, height).data;
-  const images = { [fixtures.card]: fixtures.card, [fixtures.logo]: fixtures.logo };
+  const images = Object.fromEntries(
+    [fixtures.card, fixtures.logo, fixtures.packed].map((file) => [file, file]),
+  );
   const job = { edl, time, width, height, images, footage, words };
   const chrome = await browser.draw(job);
   const d = difference(server, chrome, width, height);
@@ -81,7 +83,7 @@ async function compare(t, found) {
 describe('compositor parity: server canvas vs Chromium', () => {
   before(async () => {
     fixtures = await writeFixtures();
-    const images = await loadImages([fixtures.card, fixtures.logo]);
+    const images = await loadImages([fixtures.card, fixtures.logo, fixtures.packed]);
     env = createEnv({
       images,
       frameOf: (clip) => images.get(footage[clip.clipId]) || null,

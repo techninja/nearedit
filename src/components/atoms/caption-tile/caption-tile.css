@@ -1,0 +1,14 @@
+/* A small screen: the backdrop is part of the picture, so no theme colours. */
+caption-tile {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: #27506b;
+  overflow: hidden;
+  aspect-ratio: 2 / 1;
+
+  & canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}

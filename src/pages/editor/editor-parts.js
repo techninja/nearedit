@@ -12,6 +12,7 @@ import '#atoms/app-icon/index.js';
 import '#organisms/brand-dialog/index.js';
 import '#organisms/clip-inspector/index.js';
 import '#organisms/create-panel/index.js';
+import '#organisms/cutout-watch/index.js';
 import '#organisms/director-panel/index.js';
 import '#organisms/media-bin/index.js';
 import '#organisms/music-editor/index.js';
@@ -65,6 +66,7 @@ export function dockPanels(active) {
     <web-editor></web-editor>
     <music-editor></music-editor>
     <brand-dialog></brand-dialog>
+    <cutout-watch></cutout-watch>
   `;
 }
 

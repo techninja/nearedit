@@ -10,6 +10,7 @@
 import { isBlended } from '#utils/compose/blend.js';
 import { enabledEffects, layerKind, trackOpacity } from '#utils/compose/layers.js';
 import { parseColor } from '#utils/compose/color.js';
+import { cutoutOf } from '#utils/cutout/made.js';
 import { videoFadeOutWindow } from '#utils/edl/levels.js';
 import { RenderError } from './errors.js';
 
@@ -32,6 +33,7 @@ export const REASONS = {
   'track-blend': 'a blend mode on a track',
   background: 'a background colour',
   captions: 'captions',
+  cutout: 'a person cutout',
   forced: 'RENDER_ENGINE=canvas',
 };
 
@@ -60,6 +62,8 @@ export function clipNeeds(clip, track) {
   if (!kind) return [];
   const needs = [];
   if (kind === 'generator' || kind === 'title' || kind === 'element') needs.push(kind);
+  // A clip that remembers a cutout is drawn through its matte (`cutouts.js` keeps only usable ones).
+  if (kind === 'video' && cutoutOf(clip)) needs.push('cutout');
   if (enabledEffects(clip.effects).length) needs.push('effect');
   if (isBlended(clip.blendMode)) needs.push('blend');
   // A keyframed volume shapes sound only; every other path changes the picture.

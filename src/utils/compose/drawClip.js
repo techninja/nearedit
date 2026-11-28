@@ -1,18 +1,21 @@
 /**
  * One clip of the layer pipeline: resolve its keyframes, draw its source
- * (footage, a still, a generator, a title or a brand element) with its transform, and — when
- * it has effects or a blend mode — do that on a surface of its own first,
- * run the effects there and composite the result.
+ * (footage — through its matte when it is a cutout — a still, a generator,
+ * a title or a brand element) with its transform, and — when it has effects
+ * or a blend mode — do that on a surface of its own first, run the effects
+ * there and composite the result.
  * Isomorphic. Reference: docs/app-spec/COMPOSITOR.md § Layer pipeline.
  * @module utils/compose/drawClip
  */
 
+import { cutoutOf, isPacked } from '#utils/cutout/made.js';
 import { resolveClip } from '#utils/edl/animate.js';
 import { clipProgress, resolveTransform } from '#utils/edl/geometry.js';
 import { videoOpacity } from '#utils/edl/levels.js';
 import { applyEffects, runModule } from './applyEffects.js';
 import { compositeOperation, isBlended } from './blend.js';
 import { generatorModule } from './catalog.js';
+import { drawCutout } from './cutoutPass.js';
 import { drawElement } from './elementLayer.js';
 import { clipTime } from './frame.js';
 import { pictureSize, warnOnce } from './host.js';
@@ -95,7 +98,13 @@ function drawSource(ctx, layer, t, alpha, time, run, blank) {
   if (kind === 'generator') return drawGenerator(ctx, clip, t, alpha, time, run, blank);
   if (kind === 'title') return drawTitle(ctx, clip.text, t, alpha, time, run.frame, run.compose);
   const picture = kind === 'image' ? env.image(clip.sourceFile) : env.frameOf(clip, sourceTime);
-  if (picture) drawPicture(ctx, picture, pictureSize(picture), run.frame, t, alpha);
+  if (!picture) return;
+  const size = pictureSize(picture);
+  // A clip with a cutout is handed the packed frame of its cutout file — or,
+  // while that is not there, its plain picture: the shape of the frame says which.
+  const made = kind === 'video' ? cutoutOf(clip) : null;
+  if (made && isPacked(made, size)) return drawCutout(ctx, picture, size, clip, t, alpha, run);
+  drawPicture(ctx, picture, size, run.frame, t, alpha);
 }
 
 /**

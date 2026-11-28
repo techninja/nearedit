@@ -6,9 +6,11 @@
  */
 
 import { cleanElement } from '#utils/brand/field.js';
+import { cleanCutout } from '#utils/cutout/block.js';
 import { cleanMusic } from '#utils/music/field.js';
 import { cleanWeb, fitWindow } from '#utils/web/field.js';
 import { cleanCaptions } from './captionField.js';
+import { clipKind } from './clipKind.js';
 import { tidyKeyframes } from './clipPaths.js';
 import { fitFades } from './fades.js';
 import { createClip } from './factory.js';
@@ -49,7 +51,8 @@ function migrateKenBurns(kenBurns, raw) {
  *   end of it. An `element` block that holds a design is kept on a clip
  *   that is neither, read as `cleanElement` reads it; such a clip names no
  *   file. A `captions` block is kept on a clip that plays video or sound,
- *   when captions are on or the clip carries words of its own.
+ *   when captions are on or the clip carries words of its own, and a
+ *   `cutout` block on a clip that plays a video file (`cleanCutout`).
  * - Timeline times snap to the frame grid. A missing `timelineEnd` is derived
  *   from the source range; a clip that starts before 0 is trimmed to 0.
  * - Every clip plays at speed 1 (invariant 1). Video/audio: when the
@@ -86,6 +89,8 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
   const clip = tidyKeyframes(web ? { ...filled, web } : music ? { ...filled, music } : made);
   const timed = isTimed(clip, /** @type {any} */ ({ type: trackType }));
   const captions = timed ? cleanCaptions(raw.captions) : null;
+  const filmed = clipKind(clip, { type: trackType }) === 'video';
+  const cutout = filmed ? cleanCutout(raw.cutout) : null;
   // No genuine v1/v2 clip has a generator or keyframes: one that does was
   // written for v3 (by hand, without a version) and means its source window.
   const authored = isObject(raw.generator) || isObject(raw.keyframes);
@@ -126,5 +131,6 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
     false,
   );
   const placed = { ...clip, timelineStart, timelineEnd, sourceIn, sourceOut, fadeIn, fadeOut };
-  return captions ? { ...placed, captions } : placed;
+  const spoken = captions ? { ...placed, captions } : placed;
+  return cutout ? { ...spoken, cutout } : spoken;
 }

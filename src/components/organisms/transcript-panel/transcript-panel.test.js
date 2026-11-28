@@ -247,11 +247,31 @@ describe('transcript-panel', () => {
     );
   });
 
+  it('switches the words on as captions from the toolbar, and off again', async () => {
+    const el = await mount();
+    await ready(el);
+    const cc = () => el.querySelector('.transcript-toolbar-captions');
+    expect([cc().disabled, cc().getAttribute('aria-pressed')]).to.deep.equal([false, 'false']);
+    cc().click();
+    await waitUntil(() => cc().getAttribute('aria-pressed') === 'true', 'the switch did not turn');
+    const sound = getDoc().tracks[1].clips[0];
+    expect(sound.captions).to.deep.equal({ on: true });
+    expect('captions' in getDoc().tracks[0].clips[0]).to.equal(false);
+    expect(el.querySelector('.transcript-panel-message').textContent).to.contain('Captions on');
+    cc().click();
+    await waitUntil(() => cc().getAttribute('aria-pressed') === 'false');
+    expect(getDoc().tracks[1].clips[0].captions).to.equal(undefined);
+    undo();
+    undo();
+    expect(undo()).to.equal(false, 'each press was one undo step');
+  });
+
   it('shows a pinned file that is not on the timeline, for preview and adding only', async () => {
     const el = await mount({ doc: createEdl(), selection: [] });
     pinTranscript(TALK);
     await ready(el);
     expect(off(el)).to.deep.equal([]);
+    expect(el.querySelector('.transcript-toolbar-captions').disabled).to.equal(true);
     expect(el.querySelector('.transcript-panel-preview audio')).to.exist;
     word(el, 5).click();
     await waitUntil(() => word(el, 5).classList.contains('transcript-paragraph-selected'));

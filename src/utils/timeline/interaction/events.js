@@ -8,6 +8,7 @@
 import { selectRegion } from '#utils/commands/marks.js';
 import { selectBetweenMarkers } from '#utils/commands/timeSelection.js';
 import { isPanKeyHeld } from '#utils/keyboard/panKey.js';
+import { badgeTitleAt } from '#utils/timeline/draw/badges.js';
 import { cursorFor } from '#utils/timeline/gestureChoice.js';
 import { hitTest } from '#utils/timeline/hitTest.js';
 import { loopClip } from './clicks.js';
@@ -21,7 +22,8 @@ import { onWheel } from './zoomInput.js';
 
 /**
  * The pointer moves with no button down: show the cursor that says what a
- * drag from here would do, and the fade handles of the clip under it.
+ * drag from here would do, the fade handles of the clip under it, and —
+ * as the canvas's tooltip — what the badge under it means.
  * @param {Stage} stage
  * @param {PointerEvent} event
  */
@@ -32,6 +34,8 @@ function hover(stage, event) {
   stage.hover = { clientX, clientY };
   const input = { altKey, shiftKey, ctrlKey, panKey: isPanKeyHeld() };
   stage.canvas.style.cursor = cursorFor(hit, input);
+  const title = badgeTitleAt(stage.canvas, x, y);
+  if (stage.canvas.title !== title) stage.canvas.title = title;
   const clipId = hit.locked ? '' : hit.clipId || '';
   if (clipId === stage.overlay.hoverClipId) return;
   stage.overlay.hoverClipId = clipId;

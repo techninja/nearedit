@@ -8,6 +8,7 @@
 import { CLIP_INSET, RULER_H, laneY } from '#utils/timeline/layout.js';
 import { timeToX, visibleTimes } from '#utils/timeline/viewport.js';
 import { visibleSlice } from '#utils/timeline/visible.js';
+import { resetBadgeSpots } from './badges.js';
 import { drawClip } from './clipBody.js';
 import { clipColor } from './clipFace.js';
 import { drawCrossfade } from './fades.js';
@@ -39,6 +40,7 @@ export function trackDim(doc, track) {
 export function drawClips(scene) {
   const { ctx, vp, lanes, doc } = scene;
   const { start, end } = visibleTimes(vp);
+  resetBadgeSpots(ctx.canvas);
   for (const lane of lanes) {
     const top = laneY(lane, vp.scrollY);
     if (top > vp.height || top + lane.height < RULER_H) continue;

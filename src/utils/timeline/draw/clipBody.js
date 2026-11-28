@@ -1,8 +1,8 @@
 /**
  * One clip: coloured body, content (filmstrip / waveform / hatching / a
  * generator's colours / a song's picture / a brand element's chips), label,
- * the "fx" badge and keyframe marks, deliberate fade ramps, fade handles
- * and the selection outline.
+ * the "fx" badge, the state badges features register ("CC"…) and keyframe
+ * marks, deliberate fade ramps, fade handles and the selection outline.
  * Detail drops away as the clip gets narrower, so a zoomed-out timeline of
  * a thousand slivers costs a thousand rectangles.
  * @module utils/timeline/draw/clipBody
@@ -14,6 +14,7 @@ import { timeToX } from '#utils/timeline/viewport.js';
 import { edgeOverlaps } from '#utils/timeline/visible.js';
 import { isMusicClip } from '#utils/music/clip.js';
 import { isWebClip } from '#utils/web/clip.js';
+import { drawBadges } from './badges.js';
 import { drawFilmstrip, drawPlaceholder, drawWaveform } from './clipContent.js';
 import {
   BADGE_W,
@@ -89,7 +90,9 @@ export function drawClip(scene, track, index, lane) {
   const brand = kind === 'element' ? drawElementMark : () => 0;
   const marker = web ? drawWebMark : music ? drawMusicMark : brand;
   const mark = marker(scene, clip, { x0, x1, y, height }, badge ? BADGE_W : 0);
-  const labelRoom = x1 - labelFrom - (badge ? BADGE_W : 0) - mark;
+  const used = (badge ? BADGE_W : 0) + mark;
+  const labelRoom =
+    x1 - labelFrom - used - drawBadges(scene, clip, track, { x0, x1, y, height }, used);
   if (labelRoom >= LABEL_MIN) {
     ctx.font = `11px ${palette.sans}`;
     ctx.textBaseline = 'middle';

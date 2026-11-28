@@ -5,7 +5,7 @@
  * Contract: docs/app-spec/CUTOUT.md.
  *
  *   makeCutout({ folder, path, start, end, fps, signal?, onProgress? })
- *     → { file, key, start, end, fps, width, height, frames, cached }
+ *     → { file, key, source, start, end, fps, width, height, frames, cached }
  *   readCutout(folder, key) → the same for a cutout that exists, or null
  *   findCutout(folder, source, { start, end, fps, model }) → one that covers it, or null
  *   cutoutStatus({ fresh? }) → { available, provider, model, reason, … }

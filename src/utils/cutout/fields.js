@@ -1,8 +1,9 @@
 /**
- * The `cutout` block of a clip as data: its fields with their defaults and
- * limits — an inspector is generated from the table — reading a block from
- * whatever a file or a language model holds, and checking one. Isomorphic
- * and pure. Contract: docs/app-spec/CUTOUT.md § In the document.
+ * The settings of a clip's `cutout` block as data: its fields with their
+ * defaults and limits — an inspector is generated from the table — and
+ * reading them from whatever a file or a language model holds. The whole
+ * block, with what was made for it, is `block.js`. Isomorphic and pure.
+ * Contract: docs/app-spec/CUTOUT.md § In the document.
  * @module utils/cutout/fields
  */
 
@@ -10,7 +11,6 @@ import { coerceParam } from '#utils/compose/params.js';
 import { isPlainObject } from '#utils/edl/jsonBag.js';
 
 /** @typedef {import('./types.js').CutoutBlock} CutoutBlock */
-/** @typedef {(path: string, message: string) => void} Report */
 
 /** What is done with the background. */
 export const CUTOUT_MODES = ['remove', 'blur'];
@@ -46,9 +46,10 @@ export const CUTOUT_DEFAULTS = /** @type {any} */ (
 );
 
 /**
- * Read a `cutout` block: every field of the table, each the stored value
- * when it is usable — of the right type, numbers held inside their limits —
- * and the default otherwise. Unknown fields are left out.
+ * Read the settings of a `cutout` block: every field of the table, each
+ * the stored value when it is usable — of the right type, numbers held
+ * inside their limits — and the default otherwise. Everything else a block
+ * holds (unknown fields, and `made`) is left out.
  * @param {any} raw - Whatever a document holds; anything but a plain object
  *   gives the defaults
  * @returns {CutoutBlock}
@@ -69,27 +70,4 @@ export function normalizeCutout(raw) {
  */
 export function hasCutout(clip) {
   return isPlainObject(clip?.cutout) && clip.cutout.on === true;
-}
-
-/**
- * Check a clip's `cutout` field for a document validator: absent, or
- * exactly what `normalizeCutout` produces.
- * @param {any} cutout
- * @param {string} path - Path of the field, e.g. `tracks[0].clips[2].cutout`
- * @param {Report} report
- */
-export function checkCutout(cutout, path, report) {
-  if (cutout === undefined) return;
-  if (!isPlainObject(cutout)) return report(path, 'must be an object');
-  const normal = normalizeCutout(cutout);
-  for (const name of Object.keys(cutout)) {
-    if (!Object.hasOwn(CUTOUT_FIELDS, name))
-      report(`${path}.${name}`, 'is not a field of a cutout');
-  }
-  for (const [name, spec] of Object.entries(CUTOUT_FIELDS)) {
-    if (cutout[name] === normal[name]) continue;
-    const range = spec.type === 'number' ? `a number from ${spec.min} to ${spec.max}` : '';
-    const choice = spec.options ? `one of: ${spec.options.join(', ')}` : 'true or false';
-    report(`${path}.${name}`, `must be ${range || choice}`);
-  }
 }

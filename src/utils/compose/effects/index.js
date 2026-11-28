@@ -18,6 +18,7 @@ import grain from './grain.js';
 import levels from './levels.js';
 import mask from './mask.js';
 import mirror from './mirror.js';
+import outline from './outline.js';
 import pixelate from './pixelate.js';
 import posterize from './posterize.js';
 import rgbSplit from './rgbSplit.js';
@@ -38,6 +39,7 @@ export default [
   blur,
   glow,
   dropShadow,
+  outline,
   vignette,
   grain,
   scanlines,

@@ -104,7 +104,7 @@ describe('cutout routes', () => {
     const { body: result } = await get(`jobs/${job.id}/result`);
     assert.match(result.key, /^[0-9a-f]{20}$/);
     assert.deepEqual(result, {
-      file: join(box.cutouts, `${result.key}.mp4`),
+      ...{ file: join(box.cutouts, `${result.key}.mp4`), source: video },
       ...{ key: result.key, start: 0.5, end: 1.5, width: 320, height: 180, frames: 30, fps: 30 },
       cached: false,
     });

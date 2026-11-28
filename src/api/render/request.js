@@ -16,6 +16,7 @@ import { getConfig } from '../lib/config.js';
 import { isAllowedPath } from '../lib/paths.js';
 import { getAdaptation, getProjectDir } from '../lib/registry.js';
 import { attachMusic } from '../music/timeline.js';
+import { settleCutouts } from './cutouts.js';
 import { RenderError } from './errors.js';
 import { mapMediaPaths, renderImages } from './mediaPaths.js';
 import { renderSources } from './plan.js';
@@ -43,7 +44,7 @@ const invalid = (field, message) =>
 /**
  * Copy the EDL with every file path — clip sources and the image parameters
  * of generators and effects — made absolute and checked, on every track,
- * also muted ones.
+ * also muted ones, and with only the person cutouts that can be used.
  * @param {any} edl - Normalised EDL
  * @returns {any}
  * @throws {RenderError} 403 for a path outside the allowed roots
@@ -51,14 +52,17 @@ const invalid = (field, message) =>
 function checkedEdl(edl) {
   const mediaDir = getConfig().devMediaDir;
   const allowed = new Map();
-  return mapMediaPaths(edl, (path) => {
+  const checked = mapMediaPaths(edl, (path, where) => {
     // Legacy documents name files relative to the dev media directory.
     const file = isAbsolute(path) ? resolve(path) : resolve(mediaDir, path);
     if (!allowed.has(file)) allowed.set(file, isAllowedPath(file));
-    if (!allowed.get(file))
-      throw new RenderError(403, 'Path is outside the allowed media folders', { detail: file });
-    return file;
+    if (allowed.get(file)) return file;
+    // A cutout file that may not be read is a cutout that is not there: the clip renders plain.
+    if (where.endsWith('.cutout.made.file')) return '';
+    throw new RenderError(403, 'Path is outside the allowed media folders', { detail: file });
   });
+  // Cutouts that are missing or out of date come off their clips (the job warns).
+  return settleCutouts(checked, existsSync);
 }
 
 /**

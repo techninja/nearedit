@@ -1,13 +1,15 @@
 /**
  * What the inspector shows when nothing is selected: the open project and
- * the document at a glance — format, length, and what is on each track.
- * Read-only.
+ * the document at a glance — format, length, and what is on each track
+ * (read-only) — and, below that, what belongs to the whole timeline rather
+ * than to a clip: its captions and the style they are drawn with.
  * @module components/molecules/inspector-document
  */
 
 import { define, html } from 'hybrids';
 import { formatTimecode } from '#utils/playback/timecode.js';
 import '#atoms/app-icon/app-icon.js';
+import '#molecules/captions-style/captions-style.js';
 
 /**
  * @typedef {Object} InspectorDocumentHost
@@ -83,6 +85,7 @@ export default define({
           )}
         </ul>
         <p class="inspector-document-hint">Select a clip to see and edit its properties.</p>
+        <captions-style class="inspector-document-captions"></captions-style>
       `;
     },
     shadow: false,

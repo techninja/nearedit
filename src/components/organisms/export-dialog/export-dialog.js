@@ -1,8 +1,9 @@
 /**
  * Export dialog organism — render the timeline to a video file: pick a
  * preset and a range, see what will be rendered, start, watch progress
- * (cancel any time), then download or open the result. Web clips that are
- * not recorded, or out of date, are pointed out first. Opened with the
+ * (cancel any time), then download or open the result — and, when a
+ * subtitle file was asked for, the captions saved beside it. Web clips that
+ * are not recorded, or out of date, are pointed out first. Opened with the
  * `open` property; announces `close`. State: `#utils/ui/exportController.js`.
  * @module components/organisms/export-dialog
  */
@@ -11,8 +12,10 @@ import { html, define, dispatch } from 'hybrids';
 import { currentRanges, exportState, openExport } from '#utils/ui/exportController.js';
 import { setExportOption } from '#utils/ui/exportController.js';
 import { filenameProblem } from '#utils/ui/exportPlan.js';
-import { cancelExport, startExport } from '#utils/ui/exportRun.js';
+import { subtitleResult } from '#utils/captionsUi/exportParts.js';
+import { cancelExport, setSubtitleFormat, startExport } from '#utils/captionsUi/exportSubtitles.js';
 import { dialogFrame } from '#utils/ui/dialogFrame.js';
+import { cutoutExportNote, cutoutJobs } from '#utils/cutoutUi/exportNote.js';
 import { watch } from '#utils/ui/observable.js';
 import { exportBody } from '#utils/ui/exportViews.js';
 import { liveDoc } from '#utils/editor/liveDoc.js';
@@ -28,6 +31,7 @@ import '#molecules/export-options/index.js';
  * @property {import('#utils/ui/exportController.js').ExportState} state
  * @property {any} doc - The open document (for the note about web clips)
  * @property {{ byClip: Record<string, any> }} recordings - Web clips being recorded
+ * @property {import('#utils/cutoutUi/state.js').CutoutJobs} cutouts - Cutouts being made
  */
 
 /** @param {ExportDialogHost & HTMLElement} host */
@@ -38,7 +42,9 @@ function handleClose(host) {
 
 /** @param {ExportDialogHost} _host @param {CustomEvent} event */
 function handleField(_host, event) {
-  setExportOption(event.detail.key, event.detail.value);
+  const { key, value } = event.detail;
+  if (key === 'subtitles') setSubtitleFormat(value);
+  else setExportOption(key, value);
 }
 
 /** @param {ExportDialogHost} _host @param {boolean} open */
@@ -84,13 +90,18 @@ export default define({
   state: watch(exportState),
   doc: liveDoc(),
   recordings: watch(recordingState),
+  cutouts: watch(cutoutJobs),
   render: {
-    value: ({ open, state, doc, recordings }) =>
+    value: ({ open, state, doc, recordings, cutouts }) =>
       open
         ? html`<app-dialog open onclose="${handleClose}" onfieldchange="${handleField}">
             ${dialogFrame({
               title: 'Export video',
-              body: exportBody(state, currentRanges(), webExportNote(doc, recordings)),
+              body: html`${exportBody(state, currentRanges(), [
+                webExportNote(doc, recordings),
+                cutoutExportNote(doc, cutouts),
+              ])}
+              ${state.job || state.starting ? html`` : subtitleResult(state.result)}`,
               footer: footer(state),
               onClose: handleClose,
             })}

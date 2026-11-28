@@ -212,6 +212,7 @@ edit-plan format and the track layout it produces are described in
 | `remove_silence` | no | Tighten clips using word timestamps or detected silences |
 | `beat_sync` | no | Move cuts onto the beats of a music clip |
 | `add_captions` | no | Title clips generated from a transcript |
+| `brand` | optional | "Apply brand": the project's brand kit on the open timeline — intro, outro, logo, names, stingers, caption style; idempotent ([DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md)) |
 
 `mode` says where the fragment goes: `replace` (whole timeline), `append`,
 `prepend`, `insert` (ripple-insert at `context.playheadPosition`) or `range`
@@ -239,6 +240,8 @@ Fragment clip times are **relative to the fragment start (0)**. `index` is
 the Nth track of that `type` in the document (0 = first); missing tracks are
 created. Clips are complete v3 clips (`createClip`). `range` is `null`
 unless the mode is `range`; a result also carries its `duration`.
+A result that follows the brand may carry `document` (font files, the caption style):
+[DIRECTOR-BRAND.md § The result](./DIRECTOR-BRAND.md#the-result).
 
 Actions that rewrite existing clips in place — `remove_silence`,
 `beat_sync`, `add_captions`, `score`, and `insert_broll` with `placement: "overlay"`

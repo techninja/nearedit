@@ -2,11 +2,12 @@
  * The reference documents of the compositor tests, as a flat list of cases.
  * Together they exercise every generator, text at rest and in motion, both
  * effects, every blend mode, placement, the layer pipeline, every element
- * of every built-in brand kit, and captions.
+ * of every built-in brand kit, captions, and the person cutout.
  * @module tests/compose/cases
  */
 
 import { captionCases } from './captions.js';
+import { cutoutCases, outlineDocs } from './cutout.js';
 import { effectDocs } from './effects.js';
 import { elementCases } from './elements.js';
 import { generatorDocs } from './generators.js';
@@ -34,8 +35,8 @@ import { emojiDoc, textDocs } from './text.js';
 const TIME = 1.5;
 
 /**
- * @param {{ card: string, logo: string, font: string }} files - Fixture
- *   pictures, and a font file that stands for a brand's own
+ * @param {{ card: string, logo: string, packed: string, font: string }} files -
+ *   Fixture pictures, and a font file that stands for a brand's own
  * @returns {Case[]}
  */
 export function referenceCases(files) {
@@ -54,15 +55,22 @@ export function referenceCases(files) {
     ...still(pipelineDocs(files), false),
     ...still(effectDocs(files), false),
     ...still(textDocs(), true),
+    ...still(outlineDocs(), false).map((found) => ({
+      ...found,
+      text: found.name.endsWith('title'),
+    })),
     ...moving,
     ...particleCases(files),
     ...elementCases(files),
     ...captionCases(files),
+    ...cutoutCases(files),
   ];
 }
 
 /** Names of the reference cases, for declaring tests before fixtures exist. */
-export const CASE_NAMES = referenceCases({ card: '', logo: '', font: '' }).map((c) => c.name);
+export const CASE_NAMES = referenceCases({ card: '', logo: '', packed: '', font: '' }).map(
+  (c) => c.name,
+);
 
 /**
  * @returns {Case} The colour-emoji case (see `emojiDoc`)

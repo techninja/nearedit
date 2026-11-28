@@ -31,3 +31,8 @@
 @import '../components/molecules/music-write/music-write.css';
 @import '../components/molecules/music-sound/music-sound.css';
 @import '../components/organisms/music-editor/music-editor.css';
+
+/* Person cutout: the inspector group, its placement buttons and the watcher. */
+@import '../components/atoms/cutout-place/cutout-place.css';
+@import '../components/molecules/cutout-inspector/cutout-inspector.css';
+@import '../components/organisms/cutout-watch/cutout-watch.css';

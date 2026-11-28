@@ -1,0 +1,131 @@
+cutout-inspector {
+  display: block;
+
+  & .cutout-inspector-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  & .cutout-inspector-hint {
+    margin: 0;
+    padding: 0 var(--space-sm) var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  /* Where the cutout stands: a dot in the colour of its state, a line, a button. */
+  & .cutout-inspector-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-height: var(--control-h);
+    padding: 2px var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  & .cutout-inspector-text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+
+    &::before {
+      display: inline-block;
+      width: 0.5rem;
+      height: 0.5rem;
+      margin-right: var(--space-xs);
+      border-radius: 50%;
+      background: var(--color-warning);
+      content: '';
+    }
+  }
+
+  & [data-stage='ready'] .cutout-inspector-text::before {
+    background: var(--color-success);
+  }
+
+  & [data-stage='making'] .cutout-inspector-text::before {
+    background: var(--color-info);
+    animation: cutout-inspector-pulse 1.2s ease-in-out infinite;
+  }
+
+  & [data-stage='failed'] .cutout-inspector-text {
+    color: var(--color-danger);
+
+    &::before {
+      background: var(--color-danger);
+    }
+  }
+
+  & .cutout-inspector-progress {
+    margin: 0 var(--space-sm) var(--space-xs);
+  }
+
+  /* What the server is missing, and how to get it. */
+  & .cutout-inspector-missing {
+    margin: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+
+    & code {
+      padding: 0 0.25em;
+      border-radius: var(--radius-sm);
+      background: var(--color-surface-3);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+  }
+
+  /* Buttons in the group are as small as its text. */
+  & .btn {
+    flex: none;
+    gap: var(--space-xs);
+    padding: 2px var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  & .cutout-inspector-missing .btn {
+    margin-top: var(--space-xs);
+  }
+
+  & .seg > button {
+    cursor: pointer;
+  }
+
+  /* The seven placements share one line, however narrow the panel is. */
+  & .cutout-inspector-places {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 2.5rem));
+    gap: var(--space-xs);
+  }
+
+  & .cutout-inspector-looks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  /* Shadow and Outline are switches: pressed while the clip has the effect. */
+  & .cutout-inspector-looks .btn[aria-pressed='true'] {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 16%, var(--color-surface));
+  }
+}
+
+@keyframes cutout-inspector-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  cutout-inspector [data-stage='making'] .cutout-inspector-text::before {
+    animation: none;
+  }
+}
+
+@media (pointer: coarse) {
+  cutout-inspector .btn {
+    min-height: var(--control-h);
+  }
+}

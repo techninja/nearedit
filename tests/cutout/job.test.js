@@ -46,7 +46,7 @@ describe('the cutout job, with a fake matte program', () => {
     const source = { path: video, size: statSync(video).size, mtime: statSync(video).mtimeMs };
     const key = cutoutKey({ source, start: 0.5, end: 1.5, fps: 30, model: MODEL() });
     assert.deepEqual(made, {
-      file: join(box.cutouts, `${key}.mp4`),
+      ...{ file: join(box.cutouts, `${key}.mp4`), source: video },
       ...{ key, start: 0.5, end: 1.5, width: W, height: H, frames: 30, fps: 30, cached: false },
     });
     assert.deepEqual(kit.fakeRuns(box), [`${W}x${H}`]);

@@ -50,6 +50,28 @@ export function isIdentity(t) {
 }
 
 /**
+ * Draw a rectangle of an image where `placeSource` put a source: into the
+ * destination rectangle, turned about the anchor, faded.
+ * @param {any} ctx
+ * @param {any} image - Anything `drawImage` takes
+ * @param {{ sx: number, sy: number, sw: number, sh: number }} from - The
+ *   part of the image to read, in its pixels
+ * @param {{ dx: number, dy: number, dw: number, dh: number }} p - Where it
+ *   goes, output pixels (`placeSource`)
+ * @param {Frame} frame
+ * @param {FlatTransform} t - Resolved transform
+ * @param {number} alpha - 0..1
+ */
+export function drawPlaced(ctx, image, from, p, frame, t, alpha) {
+  ctx.save();
+  toOutputSpace(ctx, frame);
+  ctx.globalAlpha = alpha;
+  rotateAbout(ctx, t.rotation, p.dx + p.dw * t.anchorX, p.dy + p.dh * t.anchorY);
+  ctx.drawImage(image, from.sx, from.sy, from.sw, from.sh, p.dx, p.dy, p.dw, p.dh);
+  ctx.restore();
+}
+
+/**
  * Draw a footage frame or a still.
  * @param {any} ctx
  * @param {any} image - Anything `drawImage` takes
@@ -61,13 +83,7 @@ export function isIdentity(t) {
 export function drawPicture(ctx, image, size, frame, t, alpha) {
   if (!(size.width > 0 && size.height > 0)) return;
   const p = placeSource(size.width, size.height, frame.outWidth, frame.outHeight, t);
-  if (!(p.dw > 0 && p.dh > 0)) return;
-  ctx.save();
-  toOutputSpace(ctx, frame);
-  ctx.globalAlpha = alpha;
-  rotateAbout(ctx, t.rotation, p.dx + p.dw * t.anchorX, p.dy + p.dh * t.anchorY);
-  ctx.drawImage(image, p.sx, p.sy, p.sw, p.sh, p.dx, p.dy, p.dw, p.dh);
-  ctx.restore();
+  if (p.dw > 0 && p.dh > 0) drawPlaced(ctx, image, p, p, frame, t, alpha);
 }
 
 /**
