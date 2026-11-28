@@ -50,7 +50,7 @@ renderRouter.post('/render', (req, res) => {
     const { projectId, adaptationId, preset, range, filename } = request;
     const job = runJob(
       'render',
-      { projectId, adaptationId, preset, range, filename },
+      { projectId, adaptationId, preset, range, filename, subtitles: request.subtitles },
       { projectId, label: `Render: ${request.name || 'timeline'}`, lane: 'render' },
       (ctx) => runRender(request, ctx),
     );
@@ -68,10 +68,13 @@ renderRouter.post('/render/plan', async (req, res) => {
   try {
     const request = parseRenderRequest(req.body);
     const { preset, range } = request;
-    const segments = renderSegments(request.edl, { preset, range });
-    const { probes, capabilities } = await prepareRender(request.edl);
+    const prepared = await prepareRender(request.edl);
+    const { probes, capabilities, words } = prepared;
+    // With the transcripts that were found: a captioned clip without words is not drawn for.
+    const segments = renderSegments(request.edl, { preset, range, words });
     const plan = lastPass(request.edl, { probes, capabilities, preset, range }, segments);
-    const { args, filterComplex, duration, inputs, warnings, width, height, fps } = plan;
+    const { args, filterComplex, duration, inputs, width, height, fps } = plan;
+    const warnings = [...plan.warnings, ...prepared.warnings];
     // An envelope's control track is binary: say how big it is instead.
     const files = plan.files.map(({ path, content }) => ({
       path,
