@@ -100,7 +100,7 @@ duration, score, matchCount, matches: [{ field, text, start?, end?, time? }] }`.
 
 `status`: `queued`, `running`, `complete`, `error`, `cancelled`.
 `type`: `index`, `analyze`, `transcribe`, `tag`, `beats`, `scenes`,
-`silence`, `waveform`, `director`, `script`, `render`, `web`.
+`silence`, `waveform`, `director`, `script`, `render`, `web`, `cutout`.
 `result` in a summary holds only the small scalar fields of the full result.
 
 ### WebSocket `/ws`
@@ -418,3 +418,67 @@ now — whatever `sourceFile` and `music.key` the document holds — and what
 is missing is rendered when the job (or the plan) starts, into the
 project, or into `<data>/.nearedit/music/` for a timeline posted without a
 project. See [RENDER.md](./RENDER.md#limits-and-what-is-not-honoured).
+
+## Person cutout
+
+A person without their background ([CUTOUT.md](./CUTOUT.md)): a matte
+program — the built-in worker, or one of your own — is run over the frames
+of a stretch of a media file, and picture and matte are packed side by
+side into `<project>/.nearedit/cutout/<key>.mp4`, described by `<key>.json`
+beside it. The file is played through `/media/file`.
+
+| Method | Route | Purpose |
+| ------ | ----- | ------- |
+| GET | `/cutout/status` | `{ available, provider, model, reason, detail, python, file, command }`. `?fresh` asks the matte program again |
+| POST | `/cutout` | `{ projectId, path, start, end, fps? }` → `202 { jobId }`, job type `cutout` |
+| GET | `/cutout/meta?projectId=&key=` | The description of a cutout file (404 when there is none) |
+
+**Status** is found out by asking. `provider` is `builtin`
+(`workers/person_matte.py`, started with its model and run once) or
+`command` (`CUTOUT_COMMAND`, sent two 64 × 64 frames); a good answer is
+remembered until the model file or the setting changes. `model` names what
+makes the matte, with its settings — `modnet-07c308cf0fc7/size512/steady0.6/v1`,
+or `command:<the command>` — and is part of every key. `reason` says what
+is missing and the command that gets it (`Python at python3 has no
+onnxruntime: python3 -m pip install onnxruntime numpy`, `No model at
+/data/models/modnet.onnx: npm run install-cutout`); `''` when `available`.
+
+**Cut out.** `path` is absolute or relative to the project folder; `start`
+and `end` are seconds of the file, put on the frame grid of `fps` — the
+document's, default 30 — so that the stretch starts on the frame on screen
+at `start`. Refused before a job exists: `400` without `projectId` or
+`path`, `404` for an unknown project or a missing file, `403` outside the
+allowed folders, `422` with `fields` for a still or a sound file, a file
+without a picture, a `start` after its end, an `end` not after `start` or
+more than 30 minutes after it, an `fps` outside 1 to 240 — and `503` with
+the status's `reason` without a matte program. Cutout jobs run in their
+own lane, `CUTOUT_CONCURRENCY` at a time, labelled `Cut out: <file name>`;
+progress messages are `frame n of m`. The job's result:
+
+```json
+{
+  "file": "/project/.nearedit/cutout/0a51bd39df6c629f93d1.mp4",
+  "key": "0a51bd39df6c629f93d1", "start": 3, "end": 20, "fps": 30,
+  "width": 1280, "height": 720, "frames": 510, "cached": false
+}
+```
+
+`key` is `cutoutKey({ source, start, end, fps, model })`, `source` being
+the file's `{ path, size, mtime }` as `/media` lists them. `width` ×
+`height` is the picture: the source as it is shown, reduced to fit 1920 ×
+1080, sides even. `cached` is true when nothing had to be made — the key
+is there, or a longer cutout of the same file, rate and model covers the
+stretch (the result then carries that cutout's key and range). Requests
+for one key at the same moment share one run. A failed job names the stage
+and what it printed (`The matte program stopped (exit code 3) after 12 of
+510 frames: …`); cancelling ends both FFmpegs and the matte program; a
+failed or cancelled cutout leaves no file, whole or partial.
+
+**The file** is H.264 (High, yuv420p, limited range, CRF 16 `veryfast`, a
+key frame every half second, no sound), `2 × width` by `height`: the
+picture on the left, its matte on the right, white where the person is.
+Frame `n` is the frame a render shows at `start + n / fps`, by the
+renderer's own frame rule, and its matte was made from that very picture.
+A BT.601 source stays BT.601 (the file is tagged). The description is
+`{ version: 1, key, source: { path, size, mtime }, start, end, fps, width,
+height, frames, model }`, with `end = start + frames / fps`.

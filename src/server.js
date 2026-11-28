@@ -8,6 +8,7 @@ import { dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import express from 'express';
 import { browseRouter } from './api/browse.js';
+import { cutoutRouter } from './api/cutout.js';
 import { directorRouter } from './api/director.js';
 import { indexerRouter } from './api/indexer.js';
 import { intelligenceRouter } from './api/intelligence.js';
@@ -56,6 +57,7 @@ const routers = [
   renderRouter,
   webRouter,
   musicRouter,
+  cutoutRouter,
 ];
 for (const router of routers) app.use('/api', router);
 app.use('/api', apiNotFound);

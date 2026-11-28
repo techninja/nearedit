@@ -24,6 +24,7 @@ a few provider-specific ones (marked †) are read in
 | `ANALYSIS_CONCURRENCY` | `1` | Simultaneous analysis jobs |
 | `WEB_CAPTURE_CONCURRENCY` | `1` | Simultaneous web-clip recordings (each is a browser) |
 | `MUSIC_RENDER_CONCURRENCY` | `2` | Songs of music clips rendered at once, each in a thread of its own; further requests wait. See [MUSIC.md](./MUSIC.md) |
+| `CUTOUT_CONCURRENCY` | `1` | Person cutouts made at once. Each uses every core for its matting network, so more than one is rarely faster |
 
 ### Access and security
 
@@ -68,6 +69,23 @@ included), carrier-grade NAT, unique-local IPv6 or otherwise not public,
 unless `WEB_CAPTURE_ALLOW` names the host. System proxy settings are not
 used. Each recording has a fresh profile, removed afterwards; downloads,
 permission requests and service workers are refused.
+
+## Person cutout
+
+Cutting a person out of a clip ([CUTOUT.md](./CUTOUT.md)) needs a **matte
+program**. The built-in one is `workers/person_matte.py`: Python 3 with
+`onnxruntime` and `numpy`, and a matting model. `npm run install-cutout`
+downloads the model (MODNet as ONNX, Apache 2.0, 26 MB) into
+`<NEAREDIT_DATA_DIR>/models/modnet.onnx`, loads it once, and says what the
+Python side still lacks, with the `pip` command; nothing is downloaded
+otherwise. `GET /api/cutout/status` says what was found. Setting it up:
+[INTELLIGENCE.md](./INTELLIGENCE.md#person-cutout).
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `CUTOUT_PYTHON` | `FASTER_WHISPER_PYTHON`, else `python3` | Python with `onnxruntime` and `numpy` (name on `PATH` or full path) |
+| `CUTOUT_MODEL` | `<NEAREDIT_DATA_DIR>/models/modnet.onnx` | The ONNX matting model. When set, only this file is used; otherwise the installed one, then the one in NearEdit's own `data/` (for the command line) |
+| `CUTOUT_COMMAND` | empty | A matte program of your own, used instead of the built-in one: a command line, split into words without a shell (quote a path that has blanks), to which `--width W --height H --fps F` are added. It reads raw RGB frames on stdin and writes one 8-bit matte per frame on stdout |
 
 ## Director LLM
 

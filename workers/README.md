@@ -82,6 +82,27 @@ script fetches the media from `http://SERVER_HOST:PORT/api/media/file`.
 The remote machine needs key-based SSH access (no password prompt) and must
 be able to reach the NearEdit server over HTTP.
 
+## person_matte.py
+
+The matte worker of the person cutout: raw RGB frames in on stdin, one raw
+8-bit matte per frame out on stdout (255 = person), made by a portrait
+matting network (MODNet, ONNX). Needs `pip install onnxruntime numpy` and
+the model (`npm run install-cutout`). Setting it up, what it does to each
+frame and how fast it is:
+[docs/app-spec/INTELLIGENCE.md](../docs/app-spec/INTELLIGENCE.md#person-cutout).
+
+```bash
+ffmpeg -i in.mp4 -f rawvideo -pix_fmt rgb24 - |
+  python3 workers/person_matte.py --model data/models/modnet.onnx --width 1280 --height 720 \
+    [--fps 30] [--size 512] [--steady 0.6] [--threads 0] [--device auto] > mattes.gray
+python3 workers/person_matte.py --model data/models/modnet.onnx --check
+```
+
+`--check` loads everything, runs the model once and prints one JSON line.
+Errors are one line on stderr; exit status `0` done, `2` bad arguments,
+`3` onnxruntime or numpy missing, `4` no model file, `5` the model does
+not load or run, `6` the input ended in the middle of a frame.
+
 ## Other providers
 
 whisper.cpp, Ollama and OpenAI-compatible services need no script from this

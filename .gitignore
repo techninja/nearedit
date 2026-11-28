@@ -9,6 +9,8 @@ data/previews/
 data/transcode/
 data/tmp/
 data/browsers/
+data/models/
+data/kits/
 
 # Local configuration
 .env.local

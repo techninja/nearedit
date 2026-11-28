@@ -349,6 +349,77 @@ VISION_MODEL=gpt-4o-mini
 Only `model` and `messages` are sent, so servers that reject optional
 parameters still work. This provider sends frames to the configured server.
 
+## Person cutout
+
+Cutting a person out of a clip ([CUTOUT.md](./CUTOUT.md)) is the one
+analysis that writes video instead of a sidecar: a matting network decides,
+frame by frame, what is person, and picture and matte go into a cutout
+file in the project. It is optional, local, and needs two things.
+
+**1. The model** — MODNet in ONNX form (Apache 2.0, 26 MB):
+
+```bash
+npm run install-cutout        # → <NEAREDIT_DATA_DIR>/models/modnet.onnx
+```
+
+The script downloads the file, checks its size, loads it once with the
+Python below, and ends by saying that cutouts are ready — or what is
+missing, with the command to run. Exit status: 0 ready, 3 the model is
+there and the Python side is not, 1 the download failed. `--force`
+downloads again; `--url <address>` takes the file from a mirror.
+
+**2. A Python with `onnxruntime` and `numpy`** — the transcriber's
+environment will do, or one of its own:
+
+```bash
+python3 -m venv ~/nearedit-env
+~/nearedit-env/bin/pip install onnxruntime numpy
+```
+
+```ini
+CUTOUT_PYTHON=/home/me/nearedit-env/bin/python3   # default: FASTER_WHISPER_PYTHON, else python3
+CUTOUT_MODEL=/models/modnet.onnx                  # default: the installed one
+```
+
+`GET /api/cutout/status` then answers `available: true`; until then its
+`reason` names the next thing to do.
+
+**What the worker does** (`workers/person_matte.py`, see
+[workers/README.md](../../workers/README.md)). Each frame is reduced to 512
+pixels on its longer side with every source pixel counted — against
+picking every nth pixel that cuts the matte's flicker by a third to a half
+— the network gives a matte of that size, and the matte is enlarged to
+the frame. Between frames the matte is steadied only where the picture
+stood still: 16-pixel blocks that changed by less than a few levels above
+the grain keep part of the previous matte (0.6 at 30 fps), blocks within
+two of anything that moved keep none. Measured: on a still, grainy shot
+the matte's frame-to-frame change falls to about 40 %; behind a person
+moving 80 pixels a frame nothing is left, where the usual blend of
+consecutive mattes leaves a ghost over 4.6 % of the background.
+
+**Speed.** The network takes about 60 ms a frame on 4 cores, whatever the
+frame size; decoding twice, reducing, enlarging and H.264 add about 40 ms
+at 720p and 60 at 1080p. Measured on 4 shared cores, whole job: 9 to 11
+frames a second for 1280 × 720 and 6.5 to 8 for 1920 × 1080 — a minute of
+30 fps footage in three to four and a half minutes; half that speed when
+the machine is busy with something else. The cutout file comes to 5 to 6
+Mbit/s at 720p and about 9 at 1080p. With `onnxruntime-gpu` the worker
+asks for CUDA (not tested here).
+
+**Your own matte program.** `CUTOUT_COMMAND` replaces the worker with any
+program that speaks its protocol — another network, a GPU machine behind
+`ssh`:
+
+```text
+your-command … --width W --height H --fps F
+stdin:  raw RGB frames, W × H × 3 bytes each
+stdout: one raw 8-bit matte per frame, W × H bytes (255 = person), nothing else
+```
+
+It may answer late (several frames in before the first matte comes out),
+must exit 0 when its input ends, and is given up on after three minutes
+without a matte. What it prints on stderr is shown when it fails.
+
 ## Status
 
 `GET /intelligence/status` checks FFmpeg, the transcription provider, the

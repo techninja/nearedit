@@ -41,8 +41,9 @@ function pathList(raw) {
  *     whisperCppModelPath: string, python: string, sshHost: string, sshCommand: string,
  *     publicUrl: string },
  *   jobs: { renderConcurrency: number, analysisConcurrency: number, webConcurrency: number,
- *     musicConcurrency: number },
+ *     musicConcurrency: number, cutoutConcurrency: number },
  *   web: { browser: string, allow: string, noSandbox: boolean },
+ *   cutout: { python: string, model: string, command: string },
  * }}
  */
 export function getConfig() {
@@ -94,12 +95,20 @@ export function getConfig() {
       webConcurrency: parseInt(env.WEB_CAPTURE_CONCURRENCY || '', 10) || 1,
       // Songs rendered at once, each in a thread of its own (MUSIC.md § Server)
       musicConcurrency: parseInt(env.MUSIC_RENDER_CONCURRENCY || '', 10) || 2,
+      cutoutConcurrency: parseInt(env.CUTOUT_CONCURRENCY || '', 10) || 1,
     },
     // Web clips: the recording browser and what it may reach (WEBCLIP.md § Server)
     web: {
       browser: env.WEB_CAPTURE_BROWSER || '',
       allow: env.WEB_CAPTURE_ALLOW || '',
       noSandbox: env.WEB_CAPTURE_NO_SANDBOX === '1',
+    },
+    // Person cutout: the matte worker's Python and model, or a program of one's own
+    // (CUTOUT.md § The matte model). `model` is '' when unset: provider.js looks for it.
+    cutout: {
+      python: env.CUTOUT_PYTHON || env.FASTER_WHISPER_PYTHON || 'python3',
+      model: env.CUTOUT_MODEL || '',
+      command: env.CUTOUT_COMMAND || '',
     },
   };
 }
