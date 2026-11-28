@@ -29,7 +29,8 @@ brief ─► motion plan ─► complete ─► build ─► DirectorResult
 
 | Param | Values | Meaning |
 | ----- | ------ | ------- |
-| `theme` | `auto`, or a [theme](#themes) | `auto` lets the seed choose |
+| `theme` | `brand` (default), `auto`, or a [theme](#themes) | `brand` takes colours, type and motion from the project's brand kit ([DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md)); `auto` lets the seed choose among the themes below |
+| `bumpers` | toggle, default on | With `brand`: the first scene is the kit's intro and the last its outro; a line that begins `Chapter:` is its chapter card |
 | `duration` | 0–600 s, default 0 | Target length. 0 = every scene stays as long as its text takes to read; in mode `range` 0 fills the range |
 | `pacing` | `slow`, `medium`, `fast` | Reading speed and length of transitions |
 | `seed` | 1–99, default 1 | The same brief, parameters and seed always give the same piece; another seed gives another take |

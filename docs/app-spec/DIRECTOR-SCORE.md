@@ -30,9 +30,9 @@ timeline ─► span, turning points, ─► score plan ─► tempo ─► sect
 
 | Param | Values | Meaning |
 | ----- | ------ | ------- |
-| `style` | `auto`, or a [style](#styles) | `auto` chooses from the timeline ([Without a model](#without-a-model)) |
+| `style` | `brand` (default), `auto`, or a [style](#styles) | `brand` is the style of the project's brand kit ([DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md)) unless the brief names one; `auto` chooses from the timeline ([Without a model](#without-a-model)) |
 | `energy` | 0–1, default 0.5 | How much happens: 0 a quiet bed, 1 everything the style has ([Sections](#sections)) |
-| `key` | `auto`, `C`, `Db` … `B` | `auto`: one the style sits well in, by the seed. Major or minor follows from the style |
+| `key` | `brand` (default), `auto`, `C`, `Db` … `B` | `brand`: the kit's key; `auto`: one the style sits well in, by the seed. Major or minor follows from the style |
 | `bpm` | 0–240, default 0 | 0 fits a tempo of the style to the length ([Tempo](#tempo)) |
 | `duck` | 0–24 dB, default 12 | How far the music drops under speech; 0 = never |
 | `volume` | 0.05–1.5, default 0.7 | The clip's level where nobody speaks |

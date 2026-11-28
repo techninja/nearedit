@@ -34,7 +34,8 @@ address ─► look at the page ─► demo plan ─► match names ─► time 
 | ----- | ------ | ------- |
 | `url` | text, **required** | The page: `http://` or `https://`. A bare `example.com/page` is read as `https://…` |
 | `look` | `window` (default), `full` | [Looks](#looks) |
-| `theme` | `auto`, or a [motion theme](./DIRECTOR-MOTION.md#themes) | Colours and type of the background, the captions and the title card |
+| `theme` | `brand` (default), `auto`, or a [motion theme](./DIRECTOR-MOTION.md#themes) | Colours and type of the background, the captions and the title card. `brand` takes them from the project's brand kit, with its caption element and its intro as the title card ([DIRECTOR-BRAND.md](./DIRECTOR-BRAND.md)) |
+| `finished` | toggle, default off | With `brand`: the kit's intro before the recording, its outro after it and its logo bug over it |
 | `size` | `auto`, or a page size of the web clip editor (`desktop`, `wide`, `tablet`, `phone`) | [The page](#the-page) |
 | `pacing` | `slow`, `medium`, `fast` | [Timing](#timing) |
 | `duration` | 0–600 s, default 0 | Target length. 0 = what the steps and captions take; in mode `range` 0 fills the range |
