@@ -16,8 +16,11 @@ import { hasMadeSource } from './time.js';
 /** Fields a patch never writes: they belong to move/trim/slip/fade/link/group. */
 const STRUCTURAL = ['clipId', 'timelineStart', 'timelineEnd', 'sourceOut', 'fadeIn', 'fadeOut'];
 const RELATIONS = ['linkedClipId', 'groupId'];
-/** The description a clip's source is made from: written by webClip.js and musicClip.js only. */
-const DESCRIPTIONS = ['web', 'music'];
+/**
+ * The description a clip's source is made from: written by webClip.js,
+ * musicClip.js and elementClip.js only.
+ */
+const DESCRIPTIONS = ['web', 'music', 'element'];
 /** A web or music clip's recording and its window belong to those operations too. */
 const RECORDED = ['sourceFile', 'sourceIn'];
 
@@ -26,15 +29,17 @@ const RECORDED = ['sourceFile', 'sourceIn'];
  * @param {Clip} clip
  * @param {Track} track - The track that holds it
  * @param {any} patch
+ * @param {Record<string, string[]>} [enums] - The enumerations in force:
+ *   `fontEnums(edl.fonts)` lets a title name a font of the document's own
  * @returns {Clip} The clip itself when nothing changed
  */
-export function patchClip(clip, track, patch) {
+export function patchClip(clip, track, patch, enums) {
   if (!patch || typeof patch !== 'object') return clip;
   const safe = { ...patch };
   for (const key of [...STRUCTURAL, ...RELATIONS, ...DESCRIPTIONS]) delete safe[key];
   for (const key of hasMadeSource(clip) ? RECORDED : []) delete safe[key];
   /** @type {any} */
-  const merged = tidyKeyframes(/** @type {any} */ (mergeShape(clip, safe)));
+  const merged = tidyKeyframes(/** @type {any} */ (mergeShape(clip, safe, enums)));
   if (merged === clip) return clip;
   // Real media cannot start before its first frame; any other source can.
   const sourceIn = isTimed(merged, track) ? Math.max(0, merged.sourceIn) : merged.sourceIn;
@@ -71,10 +76,11 @@ function bagPatch(params, keys, value) {
  * @param {Track} track
  * @param {string} path
  * @param {any} value
+ * @param {Record<string, string[]>} [enums] - As for `patchClip`
  * @returns {Clip} The clip itself when the path cannot be written or the
  *   value changes nothing
  */
-export function writeValue(clip, track, path, value) {
+export function writeValue(clip, track, path, value, enums) {
   const parts = typeof path === 'string' ? path.split('.') : [];
   if (!parts.length || !parts.every(isSafeKey)) return clip;
   if (parts[0] === 'effects') {
@@ -95,5 +101,6 @@ export function writeValue(clip, track, path, value) {
     clip,
     track,
     parts.reduceRight((inner, key) => ({ [key]: inner }), value),
+    enums,
   );
 }

@@ -19,6 +19,11 @@ import { createPool } from './pool.js';
  *   of a clip (anything `drawImage` takes), or null when there is none
  * @property {(font: string, text: string) => boolean} [fontReady] - False while
  *   a font still has to load
+ * @property {(fonts: any[]) => void} [fonts] - Make a document's own font
+ *   files (`edl.fonts`) known under their family names. Called with the
+ *   table of every frame that has one, so it must cost nothing for a table
+ *   it has seen; a file that cannot be used is reported once and its text
+ *   falls back to the bundled sans-serif
  */
 
 /**
@@ -30,6 +35,7 @@ import { createPool } from './pool.js';
  * @property {(path: string) => any} image
  * @property {(clip: any, sourceTime: number) => any} frameOf
  * @property {(font: string, text: string) => boolean} fontReady
+ * @property {(fonts: any[]) => void} fonts
  * @property {(width?: number, height?: number) => import('./pool.js').Surface} scratch -
  *   A blank pooled surface `{ canvas, ctx, width, height }`, frame-sized by
  *   default. It is taken back when the module's `draw` / `apply` returns
@@ -62,6 +68,7 @@ export function composeFor(host) {
         frameOf: (clip, sourceTime) =>
           host.frameOf ? host.frameOf(clip, sourceTime) || null : null,
         fontReady: (font, text) => (host.fontReady ? host.fontReady(font, text) !== false : true),
+        fonts: (fonts) => void (host.fonts && host.fonts(fonts)),
         scratch: (width, height) => pool.lease(width, height),
       },
     };

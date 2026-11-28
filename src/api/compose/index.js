@@ -7,5 +7,5 @@
 
 export { createCanvas } from '@napi-rs/canvas';
 export { createEnv, createFrameSource, loadImages } from './env.js';
-export { FONT_DIR, registerFonts } from './fonts.js';
+export { FONT_DIR, registerDocumentFonts, registerFonts } from './fonts.js';
 export { renderFrame } from './renderFrame.js';

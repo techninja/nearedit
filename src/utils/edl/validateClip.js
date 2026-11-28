@@ -75,7 +75,9 @@ function checkAdditions(clip, path, report) {
  * @param {any} track
  * @param {string} path
  * @param {Report} report
- * @param {{ sourceDurations?: import('./types.js').SourceDurations, fps?: number }} opts
+ * @param {{ sourceDurations?: import('./types.js').SourceDurations, fps?: number,
+ *   enums?: Record<string, string[]> }} opts - `enums`: the enumerations in
+ *   force, with the document's own font families
  * @returns {boolean} False when the clip is too broken for track-level checks
  */
 export function checkClip(clip, track, path, report, opts) {
@@ -86,7 +88,7 @@ export function checkClip(clip, track, path, report, opts) {
   }
   if (typeof clip.placeholder !== 'boolean') report(`${path}.placeholder`, 'must be a boolean');
   if (!isGain(clip.volume)) report(`${path}.volume`, 'must be a number 0..2');
-  checkShape(clip.text, defaultText(), `${path}.text`, report);
+  checkShape(clip.text, defaultText(), `${path}.text`, report, opts.enums);
   checkShape(clip.transform, defaultTransform(), `${path}.transform`, report);
   checkShape(clip.transform?.kenBurns, defaultKenBurns(), `${path}.transform.kenBurns`, report);
   checkAdditions(clip, path, report);

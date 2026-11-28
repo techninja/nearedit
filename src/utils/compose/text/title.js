@@ -23,7 +23,7 @@ import { hasShadow, textStyle } from './style.js';
  * is the same text; a keyframed text property makes a new object each frame
  * and is simply laid out again.
  * @type {WeakMap<object, { layout: import('./layout.js').TextLayout,
- *   pieces: Record<string, import('./layout.js').Piece[]> }>}
+ *   pieces: Record<string, import('./layout.js').Piece[]>, fonts: any[]|undefined }>}
  */
 const layouts = new WeakMap();
 
@@ -37,8 +37,9 @@ const layouts = new WeakMap();
  */
 function laidOut(text, style, measure) {
   let entry = layouts.get(text);
-  if (!entry) {
-    entry = { layout: layoutText(style, measure), pieces: {} };
+  // The same words in another font table are another layout.
+  if (!entry || entry.fonts !== style.fonts) {
+    entry = { layout: layoutText(style, measure), pieces: {}, fonts: style.fonts };
     layouts.set(text, entry);
   }
   const { layout, pieces } = entry;
@@ -58,7 +59,7 @@ function laidOut(text, style, measure) {
  * @param {import('#utils/compose/host.js').Compose} compose
  */
 export function drawTitle(ctx, text, t, alpha, time, frame, compose) {
-  const style = textStyle(text);
+  const style = textStyle(text, frame.fonts);
   if (!compose.env.fontReady(fontString(style, 1), style.content)) return;
   ctx.save();
   setFont(ctx, style);

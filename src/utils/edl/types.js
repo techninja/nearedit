@@ -49,6 +49,9 @@
  *   clip: its recipe, the key of its recording, the page's title
  * @property {import('#utils/music/types.js').MusicBlock} [music] - Only on
  *   a music clip: its song and the key of its rendering
+ * @property {import('#utils/brand/types.js').ElementBlock} [element] - Only
+ *   on an element clip: the brand element it is an instance of, its slots
+ *   and its design
  */
 
 /**
@@ -93,6 +96,8 @@
  * @property {Track[]} tracks - Video tracks first, then audio
  * @property {Marker[]} markers - Sorted by time
  * @property {Region[]} [regions] - Sorted by start, then end
+ * @property {import('#utils/brand/fontTable.js').FontFace[]} [fonts] - Font
+ *   files the document needs that are not bundled; absent when it needs none
  */
 
 /**

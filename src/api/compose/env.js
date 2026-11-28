@@ -9,7 +9,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { createCanvas, loadImage } from '@napi-rs/canvas';
-import { registerFonts } from './fonts.js';
+import { registerDocumentFonts, registerFonts } from './fonts.js';
 
 /**
  * @typedef {import('#utils/compose/host.js').HostEnv} HostEnv
@@ -58,6 +58,8 @@ export function createEnv({ images, frameOf } = {}) {
     image: (path) => images?.get(path) || null,
     frameOf: (clip, sourceTime) => (frameOf ? frameOf(clip, sourceTime) : null),
     fontReady: () => true,
+    // A document's own font files: registered the first time its table is seen.
+    fonts: (fonts) => void registerDocumentFonts(fonts),
   };
 }
 

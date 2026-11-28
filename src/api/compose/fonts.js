@@ -11,6 +11,7 @@ import { createRequire } from 'node:module';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GlobalFonts, setTextRenderer } from '@napi-rs/canvas';
+import { isCustomFamily } from '#utils/brand/fontTable.js';
 import { EMOJI_FAMILY } from '#utils/compose/fonts.js';
 
 /** Where scripts/vendor-fonts.js puts the files and their list. */
@@ -96,4 +97,49 @@ export function registerFonts(dir = FONT_DIR) {
   }
   if (dir === FONT_DIR) done = result;
   return result;
+}
+
+/** @type {Map<string, { file: string, key: any }>} A document's faces by family, weight and style */
+const own = new Map();
+/** @type {WeakSet<object>} Font tables that have been gone through */
+const seen = new WeakSet();
+
+/**
+ * Register a document's own font files (`edl.fonts`) under their family
+ * names, with the weight and style the table gives each. **The caller
+ * decides which files may be read** — pass only paths that have been
+ * through the allow-list. A table that was seen costs nothing; a face that
+ * comes with another file than before is replaced; a file that is missing
+ * or cannot be used is reported once, and text in that family is then
+ * drawn in the bundled sans-serif (`fontString` names it as the fallback).
+ * @param {any[]} faces - `[{ family, weight, style, file }]`
+ * @returns {string[]} Files that could not be registered in this call
+ */
+export function registerDocumentFonts(faces) {
+  if (!Array.isArray(faces) || seen.has(faces)) return [];
+  seen.add(faces);
+  registerFonts();
+  /** @type {string[]} */
+  const failed = [];
+  for (const face of faces) {
+    // A bundled family is never redefined: both canvases must keep drawing it alike.
+    if (!face || !isCustomFamily(face.family) || typeof face.file !== 'string') continue;
+    const style = face.style === 'italic' ? 'italic' : 'normal';
+    const weight = Number.isFinite(face.weight) ? face.weight : 400;
+    const id = `${face.family.toLowerCase()}|${weight}|${style}`;
+    const before = own.get(id);
+    if (before?.file === face.file) continue;
+    if (before?.key) GlobalFonts.remove(before.key);
+    const descriptors = { weight, style: /** @type {any} */ (style) };
+    const key = existsSync(face.file)
+      ? GlobalFonts.registerFromPath(face.file, face.family, descriptors)
+      : null;
+    own.set(id, { file: face.file, key });
+    if (key) continue;
+    failed.push(face.file);
+    console.warn(
+      `[compose] could not load font file ${face.file}: "${face.family}" is drawn in the fallback font`,
+    );
+  }
+  return failed;
 }

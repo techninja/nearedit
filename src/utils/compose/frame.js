@@ -18,6 +18,8 @@ import { timelineDuration } from '#utils/edl/query.js';
  * @property {number} fps - Output frame rate
  * @property {number} outWidth - Output (document) width, pixels
  * @property {number} outHeight - Output (document) height, pixels
+ * @property {any[]} [fonts] - The document's own fonts (`edl.fonts`), when
+ *   it has any: text is styled with `textStyle(text, frame.fonts)`
  */
 
 /**
@@ -31,7 +33,7 @@ import { timelineDuration } from '#utils/edl/query.js';
 
 /**
  * Describe a canvas of a given size for a document.
- * @param {{ resolution?: string, fps?: number }} edl
+ * @param {{ resolution?: string, fps?: number, fonts?: any[] }} edl
  * @param {number} width - Canvas width, pixels
  * @param {number} height - Canvas height, pixels
  * @returns {Frame}
@@ -45,6 +47,7 @@ export function frameInfo(edl, width, height) {
     fps: edl.fps > 0 ? edl.fps : 30,
     outWidth: out.width,
     outHeight: out.height,
+    ...(edl.fonts?.length && { fonts: edl.fonts }),
   };
 }
 

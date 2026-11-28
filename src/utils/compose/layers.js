@@ -7,11 +7,12 @@
  * @module utils/compose/layers
  */
 
+import { isElementClip } from '#utils/brand/clip.js';
 import { clipKind } from '#utils/edl/factory.js';
 import { activeTracks, clipsAt, sourceTimeAt } from '#utils/edl/query.js';
 import { isBlended } from './blend.js';
 
-/** @typedef {'video'|'image'|'title'|'generator'} LayerKind */
+/** @typedef {'video'|'image'|'title'|'generator'|'element'} LayerKind */
 
 /**
  * @typedef {Object} Layer
@@ -26,12 +27,14 @@ const NONE = [];
 
 /**
  * What a clip on a video track draws, or null for clips that draw nothing
- * (placeholders, audio files).
+ * (placeholders, audio files). A clip that carries a brand element is an
+ * `element`, whatever else it holds.
  * @param {any} clip
  * @param {any} track
  * @returns {LayerKind|null}
  */
 export function layerKind(clip, track) {
+  if (isElementClip(clip)) return 'element';
   if (clip.generator?.type) return 'generator';
   const kind = clipKind(clip, track);
   return kind === 'video' || kind === 'image' || kind === 'title' ? kind : null;

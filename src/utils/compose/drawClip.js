@@ -1,6 +1,6 @@
 /**
  * One clip of the layer pipeline: resolve its keyframes, draw its source
- * (footage, a still, a generator or a title) with its transform, and — when
+ * (footage, a still, a generator, a title or a brand element) with its transform, and — when
  * it has effects or a blend mode — do that on a surface of its own first,
  * run the effects there and composite the result.
  * Isomorphic. Reference: docs/app-spec/COMPOSITOR.md § Layer pipeline.
@@ -13,6 +13,7 @@ import { videoOpacity } from '#utils/edl/levels.js';
 import { applyEffects, runModule } from './applyEffects.js';
 import { compositeOperation, isBlended } from './blend.js';
 import { generatorModule } from './catalog.js';
+import { drawElement } from './elementLayer.js';
 import { clipTime } from './frame.js';
 import { pictureSize, warnOnce } from './host.js';
 import { enabledEffects } from './layers.js';
@@ -85,8 +86,10 @@ function drawGenerator(ctx, clip, t, alpha, time, run, blank) {
  * @param {FrameRun} run
  * @param {boolean} blank
  */
-function drawSource(ctx, { clip, kind, sourceTime }, t, alpha, time, run, blank) {
+function drawSource(ctx, layer, t, alpha, time, run, blank) {
+  const { clip, kind, sourceTime } = layer;
   const { env } = run.compose;
+  if (kind === 'element') return drawElement(ctx, layer, t, alpha, run, drawClip);
   if (kind === 'generator') return drawGenerator(ctx, clip, t, alpha, time, run, blank);
   if (kind === 'title') return drawTitle(ctx, clip.text, t, alpha, time, run.frame, run.compose);
   const picture = kind === 'image' ? env.image(clip.sourceFile) : env.frameOf(clip, sourceTime);

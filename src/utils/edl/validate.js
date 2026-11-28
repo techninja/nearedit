@@ -5,8 +5,9 @@
  * @module utils/edl/validate
  */
 
+import { cleanFonts, sameFonts } from '#utils/brand/fontTable.js';
 import { BACKGROUND_COLOR, EDL_VERSION } from './defaults.js';
-import { isObject } from './sanitize.js';
+import { fontEnums, isObject } from './sanitize.js';
 import { checkClip, checkOverlaps, checkShape, isGain } from './validateClip.js';
 import { checkEffects } from './validateExtras.js';
 import { checkMarkers, checkRegions } from './validateMarks.js';
@@ -62,6 +63,14 @@ export function validateEdl(edl, opts = {}) {
   if (typeof edl.background !== 'string' || !BACKGROUND_COLOR.test(edl.background)) {
     report('background', 'must be a colour like #000000');
   }
+  // Absent, or exactly the usable entries: each face once, no bundled family.
+  const fonts = edl.fonts === undefined ? [] : edl.fonts;
+  if (!Array.isArray(fonts) || !fonts.length !== (edl.fonts === undefined)) {
+    report('fonts', 'must be a list of font files, or absent when there are none');
+  } else if (!sameFonts(fonts, cleanFonts(fonts)) || fonts.some((face) => !isObject(face))) {
+    report('fonts', 'must hold { family, weight, style, file }, each face once (see cleanFonts)');
+  }
+  const enums = fontEnums(Array.isArray(edl.fonts) ? edl.fonts : undefined);
   checkMarkers(edl.markers, report);
   checkRegions(edl.regions, report);
   if (!Array.isArray(edl.tracks)) return (report('tracks', 'must be an array'), done());
@@ -79,7 +88,7 @@ export function validateEdl(edl, opts = {}) {
     else if (audioSeen) report(path, 'video tracks must come before audio tracks');
     const sound = track.clips.filter((clip, c) => {
       const at = `${path}.clips[${c}]`;
-      const ok = checkClip(clip, track, at, report, { ...opts, fps: edl.fps });
+      const ok = checkClip(clip, track, at, report, { ...opts, fps: edl.fps, enums });
       if (ok && clips.has(clip.clipId)) report(`${at}.clipId`, 'is not unique');
       if (isObject(clip)) clips.set(clip.clipId, { clip, at });
       return ok;

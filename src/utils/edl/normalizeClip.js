@@ -5,6 +5,7 @@
  * @module utils/edl/normalizeClip
  */
 
+import { cleanElement } from '#utils/brand/field.js';
 import { cleanMusic } from '#utils/music/field.js';
 import { cleanWeb, fitWindow } from '#utils/web/field.js';
 import { tidyKeyframes } from './clipPaths.js';
@@ -44,7 +45,9 @@ function migrateKenBurns(kenBurns, raw) {
  *   so is a `music` block that holds a song (never both: `web` wins); no
  *   other clip has those fields. Such a clip's source window is brought
  *   inside its score or song, and one written without an end lasts to the
- *   end of it.
+ *   end of it. An `element` block that holds a design is kept on a clip
+ *   that is neither, read as `cleanElement` reads it; such a clip names no
+ *   file.
  * - Timeline times snap to the frame grid. A missing `timelineEnd` is derived
  *   from the source range; a clip that starts before 0 is trimmed to 0.
  * - Every clip plays at speed 1 (invariant 1). Video/audio: when the
@@ -55,15 +58,18 @@ function migrateKenBurns(kenBurns, raw) {
  * @param {any} raw
  * @param {number} fps
  * @param {'video'|'audio'} trackType - Type of the track that holds it
- * @param {{ legacy?: boolean }} [opts] - `legacy`: the clip comes from a v1
- *   or v2 document, where clips without a media source had no source
- *   window: theirs becomes `0 … duration` (unless the clip carries a
- *   generator or keyframes, which no v1/v2 clip does)
+ * @param {{ legacy?: boolean, enums?: Record<string, string[]> }} [opts] -
+ *   `legacy`: the clip comes from a v1 or v2 document, where clips without a
+ *   media source had no source window: theirs becomes `0 … duration` (unless
+ *   the clip carries a generator or keyframes, which no v1/v2 clip does).
+ *   `enums`: the enumerations in force — `fontEnums(edl.fonts)` when the
+ *   document has fonts of its own, so a title may name them
  * @returns {Clip|null} null when the clip has no usable time span
  */
 export function normalizeClip(raw, fps, trackType, opts = {}) {
   if (!isObject(raw)) return null;
-  const merged = mergeShape(createClip({ clipId: '' }), { ...raw, clipId: raw.clipId ?? raw.id });
+  const given = { ...raw, clipId: raw.clipId ?? raw.id };
+  const merged = mergeShape(createClip({ clipId: '' }), given, opts.enums);
   const kenBurns = migrateKenBurns(merged.transform.kenBurns, raw.transform?.kenBurns);
   /** @type {any} */
   const filled = { ...merged, transform: { ...merged.transform, kenBurns } };
@@ -71,8 +77,11 @@ export function normalizeClip(raw, fps, trackType, opts = {}) {
   // no other clip gets either field, and no clip both: the web block wins.
   const web = cleanWeb(raw.web);
   const music = web ? null : cleanMusic(raw.music);
+  // Nor is a clip an element and one of those: an element draws its design, not a file.
+  const element = web || music ? null : cleanElement(raw.element);
+  const made = element ? { ...filled, sourceFile: '', placeholder: false, element } : filled;
   /** @type {any} */
-  const clip = tidyKeyframes(web ? { ...filled, web } : music ? { ...filled, music } : filled);
+  const clip = tidyKeyframes(web ? { ...filled, web } : music ? { ...filled, music } : made);
   const timed = isTimed(clip, /** @type {any} */ ({ type: trackType }));
   // No genuine v1/v2 clip has a generator or keyframes: one that does was
   // written for v3 (by hand, without a version) and means its source window.

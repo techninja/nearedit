@@ -47,7 +47,9 @@ function viewOf(source) {
 export function toSavedDocument(edl, view = {}) {
   const { version, fps, resolution, background, tracks, markers, regions } = edl;
   const saved = { version, fps, resolution, background: background || '#000000', tracks };
-  return { ...saved, markers: markers || [], regions: regions || [], ...viewOf(view) };
+  // The document's own fonts, when it has any.
+  const fonts = edl.fonts?.length ? { fonts: edl.fonts } : {};
+  return { ...saved, markers: markers || [], regions: regions || [], ...fonts, ...viewOf(view) };
 }
 
 /**

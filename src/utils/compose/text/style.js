@@ -41,6 +41,8 @@ export const TITLE_BOX_PADDING = 0.25;
  * @property {number} shadowY
  * @property {import('./animation.js').TextAnimation} animateIn
  * @property {import('./animation.js').TextAnimation} animateOut
+ * @property {any[]} [fonts] - The document's own fonts, when it has any:
+ *   `fontString` looks a family up there first
  */
 
 /**
@@ -54,11 +56,13 @@ const num = (value, fallback) =>
 /**
  * Resolve a clip's `text` block.
  * @param {any} text
+ * @param {any[]} [fonts] - The document's font table (`edl.fonts`)
  * @returns {TextStyle}
  */
-export function textStyle(text) {
+export function textStyle(text, fonts) {
   const raw = text || {};
   return {
+    ...(fonts?.length && { fonts }),
     content: String(raw.content ?? '').replace(/\r\n?/g, '\n'),
     fontFamily: String(raw.fontFamily || 'sans-serif'),
     fontSize: raw.fontSize > 0 ? Number(raw.fontSize) : 72,

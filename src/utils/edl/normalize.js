@@ -5,6 +5,7 @@
  * @module utils/edl/normalize
  */
 
+import { cleanFonts } from '#utils/brand/fontTable.js';
 import { settleFades } from './fades.js';
 import { BACKGROUND_COLOR, EDL_VERSION, createTrack, newId } from './factory.js';
 import { repairLinks } from './links.js';
@@ -12,7 +13,7 @@ import { normalizeClip } from './normalizeClip.js';
 import { normalizeMarkers, normalizeRegions } from './normalizeMarks.js';
 import { resolveAll } from './place.js';
 import { sortedTracks } from './query.js';
-import { isObject, mergeShape, toNumber } from './sanitize.js';
+import { fontEnums, isObject, mergeShape, toNumber } from './sanitize.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Track} Track */
@@ -23,16 +24,17 @@ import { isObject, mergeShape, toNumber } from './sanitize.js';
  * @param {number} fps
  * @param {Unique} unique
  * @param {boolean} legacy - The document is older than v3
+ * @param {Record<string, string[]>} enums - With the document's own font families
  * @returns {Track}
  */
-function normalizeTrack(raw, fps, unique, legacy) {
+function normalizeTrack(raw, fps, unique, legacy, enums) {
   const type = raw.type === 'audio' ? 'audio' : 'video';
   const base = createTrack(type, { trackId: '', name: '' });
   /** @type {any} */
   const track = { ...mergeShape(base, { ...raw, type, clips: undefined }) };
   track.trackId = unique(raw.trackId ?? raw.id, type === 'audio' ? 'a' : 'v');
   const clips = (Array.isArray(raw.clips) ? raw.clips : [])
-    .map((clip) => normalizeClip(clip, fps, type, { legacy }))
+    .map((clip) => normalizeClip(clip, fps, type, { legacy, enums }))
     .filter(Boolean)
     .map((clip) => ({ ...clip, clipId: unique(clip.clipId, 'clip') }));
   // Overlaps become cross-fades where they can; otherwise the later clip wins.
@@ -76,6 +78,8 @@ function nameTracks(tracks) {
  *   fades clamped, asymmetric and dangling links repaired;
  * - unique track, clip, marker and region ids (the first holder keeps a
  *   duplicate); markers and regions on the frame grid, sorted;
+ * - a `fonts` table of usable entries, each face once — and no `fonts`
+ *   field at all when there are none; a title may name its families;
  * - at least one video and one audio track, video tracks first.
  *
  * A valid v3 document comes back deep-equal to itself.
@@ -97,9 +101,11 @@ export function normalizeEdl(raw) {
     seen.add(kept);
     return kept;
   };
+  const fonts = cleanFonts(doc.fonts);
+  const enums = fontEnums(fonts);
   const tracks = (Array.isArray(doc.tracks) ? doc.tracks : [])
     .filter(isObject)
-    .map((track) => normalizeTrack(track, fps, unique, legacy));
+    .map((track) => normalizeTrack(track, fps, unique, legacy, enums));
   for (const type of /** @type {('video'|'audio')[]} */ (['video', 'audio'])) {
     if (tracks.some((track) => track.type === type)) continue;
     const trackId = unique(type === 'audio' ? 'a1' : 'v1', type === 'audio' ? 'a' : 'v');
@@ -113,5 +119,6 @@ export function normalizeEdl(raw) {
     tracks: nameTracks(/** @type {Track[]} */ (sortedTracks(tracks))),
     markers: normalizeMarkers(doc.markers, fps, unique),
     regions: normalizeRegions(doc.regions, fps, unique),
+    ...(fonts.length && { fonts }),
   });
 }

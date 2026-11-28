@@ -5,6 +5,7 @@
  * @module utils/edl/validateExtras
  */
 
+import { checkElement } from '#utils/brand/field.js';
 import { checkMusic } from '#utils/music/field.js';
 import { checkWeb } from '#utils/web/field.js';
 import { describePath, keyValue } from './clipPaths.js';
@@ -18,7 +19,8 @@ import { RANGES } from './sanitize.js';
 
 /**
  * The description a clip's source is made from: the `web` block of a web
- * clip, the `music` block of a music clip — never both on one clip.
+ * clip, the `music` block of a music clip, the `element` block of an
+ * element clip — never two of them on one clip.
  * @param {any} clip
  * @param {string} path - Path of the clip
  * @param {Report} report
@@ -26,8 +28,12 @@ import { RANGES } from './sanitize.js';
 export function checkMade(clip, path, report) {
   checkWeb(clip.web, `${path}.web`, report);
   checkMusic(clip.music, `${path}.music`, report);
+  checkElement(clip.element, `${path}.element`, report);
   if (clip.web !== undefined && clip.music !== undefined) {
     report(`${path}.music`, 'a clip is a web clip or a music clip, not both');
+  }
+  if (clip.element !== undefined && (clip.web !== undefined || clip.music !== undefined)) {
+    report(`${path}.element`, 'a clip is a web clip, a music clip or an element clip, never two');
   }
 }
 

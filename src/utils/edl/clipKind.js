@@ -3,18 +3,22 @@
  * @module utils/edl/clipKind
  */
 
+import { isElementClip } from '#utils/brand/clip.js';
+
 const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 const AUDIO_EXTS = ['mp3', 'wav', 'flac', 'ogg', 'aac', 'm4a'];
 
 /**
- * Classify a clip. A clip that names a generator is a generator whatever
- * else it carries; without a source file it is a title when it has text and
- * a placeholder otherwise.
+ * Classify a clip. A clip that carries a brand element (an `element` block
+ * with a design) is an element, and one that names a generator a generator,
+ * whatever else they carry; without a source file a clip is a title when it
+ * has text and a placeholder otherwise.
  * @param {object} clip
  * @param {object} [track] - Owning track, used to tell audio from video
- * @returns {'generator'|'title'|'placeholder'|'image'|'audio'|'video'}
+ * @returns {'element'|'generator'|'title'|'placeholder'|'image'|'audio'|'video'}
  */
 export function clipKind(clip, track) {
+  if (isElementClip(clip)) return 'element';
   if (clip.generator?.type) return 'generator';
   if (!clip.sourceFile) return clip.text?.content ? 'title' : 'placeholder';
   const ext = clip.sourceFile.split('.').pop().toLowerCase();

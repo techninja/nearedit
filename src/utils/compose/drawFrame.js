@@ -68,6 +68,8 @@ export function drawFrame(
   frame = frameInfo(edl, ctx.canvas.width, ctx.canvas.height),
 ) {
   const compose = composeFor(env);
+  // The document's own fonts, before any text is measured or drawn.
+  if (edl.fonts?.length) compose.env.fonts(edl.fonts);
   compose.pool.begin(frame.width, frame.height);
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
