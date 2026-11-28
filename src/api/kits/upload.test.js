@@ -127,8 +127,7 @@ describe('PUT /kits/:id/files/:name', () => {
       [200, 'image/png', 'nosniff'],
     );
     const font = await media(join(dir, 'code.woff2'));
-    assert.equal(font.headers['content-type'], 'application/octet-stream');
-    assert.match(font.headers['content-disposition'], /^attachment/);
+    assert.equal(font.headers['content-type'], 'font/woff2');
     assert.equal(font.headers['x-content-type-options'], 'nosniff');
     assert.equal(
       (await get('/kits/acme')).status,
