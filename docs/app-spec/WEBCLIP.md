@@ -70,9 +70,17 @@ A target outside the viewport is scrolled into the middle of it **during**
 the step's `duration`, while the cursor travels — so timing never depends
 on the page. A step with `duration: 0` happens between two frames.
 
+A step stores `duration` and `hold` only when they were set; otherwise the
+default applies, which for `type` follows the text. Seconds are 0..120;
+`type.speed` 1..60; click `count` 1..3; `scroll.align` is `start`, `center`
+or `end`; at most 50 `hide` targets. The table itself is data —
+`STEP_KINDS` in `src/utils/web/stepKinds.js` — and drives the editor's
+forms, validation and the director's vocabulary.
+
 ### Targets
 
-A string, or `{ "x": 640, "y": 300 }` (CSS pixels in the viewport).
+A string, or a point: `{ "x": 640, "y": 300 }` or `point=640,300` (CSS
+pixels in the viewport).
 
 | Form | Finds |
 | ---- | ----- |
@@ -105,15 +113,18 @@ into times, without looking at any page:
 
 `start` is where the step's `duration` begins, `actionEnd = start +
 duration`, `end = actionEnd + hold`; the first step starts at `lead`, the
-recording ends `tail` after the last. All times are whole frames. A clip
-therefore knows its length before anything is recorded, and the timeline
-can show its steps as ticks.
+recording ends `tail` after the last. Lead, every duration, every hold and
+the tail are each rounded to whole frames, so equal steps take equal
+frames. A clip therefore knows its length before anything is recorded, and
+the timeline can show its steps as ticks (`stepMarks(clip, fps)`).
 
 ## Recording
 
-`key` = the first 20 hex digits of the SHA-256 of the canonical recipe
-(`recipeKey(recipe, fps)`: normalised, defaults filled in, keys sorted,
-notes left out) and the recorder's version. A recording lives in the
+`key` = the first 20 hex digits of the SHA-256 of the recorder's version,
+the frame rate and the canonical recipe (`recipeKey(recipe, fps)`:
+normalised, every step's effective `duration` and `hold` written out, keys
+sorted, notes left out). It is computed the same way in the browser and on
+the server. A recording lives in the
 project (or, for the command line, beside the document):
 
 ```text
@@ -165,18 +176,27 @@ Measured on 4 shared cores (Chrome 158): about 10 ms per frame at 1280 ×
   the page's title, for labels.
 - Until it is recorded a web clip is a placeholder with a length — the
   score's `duration`. Recorded, it is a video clip like any other.
-- **Stale:** `web.key !== recipeKey(web.recipe, fps)`. The old recording
-  keeps playing until the new one is ready.
-- `isWebClip(clip)` is `Boolean(clip.web?.recipe?.url)`. The recipe is
-  bounded data, sanitised on load like other [free-form
-  data](./EDL.md#free-form-data) and then normalised by
-  `normalizeRecipe`.
+- **Stale** (`isStale(clip, fps)`): `web.key !== recipeKey(web.recipe,
+  fps)` — which includes a clip that was never recorded. The old recording
+  keeps playing until the new one is ready. Changing a document's frame
+  rate makes its web clips stale.
+- `isWebClip(clip)` is `Boolean(clip.web?.recipe?.url)`; clips that are
+  not web clips have no `web` field at all. On load the recipe is
+  normalised by `normalizeRecipe`, which reads only known fields and
+  bounds every one.
+- A web clip's source is its **score**, recorded or not: its source window
+  stays inside `0 … score.duration`.
+- `validateEdl` checks the block's shape, not whether the recipe would
+  record — a half-written recipe can be saved. `validateRecipe` says what
+  would stop a recording.
 
 Operations (`src/utils/edl/webClip.js`): `insertWebClip(edl, recipe,
-{ time, trackId })`, `updateWebRecipe(edl, clipId, patchOrRecipe)` (the
-clip's length follows the score when the clip showed the whole recording),
-`setWebRecording(edl, clipId, { file, key, duration, title })`,
-`webClips(edl)`, `staleWebClips(edl)`.
+{ time, trackId })`; `updateWebRecipe(edl, clipId, recipe | (recipe) =>
+recipe)` — a clip that showed the whole recording follows the new score's
+length, a trimmed one is only kept inside it; `setWebRecording(edl,
+clipId, { file, key, duration, title })`; `webClips(edl)`;
+`staleWebClips(edl)`. `updateClip` cannot change `web`, nor a web clip's
+`sourceFile`.
 
 ## Zoom
 
@@ -186,8 +206,17 @@ made from the track by `zoomKeyframes(track, frame, options)`
 `options.clicks`, every click — the picture scales up about the target's
 rectangle during the step's `duration`, holds, and eases back before the
 next step that needs the whole page. `applyWebZoom(edl, clipId, track,
-options)` writes them (`transform.scaleX`, `scaleY`, `x`, `y`). They can
-then be moved, re-eased or deleted like any other keyframes.
+options)` writes them (`transform.scaleX`, `scaleY`, `x`, `y`) and
+`clearWebZoom` removes them. They can then be moved, re-eased or deleted
+like any other keyframes.
+
+Options: `clicks` (off), `margin` (0.35 of the target's size, on every
+side), `fill` (the target takes at most 0.6 of the frame), `maxZoom` (2.2;
+a step's own `zoom`, up to 8, overrides the fit), `release` (0.6 s), `join`
+(two zooms closer than 1.5 s glide into each other without zooming out).
+The picture is never moved so far that the frame's edge shows, and a
+target too large to zoom is still panned into view. The maths assumes the
+clip is neither cropped nor rotated.
 
 ## Server
 
