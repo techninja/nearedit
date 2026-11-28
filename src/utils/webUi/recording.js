@@ -77,7 +77,7 @@ export async function recordClip(clipId) {
     note(clipId, { status: 'error', progress: 0, message: problem });
     return recordingOf(clipId);
   }
-  note(clipId, { status: 'starting', progress: 0, message: '' });
+  note(clipId, { status: 'starting', progress: 0, message: '', warnings: [] });
   const controller = new AbortController();
   running.set(clipId, controller);
   try {
@@ -93,11 +93,9 @@ export async function recordClip(clipId) {
     const outcome = recordingOutcome(getDoc(), clipId, result);
     attachWhenIdle(result);
     const attached = outcome === 'attached';
-    note(clipId, {
-      status: attached ? 'done' : 'error',
-      progress: 100,
-      message: attached ? '' : OUTCOME_TEXT[outcome],
-    });
+    const warnings = Array.isArray(result.track?.warnings) ? result.track.warnings : [];
+    const message = attached ? '' : OUTCOME_TEXT[outcome];
+    note(clipId, { status: attached ? 'done' : 'error', progress: 100, message, warnings });
   } catch (err) {
     const cancelled = err.message === 'Cancelled';
     note(clipId, {

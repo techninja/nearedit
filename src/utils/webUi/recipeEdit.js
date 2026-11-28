@@ -14,7 +14,7 @@ import { sizePatch } from './sizes.js';
 const STEP_FIELD = /^steps\.(\d+)\.([A-Za-z]+)$/;
 const CURSOR_FIELD = /^cursor\.(style|size|color|clicks)$/;
 /** Fields of the recipe itself that a control may set. */
-const PLAIN = ['url', 'colorScheme', 'lead', 'tail', 'onMissing', 'scale'];
+const PLAIN = ['url', 'colorScheme', 'lead', 'tail', 'onMissing', 'scale', 'hide'];
 
 /**
  * @param {Recipe} recipe
@@ -86,7 +86,7 @@ export function patchStep(recipe, index, patch) {
 
 /**
  * Set one named field of a recipe: `url`, `colorScheme`, `lead`, `tail`,
- * `onMissing`, `size` (the id of an offered size), `cursor.style`,
+ * `onMissing`, `hide` (the whole list), `size` (the id of an offered size), `cursor.style`,
  * `cursor.size`, `cursor.color`, `cursor.clicks`, or `steps.<n>.<field>`.
  * @param {Recipe} recipe
  * @param {string} name

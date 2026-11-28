@@ -18,6 +18,8 @@ import { recordingSize } from './sizes.js';
  * @property {'starting'|'queued'|'running'|'done'|'error'|'cancelled'} status
  * @property {number} progress - 0..100
  * @property {string} message - Why it failed or was not attached
+ * @property {string[]} [warnings] - What the recorder had to say about a
+ *   recording that was made (steps it skipped, with `onMissing: skip`)
  */
 
 /**
