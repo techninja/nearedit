@@ -32,7 +32,8 @@ import { mapLayout, markOf, percentBox, placeOf, stackedElements } from '#utils/
  * @param {number} stop - Index of the outline the Tab key stops at
  */
 function outline(snapshot, element, layout, marked, stop) {
-  const out = placeOf(snapshot, element.rect) !== 'view';
+  // Inside the picture's bounds but cut off by a panel around it: not in the picture either.
+  const out = placeOf(snapshot, element.rect) !== 'view' || element.visible === false;
   const label = `${element.kind}: ${element.name}`;
   return html`<button
     type="button"

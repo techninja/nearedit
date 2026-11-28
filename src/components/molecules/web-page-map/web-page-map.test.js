@@ -44,6 +44,17 @@ describe('web-page-map', () => {
     expect(button.dataset.label).to.equal('button: Get started');
   });
 
+  it('names what is inside the picture’s bounds but cut off by a panel: it does not show there', async () => {
+    const base = testSnapshot();
+    const elements = base.elements.map((element) =>
+      element.name === 'Get started' ? { ...element, visible: false } : element,
+    );
+    const map = await mount({ elements });
+    const hidden = outline(map, 'button: Get started');
+    expect(hidden.classList.contains('is-out')).to.equal(true);
+    expect(hidden.textContent.trim()).to.equal('Get started');
+  });
+
   it('puts what lies inside a section on top of it, also while the section is hovered', async () => {
     const map = await mount();
     const box = outline(map, 'button: Get started').getBoundingClientRect();

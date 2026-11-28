@@ -20,6 +20,16 @@ import { sectionGroups } from '#utils/webUi/pageSections.js';
 
 const PLACE = { above: '↑ above', below: '↓ below', view: '' };
 
+/**
+ * @param {import('#utils/webUi/pageMap.js').Snapshot} snapshot
+ * @param {import('#utils/webUi/pageMap.js').PageElement} element
+ * @returns {string} Where it is when it is not in the picture
+ */
+function whereOf(snapshot, element) {
+  const place = placeOf(snapshot, element.rect);
+  return place === 'view' && element.visible === false ? 'cut off' : PLACE[place];
+}
+
 /** @param {WebElementListHost} host @param {Event} event */
 function handleQuery(host, event) {
   host.query = /** @type {HTMLInputElement} */ (event.target).value;
@@ -56,7 +66,7 @@ export default define({
         >
           <span class="chip">${kind}</span>
           <span class="web-element-list-name">${name}</span>
-          <small>${PLACE[placeOf(snapshot, snapshot.elements[index].rect)]}</small>
+          <small>${whereOf(snapshot, snapshot.elements[index])}</small>
         </button>`;
       return html`
         <input

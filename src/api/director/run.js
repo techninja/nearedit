@@ -9,6 +9,7 @@ import { generateEdit } from './actions/generateEdit.js';
 import { insertBroll } from './actions/insertBroll.js';
 import { motionPiece } from './actions/motion.js';
 import { executeScript, generateScripts } from './actions/scripts.js';
+import { siteDemo } from './actions/siteDemo.js';
 import { gatherMedia } from './context/gather.js';
 import { addCaptions } from './inplace/addCaptions.js';
 import { beatSync } from './inplace/beatSync.js';
@@ -22,6 +23,7 @@ export const HANDLERS = {
   execute_script: executeScript,
   insert_broll: insertBroll,
   motion_piece: motionPiece,
+  site_demo: (ctx) => siteDemo(ctx),
   remove_silence: removeSilence,
   beat_sync: beatSync,
   add_captions: addCaptions,

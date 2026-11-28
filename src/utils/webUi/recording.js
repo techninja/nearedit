@@ -16,6 +16,7 @@ import { getView } from '#utils/editor/view.js';
 import { finishEdit } from '#utils/inspector/gesture.js';
 import { onJobFinished } from '#utils/ui/jobCenter.js';
 import { createObservable } from '#utils/ui/observable.js';
+import { recipeKey } from '#utils/web/index.js';
 import { isRecording, webClipsToRecord } from './clipStatus.js';
 import {
   OUTCOME_TEXT,
@@ -77,7 +78,8 @@ export async function recordClip(clipId) {
     note(clipId, { status: 'error', progress: 0, message: problem });
     return recordingOf(clipId);
   }
-  note(clipId, { status: 'starting', progress: 0, message: '', warnings: [] });
+  const key = recipeKey(body.recipe, body.fps);
+  note(clipId, { status: 'starting', progress: 0, message: '', warnings: [], key });
   const controller = new AbortController();
   running.set(clipId, controller);
   try {

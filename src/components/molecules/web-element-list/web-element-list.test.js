@@ -27,6 +27,15 @@ describe('web-element-list', () => {
     expect(el.querySelector('[data-index="1"] small').textContent).to.equal('');
   });
 
+  it('says when something inside the picture’s bounds is cut off', async () => {
+    const el = await fixture(`<web-element-list></web-element-list>`);
+    const base = testSnapshot();
+    base.elements[1] = { ...base.elements[1], visible: false };
+    el.snapshot = base;
+    await settle();
+    expect(el.querySelector('[data-index="1"] small').textContent).to.equal('cut off');
+  });
+
   it('finds elements by name', async () => {
     const el = await mount();
     const input = el.querySelector('input');

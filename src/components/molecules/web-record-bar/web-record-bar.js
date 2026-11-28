@@ -1,7 +1,8 @@
 /**
  * Record bar of the web editor — where the clip stands (not recorded,
  * recorded, out of date, recording with its progress), why the last
- * recording failed, and the button that starts one or cancels the one
+ * recording failed or what the recorder had to say about one that was made
+ * (steps it skipped), and the button that starts one or cancels the one
  * under way. Sends bubbling `web-record` and `web-cancel` events.
  * @module components/molecules/web-record-bar
  */
@@ -61,6 +62,11 @@ export default define({
           ? html`<p class="error-message web-record-bar-problem" role="alert">
               <app-icon name="alert" size="sm"></app-icon> ${recording.message}
             </p>`
+          : html``}
+        ${!active && recording?.warnings?.length
+          ? html`<ul class="web-record-bar-problem web-record-bar-warnings" role="status">
+              ${recording.warnings.map((warning) => html`<li>${warning}</li>`)}
+            </ul>`
           : html``}
         ${noBrowser && !active && !recording?.message
           ? html`<p class="app-muted web-record-bar-problem" title="${capture.reason}">

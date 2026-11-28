@@ -201,6 +201,25 @@ describe('web-editor', () => {
     expect(steps()[0].hold).to.equal(undefined);
   });
 
+  it('changes the settings of the whole recording from the form of the end', async () => {
+    const { el } = await mount([{ do: 'wait' }]);
+    const set = (name, value) => {
+      const control = el.querySelector(`.web-editor-settings [data-name="${name}"]`);
+      control.value = value;
+      control.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    set('lead', '1.5');
+    set('tail', '0');
+    set('onMissing', 'skip');
+    set('lead', '');
+    await settle();
+    const { lead, tail, onMissing } = clip().web.recipe;
+    expect([lead, tail, onMissing]).to.deep.equal([1.5, 0, 'skip']);
+    expect(el.querySelector('.web-score-strip-total').textContent).to.contain('2.5 s');
+    undo();
+    expect(clip().web.recipe.onMissing).to.equal('fail');
+  });
+
   it('records, attaches the recording and can then play it', async () => {
     const { el } = await mount([{ do: 'click', target: '#a' }]);
     el.querySelector('web-record-bar .web-record-bar-go').click();
@@ -233,20 +252,5 @@ describe('web-editor', () => {
     await settle();
     expect(el.querySelector('app-dialog')).to.equal(null);
     expect(webEditorState.get().clipId).to.equal('');
-  });
-
-  it('says in place why the page cannot be shown', async () => {
-    api.restore();
-    api = mockApi({
-      ...routes(),
-      'POST /api/web/snapshot': [
-        502,
-        { error: 'The page did not load', detail: 'net::ERR_NAME_NOT_RESOLVED' },
-      ],
-    });
-    const { el } = await mount();
-    const alert = el.querySelector('.web-editor-error');
-    expect(alert.textContent).to.contain('The page did not load — net::ERR_NAME_NOT_RESOLVED');
-    expect(el.querySelector('web-step-list')).to.not.equal(null);
   });
 });

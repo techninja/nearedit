@@ -10,17 +10,36 @@ import { html } from 'hybrids';
 import { canRedo, canUndo } from '#utils/editor/session.js';
 import { stepKind } from '#utils/web/index.js';
 import * as on from './editorEvents.js';
+import { notices, saidAbout } from './editorNotices.js';
 import { pageArea } from './editorPage.js';
 import { settingsForm } from './editorSettings.js';
 import * as view from './editorView.js';
 import { stripBlocks } from './scoreStrip.js';
 import { recipeProblems, stepFields } from './stepForm.js';
+import { saidByStep } from './stepSaid.js';
 import { stepRows } from './stepRows.js';
 
 /** @typedef {import('./editorView.js').WebEditorHost} WebEditorHost */
 /** @typedef {import('hybrids').UpdateFunctionWithMethods<any>} Template */
 
 /** @typedef {import('./editorPage.js').EditorFacts} EditorFacts */
+
+/**
+ * What is wrong with each step: what `validateRecipe` finds, and — under
+ * the field the step aims with — what the recorder said when it played it.
+ * @param {import('#utils/web/types.js').Recipe} recipe
+ * @param {Record<number, Record<string, string>>} said - `saidByStep`
+ * @returns {Record<number, Record<string, string>>} By step, then by field
+ */
+function stepProblems(recipe, said) {
+  const { steps } = recipeProblems(recipe);
+  for (const [index, { recorder }] of Object.entries(said)) {
+    const params = stepKind(recipe.steps[index]?.do)?.params || {};
+    const aim = ['target', 'to'].find((name) => name in params) || 'recorder';
+    steps[index] = { [aim]: recorder, ...steps[index] };
+  }
+  return steps;
+}
 
 /**
  * Everything between the dialog's header and its footer.
@@ -31,8 +50,9 @@ import { stepRows } from './stepRows.js';
 export function editorBody(host, facts) {
   const { state, snap, playhead } = host;
   const { recipe, selected, locked, fps, clip } = facts;
-  const problems = recipeProblems(recipe);
-  const { rows } = stepRows(recipe, fps, problems.steps);
+  const said = saidAbout(snap, facts.recording, recipe, fps);
+  const problems = stepProblems(recipe, saidByStep(said));
+  const { rows } = stepRows(recipe, fps, problems);
   const step = recipe.steps[selected];
   const kind = stepKind(step?.do);
   return html`
@@ -68,11 +88,12 @@ export function editorBody(host, facts) {
     </div>
     <section class="web-editor-page" aria-label="Page">${pageArea(host, facts)}</section>
     <section class="web-editor-steps" aria-label="Steps">
+      ${notices(said, recipe, locked)}
       <web-step-list rows="${rows}" selected="${selected}" locked="${locked}"></web-step-list>
       <div class="web-editor-form">
         ${step && kind
           ? html`<web-step-form
-              fields="${stepFields(step, problems.steps[selected])}"
+              fields="${stepFields(step, problems[selected])}"
               index="${selected}"
               heading="${kind.label}"
               about="${kind.description}"

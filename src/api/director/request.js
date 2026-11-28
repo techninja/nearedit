@@ -13,6 +13,7 @@ import { getAdaptation, getProjectDir } from '../lib/registry.js';
 import { DirectorError } from './errors.js';
 import { checkBrief } from './motion/brief.js';
 import { checkScriptSource } from './scripts/files.js';
+import { checkSite } from './web/check.js';
 
 /**
  * @typedef {Object} Prepared
@@ -99,6 +100,7 @@ export function prepareRequest(body, route) {
     });
   if (action.id === 'execute_script') checkScriptSource(directive);
   if (action.id === 'motion_piece') checkBrief(directive);
+  if (action.id === 'site_demo') checkSite(directive);
 
   // A generated fragment that replaces a range should, by default, fill it.
   const length = action.fields.find((f) => f.key === 'duration');

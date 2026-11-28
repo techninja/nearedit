@@ -8,6 +8,7 @@ import { html } from 'hybrids';
 import { mediaFileUrl } from '#utils/playback/mediaUrl.js';
 import { describeTarget } from '#utils/web/index.js';
 import * as view from './editorView.js';
+import { readStepSaid } from './stepSaid.js';
 
 /** @typedef {import('./editorView.js').WebEditorHost} WebEditorHost */
 /** @typedef {import('hybrids').UpdateFunctionWithMethods<any>} Template */
@@ -23,6 +24,17 @@ function markText(step) {
 }
 
 /**
+ * Why there is no picture. What the recorder says about a step is shown in
+ * full with the steps, where something can be done about it.
+ * @param {string} error
+ * @returns {string}
+ */
+function whyNot(error) {
+  const said = readStepSaid(error);
+  return said ? `Step ${said.index + 1} cannot be played: see what is said under Steps.` : error;
+}
+
+/**
  * @typedef {Object} EditorFacts - What a render of the dialog works from
  * @property {any} clip
  * @property {boolean} locked
@@ -30,6 +42,7 @@ function markText(step) {
  * @property {number} selected - Inside `0 … steps.length`
  * @property {number} fps
  * @property {{ state: string, text: string, action: string }} status
+ * @property {import('./clipStatus.js').RecordingProgress|null} recording
  */
 
 /**
@@ -82,7 +95,7 @@ export function pageArea({ state, snap, listOpen, seek }, { clip, recipe, select
       ? html`<div class="app-callout app-callout-error web-editor-error" role="alert">
           <app-icon name="alert" size="sm"></app-icon>
           <div class="app-callout-body">
-            <strong>The page cannot be shown here</strong><span>${snap.error}</span>
+            <strong>The page cannot be shown here</strong><span>${whyNot(snap.error)}</span>
           </div>
         </div>`
       : html``}

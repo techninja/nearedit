@@ -58,6 +58,17 @@ function projectFolder(body) {
 }
 
 /**
+ * @param {any} fps - The frame rate of the document the clip lives in
+ * @returns {number} 30 when none was sent
+ * @throws {WebError} 422 for anything that is not a frame rate
+ */
+function checkedFps(fps) {
+  if (fps !== undefined && !(Number(fps) >= 1 && Number(fps) <= 240))
+    throw new WebError(422, 'Invalid fps', { fields: { fps: 'A number from 1 to 240' } });
+  return scoreFps(Number(fps));
+}
+
+/**
  * Validate the body of `POST /web/record`.
  * @param {any} body
  * @returns {{ projectId: string, folder: string, fps: number,
@@ -68,18 +79,17 @@ export function parseRecordRequest(body) {
   if (!body || typeof body !== 'object') throw new WebError(400, 'JSON body required');
   const folder = projectFolder(body);
   if (!folder) throw new WebError(400, 'projectId required');
-  if (body.fps !== undefined && !(Number(body.fps) >= 1 && Number(body.fps) <= 240))
-    throw new WebError(422, 'Invalid fps', { fields: { fps: 'A number from 1 to 240' } });
+  const fps = checkedFps(body.fps);
   const recipe = checkedRecipe(body.recipe);
   const storage = projectStorage(recipe.storage, folder);
-  return { projectId: body.projectId, folder, fps: scoreFps(Number(body.fps)), recipe, storage };
+  return { projectId: body.projectId, folder, fps, recipe, storage };
 }
 
 /**
  * Validate the body of `POST /web/snapshot`. Only the steps that will be
  * played have to be complete: a snapshot is how the next one gets written.
  * @param {any} body
- * @returns {{ recipe: import('#utils/web/types.js').Recipe, until: number|undefined,
+ * @returns {{ recipe: import('#utils/web/types.js').Recipe, until: number|undefined, fps: number,
  *   storage: import('./storage.js').Storage|null }}
  * @throws {WebError}
  */
@@ -96,5 +106,6 @@ export function parseSnapshotRequest(body) {
       ? { ...raw, steps: raw.steps.slice(0, until) }
       : raw;
   const recipe = checkedRecipe(played);
-  return { recipe, until, storage: projectStorage(recipe.storage, projectFolder(body)) };
+  const storage = projectStorage(recipe.storage, projectFolder(body));
+  return { recipe, until, fps: checkedFps(body.fps), storage };
 }

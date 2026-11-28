@@ -20,6 +20,7 @@ import { recordingSize } from './sizes.js';
  * @property {string} message - Why it failed or was not attached
  * @property {string[]} [warnings] - What the recorder had to say about a
  *   recording that was made (steps it skipped, with `onMissing: skip`)
+ * @property {string} [key] - The key of the recipe that was asked for
  */
 
 /**

@@ -10,6 +10,7 @@ import { BASE_EDIT, EXECUTE_SCRIPT, GENERATE_EDIT, GENERATE_SCRIPT } from './act
 import { MOTION_PIECE } from './actionsMotion.js';
 import { ADD_CAPTIONS, BEAT_SYNC_ACTION, INSERT_BROLL } from './actionsTimeline.js';
 import { REMOVE_SILENCE } from './actionsTimeline.js';
+import { SITE_DEMO } from './actionsWeb.js';
 
 /**
  * @typedef {import('./fields.js').ActionField} ActionField
@@ -39,6 +40,7 @@ export const ACTIONS = [
   EXECUTE_SCRIPT,
   INSERT_BROLL,
   MOTION_PIECE,
+  SITE_DEMO,
   REMOVE_SILENCE,
   BEAT_SYNC_ACTION,
   ADD_CAPTIONS,

@@ -46,6 +46,19 @@ describe('web-record-bar', () => {
     expect(el.querySelector('.web-record-bar-go').textContent.trim()).to.equal('Record again');
   });
 
+  it('lists what the recorder had to say about a recording that was made', async () => {
+    const skipped = 'Step 2 (click): #buy is covered by <div#chat.bubble> "Talk to us"';
+    const el = await mount({
+      status: { state: 'recorded', text: 'Recorded 4.0 s · 2560×1440', action: 'Record again' },
+      recording: { status: 'done', progress: 100, message: '', warnings: [skipped] },
+    });
+    const said = [...el.querySelectorAll('.web-record-bar-warnings li')].map(
+      (li) => li.textContent,
+    );
+    expect(said).to.deep.equal([skipped]);
+    expect(el.querySelector('[role="alert"]')).to.equal(null);
+  });
+
   it('says when the server has no browser, and cannot record a clip on a locked track', async () => {
     const reason = 'No chrome-headless-shell was found. Run "npm run install-browser".';
     const el = await mount({

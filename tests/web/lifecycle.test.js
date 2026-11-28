@@ -93,8 +93,9 @@ describe('web recorder: lifecycle', { skip: kit.SKIP }, () => {
     process.env.PATH = `${bin}${delimiter}${path}`;
     try {
       await assert.rejects(
-        kit.record(recipe([{ do: 'wait', duration: 2 }]), { ...options(), dir }),
-        /FFmpeg failed: Unknown encoder libx264/,
+        // No snapshot beside this one: a snapshot has no encoder to fail.
+        kit.record(recipe([{ do: 'wait', duration: 2 }]), { ...options(), dir, agree: false }),
+        (err) => err.message === 'FFmpeg failed: Unknown encoder libx264',
       );
     } finally {
       process.env.PATH = path;

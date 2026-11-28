@@ -7,6 +7,7 @@
  * @module tests/web/kit
  */
 
+import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,6 +15,7 @@ import { join } from 'node:path';
 import { compileScore, normalizeRecipe, recipeKey } from '#utils/web/index.js';
 import { readFrames } from '../../src/api/render/testkit.js';
 import { recordRecipe } from '../../src/api/web/record.js';
+import { takeSnapshot } from '../../src/api/web/snapshot.js';
 import { browserStatus } from '../../src/api/web/status.js';
 
 /** Everything of this test file lives here, browser profiles included. */
@@ -37,23 +39,58 @@ export const SMALL = { viewport: { width: 640, height: 360 }, scale: 1, lead: 0.
 /**
  * Record a recipe and read it back.
  * @param {object} recipe - Raw; `SMALL` fills in what it leaves out
- * @param {object} [options] - Passed to `recordRecipe` (`allow`, `fps`, `signal`…)
+ * @param {object} [options] - Passed to `recordRecipe` (`allow`, `fps`, `signal`…). `agree:
+ *   false` leaves out the comparison with a snapshot of the same recipe
  * @returns {Promise<{ dir: string, file: string, track: any, score: any, recipe: any,
  *   frames: Awaited<ReturnType<typeof readFrames>> }>}
  */
-export async function record(recipe, options = {}) {
+export async function record(recipe, { agree, ...options } = {}) {
   const normal = normalizeRecipe({ ...SMALL, ...recipe });
   const fps = options.fps || 30;
   const key = recipeKey(normal, fps);
   const dir = options.dir || mkdtempSync(join(SCRATCH, 'rec-'));
   const file = join(dir, `${key}.mp4`);
-  const track = await recordRecipe({
-    ...{ recipe: normal, fps, key, output: file, trackPath: join(dir, `${key}.json`) },
-    ...{ browser: BROWSER, noSandbox: NO_SANDBOX },
-    ...options,
-  });
+  const how = { browser: BROWSER, noSandbox: NO_SANDBOX, ...options };
+  const paths = { key, output: file, trackPath: join(dir, `${key}.json`) };
+  const outcome = await recordRecipe({ recipe: normal, fps, ...paths, ...how }).then(
+    (track) => ({ track, error: null }),
+    (error) => ({ track: null, error }),
+  );
+  // Unless the test interferes with the recording itself (it cancels it, kills the browser…).
+  if (agree ?? !(options.signal || options.onFrame))
+    await sameAsSnapshot(normal, fps, how, outcome.error);
+  if (outcome.error) throw outcome.error;
+  const { track } = outcome;
   const frames = await readFrames(file, track.width, track.height);
   return { dir, file, track, frames, recipe: normal, score: compileScore(normal, fps) };
+}
+
+/**
+ * What a snapshot can do, a recording can do, and what stops one stops the
+ * other at the same step: every recipe a test records is also played by a
+ * snapshot, and the two must end alike.
+ * @param {object} recipe - Normalised
+ * @param {number} fps
+ * @param {object} how - The options of the recording
+ * @param {any} failure - What the recording threw; null when it succeeded
+ */
+async function sameAsSnapshot(recipe, fps, how, failure) {
+  const { browser, noSandbox, allow, storage, watchdog, setting } = how;
+  // A page may name itself by chance (a blob address): that part is not compared.
+  const told = (/** @type {any} */ err) =>
+    err ? `failed at step ${err.step}: ${err.message.replace(/[0-9a-f-]{36}/g, '…')}` : 'succeeded';
+  const snapshot = await takeSnapshot({
+    ...{ recipe, fps, browser, noSandbox, allow, storage, watchdog, setting },
+  }).then(
+    () => null,
+    (err) => err,
+  );
+  const what = `${recipe.url} ${JSON.stringify(recipe.steps.map((step) => step.do))}`;
+  assert.equal(
+    told(snapshot),
+    told(failure),
+    `a snapshot and a recording of ${what} must end alike`,
+  );
 }
 
 /**

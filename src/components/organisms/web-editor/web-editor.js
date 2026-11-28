@@ -57,7 +57,8 @@ function dialog(host) {
   const recording = recordings.byClip[clip.clipId] || null;
   const status = webClipStatus(clip, fps, recording);
   const locked = Boolean(track.locked);
-  const facts = { clip, locked, recipe, selected: shownSelection(state, recipe), fps, status };
+  const selected = shownSelection(state, recipe);
+  const facts = { clip, locked, recipe, selected, fps, status, recording };
   const body = html`<div
       class="web-editor-body"
       data-tab="${state.tab}"

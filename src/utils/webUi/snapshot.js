@@ -12,6 +12,7 @@ import ProjectState from '#store/ProjectState.js';
 import { api } from '#utils/api/http.js';
 import { createObservable } from '#utils/ui/observable.js';
 import { recipeKey } from '#utils/web/index.js';
+import { forgetSaid, rememberSaid } from './saidMemory.js';
 import { recipeProblems } from './stepForm.js';
 
 /** @typedef {import('./pageMap.js').Snapshot} Snapshot */
@@ -91,6 +92,8 @@ async function ask(key, recipe, until) {
     remembered.set(key, snapshot);
     if (asking === controller) snapshotState.set({ busy: false, error: '', snapshot, key });
   } catch (err) {
+    if (controller.signal.aborted) return;
+    rememberSaid(recipe, errorText(err));
     if (asking === controller) snapshotState.set({ busy: false, error: errorText(err) });
   } finally {
     if (asking === controller) asking = null;
@@ -126,5 +129,6 @@ export function showSnapshot(recipe, until, { delay = SNAPSHOT_DELAY, fresh = fa
 export function resetSnapshots() {
   halt();
   remembered.clear();
+  forgetSaid();
   snapshotState.set({ ...EMPTY });
 }

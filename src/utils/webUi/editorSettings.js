@@ -1,19 +1,47 @@
 /**
  * What the web editor shows in place of a step's form while the end of the
  * recording is selected: what to do next, and the settings of the whole
- * recording — the rest before the first step and after the last, and what
- * a step does when its target is not on the page.
+ * recording — the rest before the first step and after the last, what a
+ * step does when its target is not on the page, and what is removed from
+ * the page before recording (`hide`).
  * @module utils/webUi/editorSettings
  */
 
 import { html } from 'hybrids';
-import { ON_MISSING, RECIPE_LIMITS } from '#utils/web/index.js';
-import { handleChoice } from './topbarEvents.js';
+import { ON_MISSING, RECIPE_LIMITS, describeTarget } from '#utils/web/index.js';
+import { webClipOf, webEditorState } from './editorState.js';
+import { setField } from './edits.js';
 
 const MISSING_NAMES = {
   fail: 'Stop the recording and say which step',
   skip: 'Skip the step and carry on',
 };
+
+/**
+ * A setting of the whole recording changed. (The dialog itself renders
+ * these controls, so the change goes straight to the recipe.)
+ * @param {any} _host
+ * @param {Event} event
+ */
+function handleSetting(_host, event) {
+  const control = /** @type {HTMLInputElement} */ (event.target);
+  const number = control.dataset.type === 'number';
+  if (number && (control.value.trim() === '' || !Number.isFinite(Number(control.value)))) return;
+  const value = number ? Number(control.value) : control.value;
+  setField(webEditorState.get().clipId, control.dataset.name, value);
+}
+
+/** Take a target off the list of what is hidden before recording. @param {any} _host @param {Event} event */
+function handleUnhide(_host, event) {
+  const at = Number(/** @type {HTMLElement} */ (event.currentTarget).dataset.index);
+  const { clipId } = webEditorState.get();
+  const hide = webClipOf(clipId)?.clip.web.recipe.hide || [];
+  setField(
+    clipId,
+    'hide',
+    hide.filter((_target, index) => index !== at),
+  );
+}
 
 /**
  * @param {string} name - `lead` or `tail`
@@ -35,7 +63,7 @@ function seconds(name, label, value, locked) {
       step="0.1"
       value="${value}"
       disabled="${locked}"
-      onchange="${handleChoice}"
+      onchange="${handleSetting}"
     />
   </label>`;
 }
@@ -66,7 +94,7 @@ export function settingsForm(recipe, locked) {
         data-name="onMissing"
         aria-label="When a step's target is not on the page"
         disabled="${locked}"
-        onchange="${handleChoice}"
+        onchange="${handleSetting}"
       >
         ${ON_MISSING.map(
           (id) =>
@@ -76,5 +104,31 @@ export function settingsForm(recipe, locked) {
         )}
       </select>
     </label>
+    ${recipe.hide.length
+      ? html`<div class="field-row">
+          <span class="field-label" title="Removed from the page before recording"
+            >Hidden first</span
+          >
+          <span class="toolbar-group web-editor-hidden">
+            ${recipe.hide.map(
+              (target, index) =>
+                html`<span class="chip">
+                  ${describeTarget(target)}
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    data-index="${index}"
+                    aria-label="${`Show ${describeTarget(target)} again`}"
+                    title="Do not hide it"
+                    disabled="${locked}"
+                    onclick="${handleUnhide}"
+                  >
+                    ×
+                  </button>
+                </span>`,
+            )}
+          </span>
+        </div>`
+      : html``}
   </div>`;
 }

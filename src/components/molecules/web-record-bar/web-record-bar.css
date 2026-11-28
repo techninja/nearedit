@@ -52,6 +52,12 @@ web-record-bar {
     overflow-wrap: anywhere;
   }
 
+  & .web-record-bar-warnings {
+    flex-direction: column;
+    padding-left: var(--space-md);
+    color: var(--color-warning);
+  }
+
   & .btn {
     flex: none;
   }

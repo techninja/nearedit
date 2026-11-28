@@ -49,11 +49,11 @@ webRouter.post('/web/snapshot', async (req, res) => {
   const gone = new AbortController();
   res.on('close', () => res.writableFinished || gone.abort());
   try {
-    const { recipe, until, storage } = parseSnapshotRequest(req.body);
+    const { recipe, until, fps, storage } = parseSnapshotRequest(req.body);
     const browser = await requireBrowser();
     const { allow, noSandbox } = getConfig().web;
     const snapshot = await snapshots(() =>
-      takeSnapshot({ recipe, until, storage, browser, allow, noSandbox, signal: gone.signal }),
+      takeSnapshot({ recipe, until, fps, storage, browser, allow, noSandbox, signal: gone.signal }),
     );
     res.json(snapshot);
   } catch (err) {

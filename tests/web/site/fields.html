@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fields far away</title>
+    <style>
+      /* Fields that are not in the picture when the page opens: below the fold, where a
+         sticky header will lie on them, and at the bottom of a panel that scrolls. */
+      body {
+        margin: 0;
+        height: 1600px;
+        font: 14px sans-serif;
+        background: #ffffff;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        height: 50px;
+        background: #222233;
+        color: #ffffff;
+      }
+      label {
+        position: absolute;
+        left: 40px;
+        display: block;
+        width: 240px;
+      }
+      input {
+        display: block;
+        width: 240px;
+        height: 30px;
+        box-sizing: border-box;
+        font: inherit;
+      }
+      #name-label {
+        top: 900px;
+      }
+      #email-label {
+        top: 1000px;
+      }
+      #phone-label {
+        top: 1100px;
+      }
+      #panel {
+        position: absolute;
+        left: 340px;
+        top: 80px;
+        width: 280px;
+        height: 150px;
+        overflow: auto;
+        background: #eeeeee;
+      }
+      #panel-in {
+        position: relative;
+        height: 600px;
+      }
+      #city-label {
+        top: 480px;
+        left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>A header that stays</header>
+    <label id="name-label">Name <input id="name" name="name" placeholder="Ada Lovelace" /></label>
+    <label id="email-label">Email <input id="email" name="email" type="email" /></label>
+    <label id="phone-label">Phone <input id="phone" name="phone" /></label>
+    <div id="panel">
+      <div id="panel-in">
+        <label id="city-label">City <input id="city" name="city" /></label>
+      </div>
+    </div>
+    <script>
+      // What every field holds, for a step that checks it: `values()` → "name=Ada|email=…".
+      window.values = () =>
+        [...document.querySelectorAll('input')]
+          .map((input) => `${input.id}=${input.value}`)
+          .join('|');
+    </script>
+  </body>
+</html>

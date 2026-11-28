@@ -54,7 +54,9 @@ describe('recording a clip', () => {
   it('starts the job with the recipe and the frame rate, and attaches the result', async () => {
     net = server(() => ({ status: 'complete', progress: 100 }));
     const ended = await recording.recordClip(clipId);
-    assert.deepEqual(ended, { status: 'done', progress: 100, message: '' });
+    const { key, ...rest } = ended;
+    assert.deepEqual(rest, { status: 'done', progress: 100, message: '', warnings: [] });
+    assert.equal(key, keyNow());
     const [start] = net.calls;
     assert.equal(start.path, '/api/web/record');
     assert.equal(start.body.projectId, 'p1');
@@ -75,11 +77,8 @@ describe('recording a clip', () => {
     net = server(() => ({ status: 'running', progress: 42 }));
     const ending = recording.recordClip(clipId);
     await tick(20);
-    assert.deepEqual(recording.recordingOf(clipId), {
-      status: 'running',
-      progress: 42,
-      message: '',
-    });
+    const { status, progress, message } = recording.recordingOf(clipId);
+    assert.deepEqual([status, progress, message], ['running', 42, '']);
     assert.equal(await recording.recordClip(clipId), recording.recordingOf(clipId));
     assert.equal(net.calls.filter((call) => call.method === 'POST').length, 1);
     recording.cancelRecording(clipId);
@@ -128,6 +127,21 @@ describe('recording a clip', () => {
     );
     assert.match((await recording.recordClip(clipId)).message, /^Step 1: click needs a target/);
     assert.equal(net.calls.length, 0);
+  });
+
+  it('keeps what the recorder had to say about a recording that was made', async () => {
+    const result = resultNow();
+    const skipped = 'Step 1 (click): text=Go is covered by <div#chat.bubble> "Talk to us"';
+    result.track = { ...result.track, warnings: [skipped] };
+    net = server(() => ({ status: 'complete', progress: 100 }), result);
+    const ended = await recording.recordClip(clipId);
+    assert.equal(ended.status, 'done');
+    assert.deepEqual(ended.warnings, [skipped]);
+    // The next recording starts with nothing said.
+    session.undo();
+    net.restore();
+    net = server(() => ({ status: 'complete', progress: 100 }));
+    assert.deepEqual((await recording.recordClip(clipId)).warnings, []);
   });
 
   it('records every clip that needs it, and attaches recordings other jobs finish', async () => {

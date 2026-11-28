@@ -9,8 +9,10 @@
  */
 
 import { html } from 'hybrids';
+import { isStale } from '#utils/web/index.js';
 import { selectStep, webClipOf, webEditorState } from './editorState.js';
 import { setField } from './edits.js';
+import { saidOf } from './saidMemory.js';
 import { stepsSaid, withHidden } from './stepSaid.js';
 
 /** @typedef {import('./stepSaid.js').StepSaid} StepSaid */
@@ -19,14 +21,27 @@ import { stepsSaid, withHidden } from './stepSaid.js';
 const MAX_NOTICES = 3;
 
 /**
- * Everything the recorder said about the steps of the clip in the dialog.
+ * Everything the recorder said about the steps of the clip in the dialog,
+ * as far as it is still about the recipe as it is: what snapshots said of
+ * steps that have not changed since, and what the last recording said when
+ * it was of this very recipe.
  * @param {import('./snapshot.js').SnapshotState} snap
  * @param {import('./clipStatus.js').RecordingProgress|null} recording
- * @returns {StepSaid[]} Failures first, then warnings
+ * @param {import('#utils/web/types.js').Recipe} recipe
+ * @param {number} fps
+ * @returns {(StepSaid & { warning?: boolean })[]} Failures first, then
+ *   warnings: steps a recording skipped
  */
-export function saidAbout(snap, recording) {
-  const warnings = [...(recording?.warnings || []), ...(snap.snapshot?.warnings || [])];
-  return stepsSaid([snap.error, recording?.message, ...warnings]);
+export function saidAbout(snap, recording, recipe, fps) {
+  const current = recording?.key && !isStale({ web: { recipe, key: recording.key } }, fps);
+  const failed = stepsSaid([...saidOf(recipe), current ? recording.message : '']);
+  const skipped = [
+    ...(current ? recording.warnings || [] : []),
+    ...(snap.snapshot?.warnings || []),
+  ];
+  const known = new Set(failed.map((one) => one.text));
+  const warned = stepsSaid(skipped).filter((one) => !known.has(one.text));
+  return [...failed, ...warned.map((one) => ({ ...one, warning: true }))];
 }
 
 /** "Go to step N". @param {any} _host @param {Event} event */
@@ -44,7 +59,7 @@ function handleHide(_host, event) {
 }
 
 /**
- * @param {StepSaid[]} said
+ * @param {(StepSaid & { warning?: boolean })[]} said
  * @param {import('#utils/web/types.js').Recipe} recipe
  * @param {boolean} locked
  * @returns {import('hybrids').UpdateFunctionWithMethods<any>} Nothing when nothing was said
@@ -55,7 +70,11 @@ export function notices(said, recipe, locked) {
   return html`<div class="web-editor-said">
     ${shown.map(
       (one) =>
-        html`<div class="app-callout app-callout-error" role="alert" data-step="${one.index}">
+        html`<div
+          class="${{ 'app-callout': true, 'app-callout-error': !one.warning }}"
+          role="${one.warning ? 'status' : 'alert'}"
+          data-step="${one.index}"
+        >
           <app-icon name="alert" size="sm"></app-icon>
           <div class="app-callout-body">
             <strong>${one.text}</strong>

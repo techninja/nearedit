@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeRecipe } from '#utils/web/index.js';
+import { forgetSaid, rememberSaid, saidOf } from './saidMemory.js';
 import { coverSelector, readStepSaid, saidByStep, stepsSaid, withHidden } from './stepSaid.js';
 
 const COVERED = 'Step 3 (click): css=#veiled is covered by <div#veil.veil.chat> "Chat with us"';
@@ -73,5 +74,45 @@ describe('what the recorder says about a step', () => {
     assert.deepEqual(withHidden(hide, ' div#veil '), ['#cookies', 'div#veil']);
     assert.equal(withHidden(hide, '#cookies'), hide);
     assert.equal(withHidden(hide, ''), hide);
+  });
+});
+
+describe('remembering what snapshots said', () => {
+  const recipe = (steps, more = {}) =>
+    normalizeRecipe({ url: 'https://example.com', steps, ...more });
+  const STEPS = [
+    { do: 'wait' },
+    { do: 'hover', target: 'text=Row 40' },
+    { do: 'click', target: '#veiled' },
+  ];
+
+  it('keeps a sentence for as long as the steps it was said of stay as they were', () => {
+    forgetSaid();
+    const first = recipe(STEPS);
+    assert.deepEqual(saidOf(first), []);
+    rememberSaid(first, COVERED);
+    assert.deepEqual(saidOf(first), [COVERED]);
+    // A later step, a note and the selection do not matter.
+    const longer = recipe([...STEPS, { do: 'wait', note: 'after' }]);
+    assert.deepEqual(saidOf(longer), [COVERED]);
+    // The step itself, a step before it, or what the recipe hides do.
+    const aimed = recipe([STEPS[0], STEPS[1], { do: 'click', target: '#other' }]);
+    assert.deepEqual(saidOf(aimed), []);
+    assert.deepEqual(saidOf(recipe([{ do: 'wait', duration: 2 }, ...STEPS.slice(1)])), []);
+    assert.deepEqual(saidOf(recipe(STEPS, { hide: ['div#veil.veil.chat'] })), []);
+    // Changed back, it is true again.
+    assert.deepEqual(saidOf(recipe(STEPS)), [COVERED]);
+  });
+
+  it('lists what was said in step order, and forgets on demand', () => {
+    forgetSaid();
+    const all = recipe(STEPS);
+    rememberSaid(all, COVERED);
+    rememberSaid(all, CUT);
+    rememberSaid(all, 'The page did not load');
+    rememberSaid(all, 'Step 9 (click): #x was not found');
+    assert.deepEqual(saidOf(all), [CUT, COVERED]);
+    forgetSaid();
+    assert.deepEqual(saidOf(all), []);
   });
 });

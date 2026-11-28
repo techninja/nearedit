@@ -95,6 +95,9 @@ export default define({
         ${!active && recording?.message
           ? html`<p class="error-message" role="alert">${recording.message}</p>`
           : html``}
+        ${(!active && recording?.warnings ? recording.warnings : []).map(
+          (warning) => html`<p class="error-message web-inspector-warning">${warning}</p>`,
+        )}
         <div class="web-inspector-actions">
           <button type="button" class="btn btn-secondary" onclick="${on.handleEdit}">
             <app-icon name="edit" size="sm"></app-icon> Edit steps…

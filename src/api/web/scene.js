@@ -48,8 +48,11 @@ export function createScene(recipe, fps) {
       /** @type {any} */
       const state = { hide, scroll: [], marks: [] };
       for (const act of acts) {
-        const p = progress(n, act.S, act.A);
-        const places = (n <= act.A ? act.scrolls || [] : []).map(([fx, fy, tx, ty]) => [
+        // What scrolls is in place when the pointer gets there — for typing that is before the
+        // keys, not when the last one has been struck — or, without a pointer, when the action ends.
+        const settled = act.G ?? act.A;
+        const p = progress(n, act.S, settled);
+        const places = (n <= settled ? act.scrolls || [] : []).map(([fx, fy, tx, ty]) => [
           scrollAt(fx, tx, p, act.ease),
           scrollAt(fy, ty, p, act.ease),
         ]);

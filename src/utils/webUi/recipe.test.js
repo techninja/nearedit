@@ -43,6 +43,10 @@ describe('recipe edits', () => {
     assert.equal(set('colorScheme', 'dark').colorScheme, 'dark');
     assert.deepEqual(set('size', 'wide').viewport, { width: 1920, height: 1080 });
     assert.equal(set('size', 'wide').scale, 1);
+    assert.deepEqual(set('hide', ['#cookies', 'div#chat.bubble']).hide, [
+      '#cookies',
+      'div#chat.bubble',
+    ]);
     assert.equal(edit.setRecipeField(base, 'steps', []), base);
   });
 
