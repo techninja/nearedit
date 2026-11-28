@@ -9,8 +9,9 @@ web-score-strip {
 
   & .web-score-strip-head {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-sm);
+    gap: 0 var(--space-sm);
     font-size: var(--text-sm);
   }
 
@@ -18,7 +19,6 @@ web-score-strip {
     margin-left: auto;
     font-family: var(--font-mono);
     font-size: var(--text-xs);
-    white-space: nowrap;
   }
 
   & .web-score-strip-track {

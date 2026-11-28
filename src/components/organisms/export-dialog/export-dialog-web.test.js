@@ -1,6 +1,7 @@
 import { fixture, expect } from '@open-wc/testing';
 import { store } from 'hybrids';
 import ProjectState from '#store/ProjectState.js';
+import { createEdl } from '#utils/edl/factory.js';
 import { clipOf } from '#utils/edl/testkit.js';
 import { getDoc, loadDoc } from '#utils/editor/session.js';
 import { exportState } from '#utils/ui/exportController.js';
@@ -47,13 +48,13 @@ describe('export-dialog and web clips', () => {
     expect(api.calls.some((call) => call.path === '/api/web/record')).to.equal(true);
     expect(clipOf(getDoc(), clipId).web.key).to.not.equal('');
     expect(el.querySelector('.export-dialog-web')).to.equal(null);
+    // What will be rendered was asked for again, with the recorded clip.
+    const plans = api.calls.filter((call) => call.path === '/api/render/plan');
+    expect(plans.length).to.equal(2);
+    expect(plans[1].body.edl.tracks[0].clips[0].sourceFile).to.contain('.nearedit/web/');
   });
 
   it('says nothing when the timeline has no web clip that needs recording', async () => {
-    loadDoc(webDoc().doc);
-    const key = recipeKey(clipOf(getDoc(), webDoc().clipId)?.web.recipe ?? {}, 30);
-    expect(key).to.be.a('string');
-    const { createEdl } = await import('#utils/edl/factory.js');
     loadDoc(createEdl());
     const el = await fixture(`<export-dialog></export-dialog>`);
     el.open = true;

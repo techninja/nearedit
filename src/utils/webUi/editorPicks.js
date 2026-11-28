@@ -10,6 +10,7 @@ import { addStep, setField } from './edits.js';
 import { pickActions, pickTitle, pickedTarget } from './pickActions.js';
 import { snapshotState } from './snapshot.js';
 import { recipeProblems } from './stepForm.js';
+import { blankStep, kindChoices } from './stepRows.js';
 
 /** @typedef {import('./editorView.js').WebEditorHost & HTMLElement} Host */
 
@@ -56,18 +57,30 @@ export function handlePickField(_host, event) {
   webEditorState.set({ picking: waiting ? '' : name, tab: 'page', mode: 'page', menu: null });
 }
 
+/** "Add a step" of the steps list: open the menu of step kinds. @param {Host} _host @param {CustomEvent} event */
+export function handleStepMenu(_host, event) {
+  webEditorState.set({ menu: { x: event.detail.x, y: event.detail.y, pick: null } });
+}
+
 /** Close the menu of a pick. */
 export const handleMenuClose = () => webEditorState.set({ menu: null });
 
 /**
- * The menu of what was pressed on the page view.
+ * The open menu: the steps that can be added for what was pressed on the
+ * page view, or every step kind.
  * @param {import('./editorState.js').WebEditorState['menu']} menu
  * @param {import('./pageMap.js').Snapshot|null} snapshot
  * @returns {import('#utils/timeline/menuModel.js').MenuItem[]}
  */
 export function pickMenu(menu, snapshot) {
-  if (!menu || !snapshot) return [];
+  if (!menu) return [];
   const { pick, x, y } = menu;
+  if (!pick)
+    return kindChoices().map((kind) => ({
+      label: `${kind.label} — ${kind.description}`,
+      run: () => addAndShow(blankStep(kind.do), true),
+    }));
+  if (!snapshot) return [];
   /** @type {import('#utils/timeline/menuModel.js').MenuItem[]} */
   const items = [{ label: pickTitle(pick, snapshot), disabled: true }, { separator: true }];
   for (const action of pickActions(pick, snapshot))

@@ -16,7 +16,7 @@ async function mount(selected = 1, steps = STEPS) {
   el.selected = selected;
   await settle();
   const seen = [];
-  for (const name of ['web-select', 'web-step', 'web-step-add'])
+  for (const name of ['web-select', 'web-step', 'web-step-menu'])
     el.addEventListener(name, (event) => seen.push([name, event.detail]));
   return {
     el,
@@ -104,23 +104,17 @@ describe('web-step-list', () => {
     expect(row(0).getAttribute('draggable')).to.equal('false');
   });
 
-  it('adds a step from a menu of every step kind', async () => {
+  it('asks for the menu of step kinds under its add button, which says where the step goes', async () => {
     const { el, seen } = await mount(3);
-    const menu = el.querySelector('.web-step-list-add');
-    expect(menu.options[0].textContent).to.contain('at the end');
-    expect([...menu.options].slice(1).map((o) => o.value)).to.include.members([
-      'wait',
-      'click',
-      'type',
-      'scroll',
-      'focus',
-      'goto',
-    ]);
-    expect(menu.options.length).to.equal(14);
-    menu.value = 'scroll';
-    menu.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(seen).to.deep.equal([['web-step-add', { do: 'scroll' }]]);
-    expect(menu.value).to.equal('');
+    const add = el.querySelector('.web-step-list-add');
+    expect(add.tagName).to.equal('BUTTON');
+    expect(add.textContent).to.contain('Add a step at the end');
+    add.click();
+    const box = add.getBoundingClientRect();
+    expect(seen).to.deep.equal([['web-step-menu', { x: box.left, y: box.bottom }]]);
+    el.selected = 0;
+    await settle();
+    expect(el.querySelector('.web-step-list-add').textContent).to.contain('after step 1');
   });
 
   it('reorders by dragging a row to a gap between rows', async () => {
@@ -149,5 +143,17 @@ describe('web-step-list', () => {
     el.selected = 2;
     await settle(120);
     expect(document.activeElement === row(2)).to.equal(true);
+  });
+
+  it('puts the focus back on the selected row after a key removed the row it was on', async () => {
+    const { el, row } = await mount(2);
+    row(2).focus();
+    key(row(2), 'Delete');
+    // The owner removes the step: two rows are left and the end is selected.
+    el.rows = rowsOf(STEPS.slice(0, 2));
+    el.selected = 2;
+    await settle(150);
+    expect(document.activeElement === row(2)).to.equal(true);
+    expect(row(2).classList.contains('web-step-list-end')).to.equal(true);
   });
 });

@@ -134,6 +134,21 @@ describe('web-editor', () => {
     );
   });
 
+  it('adds a step of any kind from the menu under "Add a step"', async () => {
+    const { el } = await mount();
+    el.querySelector('web-step-list .web-step-list-add').click();
+    await settle();
+    const items = [...el.querySelectorAll('timeline-menu .menu-item')];
+    expect(items.length).to.equal(13);
+    expect(items[0].textContent.trim()).to.equal('Wait — The page plays on');
+    items.find((item) => item.textContent.includes('Scroll —')).click();
+    await settle();
+    expect(steps().map((step) => step.do)).to.deep.equal(['scroll']);
+    // A scroll goes nowhere yet: its form is up to say so.
+    expect(webEditorState.get().selected).to.equal(0);
+    expect(el.querySelector('web-step-form [role="alert"]').textContent).to.contain('scroll needs');
+  });
+
   it('edits a field as one undo step, however much is typed', async () => {
     const { el } = await mount([{ do: 'type', text: 'a', target: 'label=Email' }]);
     el.querySelector('.web-step-list-row[data-index="0"]').click();

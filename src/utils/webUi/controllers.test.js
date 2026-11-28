@@ -94,7 +94,11 @@ describe('web editor state and edits', () => {
   });
 
   it('removes, copies and moves steps as single undo steps, selection following', async () => {
-    const clipId = await open([{ do: 'wait' }, { do: 'click', target: '#a' }, { do: 'run', js: '1' }]);
+    const clipId = await open([
+      { do: 'wait' },
+      { do: 'click', target: '#a' },
+      { do: 'run', js: '1' },
+    ]);
     editor.openWebEditor(clipId);
     editor.selectStep(1);
     assert.equal(editStep(clipId, 'move', 1, 0), true);
@@ -164,12 +168,20 @@ describe('snapshots', () => {
     assert.equal(net.calls.length, 1);
     assert.equal(net.calls[0].body.until, 1);
     assert.equal(net.calls[0].body.projectId, 'p1');
-    assert.deepEqual(net.calls[0].body.recipe.steps.map((step) => step.do), ['click']);
+    assert.deepEqual(
+      net.calls[0].body.recipe.steps.map((step) => step.do),
+      ['click'],
+    );
     assert.equal(snapshotState.get().busy, false);
     assert.equal(snapshotState.get().snapshot.title, 'Example');
-    assert.equal(snapshotState.get().key, recipeKey({ ...recipe, steps: recipe.steps.slice(0, 1) }, 30));
+    assert.equal(
+      snapshotState.get().key,
+      recipeKey({ ...recipe, steps: recipe.steps.slice(0, 1) }, 30),
+    );
     // A step after the played ones changes nothing; going back is remembered.
-    showSnapshot({ ...recipe, steps: [recipe.steps[0], { do: 'wait', duration: 9 }] }, 1, { delay: 0 });
+    showSnapshot({ ...recipe, steps: [recipe.steps[0], { do: 'wait', duration: 9 }] }, 1, {
+      delay: 0,
+    });
     showSnapshot(recipe, 0, { delay: 0 });
     await tick(10);
     showSnapshot(recipe, 1, { delay: 0 });
@@ -190,7 +202,10 @@ describe('snapshots', () => {
     showSnapshot(recipe, 0, { delay: 5 });
     showSnapshot(recipe, 2, { delay: 0 });
     await tick(20);
-    assert.deepEqual(net.calls.map((call) => call.body.until), [2]);
+    assert.deepEqual(
+      net.calls.map((call) => call.body.until),
+      [2],
+    );
     assert.equal(snapshotState.get().error, 'No browser — Install one');
     assert.equal(snapshotState.get().busy, false);
   });

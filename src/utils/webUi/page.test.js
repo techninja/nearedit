@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import { normalizeRecipe, validateRecipe } from '#utils/web/index.js';
 import { mapLayout, markOf, percentBox, placeOf, pointTarget, stackedElements } from './pageMap.js';
 import { sectionGroups } from './pageSections.js';
-import { elementActions, pickActions, pickTitle, pickedTarget, pointActions } from './pickActions.js';
+import {
+  elementActions,
+  pickActions,
+  pickTitle,
+  pickedTarget,
+  pointActions,
+} from './pickActions.js';
 import * as strip from './scoreStrip.js';
 import { testSnapshot } from './testkit.js';
 
@@ -113,7 +119,10 @@ describe('pick actions', () => {
 describe('score strip', () => {
   const recipe = normalizeRecipe({
     url: 'https://example.com',
-    steps: [{ do: 'click', target: '#a' }, { do: 'goto', url: '/next' }],
+    steps: [
+      { do: 'click', target: '#a' },
+      { do: 'goto', url: '/next' },
+    ],
   });
 
   it('lays the recording out as lead, actions, holds and tail in whole frames', () => {

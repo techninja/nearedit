@@ -68,6 +68,6 @@ web-element-list {
 @media (width < 760px) {
   web-element-list {
     width: auto;
-    max-height: 45%;
+    height: 50%;
   }
 }

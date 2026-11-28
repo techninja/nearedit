@@ -101,7 +101,32 @@ describe('web-page-map', () => {
     expect(Math.round(empty.detail.pick.point.y)).to.be.within(497, 503);
   });
 
-  it('scrolls to the picture when the page was scrolled, and renders nothing without a snapshot', async () => {
+  it('is one stop for the Tab key; the arrow keys walk the outlines in page order', async () => {
+    const map = await mount({}, 'label=Email');
+    const stops = [...map.querySelectorAll('.web-page-map-el')].filter((el) => el.tabIndex === 0);
+    expect(stops.map((el) => el.getAttribute('aria-label'))).to.deep.equal(['input: Email']);
+    const press = (name) =>
+      document.activeElement.dispatchEvent(
+        new KeyboardEvent('keydown', { key: name, bubbles: true }),
+      );
+    const focused = () => document.activeElement.getAttribute('aria-label');
+    outline(map, 'section: Hero').focus();
+    press('ArrowDown');
+    expect(focused()).to.equal('button: Get started');
+    press('ArrowRight');
+    expect(focused()).to.equal('link: Pricing');
+    press('End');
+    expect(focused()).to.equal('input: Email');
+    press('ArrowUp');
+    expect(focused()).to.equal('section: Sign up');
+    press('Home');
+    expect(focused()).to.equal('section: Hero');
+    const unmarked = await mount();
+    expect(outline(unmarked, 'section: Hero').tabIndex).to.equal(0);
+    expect(outline(unmarked, 'button: Get started').tabIndex).to.equal(-1);
+  });
+
+  it('scrolls to the picture when the page was scrolled, and says so when there is no picture', async () => {
     const map = await mount({ scrollY: 1000 });
     await settle(120);
     const area = map.querySelector('.web-page-map-area');
@@ -109,5 +134,6 @@ describe('web-page-map', () => {
     map.snapshot = null;
     await settle();
     expect(map.querySelector('.web-page-map-area')).to.equal(null);
+    expect(map.querySelector('.empty-state').textContent).to.contain('shows here');
   });
 });

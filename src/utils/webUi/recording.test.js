@@ -59,7 +59,10 @@ describe('recording a clip', () => {
     assert.equal(start.path, '/api/web/record');
     assert.equal(start.body.projectId, 'p1');
     assert.equal(start.body.fps, 30);
-    assert.deepEqual(start.body.recipe.steps.map((step) => step.do), ['click']);
+    assert.deepEqual(
+      start.body.recipe.steps.map((step) => step.do),
+      ['click'],
+    );
     assert.equal(clip().web.key, keyNow());
     assert.match(clip().sourceFile, /\.mp4$/);
     session.undo();
@@ -72,7 +75,11 @@ describe('recording a clip', () => {
     net = server(() => ({ status: 'running', progress: 42 }));
     const ending = recording.recordClip(clipId);
     await tick(20);
-    assert.deepEqual(recording.recordingOf(clipId), { status: 'running', progress: 42, message: '' });
+    assert.deepEqual(recording.recordingOf(clipId), {
+      status: 'running',
+      progress: 42,
+      message: '',
+    });
     assert.equal(await recording.recordClip(clipId), recording.recordingOf(clipId));
     assert.equal(net.calls.filter((call) => call.method === 'POST').length, 1);
     recording.cancelRecording(clipId);
@@ -88,7 +95,10 @@ describe('recording a clip', () => {
     const ending = recording.recordClip(clipId);
     await tick(10);
     session.edit((doc) =>
-      updateWebRecipe(doc, clipId, (recipe) => ({ ...recipe, steps: [...recipe.steps, { do: 'wait' }] })),
+      updateWebRecipe(doc, clipId, (recipe) => ({
+        ...recipe,
+        steps: [...recipe.steps, { do: 'wait' }],
+      })),
     );
     state = 'complete';
     // The poll that sees the job complete is seconds away; a socket message would bring it sooner.
@@ -100,15 +110,22 @@ describe('recording a clip', () => {
   });
 
   it('reports what the server says when it refuses or the job fails', async () => {
-    net = fakeFetch({ 'POST /api/web/record': [503, { error: 'No chrome-headless-shell was found' }] });
+    net = fakeFetch({
+      'POST /api/web/record': [503, { error: 'No chrome-headless-shell was found' }],
+    });
     assert.match((await recording.recordClip(clipId)).message, /No chrome-headless-shell/);
     net.restore();
     net = server(() => ({ status: 'error', error: 'Step 1: nothing shows the text "Go"' }));
     const failed = await recording.recordClip(clipId);
-    assert.deepEqual([failed.status, failed.message], ['error', 'Step 1: nothing shows the text "Go"']);
+    assert.deepEqual(
+      [failed.status, failed.message],
+      ['error', 'Step 1: nothing shows the text "Go"'],
+    );
     net.restore();
     net = fakeFetch({});
-    session.edit((doc) => updateWebRecipe(doc, clipId, (r) => ({ ...r, steps: [{ do: 'click' }] })));
+    session.edit((doc) =>
+      updateWebRecipe(doc, clipId, (r) => ({ ...r, steps: [{ do: 'click' }] })),
+    );
     assert.match((await recording.recordClip(clipId)).message, /^Step 1: click needs a target/);
     assert.equal(net.calls.length, 0);
   });

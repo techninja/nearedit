@@ -3,15 +3,15 @@
  * it starts and how long it takes, and a last row for the end of the
  * recording. Press or arrow to select; drag a row, or Alt+arrow, to
  * reorder; the selected row has buttons to move, copy and delete it
- * (Delete and Ctrl+D do the same); steps are added from a menu of the step
- * kinds. Events: `web-select`, `web-step`, `web-step-add`
+ * (Delete and Ctrl+D do the same); "Add a step" asks its owner for the menu
+ * of step kinds. Events: `web-select`, `web-step`, `web-step-menu`
  * (`#utils/webUi/stepListEvents.js`).
  * @module components/molecules/web-step-list
  */
 
 import { define, html } from 'hybrids';
 import * as on from '#utils/webUi/stepListEvents.js';
-import { clockLabel, kindChoices, secondsLabel } from '#utils/webUi/stepRows.js';
+import { clockLabel, secondsLabel } from '#utils/webUi/stepRows.js';
 import '#atoms/app-icon/app-icon.js';
 
 /** @typedef {import('#utils/webUi/stepListEvents.js').StepListHost} StepListHost */
@@ -111,20 +111,16 @@ export default define({
             >
           </li>
         </ol>
-        <select
-          class="field-input web-step-list-add"
-          aria-label="Add a step"
+        <button
+          type="button"
+          class="btn btn-secondary web-step-list-add"
+          aria-haspopup="menu"
           disabled="${locked}"
-          onchange="${on.handleAdd}"
+          onclick="${on.handleAdd}"
         >
-          <option value="" selected>
-            + Add a step ${atEnd ? 'at the end' : `after step ${selected + 1}`}…
-          </option>
-          ${kindChoices().map(
-            (kind) =>
-              html`<option value="${kind.do}" title="${kind.description}">${kind.label}</option>`,
-          )}
-        </select>
+          <app-icon name="plus" size="sm"></app-icon>
+          Add a step ${atEnd ? 'at the end' : `after step ${selected + 1}`}…
+        </button>
       `;
     },
     shadow: false,

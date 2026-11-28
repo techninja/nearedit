@@ -4,7 +4,8 @@
  * and everything one can aim at (links, buttons, form controls, headings,
  * sections) is an outline that lights up under the pointer and can be
  * pressed. What lies above or below the picture has no picture: there the
- * outlines carry the names. The element scrolls. A press sends a bubbling
+ * outlines carry the names. The element scrolls. By keyboard the map is one
+ * Tab stop and the arrow keys walk the outlines. A press sends a bubbling
  * `web-pick` event (`detail: { pick: { element, point }, x, y }`).
  * @module components/molecules/web-page-map
  */
@@ -28,8 +29,9 @@ import { mapLayout, markOf, percentBox, placeOf, stackedElements } from '#utils/
  * @param {import('#utils/webUi/pageMap.js').PageElement & { index: number }} element
  * @param {{ width: number, height: number }} layout
  * @param {number} marked - Index of the marked element
+ * @param {number} stop - Index of the outline the Tab key stops at
  */
-function outline(snapshot, element, layout, marked) {
+function outline(snapshot, element, layout, marked, stop) {
   const out = placeOf(snapshot, element.rect) !== 'view';
   const label = `${element.kind}: ${element.name}`;
   return html`<button
@@ -43,8 +45,10 @@ function outline(snapshot, element, layout, marked) {
     data-index="${element.index}"
     data-label="${label}"
     aria-label="${label}"
+    tabindex="${element.index === stop ? 0 : -1}"
     style="${percentBox(element.rect, layout)}"
     onclick="${on.handleElement}"
+    onkeydown="${on.handleOutlineKeys}"
   >
     ${out && element.kind !== 'section' ? html`<span>${element.name}</span>` : html``}
   </button>`.key(`${element.index}:${element.target}`);
@@ -59,7 +63,8 @@ export default define({
   busy: { value: false, reflect: true },
   render: {
     value: ({ snapshot, mark }) => {
-      if (!snapshot) return html``;
+      if (!snapshot)
+        return html`<div class="empty-state">The picture of the page shows here.</div>`;
       const layout = mapLayout(snapshot);
       const { view } = layout;
       const marked = markOf(snapshot, mark);
@@ -86,7 +91,7 @@ export default define({
           <span>Below the picture: the rest of the page, as outlines</span>
         </div>`}
         ${stackedElements(snapshot).map((element) =>
-          outline(snapshot, element, layout, marked.index),
+          outline(snapshot, element, layout, marked.index, Math.max(0, marked.index)),
         )}
         ${marked.point &&
         html`<span

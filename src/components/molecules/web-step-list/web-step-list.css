@@ -107,6 +107,8 @@ web-step-list {
 
   & .web-step-list-add {
     flex: none;
+    justify-content: center;
+    padding: var(--space-xs) var(--space-sm);
   }
 }
 

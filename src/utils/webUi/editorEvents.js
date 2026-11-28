@@ -10,10 +10,8 @@ import { redo, undo } from '#utils/editor/session.js';
 import { finishEdit } from '#utils/inspector/gesture.js';
 import { closeWebEditor, selectStep, webClipOf, webEditorState } from './editorState.js';
 import { editStep, retimeBlock, setField } from './edits.js';
-import { addAndShow } from './editorPicks.js';
 import { cancelRecording, recordClip } from './recording.js';
 import { resetSnapshots, showSnapshot } from './snapshot.js';
-import { blankStep } from './stepRows.js';
 
 /** @typedef {import('./editorView.js').WebEditorHost & HTMLElement} Host */
 
@@ -45,12 +43,6 @@ export function handleSelect(_host, event) {
 export function handleStep(_host, event) {
   const { action, index, to } = event.detail;
   editStep(clipId(), action, index, to);
-}
-
-/** A kind was chosen in the "add a step" menu. @param {Host} _host @param {CustomEvent} event */
-export function handleStepAdd(_host, event) {
-  const step = blankStep(event.detail.do);
-  if (step) addAndShow(step, true);
 }
 
 /** The end of a block of the score strip moved. @param {Host} _host @param {CustomEvent} event */

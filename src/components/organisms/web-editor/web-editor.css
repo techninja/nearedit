@@ -65,18 +65,12 @@ web-editor {
     min-height: 0;
   }
 
+  /* A `.chip` floating over the page while its picture is being made. */
   & .web-editor-busy {
     position: absolute;
     top: var(--space-sm);
     left: var(--space-sm);
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: 2px var(--space-sm);
-    border-radius: 999px;
-    background: var(--color-surface);
     box-shadow: var(--shadow-md);
-    font-size: var(--text-xs);
   }
 
   & .web-editor-steps {
@@ -140,6 +134,11 @@ web-editor {
   web-editor .web-editor-page,
   web-editor .web-editor-steps {
     flex: 1;
+  }
+
+  /* The element list goes under the page map, not beside it. */
+  web-editor .web-editor-view {
+    flex-direction: column;
   }
 
   web-editor [data-tab='steps'] :is(.web-editor-top, .web-editor-page, .web-editor-timing),

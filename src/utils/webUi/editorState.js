@@ -22,8 +22,9 @@ import { isWebClip } from '#utils/web/index.js';
  *   is before the selected step, or plays the recording
  * @property {string} picking - The field of the selected step the next
  *   press on the page view fills in; '' when it adds a step instead
- * @property {{ x: number, y: number, pick: import('./pickActions.js').Pick }|null} menu -
- *   The menu of what was pressed on the page view
+ * @property {{ x: number, y: number, pick: import('./pickActions.js').Pick|null }|null} menu -
+ *   The open menu: of what was pressed on the page view, or (no `pick`)
+ *   of the step kinds that can be added
  */
 
 /** @type {WebEditorState} */

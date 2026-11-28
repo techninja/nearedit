@@ -3,7 +3,7 @@
  * or the arrow keys, reordering by drag or Alt+arrow, and the buttons of a
  * row. Everything leaves as a bubbling event: `web-select` (`{ index }`),
  * `web-step` (`{ action: 'remove'|'duplicate'|'move', index, to? }`) and
- * `web-step-add` (`{ do }`).
+ * `web-step-menu` (`{ x, y }`: where the menu of step kinds belongs).
  * @module utils/webUi/stepListEvents
  */
 
@@ -65,6 +65,7 @@ export function handleKeys(host, event) {
     const to = indexAfterKey(index, event.key, count);
     if (to === null) return;
     used();
+    refocus(host);
     return send(host, 'web-step', { action: 'move', index, to });
   }
   const to = indexAfterKey(index, event.key, count + 1);
@@ -73,21 +74,28 @@ export function handleKeys(host, event) {
     return send(host, 'web-select', { index: to });
   }
   if (!step || host.locked) return;
-  if (event.key === 'Delete' || event.key === 'Backspace') {
-    used();
-    send(host, 'web-step', { action: 'remove', index });
-  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') {
-    used();
-    send(host, 'web-step', { action: 'duplicate', index });
-  }
+  const copy = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd';
+  if (!copy && event.key !== 'Delete' && event.key !== 'Backspace') return;
+  used();
+  refocus(host);
+  send(host, 'web-step', { action: copy ? 'duplicate' : 'remove', index });
 }
 
-/** A kind was chosen in the "add a step" menu. @param {Host} host @param {Event} event */
+/** "Add a step": ask for the menu of step kinds, under the button. @param {Host} host @param {Event} event */
 export function handleAdd(host, event) {
-  const select = /** @type {HTMLSelectElement} */ (event.target);
-  event.stopPropagation();
-  if (select.value) send(host, 'web-step-add', { do: select.value });
-  select.value = '';
+  const box = /** @type {HTMLElement} */ (event.currentTarget).getBoundingClientRect();
+  send(host, 'web-step-menu', { x: box.left, y: box.bottom });
+}
+
+/**
+ * After a key moved, copied or removed a step, the focus goes to the row
+ * that is selected now (the row it was on may be gone).
+ * @param {Host} host
+ */
+function refocus(host) {
+  const again = () =>
+    /** @type {HTMLElement|null} */ (host.querySelector('[aria-selected="true"]'))?.focus();
+  requestAnimationFrame(() => requestAnimationFrame(again));
 }
 
 /** @param {Host} host @param {DragEvent} event */

@@ -6,11 +6,15 @@
  */
 
 import { html } from 'hybrids';
+import { refreshPlan } from '#utils/ui/exportController.js';
 import { isRecording, webClipsToRecord } from './clipStatus.js';
 import { recordAllStale } from './recording.js';
 
-/** Record every web clip that needs it; the note follows their progress. */
-const handleRecordAll = () => void recordAllStale();
+/**
+ * Record every web clip that needs it; the note follows their progress.
+ * What will be rendered is then asked for again: it has just changed.
+ */
+const handleRecordAll = () => void recordAllStale().then(refreshPlan);
 
 /**
  * @param {any} doc - The open document
@@ -35,13 +39,15 @@ export function webExportNote(doc, recordings) {
       ${failed ? html`<span class="error-message">${failed}</span>` : html``}
       ${active.length
         ? html`<span><span class="spinner"></span> Recording ${active.length} of them…</span>`
-        : html`<button
-            type="button"
-            class="btn btn-secondary export-dialog-record"
-            onclick="${handleRecordAll}"
-          >
-            <app-icon name="record" size="sm"></app-icon> Record them first
-          </button>`}
+        : html`<span>
+            <button
+              type="button"
+              class="btn btn-secondary export-dialog-record"
+              onclick="${handleRecordAll}"
+            >
+              <app-icon name="record" size="sm"></app-icon> Record them first
+            </button>
+          </span>`}
     </div>
   </div>`;
 }

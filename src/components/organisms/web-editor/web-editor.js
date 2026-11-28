@@ -64,7 +64,7 @@ function dialog(host) {
       onfield-change="${on.handleFieldChange}"
       onweb-select="${on.handleSelect}"
       onweb-step="${on.handleStep}"
-      onweb-step-add="${on.handleStepAdd}"
+      onweb-step-menu="${picks.handleStepMenu}"
       onweb-retime="${on.handleRetime}"
       onweb-refresh="${on.handleRefresh}"
       onweb-pick="${picks.handlePick}"

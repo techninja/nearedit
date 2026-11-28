@@ -8,6 +8,7 @@
  */
 
 import { dispatch } from 'hybrids';
+import { arrowFocus } from '#utils/ui/focus.js';
 import { mapLayout } from './pageMap.js';
 
 /**
@@ -73,6 +74,19 @@ export function handleMap(host, event) {
   if (!host.snapshot) return;
   const screen = { x: event.clientX, y: event.clientY };
   announce(host, null, pagePoint(area, host.snapshot, event), screen);
+}
+
+/**
+ * The map is one stop for the Tab key: the arrow keys (and Home, End) walk
+ * its outlines in the order of the page.
+ * @param {Host} host
+ * @param {KeyboardEvent} event
+ */
+export function handleOutlineKeys(host, event) {
+  const outlines = /** @type {HTMLElement[]} */ ([...host.querySelectorAll('.web-page-map-el')]);
+  outlines.sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
+  const moved = arrowFocus(outlines, event) || arrowFocus(outlines, event, { horizontal: true });
+  if (moved) event.stopPropagation();
 }
 
 /**

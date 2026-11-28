@@ -103,7 +103,7 @@ export function pageArea({ state, snap, listOpen, seek }, { clip, recipe, select
               ? html`<web-element-list snapshot="${snap.snapshot}"></web-element-list>`
               : html``}
             ${snap.busy
-              ? html`<div class="web-editor-busy" role="status">
+              ? html`<div class="chip web-editor-busy" role="status">
                   <span class="spinner"></span>
                   ${snap.snapshot ? 'Playing the steps up to here…' : 'Loading the page…'}
                 </div>`
