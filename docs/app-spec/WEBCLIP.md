@@ -377,6 +377,8 @@ nearedit record recipe.json -o demo.mp4          # one recipe → demo.mp4 and d
 nearedit render timeline.json                    # records its web clips first, then renders
 ```
 
+A recording is looked for by its key beside the document and in every
+`--media` folder (a project folder keeps its recordings the same way).
 `render` and `frame` record any web clip whose recording is missing into
 `.nearedit/web/` beside the document; the document itself is not rewritten.
 All three take `--allow host[:port]` for private addresses, like
@@ -399,3 +401,8 @@ and lists unrecorded clips.
   to be identical to the bit; the recording that exists is the one used.
 - A recipe is replayed from a fresh profile every time: it must reach the
   state it shows by itself (or through `storage`).
+- A page is visited more than once — for every picture in the editor, for
+  the director's look at it, and for the recording. Whatever a step
+  changes **on the site's server** (a record created, a setting saved)
+  stays changed for the next visit: demo an app with data that can be
+  reset, or with steps that give the same result every time.

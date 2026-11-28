@@ -36,19 +36,21 @@ export function recipeFindings(tracks) {
 }
 
 /**
- * Point every web clip at its recording beside the document — or, when
- * there is none yet, leave it a placeholder and say so.
+ * Point every web clip at its recording — beside the document or in one of
+ * the `--media` folders (a project folder keeps its recordings the same
+ * way) — or, when there is none yet, leave it a placeholder and say so.
  * @param {any} edl - Normalised
  * @param {string} dir - The document's folder
+ * @param {string[]} [folders] - The `--media` folders
  * @returns {{ edl: any, unrecorded: Unrecorded[] }}
  */
-export function attachRecordings(edl, dir) {
+export function attachRecordings(edl, dir, folders = []) {
   /** @type {Unrecorded[]} */
   const unrecorded = [];
   let out = edl;
   for (const { clip } of webClips(edl)) {
     const key = recipeKey(clip.web.recipe, edl.fps);
-    const recording = readRecording(dir, key);
+    const recording = [dir, ...folders].map((at) => readRecording(at, key)).find(Boolean);
     if (recording) {
       out = setWebRecording(out, clip.clipId, recording);
       continue;

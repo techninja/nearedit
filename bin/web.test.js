@@ -231,6 +231,17 @@ describe('nearedit command line: web clips', { skip: kit.SKIP }, () => {
     const valid = await cli('validate', file);
     assert.match(valid.out, /page\.json: valid — 640x360 at 30 fps, 1\.1 s, 2 clips\n$/);
 
+    // A document kept elsewhere finds the recording in a --media folder (a project's).
+    mkdirSync(join(kit.SCRATCH, 'away'), { recursive: true });
+    const away = join(kit.SCRATCH, 'away', 'page.json');
+    writeFileSync(away, readFileSync(file));
+    assert.match((await cli('validate', away)).out, /web clip not recorded yet/);
+    const found = await cli('validate', away, '--media', project);
+    assert.match(found.out, /page\.json: valid — 640x360 at 30 fps, 1\.1 s, 2 clips\n$/);
+    const still = await cli('frame', away, '--time', '1', '--media', project);
+    assert.equal(still.code, 0, still.err);
+    assert.doesNotMatch(still.err, /recording/, 'no browser: the recording was found');
+
     // A changed recipe is another recording; the old one stays.
     const changed = save(
       'page.json',

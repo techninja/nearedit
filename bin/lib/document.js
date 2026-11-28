@@ -78,7 +78,7 @@ export function loadDocument(path, options = {}) {
     return realpathSync(folder);
   });
   // A web clip's footage is its recording beside the document, when there is one.
-  const { edl: normal, unrecorded } = attachRecordings(normalizeEdl(raw), dir);
+  const { edl: normal, unrecorded } = attachRecordings(normalizeEdl(raw), dir, folders);
   /** @type {Finding[]} */
   const findings = [...repairFindings(raw, normal), ...catalogFindings(normal)];
   findings.push(...recipeFindings(tracks), ...unrecordedFindings(normal, unrecorded));
