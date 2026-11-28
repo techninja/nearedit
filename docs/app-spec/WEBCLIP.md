@@ -145,11 +145,23 @@ time). Timers, `requestAnimationFrame`, CSS transitions and animations all
 move one frame per frame, so a hover fades in over the right number of
 frames however long the capture takes. While a page is loading, or a click
 has started a request, the clock waits for the network: the recording shows
-a site that answers instantly. A request that never finishes holds the
-clock for at most 5 real seconds.
+a site that answers instantly. When nothing has moved on the network for 5
+real seconds the clock goes on without the request (a stream that never
+ends is given up on for good). After every load the page gets one second of
+its own time, unrecorded, to settle.
 
-Measured on 4 shared cores (Chrome 158): about 10 ms per frame at 1280 ×
-720, 20 ms at 1920 × 1080, 30 ms at 1280 × 720 × 2 — faster than real time.
+The pointer is not drawn until the first step that uses it; it then enters
+from below the picture. It becomes a hand where the page asks for one, and
+stays above modal dialogs. A target is brought into view by scrolling
+whatever scrolls it — the page or a panel inside it. `hide` stays applied
+when the page changes.
+
+The recording is H.264 (`veryfast`, CRF 16, a key frame every half second
+so it scrubs well): small text shows no visible difference from a lossless
+frame. Measured on 4 shared cores (Chrome 158), per frame: about 10 ms at
+1280 × 720, 20 ms at 1920 × 1080 and 34 ms at 1280 × 720 × 2 for a plain
+page; about twice that for a page with gradients and shadows — still close
+to real time. A product page at 1280 × 720 × 2 comes to about 2 Mbit/s.
 
 **The track** is what happened, for the editor and the director:
 
@@ -157,7 +169,8 @@ Measured on 4 shared cores (Chrome 158): about 10 ms per frame at 1280 ×
 { version: 1, key, url, title, fps, duration, viewport, scale, width, height,
   steps: [{ index, do, start, actionEnd, end, note, target, missing: false,
             rect: { x, y, width, height },   // of the target, viewport CSS px, at the action
-            point: { x, y } }],              // where the cursor went
+            point: { x, y },                 // where the cursor went
+            zoom }],                         // a camera step's own zoom
   cursor: [[t, x, y], …],                    // only when it moved
   scroll: [[t, y], …],
   warnings: [] }
@@ -222,8 +235,8 @@ clip is neither cropped nor rotated.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
-| GET | `/web/status` | `{ available, browser: { path, version }, reason, allow: [] }` |
-| POST | `/web/snapshot` | `{ recipe, until? }` → the page after the first `until` steps (default: all): `{ url, title, viewport, page: { width, height }, scrollY, image, elements }` |
+| GET | `/web/status` | `{ available, browser: { path, version }, reason, allow: [] }`; `?fresh` looks again |
+| POST | `/web/snapshot` | `{ recipe, until?, projectId? }` → the page after the first `until` steps (default: all): `{ url, title, viewport, page: { width, height }, scrollY, image, elements, warnings }` |
 | POST | `/web/record` | `{ projectId, recipe, fps? }` → `202 { jobId }`; job type `web`, result `{ file, key, duration, fps, width, height, title, track, cached }` |
 | GET | `/web/track?projectId=&key=` | The track of a recording |
 
@@ -233,11 +246,19 @@ form controls, headings, images and landmark sections, at most 300:
 `rect` in page CSS pixels and `target` a string that finds exactly that
 element. `image` is a PNG data URL of the viewport.
 
-A browser is found in this order: `WEB_CAPTURE_BROWSER`, the copy
-`npm run install-browser` puts in the data folder, then Playwright's and
-Puppeteer's caches. It must be **chrome-headless-shell**: ordinary Chrome
+A browser is found in this order: `WEB_CAPTURE_BROWSER` (when set, only
+that one is tried), the copy `npm run install-browser` puts in the data
+folder, then Playwright's and Puppeteer's caches. It must be **chrome-headless-shell**: ordinary Chrome
 has no begin-frame control. Without one, `/web/status` says so and how to
 get it; nothing else in NearEdit is affected.
+
+```bash
+npm run install-browser
+```
+
+In Docker, build the image with `--build-arg WEB_CAPTURE=1` to include the
+browser; there it runs without Chrome's own sandbox and relies on the
+container.
 
 ### What the browser may load
 
@@ -247,9 +268,16 @@ the server can reach. So:
 - Only `http:` and `https:` pages. Never `file:`.
 - **Private addresses are refused** — loopback, RFC 1918, link-local
   (including cloud metadata addresses), CGNAT, unique-local IPv6 — for the
-  page itself and for everything it loads, checked on every request after
-  resolving the name, and again against the address that actually answered.
-  `WEB_CAPTURE_ALLOW` lists exceptions: `localhost:5173,*.staging.example.com`.
+  page itself and for everything it loads: frames, images, requests, web
+  sockets, workers. `WEB_CAPTURE_ALLOW` lists exceptions:
+  `localhost:5173,*.staging.example.com`.
+- The browser's only way out is a small proxy inside NearEdit
+  (`src/api/web/proxy.js`): it resolves each name itself, checks the
+  address, and connects to the address it checked, so a name cannot answer
+  differently a moment later. The browser cannot resolve names or open
+  connections of its own. The price: the system's proxy settings are not
+  used, so a site reachable only through a corporate proxy cannot be
+  recorded.
 - A fresh, empty browser profile for every recording; downloads, extra
   permissions and service workers off; the Chrome sandbox on unless
   `WEB_CAPTURE_NO_SANDBOX=1`.
@@ -259,12 +287,15 @@ the server can reach. So:
 ## Command line
 
 ```bash
-nearedit record recipe.json -o demo.mp4          # one recipe → a recording and its track
+nearedit record recipe.json -o demo.mp4          # one recipe → demo.mp4 and demo.track.json
 nearedit render timeline.json                    # records its web clips first, then renders
 ```
 
 `render` and `frame` record any web clip whose recording is missing into
-`.nearedit/web/` beside the document.
+`.nearedit/web/` beside the document; the document itself is not rewritten.
+All three take `--allow host[:port]` for private addresses, like
+`WEB_CAPTURE_ALLOW`. `validate` reports recipe problems with their place
+and lists unrecorded clips.
 
 ## Limits
 
@@ -273,7 +304,11 @@ nearedit render timeline.json                    # records its web clips first, 
 - `<video>`, WebGL and `<canvas>` animations driven by their own clocks
   are not stepped with the page and may stutter or freeze. No sound.
 - Native pop-ups (a `<select>` list, a file chooser, an alert) are not
-  drawn; `select` sets the value directly, alerts are dismissed.
+  drawn; `select` sets the value directly, alerts are dismissed. A link
+  that opens a new tab is not followed. Targets inside frames and shadow
+  roots are not found. Pages asking for an HTTP password cannot be recorded.
+- Verified on Linux against local pages only: public sites, macOS, Windows
+  and the sandboxed launch have not been exercised.
 - Two recordings of one recipe show the same thing but are not guaranteed
   to be identical to the bit; the recording that exists is the one used.
 - A recipe is replayed from a fresh profile every time: it must reach the
