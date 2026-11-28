@@ -9,6 +9,7 @@
 import { elementBounds } from '#utils/brandUi/elementBounds.js';
 import { setFont } from '#utils/compose/text/draw.js';
 import { textStyle } from '#utils/compose/text/style.js';
+import { shownSize } from '#utils/cutout/made.js';
 import { resolveClip } from '#utils/edl/animate.js';
 import { parseResolution } from '#utils/edl/factory.js';
 import { getMediaItem } from '#utils/media/library.js';
@@ -132,9 +133,11 @@ export function layerBox(edl, layer, time, footageSize) {
   if (kind === 'generator') return clipBox(edl, clip, time);
   // A brand element moves and scales as one layer; its box goes around what it shows.
   if (kind === 'element') return clipBox(edl, clip, time, null, elementRect(edl, clip.element));
+  // A clip drawn through its matte plays a frame twice as wide as its picture: the left half is it.
+  const playing = kind === 'image' ? null : footageSize?.(clip);
   const size =
     kind === 'image'
       ? stillSize(clip.sourceFile)
-      : footageSize?.(clip) || listedSize(clip.sourceFile);
+      : (playing && shownSize(clip, playing)) || listedSize(clip.sourceFile);
   return size ? clipBox(edl, clip, time, size) : null;
 }

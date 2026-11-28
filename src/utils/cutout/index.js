@@ -36,7 +36,15 @@ export {
   hasCutout,
   normalizeCutout,
 } from './fields.js';
-export { MADE_FIELDS, cleanMade, cutoutOf, cutoutShown, cutoutState, isPacked } from './made.js';
+export {
+  MADE_FIELDS,
+  cleanMade,
+  cutoutOf,
+  cutoutShown,
+  cutoutState,
+  isPacked,
+  shownSize,
+} from './made.js';
 export { CUTOUT_MARGIN, CUTOUT_MAX_SECONDS, cutoutRanges, isCutoutClip } from './ranges.js';
 export { CUTOUT_VERSION, KEY_LENGTH, KEY_PATTERN, cutoutKey, cutoutSource } from './key.js';
 export { coversClip, cutoutFps, cutoutTime, frameRange, frameTolerance } from './time.js';

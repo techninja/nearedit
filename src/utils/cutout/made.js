@@ -131,3 +131,17 @@ export function isPacked(made, size) {
   if (!(size.width > 0 && size.height > 0 && made.width > 0 && made.height > 0)) return false;
   return size.width * made.height > PACKED * made.width * size.height;
 }
+
+/**
+ * The size of the picture in a frame a host shows for a clip: the frame's
+ * own — or, when the frame is the packed frame of the clip's cutout, its
+ * left half. What the compositor places, and what a selection box goes round.
+ * @param {any} clip
+ * @param {{ width: number, height: number }} size - Of the frame its player holds
+ * @returns {{ width: number, height: number }}
+ */
+export function shownSize(clip, size) {
+  const made = cutoutOf(clip);
+  if (!made || !isPacked(made, size)) return size;
+  return { width: Math.floor(size.width / 2), height: size.height };
+}

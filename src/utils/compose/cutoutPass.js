@@ -18,6 +18,7 @@
  */
 
 import { normalizeCutout } from '#utils/cutout/fields.js';
+import { shownSize } from '#utils/cutout/made.js';
 import { placeSource } from '#utils/edl/geometry.js';
 import { runModule } from './applyEffects.js';
 import { gaussianBlur } from './effects/blur.js';
@@ -28,7 +29,7 @@ import { drawPlaced } from './place.js';
 /** The matte model works on a picture reduced to this on its long side. */
 const MATTE_GRID = 512;
 /** The deviation of a matte's edge as made, in pixels of the model's grid (measured on real mattes). */
-const NATIVE = 0.7;
+const NATIVE = 0.8;
 /** The matte is read at a reduced size while the edge to draw stays this soft there, pixels. */
 const FINE_ENOUGH = 0.5;
 const MAX_REDUCTION = 4;
@@ -45,7 +46,7 @@ const MAX_REDUCTION = 4;
  */
 export function drawCutout(ctx, packed, size, clip, t, alpha, run) {
   const { frame, compose } = run;
-  const half = Math.floor(size.width / 2);
+  const half = shownSize(clip, size).width;
   const p = placeSource(half, size.height, frame.outWidth, frame.outHeight, t);
   if (!(p.dw > 0 && p.dh > 0)) return;
   // Canvas pixels per pixel handed over, along the axis drawn larger: the picture
