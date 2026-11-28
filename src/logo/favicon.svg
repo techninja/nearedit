@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The mark for 16–32 pixels: stem, clips and gaps sit on the pixel grid at 16 and at 32. -->
+  <rect width="32" height="32" rx="7" fill="#0f172a"/>
+  <rect x="12" y="8" width="12" height="4" rx="1" fill="#3b82f6"/>
+  <rect x="12" y="14" width="8" height="4" rx="1" fill="#f59e0b"/>
+  <rect x="12" y="20" width="14" height="4" rx="1" fill="#10b981"/>
+  <path d="M8 4H16V6L14 8V26A2 2 0 0 1 10 26V8L8 6Z" fill="#ef4444"/>
+</svg>

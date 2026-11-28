@@ -6,6 +6,7 @@
 @import '../components/atoms/app-button/app-button.css';
 @import '../components/atoms/app-badge/app-badge.css';
 @import '../components/atoms/app-icon/app-icon.css';
+@import '../components/atoms/app-logo/app-logo.css';
 @import '../components/atoms/theme-toggle/theme-toggle.css';
 @import '../components/atoms/transport-controls/transport-controls.css';
 

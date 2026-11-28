@@ -128,18 +128,6 @@ editor-view {
   & .editor-view-grip {
     display: none;
   }
-
-  & .editor-view-veil {
-    position: absolute;
-    inset: var(--header-h) 0 0;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-sm);
-    background: color-mix(in srgb, var(--color-bg) 82%, transparent);
-    color: var(--color-text-muted);
-  }
 }
 
 @container (width < 27rem) {

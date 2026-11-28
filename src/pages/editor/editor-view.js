@@ -11,6 +11,7 @@
 import { html, define, router, store } from 'hybrids';
 import AppState, { setAppState } from '#store/AppState.js';
 import { TABS, dockPanels, failureTemplate } from '#pages/editor/editor-parts.js';
+import { veilTemplate } from '#pages/editor/editor-veil.js';
 import { handleSplitEvent } from '#utils/ui/editorLayout.js';
 import { editorPageState, enterEditor, leaveEditor, setExportOpen } from '#utils/ui/editorPage.js';
 import { dockTabOf, layoutVars, sheetAfterTap } from '#utils/ui/layout.js';
@@ -119,11 +120,7 @@ function layoutTemplate({ layout, page }) {
         panel-prefix="editor-dock-"
         ontabchange="${handleBarTab}"
       ></app-tabs>
-      ${page.status === 'ready'
-        ? html``
-        : html`<div class="editor-view-veil" role="status">
-            <span class="spinner"></span> Opening…
-          </div>`}
+      ${page.status === 'ready' ? html`` : veilTemplate()}
     </div>
     <export-dialog open="${page.exportOpen}" onclose="${handleExportClose}"></export-dialog>
   `;

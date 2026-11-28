@@ -1,0 +1,79 @@
+/* The logo. Its colours are brand constants, not theme tokens; only the
+   wordmark's letters follow the text colour (currentColor). */
+app-logo {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.app-logo {
+  --app-logo-h: 1.75rem;
+
+  display: inline-flex;
+}
+
+.app-logo-sm {
+  --app-logo-h: 1.25rem;
+}
+
+.app-logo-lg {
+  --app-logo-h: 3rem;
+}
+
+.app-logo-xl {
+  --app-logo-h: 5rem;
+}
+
+.app-logo-svg {
+  display: block;
+  width: auto;
+  height: var(--app-logo-h);
+  overflow: visible;
+}
+
+/* Builds itself once, in about a second: the playhead glides in and
+   stops, the three clips slide out from behind it one after another, and
+   the letters settle into place, nearest the E first. Lengths are in the
+   drawing's own units (cap height 100). */
+.app-logo-animated .app-logo-playhead {
+  animation: app-logo-arrive 360ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.app-logo-animated .app-logo-clip {
+  animation: app-logo-slide 400ms cubic-bezier(0.3, 1.35, 0.6, 1) both;
+  animation-delay: calc(260ms + var(--i) * 80ms);
+}
+
+.app-logo-animated .app-logo-letter {
+  animation: app-logo-settle 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(420ms + var(--i) * 45ms);
+}
+
+@keyframes app-logo-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(-64px);
+  }
+}
+
+/* A clip starts wholly behind the playhead (2 more than its length, so
+   not even its soft edge shows) and may pass its place a little. */
+@keyframes app-logo-slide {
+  from {
+    transform: translateX(calc(-1 * var(--w) - 2px));
+  }
+}
+
+@keyframes app-logo-settle {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-logo-animated .app-logo-playhead,
+  .app-logo-animated .app-logo-clip,
+  .app-logo-animated .app-logo-letter {
+    animation: none;
+  }
+}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 176 176" role="img" aria-label="NearEdit">
+  <title>NearEdit</title>
+  <!-- The mark on the navy tile. For 16–32 pixels use favicon.svg, which is drawn on the pixel grid. -->
+  <rect width="176" height="176" rx="39" fill="#0f172a"/>
+  <g transform="translate(60 41)">
+    <rect x="7" y="0" width="57" height="22" rx="6" fill="#3b82f6"/>
+    <rect x="7" y="39" width="41" height="22" rx="6" fill="#f59e0b"/>
+    <rect x="7" y="78" width="63" height="22" rx="6" fill="#10b981"/>
+    <path d="M-6 -19H20Q22 -19 22 -17V-12L14 -4V102A7 7 0 0 1 0 102V-4L-8 -12V-17Q-8 -19 -6 -19Z" fill="#ef4444"/>
+  </g>
+</svg>

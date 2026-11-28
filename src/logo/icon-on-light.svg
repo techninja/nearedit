@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 224" role="img" aria-label="NearEdit">
+  <title>NearEdit</title>
+  <!-- Icon for light grounds: the NE monogram on a paper tile with a hairline edge. -->
+  <rect x="1" y="1" width="222" height="222" rx="49" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+  <!-- The monogram: N, whose right stem is the playhead holding the E's three clips. -->
+  <g transform="translate(51 64)">
+    <path d="M0 0H23L73 100H50L21 42V100H0Z" fill="#0f172a"/>
+    <rect x="66" y="0" width="57" height="22" rx="6" fill="#3b82f6"/>
+    <rect x="66" y="39" width="41" height="22" rx="6" fill="#f59e0b"/>
+    <rect x="66" y="78" width="63" height="22" rx="6" fill="#10b981"/>
+    <path d="M53 -19H79Q81 -19 81 -17V-12L73 -4V102A7 7 0 0 1 59 102V-4L51 -12V-17Q51 -19 53 -19Z" fill="#ef4444"/>
+  </g>
+</svg>
