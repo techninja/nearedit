@@ -5,7 +5,6 @@
  * @module utils/musicUi/songSvg
  */
 
-import { DRUM_NAMES } from '#utils/music/catalog/drums.js';
 import { musicSeconds } from '#utils/music/timing.js';
 import { songPicture } from '#utils/timeline/clipMarksMusic.js';
 
@@ -22,13 +21,13 @@ const at = (value) => String(Math.round(value * 10) / 10);
  * @returns {string} An `<svg>` element, drawn in `currentColor`
  */
 export function songSvg(song) {
-  const { hits, notes, low, high } = songPicture(song);
+  const { hits, rows, notes, low, high } = songPicture(song);
   const seconds = musicSeconds(song) || 1;
   const x = (/** @type {number} */ time) => (time / seconds) * WIDTH;
-  const drums = hits.length ? (notes.length ? HEIGHT * DRUM_SHARE : HEIGHT) : 0;
-  const row = drums / DRUM_NAMES.length;
+  const row = Math.min(7, (notes.length ? HEIGHT * DRUM_SHARE : HEIGHT) / Math.max(1, rows));
+  const drums = rows * row;
   const span = Math.max(11, high - low);
-  const room = HEIGHT - drums - 3;
+  const room = HEIGHT - drums - (drums ? 3 : 0);
   const marks = [
     ...notes.map(([time, length, pitch]) => {
       const y = 1 + (1 - (pitch - low) / span) * (room - 2);
@@ -37,7 +36,7 @@ export function songSvg(song) {
     }),
     ...hits.map(([time, drum]) => {
       const y = HEIGHT - drums + drum * row;
-      return `<rect x="${at(x(time))}" y="${at(y)}" width="2" height="${at(Math.max(1.6, row - 0.4))}"/>`;
+      return `<rect x="${at(x(time))}" y="${at(y)}" width="2.4" height="${at(Math.max(1.6, row - 1.5))}"/>`;
     }),
   ];
   return `<svg viewBox="0 0 ${WIDTH} ${HEIGHT}" preserveAspectRatio="none" fill="currentColor" aria-hidden="true">${marks.join('')}</svg>`;

@@ -17,3 +17,17 @@
 @import '../components/molecules/web-record-bar/web-record-bar.css';
 @import '../components/molecules/web-playback/web-playback.css';
 @import '../components/organisms/web-editor/web-editor.css';
+
+/* Music clips: the Create tab's section, the inspector group and the music editor. */
+@import '../components/atoms/music-playhead/music-playhead.css';
+@import '../components/atoms/music-bar-strip/music-bar-strip.css';
+@import '../components/atoms/music-keys/music-keys.css';
+@import '../components/molecules/music-create/music-create.css';
+@import '../components/molecules/music-inspector/music-inspector.css';
+@import '../components/molecules/music-topbar/music-topbar.css';
+@import '../components/molecules/music-part-list/music-part-list.css';
+@import '../components/molecules/music-drum-grid/music-drum-grid.css';
+@import '../components/molecules/music-piano-roll/music-piano-roll.css';
+@import '../components/molecules/music-write/music-write.css';
+@import '../components/molecules/music-sound/music-sound.css';
+@import '../components/organisms/music-editor/music-editor.css';

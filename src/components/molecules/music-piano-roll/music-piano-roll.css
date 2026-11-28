@@ -1,0 +1,138 @@
+music-piano-roll {
+  --roll-out: color-mix(in srgb, var(--color-text) 8%, transparent);
+  --roll-line: color-mix(in srgb, var(--color-text) 10%, transparent);
+
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-height: 0;
+
+  & .music-piano-roll-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+
+    & select {
+      width: auto;
+    }
+
+    & .btn {
+      height: var(--control-h);
+      padding: 0 var(--space-sm);
+      font-size: var(--text-xs);
+    }
+  }
+
+  & .music-piano-roll-velocity {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+
+    & input {
+      width: 5.5rem;
+    }
+  }
+
+  & .music-piano-roll-velocity,
+  & .music-piano-roll-count,
+  & .music-piano-roll-hint {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.6875rem;
+  }
+
+  & .music-piano-roll-scroll {
+    flex: 1;
+    min-height: 9rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: auto;
+  }
+
+  & .music-piano-roll-sheet {
+    display: flex;
+    width: max-content;
+  }
+
+  /* The keyboard stays put while the notes scroll under it. */
+  & music-keys {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+  }
+
+  /* Bar, beat and grid lines; row lines; the rows outside the scale shaded. */
+  & .music-piano-roll-area {
+    position: relative;
+    flex: none;
+    background-image:
+      var(--roll-lines),
+      repeating-linear-gradient(to bottom, transparent 0 11px, var(--roll-line) 11px 12px),
+      var(--roll-bands);
+    touch-action: pan-x pan-y;
+    cursor: crosshair;
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+  }
+
+  & .music-piano-roll-note {
+    position: absolute;
+    height: 11px;
+    border: 1px solid color-mix(in srgb, var(--color-clip-music) 70%, #000);
+    border-radius: 2px;
+    background: var(--color-clip-music);
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+
+    &[data-selected='true'] {
+      z-index: 1;
+      border-color: var(--color-selection);
+      box-shadow: 0 0 0 1px var(--color-selection);
+    }
+
+    /* How hard it is played: a bar along its foot. */
+    & i {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: rgb(255 255 255 / 75%);
+    }
+  }
+
+  & .music-piano-roll-grip {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 6px;
+    cursor: ew-resize;
+  }
+
+  & .music-piano-roll-cursor,
+  & .music-piano-roll-box {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  & .music-piano-roll-cursor {
+    display: none;
+    height: 11px;
+    border: 1px dashed var(--color-text);
+  }
+
+  & .music-piano-roll-area:focus-visible .music-piano-roll-cursor {
+    display: block;
+  }
+
+  & .music-piano-roll-box {
+    border: 1px solid var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  }
+}

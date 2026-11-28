@@ -18,6 +18,7 @@ import { select } from '#utils/musicUi/fieldParts.js';
 import * as on from '#utils/musicUi/gridEvents.js';
 import { drumRows, stepLabel, stepPlace } from '#utils/musicUi/gridModel.js';
 import { laneTools } from '#utils/musicUi/gridParts.js';
+import * as tools from '#utils/musicUi/gridTools.js';
 import '#atoms/app-icon/app-icon.js';
 import '#atoms/music-playhead/music-playhead.js';
 
@@ -32,7 +33,7 @@ import '#atoms/music-playhead/music-playhead.js';
 function drumRow(host, row, first) {
   const { shown: part, beats, lane, step: focused, locked } = host;
   const current = lane ? lane === row.name : first;
-  return html`<div class="music-drum-grid-row" role="row" data-current="${current}">
+  return html`<div class="music-drum-grid-row" role="row" data-current="${String(current)}">
     <button
       type="button"
       class="music-drum-grid-name"
@@ -94,7 +95,7 @@ export default define({
             aria-label="Replace the pattern with a beat"
             title="Replace the pattern with a named beat"
             disabled="${locked}"
-            onchange="${on.handleBeat}"
+            onchange="${tools.handleBeat}"
           >
             <option value="">Beat…</option>
             ${beatChoices().map(
@@ -109,7 +110,7 @@ export default define({
             class="btn btn-secondary"
             title="Write the beat's fill into the last bar"
             disabled="${locked}"
-            onclick="${on.handleFill}"
+            onclick="${tools.handleFill}"
           >
             Fill
           </button>
@@ -128,7 +129,11 @@ export default define({
             </div>
           </div>
         </div>
-        <button type="button" class="btn btn-ghost music-drum-grid-more" onclick="${on.handleMore}">
+        <button
+          type="button"
+          class="btn btn-ghost music-drum-grid-more"
+          onclick="${tools.handleMore}"
+        >
           ${all ? 'Only the drums that play' : `More drums (${more})`}
         </button>
       `;

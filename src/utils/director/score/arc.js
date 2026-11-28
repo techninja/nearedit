@@ -80,16 +80,33 @@ export function sectionNames(count) {
 }
 
 /**
- * The level of every section of an arc before the energy parameter: its
- * kind's, and 1 for the last of several lifts — the peak.
- * @param {string[]} names
- * @returns {number[]}
+ * The arc of a score with a number of sections: their names and levels
+ * before the energy parameter. The peak — a lift at level 1 when there are
+ * several — is the last lift of the usual arc, unless sections begin on
+ * markers: then the one nearest to it is the peak, so that the music lifts
+ * where the editor marked the picture, with a quieter section before it.
+ * @param {number} count
+ * @param {number[]} [marked] - The sections that begin on a marker
+ * @returns {{ names: string[], levels: number[] }}
  */
-export function arcLevels(names) {
-  const peak = names.lastIndexOf('lift');
-  return names.map((name, i) =>
-    i === peak && names.indexOf('lift') !== peak ? 1 : (SECTION_ENERGY[name] ?? 0.55),
-  );
+export function arcOf(count, marked = []) {
+  const names = sectionNames(count);
+  const usual = names.lastIndexOf('lift');
+  const anchors = marked.filter((i) => i > 0 && i < count);
+  let peak = usual;
+  if (anchors.length && !anchors.includes(usual)) {
+    const nearer = (/** @type {number} */ best, /** @type {number} */ i) =>
+      Math.abs(i - usual) <= Math.abs(best - usual) ? i : best;
+    peak = anchors.reduce(nearer);
+    names[peak] = 'lift';
+    const before = peak - 1;
+    if (before > 0 && names[before] === 'lift') {
+      names[before] = names[before - 1] === 'break' ? 'verse' : 'break';
+    }
+  }
+  const lifts = names.filter((name) => name === 'lift').length;
+  const levels = names.map((name, i) => (i === peak && lifts > 1 ? 1 : SECTION_ENERGY[name]));
+  return { names, levels };
 }
 
 /**

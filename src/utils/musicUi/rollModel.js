@@ -109,7 +109,7 @@ export function rollKeys(song) {
  * A background that shades the rows outside the song's scale: one octave
  * of bands, repeated up the roll.
  * @param {{ key: string, scale: string }} song
- * @returns {string} A CSS `linear-gradient`; `var(--roll-out)` is the shade
+ * @returns {string} A CSS gradient that repeats every octave; `var(--roll-out)` is the shade
  */
 export function scaleBands(song) {
   const bands = [];
@@ -118,7 +118,7 @@ export function scaleBands(song) {
     const colour = inScale(TOP - row, song.key, song.scale) ? 'transparent' : 'var(--roll-out)';
     bands.push(`${colour} ${row * ROW}px ${(row + 1) * ROW}px`);
   }
-  return `linear-gradient(${bands.join(', ')})`;
+  return `repeating-linear-gradient(${bands.join(', ')})`;
 }
 
 /**

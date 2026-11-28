@@ -36,6 +36,14 @@ create-panel {
     }
   }
 
+  /* Five sections in a slim panel: smaller words, no padding. */
+  @container (width < 24rem) {
+    & .create-panel-sections > button {
+      padding: 0 2px;
+      font-size: var(--text-xs);
+    }
+  }
+
   & .create-panel-search {
     position: relative;
     display: flex;

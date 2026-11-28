@@ -8,7 +8,6 @@
  * @module utils/timeline/draw/musicClip
  */
 
-import { DRUM_NAMES } from '#utils/music/catalog/drums.js';
 import { firstAt, musicLines, musicMark, songPicture } from '#utils/timeline/clipMarksMusic.js';
 import { timeToX, xToTimeRaw } from '#utils/timeline/viewport.js';
 import { drawWaveform } from './clipContent.js';
@@ -45,7 +44,10 @@ function drawPicture(scene, clip, { left, right, top, height }) {
     ctx.fillRect(Math.round(xOf(line.time)), top, 1, line.bar ? Math.min(7, height) : 3);
   }
   const picture = songPicture(song);
-  const drums = picture.hits.length ? Math.min(height * 0.45, 26) : 0;
+  // Drums take the foot of the body — all of it in a song without notes.
+  const share = picture.notes.length ? 0.45 : 1;
+  const row = Math.min(6, (height * share - 9 * share) / Math.max(1, picture.rows));
+  const drums = picture.rows * row;
   const span = Math.max(11, picture.high - picture.low);
   const room = height - drums - 9;
   ctx.globalAlpha = 0.9;
@@ -57,11 +59,10 @@ function drawPicture(scene, clip, { left, right, top, height }) {
     const y = top + 8 + (1 - (pitch - picture.low) / span) * Math.max(0, room - 2);
     if (end > x && room > 3) ctx.fillRect(x, Math.round(y), Math.max(1.5, end - x - 0.5), 2);
   }
-  const row = drums / DRUM_NAMES.length;
   for (let i = firstAt(picture.hits, from); i < picture.hits.length; i++) {
     const [time, drum] = picture.hits[i];
     if (time >= to) break;
-    ctx.fillRect(xOf(time), top + height - drums + drum * row, 2, Math.max(1.5, row - 0.5));
+    ctx.fillRect(xOf(time), top + height - drums + drum * row, 2.5, Math.max(1.5, row - 1));
   }
   ctx.globalAlpha = 1;
 }

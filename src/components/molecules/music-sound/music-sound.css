@@ -1,0 +1,41 @@
+music-sound {
+  display: block;
+  padding-bottom: var(--space-sm);
+
+  & .music-sound-about {
+    margin: 0;
+    padding: 2px var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: 1.45;
+  }
+
+  & .music-sound-reset {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    padding: 2px var(--space-sm);
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+
+    & .btn {
+      padding: 0 var(--space-xs);
+      font-size: var(--text-xs);
+    }
+  }
+
+  /* A long label of the schema gets two lines instead of an ellipsis. */
+  & .field-number-label,
+  & .field-label {
+    white-space: normal;
+  }
+
+  & .keyed-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  & .keyed-row > span:empty {
+    display: none;
+  }
+}

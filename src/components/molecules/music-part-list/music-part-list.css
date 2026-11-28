@@ -68,6 +68,7 @@ music-part-list {
 
   /* The volume of a row: a slider only. */
   & .music-part-list-head field-number {
+    grid-template-columns: minmax(0, 1fr);
     padding: 0;
 
     & .field-input,

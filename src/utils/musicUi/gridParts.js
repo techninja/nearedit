@@ -5,7 +5,7 @@
  */
 
 import { html } from 'hybrids';
-import { handleTool } from './gridEvents.js';
+import { handleTool } from './gridTools.js';
 
 /** @typedef {import('hybrids').UpdateFunctionWithMethods<any>} Template */
 

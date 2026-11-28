@@ -22,6 +22,8 @@ import { joinSpans } from './duck.js';
 
 /** Words closer together than this are one stretch of speech. */
 const BREATH = 0.35;
+/** @type {(seconds: number) => number} To the millisecond. */
+const tidy = (seconds) => Math.round(seconds * 1000) / 1000;
 
 /**
  * Where a clip speaks.
@@ -42,8 +44,8 @@ export function clipSpeech(clip, media, voice) {
     joinSpans(
       sources
         .map((span) => ({
-          start: clip.timelineStart + Math.max(sourceIn, span.start) - sourceIn,
-          end: clip.timelineStart + Math.min(sourceOut, span.end) - sourceIn,
+          start: tidy(clip.timelineStart + Math.max(sourceIn, span.start) - sourceIn),
+          end: tidy(clip.timelineStart + Math.min(sourceOut, span.end) - sourceIn),
         }))
         .filter((span) => span.end > span.start),
       BREATH,

@@ -60,9 +60,10 @@ export function handleDelete(host) {
 /** "Write…" opens and closes its form. @param {Host} host */
 export const handleWrite = (host) => send(host, 'music-view', { writing: !host.writing });
 
-/** A key of the keyboard column plays its note. @param {Host} host @param {Event} event */
+/** A key of the keyboard column plays its note. @param {Host} host @param {CustomEvent} event */
 export function handleKey(host, event) {
-  const pitch = Number(/** @type {HTMLElement} */ (event.currentTarget).dataset.pitch);
+  const { pitch } = event.detail;
+  event.stopPropagation();
   host.cursor = { beat: host.cursor.beat, pitch };
   send(host, 'music-hear', { pitch, velocity: 0.8, length: newLength(host) });
 }
@@ -76,4 +77,12 @@ export function syncScroll(host) {
   if (!view || !view.clientHeight || scrolled.get(host) === host.shown.id) return;
   scrolled.set(host, host.shown.id);
   view.scrollTop = firstScroll(host.shown.notes, view.clientHeight);
+}
+
+/** A double click on a note removes it. @param {Host} host @param {MouseEvent} event */
+export function handleDouble(host, event) {
+  const target = /** @type {HTMLElement} */ (event.target);
+  const key = /** @type {HTMLElement|null} */ (target.closest('[data-key]'))?.dataset.key;
+  if (!key || host.locked) return;
+  send(host, 'music-notes', { ...edit.removeNotes(host.shown.notes, [key]), phase: 'commit' });
 }

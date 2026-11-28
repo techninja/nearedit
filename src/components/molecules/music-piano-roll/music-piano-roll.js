@@ -18,6 +18,7 @@ import * as model from '#utils/musicUi/rollModel.js';
 import { areaStyle, rollBar } from '#utils/musicUi/rollParts.js';
 import * as pointer from '#utils/musicUi/rollPointer.js';
 import '#atoms/app-icon/app-icon.js';
+import '#atoms/music-keys/music-keys.js';
 import '#atoms/music-playhead/music-playhead.js';
 
 /** @typedef {import('#utils/musicUi/rollEvents.js').PianoRollHost} PianoRollHost */
@@ -50,25 +51,11 @@ export default define({
         ${rollBar(host)}
         <div class="music-piano-roll-scroll">
           <div class="music-piano-roll-sheet" style="${{ height: `${128 * model.ROW}px` }}">
-            <div class="music-piano-roll-keys">
-              ${model
-                .rollKeys(song)
-                .map(
-                  (key) =>
-                    html`<button
-                      type="button"
-                      tabindex="-1"
-                      data-pitch="${key.pitch}"
-                      data-black="${key.black}"
-                      data-scale="${key.scale}"
-                      title="${key.name}"
-                      aria-label="${`Play ${key.name}`}"
-                      onpointerdown="${on.handleKey}"
-                    >
-                      ${key.label}
-                    </button>`,
-                )}
-            </div>
+            <music-keys
+              tonic="${song.key}"
+              scale="${song.scale}"
+              onkey-press="${on.handleKey}"
+            ></music-keys>
             <div
               class="music-piano-roll-area"
               tabindex="0"
@@ -78,8 +65,8 @@ export default define({
               onpointerdown="${pointer.handleDown}"
               onpointermove="${pointer.handleMove}"
               onpointerup="${pointer.handleUp}"
-              onpointercancel="${pointer.handleUp}"
-              ondblclick="${pointer.handleDouble}"
+              onpointercancel="${pointer.handleCancel}"
+              ondblclick="${on.handleDouble}"
               onkeydown="${handleKeys}"
               onkeyup="${handleKeyUp}"
             >
@@ -87,7 +74,7 @@ export default define({
                 html`<div
                   class="music-piano-roll-note"
                   data-key="${noteKey(note)}"
-                  data-selected="${selected.includes(noteKey(note))}"
+                  data-selected="${String(selected.includes(noteKey(note)))}"
                   style="${model.noteBox(note)}"
                 >
                   <i style="${{ width: `${Math.round(note[3] * 100)}%` }}"></i>

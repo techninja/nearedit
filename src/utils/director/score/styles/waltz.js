@@ -18,7 +18,7 @@ export default style({
   turn: 'V7',
   kit: 'acoustic',
   drums: [
-    layer('Kit', 0.4, 0.5, { kick: 'X...........', rim: '....o...o...' }, 0.4),
+    layer('Kit', 0.4, 0.55, { kick: 'X...........', rim: '....o...o...' }, 0.4),
     layer('Ride', 0.65, 0.4, { ride: 'o...o...o...' }, 0.4),
   ],
   fill: {
@@ -37,8 +37,8 @@ export default style({
       ],
       velocity: 0.65,
     }),
-    part('bass', 'Bass', 'bass', 0.25, [0.65, 0, 0.1, 0], { style: 'roots' }),
-    part('chords', 'Strings', 'strings', 0.25, [0.75, -0.2, 0.55, 0], { center: 62 }),
+    part('bass', 'Bass', 'bass', 0.25, [0.55, 0, 0.1, 0], { style: 'roots' }),
+    part('chords', 'Strings', 'strings', 0.4, [0.75, -0.2, 0.55, 0], { center: 62 }),
     part('arp', 'Bells', 'bell', 0.5, [0.45, 0.3, 0.6, 0.25], {
       rate: 1,
       mode: 'up',

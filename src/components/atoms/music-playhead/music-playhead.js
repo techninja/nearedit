@@ -30,7 +30,7 @@ function follow(host) {
     const state = auditionState.get();
     const playing = state.owner === 'editor' && state.playing;
     frame = playing ? requestAnimationFrame(step) : 0;
-    const bar = (playing && auditionPosition()?.bar) ?? -1;
+    const bar = playing ? (auditionPosition()?.bar ?? -1) : -1;
     // Words change once a beat; a line moves every frame.
     const next = host.readout && bar >= 0 ? Math.floor(bar * host.beats) / host.beats : bar;
     if (next !== host.at) host.at = next;

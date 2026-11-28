@@ -20,11 +20,11 @@ export default style({
     layer(
       'Claps and hats',
       0.65,
-      0.6,
+      0.7,
       { clap: '....X.......X...', hat: 'x.o.x.o.x.o.x.o.', openHat: '..x...x...x...x.' },
       0.08,
     ),
-    layer('Tops', 0.85, 0.45, { shaker: 'o.x.o.x.o.x.o.x.', ride: '..x...x...x...x.' }, 0.1),
+    layer('Tops', 0.85, 0.5, { shaker: 'o.x.o.x.o.x.o.x.', ride: '..x...x...x...x.' }, 0.1),
   ],
   fill: {
     kick: 'X...X...X...X.x.',

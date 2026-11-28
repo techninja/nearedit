@@ -1,0 +1,38 @@
+/* A column of piano keys, one to a pitch row of the roll beside it. Keys
+   are black and white whatever the theme. */
+music-keys {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: 2.75rem;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+
+  & button {
+    flex: none;
+    height: 12px;
+    padding: 0 3px;
+    border: 0;
+    border-bottom: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 9px;
+    line-height: 11px;
+    text-align: right;
+    cursor: pointer;
+  }
+
+  & button[data-black='true'] {
+    width: 62%;
+    background: #1e293b;
+  }
+
+  /* Keys of the song's scale carry a mark. */
+  & button[data-scale='true'] {
+    box-shadow: inset 3px 0 0 var(--color-clip-music);
+  }
+
+  & button:active {
+    background: var(--color-clip-music);
+  }
+}

@@ -31,7 +31,7 @@ function row(host, part, index) {
   const soloed = solo.includes(part.id);
   const label = partLabel(part);
   const about = part.kind === 'drums' ? `${part.steps} steps` : `${part.notes.length} notes`;
-  return html`<li class="music-part-list-row" data-part="${part.id}" data-open="${open}">
+  return html`<li class="music-part-list-row" data-part="${part.id}" data-open="${String(open)}">
     <div class="music-part-list-head">
       <button
         type="button"
@@ -64,7 +64,7 @@ function row(host, part, index) {
         type="button"
         class="music-part-list-flag"
         data-action="solo"
-        data-solo="${soloed}"
+        data-solo="${String(soloed)}"
         aria-pressed="${soloed ? 'true' : 'false'}"
         aria-label="${`Solo ${label}`}"
         title="${SOLO_TITLE}"

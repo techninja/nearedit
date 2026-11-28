@@ -18,20 +18,25 @@ import { BEAT, GRIDS, scaleBands } from './rollModel.js';
 const GRID_CHOICES = GRIDS.map(([beats, label]) => [String(beats), String(label)]);
 
 /**
- * The style of the note area: its width, the bands of the scale, and the
- * distances between grid, beat and bar lines.
+ * The style of the note area: its width, the bands of the scale, and its
+ * bar, beat and grid lines.
  * @param {{ key: string, scale: string, beatsPerBar: number }} song
  * @param {number} beats - Of the part's loop
  * @param {number} grid - Beats between grid lines; 0 = none
  * @returns {Record<string, string>}
  */
 export function areaStyle(song, beats, grid) {
+  /** @type {(colour: string, every: number) => string} A vertical line every so many beats */
+  const lines = (colour, every) =>
+    `repeating-linear-gradient(to right, ${colour} 0 1px, transparent 1px ${every * BEAT}px)`;
   return {
     width: `${beats * BEAT}px`,
     '--roll-bands': scaleBands(song),
-    '--roll-grid': `${(grid || 1) * BEAT}px`,
-    '--roll-beat': `${BEAT}px`,
-    '--roll-bar': `${song.beatsPerBar * BEAT}px`,
+    '--roll-lines': [
+      lines('var(--color-text-muted)', song.beatsPerBar),
+      lines('var(--color-border)', 1),
+      lines('var(--roll-line)', grid || 1),
+    ].join(', '),
   };
 }
 
@@ -45,6 +50,15 @@ export function rollBar(host) {
   const none = selected.length === 0 || locked;
   const scale = `${song.key} ${SCALES[song.scale]?.label.toLowerCase() || song.scale}`;
   return html`<div class="music-piano-roll-bar">
+    <button
+      type="button"
+      class="btn btn-secondary"
+      aria-pressed="${writing ? 'true' : 'false'}"
+      disabled="${locked}"
+      onclick="${on.handleWrite}"
+    >
+      <app-icon name="wand" size="sm"></app-icon> Write…
+    </button>
     ${select('grid', 'Grid', GRID_CHOICES, String(grid))}
     <label class="switch" title="New and moved notes go to the nearest note of the song's scale">
       <input
@@ -82,14 +96,5 @@ export function rollBar(host) {
     <span class="music-piano-roll-count">
       ${selected.length ? `${selected.length} selected` : `${host.shown.notes.length} notes`}
     </span>
-    <button
-      type="button"
-      class="btn btn-secondary"
-      aria-pressed="${writing ? 'true' : 'false'}"
-      disabled="${locked}"
-      onclick="${on.handleWrite}"
-    >
-      <app-icon name="wand" size="sm"></app-icon> Write…
-    </button>
   </div>`;
 }

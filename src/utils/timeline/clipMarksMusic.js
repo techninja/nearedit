@@ -23,8 +23,9 @@ const MOST_EVENTS = 6000;
 
 /**
  * @typedef {Object} SongPicture
- * @property {number[][]} hits - `[seconds, drum]` in time order; `drum` is
- *   the drum's place among the kit's thirteen
+ * @property {number[][]} hits - `[seconds, row]` in time order; `row` is the
+ *   drum's place among the drums the song plays, in the kit's order
+ * @property {number} rows - How many different drums the song plays
  * @property {number[][]} notes - `[seconds, length, pitch]` in time order
  * @property {number} low - Lowest pitch
  * @property {number} high - Highest pitch
@@ -63,7 +64,7 @@ export function songPicture(song) {
   if (known) return known;
   const { bpm } = songFrame(song);
   /** @type {SongPicture} */
-  const picture = { hits: [], notes: [], low: 127, high: 0, longest: 0 };
+  const picture = { hits: [], rows: 0, notes: [], low: 127, high: 0, longest: 0 };
   for (const part of song.parts) {
     if (part.mute) continue;
     for (const [beat, what, , length] of unrollPart(song, part, MOST_EVENTS)) {
@@ -79,7 +80,11 @@ export function songPicture(song) {
       }
     }
   }
-  picture.hits.sort((a, b) => a[0] - b[0]);
+  // Only the drums that play get a row, so three drums fill the room of thirteen.
+  const drums = [...new Set(picture.hits.map((hit) => hit[1]))].sort((a, b) => a - b);
+  picture.rows = drums.length;
+  picture.hits = picture.hits.map(([time, drum]) => [time, drums.indexOf(drum)]);
+  picture.hits.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   picture.notes.sort((a, b) => a[0] - b[0]);
   pictures.set(song, picture);
   return picture;

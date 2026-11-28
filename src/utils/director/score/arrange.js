@@ -25,6 +25,22 @@
  */
 
 /**
+ * Bar ranges as a song stores them: those that touch are one.
+ * @param {number[][]} ranges - In order
+ * @returns {number[][]}
+ */
+function joined(ranges) {
+  /** @type {number[][]} */
+  const out = [];
+  for (const [from, to] of ranges) {
+    const last = out[out.length - 1];
+    if (last && from <= last[1]) last[1] = Math.max(last[1], to);
+    else out.push([from, to]);
+  }
+  return out;
+}
+
+/**
  * @param {Section[]} sections - Covering `0 … bars`
  * @param {number} bars - Of the song
  * @param {number} drumsFrom - Energy at which the first drum layer joins
@@ -48,7 +64,7 @@ export function arrange(sections, bars, drumsFrom) {
       .filter(([start, stop]) => stop > start);
   return {
     loops: (from) => where(from, loopEnd),
-    layers: (from) => where(from, (i) => (fill(i) ? loopEnd(i) : sections[i].to)),
+    layers: (from) => joined(where(from, (i) => (fill(i) ? loopEnd(i) : sections[i].to))),
     turns(from) {
       const ranges = sections
         .slice(0, -1)
@@ -61,7 +77,7 @@ export function arrange(sections, bars, drumsFrom) {
         .slice(0, -1)
         .filter((_, i) => fill(i))
         .map((section) => [section.to - 1, section.to + 1]);
-      return bars >= 2 && fill(last) ? [...ranges, [bars - 2, bars]] : ranges;
+      return joined(bars >= 2 && fill(last) ? [...ranges, [bars - 2, bars]] : ranges);
     },
   };
 }

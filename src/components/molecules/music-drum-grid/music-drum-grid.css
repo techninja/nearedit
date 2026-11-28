@@ -1,6 +1,6 @@
 music-drum-grid {
   --cell: 1.5rem;
-  --name: 6.25rem;
+  --name: clamp(4.5rem, 16vw, 6.25rem);
 
   display: flex;
   flex: 1;
@@ -35,13 +35,8 @@ music-drum-grid {
   }
 
   & .music-drum-grid-lane {
-    margin-right: var(--space-xs);
     color: var(--color-text);
     font-weight: 600;
-  }
-
-  & .music-drum-grid-every {
-    margin-left: var(--space-xs);
   }
 
   & .music-drum-grid-scroll {
@@ -132,7 +127,6 @@ music-drum-grid {
 
   & .music-drum-grid-step:focus-visible {
     outline: 2px solid var(--color-focus);
-    outline-offset: 1px;
   }
 
   /* As wide as the steps, over them: the playhead runs along it. */
@@ -152,11 +146,5 @@ music-drum-grid {
 @media (pointer: coarse) {
   music-drum-grid {
     --cell: 2rem;
-  }
-}
-
-@media (width < 760px) {
-  music-drum-grid {
-    --name: 4.5rem;
   }
 }

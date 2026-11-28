@@ -1,0 +1,131 @@
+/* The host takes no room: its dialog is a fixed overlay. */
+music-editor {
+  display: contents;
+
+  & .dialog-body {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-sm) var(--space-md);
+    overflow: hidden;
+  }
+
+  & .music-editor-body {
+    display: grid;
+    flex: 1;
+    grid-template:
+      'top top top' auto
+      'parts grid sound' minmax(0, 1fr)
+      / minmax(15rem, 18rem) minmax(0, 1fr) minmax(15rem, 19rem);
+    gap: var(--space-sm) var(--space-md);
+    min-height: 0;
+  }
+
+  & .music-editor-tabs {
+    display: none;
+  }
+
+  & .music-editor-top {
+    display: flex;
+    grid-area: top;
+    align-items: flex-start;
+    gap: var(--space-xs);
+
+    & music-topbar {
+      flex: 1;
+    }
+  }
+
+  & .music-editor-parts,
+  & .music-editor-sound {
+    min-height: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: auto;
+  }
+
+  & .music-editor-parts {
+    grid-area: parts;
+  }
+
+  & .music-editor-sound {
+    grid-area: sound;
+  }
+
+  & .music-editor-grid {
+    display: flex;
+    grid-area: grid;
+    flex-direction: column;
+    gap: var(--space-sm);
+    min-width: 0;
+    min-height: 0;
+  }
+
+  & .music-editor-empty {
+    margin: var(--space-lg) 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    text-align: center;
+  }
+
+  & .music-editor-status[data-state='rendered'] {
+    color: var(--color-success);
+  }
+
+  & .music-editor-status[data-state='failed'],
+  & .music-editor-status[data-state='stale'] {
+    color: var(--color-warning);
+  }
+
+  & .music-editor-keys {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+}
+
+/* Not wide enough for three columns: the sound goes under the parts. */
+@media (width < 1100px) {
+  music-editor .music-editor-body {
+    grid-template:
+      'top top' auto
+      'parts grid' minmax(0, 1fr)
+      'sound grid' minmax(0, 1fr)
+      / minmax(14rem, 17rem) minmax(0, 1fr);
+  }
+}
+
+/* Narrow screens: the dialog fills the screen and its three parts are tabs. */
+@media (width < 760px) {
+  music-editor app-dialog.dialog-backdrop {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  music-editor .dialog.app-dialog-huge {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  music-editor .music-editor-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  music-editor .music-editor-tabs {
+    display: block;
+    flex: none;
+  }
+
+  music-editor :is(.music-editor-parts, .music-editor-grid, .music-editor-sound) {
+    flex: 1;
+  }
+
+  music-editor .music-editor-keys,
+  music-editor [data-tab='parts'] :is(.music-editor-grid, .music-editor-sound),
+  music-editor [data-tab='grid'] :is(.music-editor-parts, .music-editor-sound),
+  music-editor [data-tab='sound'] :is(.music-editor-parts, .music-editor-grid) {
+    display: none;
+  }
+}

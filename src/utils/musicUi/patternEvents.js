@@ -54,7 +54,7 @@ export function handleBeat(_host, event) {
 export function handleNotes(_host, event) {
   const { notes, keys, phase } = event.detail;
   changeShown(event, 'notes', (part) => ({ ...part, notes }), phase);
-  musicEditorState.set({ notes: keys });
+  if (phase !== 'cancel') musicEditorState.set({ notes: keys });
 }
 
 /** The selection of the piano roll. @param {Host} _host @param {CustomEvent} event */

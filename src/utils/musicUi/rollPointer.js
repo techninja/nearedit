@@ -10,6 +10,7 @@
 
 import { dispatch } from 'hybrids';
 import * as edit from './noteEdit.js';
+import { capturePointer } from './pointerCapture.js';
 import { BEAT, ROW, cellAt, cellStart, pitchFit } from './rollModel.js';
 
 /** @typedef {import('./rollEvents.js').PianoRollHost & HTMLElement} Host */
@@ -57,7 +58,7 @@ export function handleDown(host, event) {
   const target = /** @type {HTMLElement} */ (event.target);
   const key = /** @type {HTMLElement|null} */ (target.closest('[data-key]'))?.dataset.key || '';
   const { selected, shown: part } = host;
-  area.setPointerCapture?.(event.pointerId);
+  capturePointer(area, event);
   let keys = event.shiftKey ? selected : [];
   if (key && event.shiftKey) {
     keys = selected.includes(key) ? selected.filter((k) => k !== key) : [...selected, key];
@@ -105,6 +106,14 @@ export function handleMove(host, event) {
   send(host, 'music-notes', { ...gesture.last, phase: 'live' });
 }
 
+/** The press was taken away (a scroll began): nothing of it stays. @param {Host} host */
+export function handleCancel(host) {
+  const gesture = gestures.get(host);
+  gestures.delete(host);
+  host.box = NO_BOX;
+  if (gesture?.last) send(host, 'music-notes', { ...gesture.last, phase: 'cancel' });
+}
+
 /** @param {Host} host */
 export function handleUp(host) {
   const gesture = gestures.get(host);
@@ -135,12 +144,4 @@ export function handleUp(host) {
     host,
     added.notes.find((n) => added.keys.includes(edit.noteKey(n))),
   );
-}
-
-/** A double click on a note removes it. @param {Host} host @param {MouseEvent} event */
-export function handleDouble(host, event) {
-  const target = /** @type {HTMLElement} */ (event.target);
-  const key = /** @type {HTMLElement|null} */ (target.closest('[data-key]'))?.dataset.key;
-  if (!key || host.locked) return;
-  send(host, 'music-notes', { ...edit.removeNotes(host.shown.notes, [key]), phase: 'commit' });
 }

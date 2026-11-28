@@ -16,16 +16,16 @@ export default style({
   turn: 'IV',
   parts: [
     part('chords', 'Pad', 'pad', 0, [0.8, 0, 0.6, 0], { center: 60 }),
-    part('arp', 'Bells', 'bell', 0.25, [0.4, 0.3, 0.6, 0.4], {
+    part('bass', 'Sub', 'sub', 0.4, [0.6, 0, 0, 0], { style: 'roots' }),
+    part('arp', 'Bells', 'bell', 0.4, [0.4, 0.3, 0.6, 0.4], {
       rate: 1,
       mode: 'up',
       octave: 5,
       gate: 2,
       velocity: 0.6,
     }),
-    part('bass', 'Sub', 'sub', 0.4, [0.7, 0, 0, 0], { style: 'roots' }),
-    part('chords', 'Strings', 'strings', 0.5, [0.5, -0.25, 0.55, 0], { center: 72 }),
-    part('lead', 'Glass', 'keys', 0.75, [0.5, 0.2, 0.55, 0.35], {
+    part('chords', 'Strings', 'strings', 0.5, [0.55, -0.25, 0.55, 0], { center: 72 }),
+    part('lead', 'Glass', 'keys', 0.75, [0.55, 0.2, 0.55, 0.35], {
       octave: 5,
       scale: 'majorPentatonic',
       phrase: 4,

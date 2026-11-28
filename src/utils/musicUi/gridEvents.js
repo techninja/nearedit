@@ -2,15 +2,15 @@
  * Behaviour of the drum grid (`<music-drum-grid>`): a press on a step
  * cycles it (rest, hit, accent, soft) and dragging on paints what the
  * first step became; the arrow keys walk the grid and Enter cycles the
- * step in focus; a lane's name plays its drum; the toolbar clears, shifts
- * and fills the lane that was touched last. Everything leaves as events
- * for the music editor to turn into edits.
+ * step in focus; a lane's name plays its drum. Everything leaves as events
+ * for the music editor to turn into edits. (The toolbar: `gridTools.js`.)
  * @module utils/musicUi/gridEvents
  */
 
 import { dispatch } from 'hybrids';
 import { laneOf, loopSteps, nextStep } from './drumEdit.js';
 import { drumRows, stepAt } from './gridModel.js';
+import { capturePointer } from './pointerCapture.js';
 
 /**
  * @typedef {Object} DrumGridHost
@@ -30,7 +30,7 @@ import { drumRows, stepAt } from './gridModel.js';
 const painting = new WeakMap();
 
 /** @param {Host} host @param {string} type @param {Record<string, any>} detail */
-const send = (host, type, detail) => dispatch(host, type, { detail, bubbles: true });
+export const send = (host, type, detail) => dispatch(host, type, { detail, bubbles: true });
 
 /** @param {Host} host @param {string} drum A drum was touched: its row stays and is the lane in hand */
 function touch(host, drum) {
@@ -41,7 +41,7 @@ function touch(host, drum) {
 /**
  * Set steps of a lane and say so.
  * @param {Host} host
- * @param {'live'|'commit'} phase
+ * @param {'live'|'commit'|'cancel'} phase
  */
 function report(host, phase) {
   const { drum, char, steps } = painting.get(host);
@@ -56,10 +56,12 @@ export function handleDown(host, event) {
   const lane = laneOf(host.shown, drum);
   const step = stepAt(row.getBoundingClientRect(), event.clientX, lane.length);
   const char = nextStep(lane[step]);
-  row.setPointerCapture?.(event.pointerId);
   touch(host, drum);
   host.step = step;
   painting.set(host, { drum, char, steps: [step] });
+  // A finger may be starting to scroll: its press counts when it is lifted.
+  if (event.pointerType === 'touch') return;
+  capturePointer(row, event);
   if (char !== '.') send(host, 'music-hear', { drum, char });
   report(host, 'live');
 }
@@ -67,7 +69,7 @@ export function handleDown(host, event) {
 /** Dragging over a row paints what the first step became. @param {Host} host @param {PointerEvent} event */
 export function handleMove(host, event) {
   const paint = painting.get(host);
-  if (!paint) return;
+  if (!paint || event.pointerType === 'touch') return;
   const row = /** @type {HTMLElement} */ (event.currentTarget);
   const step = stepAt(row.getBoundingClientRect(), event.clientX, loopSteps(host.shown));
   if (paint.steps.includes(step)) return;
@@ -75,10 +77,17 @@ export function handleMove(host, event) {
   report(host, 'live');
 }
 
-/** The press ends: one undo step. @param {Host} host */
-export function handleUp(host) {
-  if (!painting.has(host)) return;
-  report(host, 'commit');
+/** The press ends (one undo step), or is taken away by a scroll. @param {Host} host @param {PointerEvent} event */
+export function handleUp(host, event) {
+  const paint = painting.get(host);
+  if (!paint) return;
+  const tapped = event.pointerType === 'touch';
+  if (event.type === 'pointercancel') {
+    if (!tapped) report(host, 'cancel');
+  } else {
+    if (tapped && paint.char !== '.') send(host, 'music-hear', paint);
+    report(host, 'commit');
+  }
   painting.delete(host);
 }
 
@@ -121,23 +130,3 @@ export function handleKeys(host, event) {
   event.preventDefault();
   event.stopPropagation();
 }
-
-/** A button of the lane tools: clear, shift or fill the lane in hand. @param {Host} host @param {Event} event */
-export function handleTool(host, event) {
-  const { action, by } = /** @type {HTMLElement} */ (event.currentTarget).dataset;
-  send(host, 'music-lane', { action, drum: host.lane, by: Number(by) || 0 });
-}
-
-/** "Beat…": replace the lanes with a named beat. @param {Host} host @param {Event} event */
-export function handleBeat(host, event) {
-  const menu = /** @type {HTMLSelectElement} */ (event.target);
-  event.stopPropagation();
-  if (menu.value) send(host, 'music-beat', { action: 'beat', name: menu.value });
-  menu.value = '';
-}
-
-/** "Fill": the beat's fill in the last bar. @param {Host} host */
-export const handleFill = (host) => send(host, 'music-beat', { action: 'fill' });
-
-/** "More drums" / "Fewer": fold the silent drums away or bring them out. @param {Host} host */
-export const handleMore = (host) => send(host, 'music-view', { allLanes: !host.all });

@@ -74,11 +74,12 @@ describe('marks of a music clip', () => {
       picture.hits.slice(0, 3),
       [
         [0, 0],
-        [0, 4],
-        [0.25, 4],
+        [0, 1],
+        [0.25, 1],
       ],
-      'kick and hat, then a hat',
+      'kick and hat on the two rows the song needs, then a hat',
     );
+    assert.equal(picture.rows, 2);
     assert.deepEqual(picture.notes, [
       [0, 0.5, 36],
       [2, 0.5, 43],

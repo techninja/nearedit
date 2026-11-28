@@ -28,7 +28,7 @@ export default style({
   },
   hit: { ride: 'x...............' },
   parts: [
-    part('chords', 'Keys', 'keys', 0, [0.8, 0.15, 0.3, 0], {
+    part('chords', 'Keys', 'keys', 0, [0.7, 0.15, 0.3, 0], {
       center: 62,
       hits: [
         [0, 1.4],
@@ -37,8 +37,8 @@ export default style({
       ],
       velocity: 0.65,
     }),
-    part('bass', 'Bass', 'bass', 0.25, [0.65, 0, 0, 0], { style: 'syncopated' }),
-    part('chords', 'Strings', 'strings', 0.5, [0.45, -0.25, 0.5, 0], { center: 67 }),
+    part('bass', 'Bass', 'bass', 0.4, [0.65, 0, 0, 0], { style: 'syncopated' }),
+    part('chords', 'Strings', 'strings', 0.5, [0.55, -0.25, 0.5, 0], { center: 67 }),
     part('lead', 'Pluck', 'pluck', 0.75, [0.55, -0.15, 0.35, 0.25], {
       octave: 5,
       scale: 'majorPentatonic',
