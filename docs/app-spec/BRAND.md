@@ -206,7 +206,8 @@ with soft shadows over gradients, and 2–18 ms while entering.
 
 - **Built in**: in the code, `src/utils/brand/kits/`.
 - **The library**: `<data>/kits/<id>/` — a person's or a team's kits,
-  listed by `GET /kits`.
+  listed by `GET /kits` ([BRAND-API.md](./BRAND-API.md) has the routes and
+  the storage rules).
 - **In a project**: `<project>/.nearedit/kit/` — a kit that travels with
   the project, usually one that extends a library kit and changes a little.
 
@@ -234,6 +235,14 @@ an adaptation may name another. With none, `builtin:clean`.
 - Elements cannot contain elements.
 - Kits are edited as tokens in the editor; a new element is written as
   JSON.
+- The built-in kits draw the small mark (`logo.mark`) everywhere; the full
+  logo (`logo.main`) is for elements of your own. The editor's logo upload
+  sets both.
+- A kit's revision covers the names of its files, not their contents:
+  replacing a logo under the same name changes the picture without making
+  any clip out of date (and the preview shows the old one until reload).
+- A kit is chosen for the project; choosing one clears an adaptation's own
+  choice. There is no zip import or export of kits yet — a kit is a folder.
 
 ## In the editor
 
