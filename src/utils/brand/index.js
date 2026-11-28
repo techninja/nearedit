@@ -18,11 +18,13 @@ export {
   withOpacity,
 } from './color.js';
 export { normalizeKit } from './normalize.js';
+export { validateKit } from './validate.js';
 export { KitError, kitChain, resolveKit } from './resolve.js';
 export { KEY_LENGTH, KEY_PATTERN, canonicalKit, kitKey } from './key.js';
 export { kitFiles, mapKitFiles } from './files.js';
 export { FONT_FILE, cleanFonts, isCustomFamily, mergeFonts, sameFonts } from './fontTable.js';
 export { BUILTIN_KITS, builtinKit } from './kits/index.js';
+export { brandCatalog, kitElements } from './catalog.js';
 export { STANDARD_DEFAULTS, STANDARD_ELEMENTS } from './kits/parts.js';
 export { elementSpan, isElementClip, sameElement } from './clip.js';
 export { checkElement, cleanElement, cleanSlots } from './field.js';

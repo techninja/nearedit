@@ -34,6 +34,9 @@ export const T = Object.freeze({
   exit: '{motion.exit}',
 });
 
+/** The logo tokens of a kit that has no logo file: its mark is drawn. */
+export const NO_LOGO = Object.freeze({ main: '', mark: '', initials: '' });
+
 /** The standard elements every complete kit defines (BRAND.md § Elements). */
 const HEADS = {
   'lower-third': {
@@ -61,7 +64,9 @@ const HEADS = {
     kind: 'overlay',
     duration: 3,
     minDuration: 0.4,
-    slots: { text: { label: 'Text', sample: 'One line of what is being said', max: 300, lines: 2 } },
+    slots: {
+      text: { label: 'Text', sample: 'One line of what is being said', max: 300, lines: 2 },
+    },
   },
   quote: {
     label: 'Quote',

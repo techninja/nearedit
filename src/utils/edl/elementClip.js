@@ -49,8 +49,15 @@ export function insertElement(edl, kit, elementId, slots, opts = {}) {
   const design = resolveElement(kit, elementId);
   if (!design) return edl;
   const given = cleanSlots(slots);
-  const kept = Object.fromEntries(design.slots.flatMap((name) => (name in given ? [[name, given[name]]] : [])));
-  const element = { kit: { id: kit.id || '', key: kitKey(kit) }, id: elementId, slots: kept, design };
+  const kept = Object.fromEntries(
+    design.slots.flatMap((name) => (name in given ? [[name, given[name]]] : [])),
+  );
+  const element = {
+    kit: { id: kit.id || '', key: kitKey(kit) },
+    id: elementId,
+    slots: kept,
+    design,
+  };
   const clip = newElementClip(edl, element, kit.elements[elementId]?.label, opts);
   return syncFonts(placeElement(edl, clip, opts));
 }

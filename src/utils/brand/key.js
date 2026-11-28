@@ -11,7 +11,7 @@
 
 import { KEY_LENGTH, KEY_PATTERN, canonicalJson } from '#utils/web/key.js';
 import { sha256 } from '#utils/web/sha256.js';
-import { BRAND_VERSION } from './limits.js';
+import { BRAND_VERSION, without } from './limits.js';
 
 export { KEY_LENGTH, KEY_PATTERN };
 
@@ -27,8 +27,8 @@ export function canonicalKit(kit) {
   /** @type {Record<string, any>} */
   const elements = {};
   for (const [id, element] of Object.entries(kit?.elements || {})) {
-    const { label: _label, slots, ...drawn } = element;
-    elements[id] = { ...drawn, slots: Object.keys(slots || {}).sort() };
+    const slots = Object.keys(element.slots || {}).sort();
+    elements[id] = { ...without(element, 'label', 'slots'), slots };
   }
   return { tokens: kit?.tokens || {}, fonts: kit?.fonts || [], elements };
 }

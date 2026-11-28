@@ -38,11 +38,18 @@ function onTimeline(edl, layer, origin, clip, groupId) {
   const end = snap(edl, Math.min(to, clip.timelineEnd));
   if (!(end - start > EPS)) return null;
   const [cutIn, cutOut] = [start - from > 0.5 / edl.fps, to - end > 0.5 / edl.fps];
-  const [fadeIn, fadeOut] = fitFades(cutIn ? 0 : layer.fadeIn, cutOut ? 0 : layer.fadeOut, end - start, false, false);
+  const [fadeIn, fadeOut] = fitFades(
+    cutIn ? 0 : layer.fadeIn,
+    cutOut ? 0 : layer.fadeOut,
+    end - start,
+    false,
+    false,
+  );
   const sourceIn = layer.sourceIn + (start - from);
   const { x, y, scaleX, scaleY, opacity } = clip.transform;
   /** @type {(path: string, change: (v: number) => number) => any[]|undefined} */
-  const keys = (path, change) => layer.keyframes[path]?.map((key) => ({ ...key, v: change(key.v) }));
+  const keys = (path, change) =>
+    layer.keyframes[path]?.map((key) => ({ ...key, v: change(key.v) }));
   const moved = {
     'transform.x': keys('transform.x', (v) => v * scaleX + x),
     'transform.y': keys('transform.y', (v) => v * scaleY + y),
@@ -99,22 +106,29 @@ export function detachElement(edl, clipId, opts = {}) {
     ...{ measure: opts.measure, sizeOf: opts.sizeOf, fonts: edl.fonts },
   });
   const groupId = newId('grp');
-  const pieces = expanded.map((layer) => onTimeline(edl, layer, span.start, clip, groupId)).filter(Boolean);
+  const pieces = expanded
+    .map((layer) => onTimeline(edl, layer, span.start, clip, groupId))
+    .filter(Boolean);
   if (!pieces.length) return edl;
   let doc = mapClips(edl, (one) => (one.clipId === clipId ? null : one));
   /** @type {{ trackId: string, clip: Clip }[]} */
   const items = [];
   let below = ref.track.trackId;
   pieces.forEach((piece, i) => {
+    // Neighbours in the stack that never show together share a track.
+    const taken = items.filter((item) => item.trackId === below);
+    if (i === 0 || !taken.some((item) => intersects(item.clip, piece))) {
+      return items.push({ trackId: below, clip: piece });
+    }
     const lane = tracksOfType(doc, 'video');
     const at = lane.findIndex((track) => track.trackId === below);
     const above = lane[at - 1];
     const free = above && !above.locked && !above.clips.some((other) => intersects(other, clip));
-    if (i > 0 && !free) {
-      const id = newId('v');
-      doc = moveTrack(addTrack(doc, 'video', { trackId: id }), id, at);
-      below = id;
-    } else if (i > 0) below = above.trackId;
+    if (free) below = above.trackId;
+    else {
+      below = newId('v');
+      doc = moveTrack(addTrack(doc, 'video', { trackId: below }), below, at);
+    }
     items.push({ trackId: below, clip: piece });
   });
   return addClips(doc, items, { autoCrossfade: false });

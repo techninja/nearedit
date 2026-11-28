@@ -9,9 +9,9 @@ import { settle } from './crossfade.js';
 import { NO_OVERLAP, fitFades, neighbourOverlaps } from './fades.js';
 import { changeClip, indexClips, isTimed, mapClips } from './immutable.js';
 import { repairLinks } from './links.js';
-import { fontEnums } from './sanitize.js';
 import { expandSelection } from './selection.js';
 import { EPS, clamp, finite, snap, sourceLimit } from './time.js';
+import { fontEnums } from './fontEnums.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 

@@ -9,7 +9,7 @@
  */
 
 export { drawFrame } from './drawFrame.js';
-export { requirements } from './requirements.js';
+export { elementImages, elementRequirements, requirements } from './requirements.js';
 export { layerKind, layersAt } from './layers.js';
 export { clipTime, frameInfo } from './frame.js';
 export { pictureSize } from './host.js';
@@ -30,5 +30,6 @@ export {
 } from './catalog.js';
 export { fontString, resolveFamily } from './fonts.js';
 export { createFontLoader } from './fontLoader.js';
+export { createFontRegistrar } from './fontRegistrar.js';
 export { textStyle, TITLE_BOX_PADDING, TITLE_LINE_HEIGHT } from './text/style.js';
 export { layoutText } from './text/layout.js';

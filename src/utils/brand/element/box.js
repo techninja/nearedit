@@ -63,8 +63,9 @@ export function grown(box, px, py) {
 }
 
 /**
- * The size a `beside` shape takes from the box it runs along: its
- * `thickness` across, `span` × that side's length along.
+ * The size a `beside` shape takes from the box it runs along: across it its
+ * `thickness`, along it `span` × that side's length — unless the shape
+ * says its own `w` or `h`.
  * @param {Record<string, any>} layer
  * @param {Box} box
  * @param {number} unit
@@ -73,9 +74,11 @@ export function grown(box, px, py) {
 export function besideSize(layer, box, unit) {
   const thickness = num(layer.thickness, 0.4, 0, 100) * unit;
   const span = num(layer.span, 1, 0, 4);
-  return layer.side === 'top' || layer.side === 'bottom'
-    ? { w: lengthOf(layer.w, box.w, unit, box.w * span), h: thickness }
-    : { w: thickness, h: lengthOf(layer.h, box.h, unit, box.h * span) };
+  const flat = layer.side === 'top' || layer.side === 'bottom';
+  return {
+    w: lengthOf(layer.w, box.w, unit, flat ? box.w * span : thickness),
+    h: lengthOf(layer.h, box.h, unit, flat ? thickness : box.h * span),
+  };
 }
 
 /**

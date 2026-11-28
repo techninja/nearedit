@@ -5,7 +5,6 @@
  * @module utils/edl/sanitize
  */
 
-import { customFamilyNames } from '#utils/compose/fontFaces.js';
 import { FONT_FAMILIES } from '#utils/compose/fonts.js';
 import { BLEND_MODES, FADE_CURVES, TEXT_ANIMATIONS, TEXT_UNITS } from './defaults.js';
 import { EASINGS } from './easing.js';
@@ -16,7 +15,7 @@ import { mergeKeyframes } from './keyList.js';
 /** @typedef {Record<string, string[]>} Enums */
 
 /** Bundled font families plus the generic names older documents use. */
-const FONTS = [...new Set(FONT_FAMILIES.flatMap((family) => [family.generic, family.id]))];
+export const FONTS = [...new Set(FONT_FAMILIES.flatMap((family) => [family.generic, family.id]))];
 
 /**
  * Allowed values of enumerated fields, by key.
@@ -30,23 +29,6 @@ export const ENUMS = {
   fadeInCurve: FADE_CURVES,
   fadeOutCurve: FADE_CURVES,
 };
-
-/** @type {WeakMap<object, Enums>} */
-const withFonts = new WeakMap();
-
-/**
- * The enumerations in force in a document: `ENUMS`, with the families of
- * the document's own font table (`edl.fonts`) allowed as `fontFamily`.
- * @param {any[]|undefined} fonts
- * @returns {Enums} `ENUMS` itself for a document without fonts of its own
- */
-export function fontEnums(fonts) {
-  if (!Array.isArray(fonts) || !fonts.length) return ENUMS;
-  if (!withFonts.has(fonts)) {
-    withFonts.set(fonts, { ...ENUMS, fontFamily: [...FONTS, ...customFamilyNames(fonts)] });
-  }
-  return withFonts.get(fonts);
-}
 
 /** Enumerations of a `text.animateIn` / `text.animateOut` block. */
 export const ANIMATION_ENUMS = { type: TEXT_ANIMATIONS, by: TEXT_UNITS, ease: EASINGS };

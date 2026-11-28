@@ -11,9 +11,10 @@
 
 import { drawFrame } from '#utils/compose/drawFrame.js';
 import { createFontLoader } from '#utils/compose/fontLoader.js';
+import { createFontRegistrar } from '#utils/compose/fontRegistrar.js';
 import { frameInfo } from '#utils/compose/frame.js';
-import { requirements } from '#utils/compose/requirements.js';
-import { pictureUrl } from '#utils/playback/mediaUrl.js';
+import { elementImages, requirements } from '#utils/compose/requirements.js';
+import { mediaFileUrl, pictureUrl } from '#utils/playback/mediaUrl.js';
 import { hasFrame } from '#utils/playback/videoSlot.js';
 
 /**
@@ -31,7 +32,15 @@ import { hasFrame } from '#utils/playback/videoSlot.js';
  */
 export function createPainter(canvas, { videos, images, onArrive }) {
   const ctx = canvas.getContext('2d', { alpha: false });
-  const fontReady = createFontLoader(document.fonts, onArrive);
+  let fontReady = createFontLoader(document.fonts, onArrive);
+  // A document's own fonts come from the media route, as its pictures do. When
+  // faces are added or replaced, what was known about ready fonts is asked anew.
+  const ownFonts = createFontRegistrar(
+    document.fonts,
+    (family, source, descriptors) => new globalThis.FontFace(family, source, descriptors),
+    mediaFileUrl,
+    () => void (fontReady = createFontLoader(document.fonts, onArrive)),
+  );
   /** @type {import('#utils/compose/host.js').HostEnv} */
   const env = {
     createCanvas: (width, height) =>
@@ -44,7 +53,8 @@ export function createPainter(canvas, { videos, images, onArrive }) {
       const slot = videos.find(clip.clipId);
       return slot && hasFrame(slot) ? slot.el : null;
     },
-    fontReady,
+    fontReady: (font, text) => fontReady(font, text),
+    fonts: ownFonts,
   };
   /** @type {any} The document whose fonts were last asked for */
   let warmed = null;
@@ -57,9 +67,12 @@ export function createPainter(canvas, { videos, images, onArrive }) {
      */
     paint(doc, time) {
       if (doc !== warmed) {
-        // A new document: start loading every font it uses, not just this frame's.
+        // A new document: start loading every font it uses, not just this frame's,
+        // and the pictures its element clips show (their logos).
         warmed = doc;
+        if (doc.fonts?.length) ownFonts(doc.fonts);
         for (const { font, text } of requirements(doc).fonts) fontReady(font, text);
+        for (const path of elementImages(doc)) images.get(pictureUrl(path));
       }
       drawFrame(ctx, doc, time, env, frameInfo(doc, canvas.width, canvas.height));
     },

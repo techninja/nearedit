@@ -35,6 +35,9 @@ import { TEXT_ANIMATIONS, TEXT_UNITS } from './text/animation.js';
  * @property {string} [description]
  * @property {ParamSchema} params
  * @property {Preset[]} [presets] - Ready-made parameter sets to offer
+ * @property {boolean} [direct] - Its drawing only adds marks with ordinary
+ *   blending and leaves every other pixel alone, so an untransformed, opaque
+ *   clip may draw straight over the picture instead of through a surface
  * @property {(ctx: any, params: Record<string, any>, time: Time, frame: Frame,
  *   env: ComposeEnv) => void} draw
  */

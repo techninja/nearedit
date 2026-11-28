@@ -9,6 +9,7 @@
 import { isHex } from '#utils/compose/color.js';
 import { graphemes } from '#utils/compose/text/wrap.js';
 import { num } from './measure.js';
+import { micro } from './timing.js';
 import { STAGGER } from './vocabulary.js';
 
 /** @typedef {import('./timing.js').Move} Move */
@@ -45,8 +46,11 @@ export function pieceCount(content, by) {
 export function textAnimation(move, content) {
   const type = move && ANIMATIONS[move.motion];
   if (!type) return NONE;
-  const seconds = move.to - move.from;
-  const count = pieceCount(content, type === 'typewriter' && move.by === 'block' ? 'char' : move.by);
+  const seconds = micro(move.to - move.from);
+  const count = pieceCount(
+    content,
+    type === 'typewriter' && move.by === 'block' ? 'char' : move.by,
+  );
   if (type === 'typewriter') {
     const by = move.by === 'block' ? 'char' : move.by;
     const step = trim(Math.min(move.stagger ?? STAGGER[by] ?? 0.04, seconds / count));

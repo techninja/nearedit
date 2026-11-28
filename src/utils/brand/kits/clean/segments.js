@@ -32,7 +32,7 @@ export const chapter = element('chapter', {
     },
     {
       ...{ id: 'title', type: 'text', in: 'stack', text: slot('title'), font: F.heading },
-      ...{ size: 11, minSize: 5.5, color: C.text, lines: 3 },
+      ...{ size: 11, minSize: 4.6, color: C.text, lines: 4 },
       ...{ enter: { motion: T.enter, delay: 0.25, duration: 0.7 }, exit: leave },
     },
   ],
@@ -49,12 +49,12 @@ export const intro = element('intro', {
     }),
     {
       ...{ id: 'title', type: 'text', in: 'stack', text: slot('title'), font: F.heading },
-      ...{ size: 10, minSize: 5, color: C.text, lines: 3, gap: 4 },
+      ...{ size: 10, minSize: 4.4, color: C.text, lines: 4, gap: 4 },
       ...{ enter: { motion: T.enter, delay: 0.35, duration: 0.7 }, exit: leave },
     },
     {
       ...{ id: 'subtitle', type: 'text', in: 'stack', when: slot('subtitle') },
-      ...{ text: slot('subtitle'), font: F.body, size: 3.8, color: C.muted, lines: 3 },
+      ...{ text: slot('subtitle'), font: F.body, size: 4.4, color: C.muted, lines: 3 },
       ...{ enter: { motion: 'fade', delay: 0.8, duration: 0.5 }, exit: leave },
     },
   ],
@@ -66,12 +66,12 @@ export const outro = element('outro', {
     ground,
     {
       ...{ id: 'title', type: 'text', in: 'stack', text: slot('title'), font: F.heading },
-      ...{ size: 8.5, minSize: 4.5, color: C.text, lines: 3 },
+      ...{ size: 8.5, minSize: 4.2, color: C.text, lines: 4 },
       ...{ enter: { motion: T.enter, delay: 0.1, duration: 0.7 }, exit: leave },
     },
     {
       ...{ id: 'text', type: 'text', in: 'stack', when: slot('text'), text: slot('text') },
-      ...{ font: F.body, size: 3.8, color: C.muted, lines: 4 },
+      ...{ font: F.body, size: 4.4, color: C.muted, lines: 4 },
       ...{ enter: { motion: 'fade', delay: 0.5, duration: 0.5 }, exit: leave },
     },
     ...mark({

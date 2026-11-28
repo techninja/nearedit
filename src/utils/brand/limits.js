@@ -35,6 +35,8 @@ export const LIMITS = Object.freeze({
   slotText: 2000,
   /** A text written into a design. */
   text: 400,
+  /** Characters of one text layer that are laid out and drawn. */
+  shown: 600,
   /** Seconds an element may ask for as its length. */
   duration: Object.freeze([0.2, 600]),
 });
@@ -61,3 +63,15 @@ export const DEFAULT_KIT = 'clean';
  * element clip counts as out of date.
  */
 export const BRAND_VERSION = 1;
+
+/**
+ * A copy of an object without some of its keys.
+ * @param {Record<string, any>} object
+ * @param {...string} keys
+ * @returns {Record<string, any>}
+ */
+export function without(object, ...keys) {
+  const copy = { ...object };
+  for (const key of keys) delete copy[key];
+  return copy;
+}

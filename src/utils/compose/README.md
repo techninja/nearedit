@@ -26,8 +26,9 @@ drawFrame(ctx, edl, time, env, frameInfo(edl, canvas.width, canvas.height));
   `env`, so a steady stream of frames allocates nothing.
 - `requirements(edl)` → `{ images: [path], fonts: [{ font, text }] }`, what
   to load first. `layersAt(edl, time)` → the layers of a frame back to
-  front, each with `kind` (`video`, `image`, `title`, `generator`) and
-  `sourceTime` — how a host knows which footage frames a frame needs.
+  front, each with `kind` (`video`, `image`, `title`, `generator`,
+  `element`) and `sourceTime` — how a host knows which footage frames a
+  frame needs.
 
 Hosts: `#utils/playback/paintFrame.js` (browser) and `src/api/compose/`
 (Node: `createEnv`, `loadImages`, `registerFonts`, `renderFrame`).
@@ -97,6 +98,12 @@ and add it to the array in `generators/index.js`. That is all: the catalog,
 `requirements` (for `image` parameters), keyframes
 (`generator.params.<name>`) and the tests that check every schema pick it up.
 
+A generator that only adds its own marks with ordinary blending — it never
+clears, reads back or changes the composite operation — may say `direct:
+true`: an untransformed, opaque clip of it is then drawn straight over the
+picture instead of through a surface of its own (`shape`, `solid`,
+`gradient`, `pattern`).
+
 ## Adding an effect
 
 An effect works on a frame-sized surface holding the clip (or track) after
@@ -164,6 +171,8 @@ values. Do not name a parameter `seed`.
 | `catalog.js`, `params.js`, `blend.js`           | Registry, parameter resolution, blend modes                    |
 | `frame.js`, `color.js`, `random.js`, `fonts.js` | Time and size, colours, randomness, bundled fonts              |
 | `text/`                                         | Titles: style, wrapping, layout, animation, drawing            |
+| `elementLayer.js`, `elementExpansion.js`        | Brand element clips: expanded into layers, kept between frames |
+| `fontFaces.js`, `fontRegistrar.js`              | A document's own fonts, as data and as faces in the browser    |
 | `generators/`, `effects/`                       | One module each, listed in their `index.js`                    |
 
 ## Text

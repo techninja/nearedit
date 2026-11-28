@@ -75,9 +75,7 @@ function checkAdditions(clip, path, report) {
  * @param {any} track
  * @param {string} path
  * @param {Report} report
- * @param {{ sourceDurations?: import('./types.js').SourceDurations, fps?: number,
- *   enums?: Record<string, string[]> }} opts - `enums`: the enumerations in
- *   force, with the document's own font families
+ * @param {{ sourceDurations?: import('./types.js').SourceDurations, fps?: number, enums?: any }} opts
  * @returns {boolean} False when the clip is too broken for track-level checks
  */
 export function checkClip(clip, track, path, report, opts) {

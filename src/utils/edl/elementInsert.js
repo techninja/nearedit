@@ -26,7 +26,9 @@ const LABEL = 48;
  * @returns {string}
  */
 export function elementLabel(element, fallback = '') {
-  const first = element.design.slots.map((name) => element.slots[name]).find((text) => text?.trim());
+  const first = element.design.slots
+    .map((name) => element.slots[name])
+    .find((text) => text?.trim());
   return (first || fallback).replace(/\s+/g, ' ').trim().slice(0, LABEL);
 }
 
@@ -42,7 +44,8 @@ export function newElementClip(edl, element, name, opts) {
   const { design } = element;
   const wanted = finite(opts.duration, 0) > 0 ? opts.duration : design.duration;
   const span = overlaySpan(edl, opts.time, wanted);
-  const label = typeof opts.label === 'string' ? opts.label : elementLabel(element, name || element.id);
+  const label =
+    typeof opts.label === 'string' ? opts.label : elementLabel(element, name || element.id);
   const intent = design.kind === 'transition' ? 'transition' : 'title';
   return /** @type {Clip} */ (createClip({ ...span, label, intent, element }));
 }
@@ -57,7 +60,9 @@ export function newElementClip(edl, element, name, opts) {
 export function cutTimes(edl) {
   const cuts = new Set();
   for (const track of tracksOfType(edl, 'video')) {
-    const shots = track.clips.filter((clip) => !['title', 'element'].includes(clipKind(clip, track)));
+    const shots = track.clips.filter(
+      (clip) => !['title', 'element'].includes(clipKind(clip, track)),
+    );
     shots.forEach((clip, i) => {
       const next = shots[i + 1];
       const overlap = next ? clip.timelineEnd - next.timelineStart : -Infinity;
@@ -84,9 +89,13 @@ export function placeElement(edl, clip, opts) {
   if (kind === 'transition') {
     const cuts = cutTimes(edl);
     const at = finite(opts.time, 0);
-    const cut = cuts.reduce((best, time) => (Math.abs(time - at) < Math.abs(best - at) ? time : best), cuts[0]);
+    const cut = cuts.reduce(
+      (best, time) => (Math.abs(time - at) < Math.abs(best - at) ? time : best),
+      cuts[0],
+    );
     // The moment the frame is covered lands on the cut.
-    const wanted = cut === undefined ? clip.timelineStart : cut - coverTime(clip.element.design, length);
+    const wanted =
+      cut === undefined ? clip.timelineStart : cut - coverTime(clip.element.design, length);
     const start = Math.max(0, snap(edl, wanted));
     const moved = { ...clip, timelineStart: start, timelineEnd: snap(edl, start + length) };
     return addOverlay(edl, moved, opts);

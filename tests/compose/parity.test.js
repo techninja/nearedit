@@ -44,10 +44,10 @@ let footage = {};
 const lines = [];
 
 /** Save an RGBA buffer as PNG. */
-async function save(name, rgba) {
-  const canvas = createCanvas(WIDTH, HEIGHT);
+async function save(name, rgba, width = WIDTH, height = HEIGHT) {
+  const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
-  const image = ctx.createImageData(WIDTH, HEIGHT);
+  const image = ctx.createImageData(width, height);
   image.data.set(rgba);
   ctx.putImageData(image, 0, 0);
   await writeFile(join(OUT, `${name}.png`), canvas.toBuffer('image/png'));
@@ -58,16 +58,18 @@ async function compare(t, found) {
   if (skipped) return t.skip(skipped);
   const { name, edl, time } = found;
   footage = found.footage;
-  const canvas = renderFrame(edl, time, { width: WIDTH, height: HEIGHT, env });
-  const server = canvas.getContext('2d').getImageData(0, 0, WIDTH, HEIGHT).data;
+  // A document that is not 16:9 is drawn on a canvas of its own shape.
+  const { width, height } = found.size || { width: WIDTH, height: HEIGHT };
+  const canvas = renderFrame(edl, time, { width, height, env });
+  const server = canvas.getContext('2d').getImageData(0, 0, width, height).data;
   const images = { [fixtures.card]: fixtures.card, [fixtures.logo]: fixtures.logo };
-  const chrome = await browser.draw({ edl, time, width: WIDTH, height: HEIGHT, images, footage });
-  const d = difference(server, chrome, WIDTH, HEIGHT);
+  const chrome = await browser.draw({ edl, time, width, height, images, footage });
+  const d = difference(server, chrome, width, height);
   lines.push(report(name, d));
   if (OUT) {
-    await save(`${name}.server`, server);
-    await save(`${name}.chromium`, chrome);
-    await save(`${name}.diff`, differenceImage(server, chrome));
+    await save(`${name}.server`, server, width, height);
+    await save(`${name}.chromium`, chrome, width, height);
+    await save(`${name}.diff`, differenceImage(server, chrome), width, height);
   }
   return d;
 }

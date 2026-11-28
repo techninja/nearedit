@@ -2,10 +2,13 @@
  * Generator and effect names and parameters checked against the catalog:
  * the compositor draws nothing for a generator it does not know and skips
  * an unknown effect, which is the right thing for a preview and the wrong
- * thing to leave unsaid to someone writing a document by hand. Pure.
+ * thing to leave unsaid to someone writing a document by hand. The design
+ * of an element clip is checked the same way (`validateDesign`). Pure.
  * @module bin/lib/catalogCheck
  */
 
+import { isElementClip } from '#utils/brand/clip.js';
+import { validateDesign } from '#utils/brand/element/validate.js';
 import { effectModule, generatorModule, EFFECTS, GENERATORS } from '#utils/compose/index.js';
 import { coerceParam } from '#utils/compose/params.js';
 
@@ -63,6 +66,11 @@ export function catalogFindings(edl) {
     track.clips.forEach((clip, c) => {
       const path = `tracks[${t}].clips[${c}]`;
       effects(clip.effects, `${path}.effects`);
+      // An element clip draws its design: say what in it cannot be drawn as meant.
+      if (isElementClip(clip)) {
+        out.push(...validateDesign(clip.element.design, `${path}.element.design`));
+        return;
+      }
       if (!clip.generator?.type) return;
       const module = generatorModule(clip.generator.type);
       if (!module) unknown(`${path}.generator.type`, 'generator', clip.generator.type, GENERATORS);

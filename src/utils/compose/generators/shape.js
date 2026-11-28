@@ -21,6 +21,8 @@ export default {
   label: 'Shape',
   category: 'shape',
   description: 'Rectangle, ellipse, polygon, star or line with fill and stroke',
+  // Fills and strokes one path: it can be drawn straight over a picture.
+  direct: true,
   params: {
     shape: {
       type: 'select',

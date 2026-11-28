@@ -13,7 +13,8 @@ import { normalizeClip } from './normalizeClip.js';
 import { normalizeMarkers, normalizeRegions } from './normalizeMarks.js';
 import { resolveAll } from './place.js';
 import { sortedTracks } from './query.js';
-import { fontEnums, isObject, mergeShape, toNumber } from './sanitize.js';
+import { isObject, mergeShape, toNumber } from './sanitize.js';
+import { fontEnums } from './fontEnums.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Track} Track */

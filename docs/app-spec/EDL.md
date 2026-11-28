@@ -42,6 +42,7 @@ modified.
 | tracks     | Track[]  | Video tracks first, then audio                           |
 | markers    | Marker[] | Sorted by `time`                                         |
 | regions    | Region[] | Named time spans, sorted by `start` (`src/utils/edl/regions.js`) |
+| fonts      | Font[]   | Only when the document needs fonts that are not bundled, see [fonts](#fonts) |
 
 `playheadPosition`, `cursorPosition`, `zoom` and `scrollX` are view state.
 In the browser they live in `ViewState`, not in the session's document; they
@@ -100,15 +101,16 @@ an audio track, joined to its picture by `linkedClipId`.
 | generator     | object   | A synthetic source, see [generator](#generator)    |
 | web           | object   | Only on a web clip: its recipe and recording, see [web](#web) |
 | music         | object   | Only on a music clip: its song and rendering, see [music](#music) |
+| element       | object   | Only on an element clip: a brand element, its slots and its design, see [element](#element) |
 | effects       | Effect[] | Applied in order after the clip is placed          |
 | keyframes     | object   | Animated properties, see [keyframes](#keyframes)   |
 | text          | object   | Title text block, see below                        |
 | transform     | object   | Geometry, see below                                |
 
-`clipKind(clip, track)` classifies a clip as `generator` (it names a
-`generator.type`, whatever else it carries), `video`, `audio`, `image`,
-`title` (no `sourceFile`, non-empty `text.content`) or `placeholder` (no
-`sourceFile`, empty text). A [web clip](#web) is not a kind of its own:
+`clipKind(clip, track)` classifies a clip as `element` (it carries a
+[design](#element), whatever else it holds), `generator` (it names a
+`generator.type`), `video`, `audio`, `image`, `title` (no `sourceFile`,
+non-empty `text.content`) or `placeholder` (no `sourceFile`, empty text). A [web clip](#web) is not a kind of its own:
 recorded it is a `video`, until then a `placeholder` with a length —
 `isWebClip(clip)` tells. Nor is a [music clip](#music): rendered it is an
 `audio` clip, until then a `placeholder` — `isMusicClip(clip)` tells.
@@ -175,7 +177,7 @@ lives on a video track and is composited like any other layer.
 | Field        | Type    | Notes                                     |
 | ------------ | ------- | ----------------------------------------- |
 | content      | string  | May contain `\n` line breaks              |
-| fontFamily   | enum    | A bundled family (`Inter`, `Playfair Display`, `JetBrains Mono`, `Bebas Neue`, `Caveat`) or a generic name (`sans-serif`, `serif`, `monospace`, `display`, `handwriting`). Anything else becomes `sans-serif` |
+| fontFamily   | enum    | A bundled family (`Inter`, `Playfair Display`, `JetBrains Mono`, `Bebas Neue`, `Caveat`), a generic name (`sans-serif`, `serif`, `monospace`, `display`, `handwriting`) or a family of the document's [fonts](#fonts). Anything else becomes `sans-serif` |
 | fontSize     | number  | Pixels at output resolution               |
 | color        | string  | Hex                                       |
 | background   | string  | Box colour behind the text, empty = none  |
@@ -321,8 +323,30 @@ see [MUSIC.md](./MUSIC.md). Every other clip has no `music` at all.
 - `music`, and on a music clip `sourceFile` and `sourceIn`, are not written
   by `updateClip`; they belong to the [music clip
   operations](./EDL-OPERATIONS.md#music-clips), slip and trim.
-- A clip is a web clip or a music clip, never both: `validateEdl` refuses
-  one that carries both blocks, and on load the `web` block wins.
+- A clip is a web, a music or an element clip, never two: `validateEdl`
+  refuses that, and on load `web` wins over `music`, either over `element`.
+
+### element
+
+```json
+{ "kit": { "id": "acme", "key": "5d0c9be1c4d07be24a6f" }, "id": "lower-third",
+  "slots": { "name": "Ada Lovelace" }, "design": { "kind": "overlay", "layers": [] } }
+```
+
+Only an **element clip** has this field: one instance of an element of a
+brand kit ([BRAND.md](./BRAND.md)). `design` is that element with the kit's
+tokens filled in, so the clip draws with no kit at hand; `slots` fills its
+blanks; `kit.key` is the revision of the kit it came from. `cleanElement`
+reads the block on load — bounded, kept when it holds a design object — and
+`validateEdl` accepts exactly that. The clip names no file, its source is
+unbounded like a title's, and `updateClip` cannot write `element`.
+
+### fonts
+
+`[{ "family": "Acme Sans", "weight": 700, "style": "normal", "file": "/abs/Bold.woff2" }]`
+— the font files a document needs that are not bundled, each face once;
+absent when there are none. A title may name these families; a bundled one
+cannot be redefined. [Element operations](./EDL-OPERATIONS.md#element-clips).
 
 ### effects
 

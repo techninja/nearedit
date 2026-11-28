@@ -12,7 +12,7 @@
 
 import { isPlainObject } from '#utils/edl/jsonBag.js';
 import { LIMITS } from '#utils/brand/limits.js';
-import { layerClip } from './layerClips.js';
+import { layerClips } from './layerClips.js';
 import { layoutView } from './layout.js';
 import { estimateMeasure, num } from './measure.js';
 import { timings } from './timing.js';
@@ -71,7 +71,7 @@ export function expandElement(design, slots, options) {
     const times = timings(view, duration);
     return view.layers.flatMap((layer) => {
       const [where, when] = [placed.get(layer.id), times.get(layer.id)];
-      return (where && when && layerClip(layer, where, when, env)) || [];
+      return where && when ? layerClips(layer, where, when, env) : [];
     });
   } catch (err) {
     warn(`an element could not be expanded and draws nothing: ${err?.message || err}`);

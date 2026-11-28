@@ -47,6 +47,14 @@ let footage = {};
 const envs = {};
 const lines = [];
 
+/**
+ * The small canvas of a case: 480 × 270, or — for a document that is not
+ * 16:9 — its own shape with the same shorter side (three quarters of the
+ * size the parity test draws it at).
+ */
+const smallOf = (found) =>
+  found.size ? { width: found.size.width * 0.75, height: found.size.height * 0.75 } : SMALL;
+
 /** RGBA of a frame drawn `scale` times the small size. */
 function frame(found, scale) {
   footage = found.footage;
@@ -54,13 +62,14 @@ function frame(found, scale) {
     images,
     frameOf: (clip) => images.get(footage[clip.clipId]) || null,
   });
-  const size = { width: SMALL.width * scale, height: SMALL.height * scale };
+  const small = smallOf(found);
+  const size = { width: small.width * scale, height: small.height * scale };
   const canvas = renderFrame(found.edl, found.time, { ...size, env: envs[scale] });
   return canvas.getContext('2d').getImageData(0, 0, size.width, size.height).data;
 }
 
 /** Average every FACTOR × FACTOR pixels of a large frame into one. */
-function averaged(large) {
+function averaged(large, SMALL = { width: 480, height: 270 }) {
   const out = new Uint8ClampedArray(SMALL.width * SMALL.height * 4);
   const stride = SMALL.width * FACTOR * 4;
   for (let y = 0; y < SMALL.height; y++) {
@@ -79,10 +88,10 @@ function averaged(large) {
 }
 
 /** Save an RGBA buffer of the small size as PNG. */
-async function save(name, rgba) {
-  const canvas = createCanvas(SMALL.width, SMALL.height);
+async function save(name, rgba, size = SMALL) {
+  const canvas = createCanvas(size.width, size.height);
   const ctx = canvas.getContext('2d');
-  const image = ctx.createImageData(SMALL.width, SMALL.height);
+  const image = ctx.createImageData(size.width, size.height);
   image.data.set(rgba);
   ctx.putImageData(image, 0, 0);
   await writeFile(join(OUT, `${name}.png`), canvas.toBuffer('image/png'));
@@ -103,14 +112,15 @@ describe('resolution independence: 480 px wide vs 1920 px wide', () => {
   for (const name of CASE_NAMES) {
     it(`draws "${name}" the same picture at both sizes`, async () => {
       const found = referenceCases(fixtures).find((c) => c.name === name);
+      const size = smallOf(found);
       const small = frame(found, 1);
-      const large = averaged(frame(found, FACTOR));
-      const d = difference(small, large, SMALL.width, SMALL.height);
+      const large = averaged(frame(found, FACTOR), size);
+      const d = difference(small, large, size.width, size.height);
       lines.push(report(name, d));
       if (OUT) {
-        await save(`${name}.480`, small);
-        await save(`${name}.1920`, large);
-        await save(`${name}.diff`, differenceImage(small, large, 8));
+        await save(`${name}.480`, small, size);
+        await save(`${name}.1920`, large, size);
+        await save(`${name}.diff`, differenceImage(small, large, 8), size);
       }
       const block = found.text ? TEXT_BLOCK : BLOCK;
       assert.ok(d.mean <= MEAN, `mean difference ${d.mean.toFixed(3)} levels`);

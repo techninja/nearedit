@@ -10,8 +10,8 @@ import { NO_OVERLAP, fitFades, neighbourOverlaps } from './fades.js';
 import { idList, indexClips, mapClips } from './immutable.js';
 import { sameJson } from './jsonBag.js';
 import { normalizeClip } from './normalizeClip.js';
-import { fontEnums } from './sanitize.js';
 import { EPS, fpsOf, snap } from './time.js';
+import { fontEnums } from './fontEnums.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Clip} Clip */

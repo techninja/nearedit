@@ -73,8 +73,15 @@ async function serve(fixtures) {
  */
 async function drawInPage(job) {
   const mod = '/utils/compose/index.js';
-  const { drawFrame, frameInfo, requirements } = await import(mod);
+  const { createFontRegistrar, drawFrame, frameInfo, requirements } = await import(mod);
   const state = (globalThis.__compose ||= { images: new Map(), env: null });
+  // A document's own fonts: the app's registrar, reading the files from the fixture folder.
+  state.fonts ||= createFontRegistrar(
+    document.fonts,
+    (family, source, descriptors) => new FontFace(family, source, descriptors),
+    (file) => `/__file?path=${encodeURIComponent(file)}`,
+  );
+  if (job.edl.fonts) state.fonts(job.edl.fonts);
   for (const [path, file] of Object.entries(job.images || {})) {
     if (state.images.has(path)) continue;
     const image = new Image();
@@ -82,7 +89,10 @@ async function drawInPage(job) {
     await image.decode();
     state.images.set(path, image);
   }
-  for (const { font, text } of requirements(job.edl).fonts) await document.fonts.load(font, text);
+  for (const { font, text } of requirements(job.edl).fonts) {
+    // A font file that is missing fails to load; its text falls back, as in the app.
+    await document.fonts.load(font, text).catch(() => []);
+  }
   const createCanvas = (width, height) =>
     Object.assign(document.createElement('canvas'), { width, height });
   state.footage = job.footage || {};
@@ -91,6 +101,7 @@ async function drawInPage(job) {
     image: (path) => state.images.get(path) || null,
     frameOf: (clip) => state.images.get(state.footage[clip.clipId]) || null,
     fontReady: () => true, // every font was loaded above, before drawing
+    fonts: (table) => state.fonts(table),
   };
   const canvas = createCanvas(job.width, job.height);
   const ctx = canvas.getContext('2d');

@@ -38,6 +38,8 @@ import { MOTIONS, MOTION_SECONDS } from './vocabulary.js';
 
 /** Shortest a layer may be for it to be drawn at all, seconds. */
 const SHORTEST = 1e-3;
+/** Times are kept to the microsecond: no dust from adding and dividing. */
+export const micro = (/** @type {number} */ seconds) => Math.round(seconds * 1e6) / 1e6;
 
 /**
  * A motion as a design writes it — a name, or an object — with every field usable.
@@ -83,8 +85,8 @@ export function timings(view, duration) {
   /** @type {Map<string, Timing|null>} */
   const out = new Map();
   for (const { id, enter, exit } of specs) {
-    const start = enter.delay * k;
-    const end = duration - exit.delay * k;
+    const start = micro(enter.delay * k);
+    const end = micro(duration - exit.delay * k);
     /** @type {(spec: any, from: number, to: number) => Move|null} */
     const move = (spec, from, to) => {
       if (spec.motion === 'none' || !(to - from > 0)) return null;
@@ -97,8 +99,8 @@ export function timings(view, duration) {
         ? {
             start,
             end,
-            enter: move(enter, start, start + enter.duration * k),
-            exit: move(exit, end - exit.duration * k, end),
+            enter: move(enter, start, micro(start + enter.duration * k)),
+            exit: move(exit, micro(end - exit.duration * k), end),
           }
         : null,
     );

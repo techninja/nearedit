@@ -14,9 +14,10 @@ import { mapClips, tracksOfType } from './immutable.js';
 import { repairLinks } from './links.js';
 import { addClips, ensureTrack } from './placement.js';
 import { rippleDeleteRange, rippleInsert } from './ripple.js';
-import { fontEnums, isObject, toNumber } from './sanitize.js';
+import { isObject, toNumber } from './sanitize.js';
 import { fpsOf, snap } from './time.js';
 import { addTrack } from './trackOps.js';
+import { fontEnums } from './fontEnums.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./fragment.js').Fragment} Fragment */

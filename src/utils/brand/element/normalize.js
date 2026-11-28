@@ -8,7 +8,7 @@
  */
 
 import { isPlainObject } from '#utils/edl/jsonBag.js';
-import { LIMITS, isId } from '#utils/brand/limits.js';
+import { LIMITS, isId, without } from '#utils/brand/limits.js';
 import { cleanFonts } from '#utils/brand/fontTable.js';
 import { GROUP_FIELDS, LAYER_FIELDS, readShape } from './fields.js';
 import { FORMATS, KINDS } from './vocabulary.js';
@@ -56,7 +56,7 @@ function readFormats(raw) {
   const out = {};
   if (!isPlainObject(raw)) return out;
   for (const format of FORMATS.filter((name) => isPlainObject(raw[name]))) {
-    const { type: _type, id: _id, ...patch } = LAYER_FIELDS;
+    const patch = without(LAYER_FIELDS, 'type', 'id');
     const layers = readMap(raw[format].layers, patch, LIMITS.layers);
     const groups = readMap(raw[format].groups, GROUP_FIELDS, LIMITS.groups);
     const head = readShape(raw[format], { margin: 'num' });

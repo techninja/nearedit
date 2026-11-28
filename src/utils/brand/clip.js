@@ -65,7 +65,9 @@ export function elementSpan(track, clip) {
   let { timelineStart: start, timelineEnd: end } = clip;
   const pieces = (track?.clips || []).filter(
     (other) =>
-      other.clipId !== clip.clipId && isElementClip(other) && sameElement(other.element, clip.element),
+      other.clipId !== clip.clipId &&
+      isElementClip(other) &&
+      sameElement(other.element, clip.element),
   );
   for (let grown = pieces.length > 0; grown; ) {
     grown = false;

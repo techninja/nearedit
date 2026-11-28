@@ -65,8 +65,10 @@ function drawGenerator(ctx, clip, t, alpha, time, run, blank) {
     seed: Number.isFinite(seed) ? seed : 0,
     ...resolveParams(module.params, params),
   };
-  // On the clip's own blank surface an untransformed generator needs no detour.
-  const own = blank && isIdentity(t) ? null : pool.acquire();
+  // On the clip's own blank surface an untransformed generator needs no detour;
+  // nor does one that only adds its own marks (`direct`), drawn opaque, anywhere.
+  const straight = isIdentity(t) && (blank || (module.direct === true && alpha === 1));
+  const own = straight ? null : pool.acquire();
   const target = own ? own.ctx : ctx;
   runModule(`generator "${type}"`, target, pool, () =>
     module.draw(target, values, time, run.frame, env),

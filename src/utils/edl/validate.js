@@ -7,10 +7,11 @@
 
 import { cleanFonts, sameFonts } from '#utils/brand/fontTable.js';
 import { BACKGROUND_COLOR, EDL_VERSION } from './defaults.js';
-import { fontEnums, isObject } from './sanitize.js';
+import { isObject } from './sanitize.js';
 import { checkClip, checkOverlaps, checkShape, isGain } from './validateClip.js';
 import { checkEffects } from './validateExtras.js';
 import { checkMarkers, checkRegions } from './validateMarks.js';
+import { fontEnums } from './fontEnums.js';
 
 /**
  * @typedef {Object} Problem

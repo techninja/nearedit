@@ -61,6 +61,8 @@ export function syncFonts(edl, dropped = []) {
   const kept = (edl.fonts || []).filter((face) => !gone.has(faceKey(face)));
   const fonts = mergeFonts(faces, kept);
   if (sameFonts(fonts, edl.fonts)) return edl;
-  const { fonts: _old, ...rest } = edl;
-  return /** @type {Edl} */ (fonts.length ? { ...rest, fonts } : rest);
+  /** @type {any} */
+  const next = { ...edl, fonts };
+  if (!fonts.length) delete next.fonts;
+  return next;
 }

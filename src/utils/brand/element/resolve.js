@@ -7,6 +7,7 @@
  * @module utils/brand/element/resolve
  */
 
+import { without } from '#utils/brand/limits.js';
 import { tokenValue } from '#utils/brand/tokens.js';
 import { normalizeDesign } from './normalize.js';
 import { fill, isPresent, references } from './refs.js';
@@ -27,8 +28,7 @@ function settle(layer) {
   for (const key of ['when', 'unless']) {
     if (!Object.hasOwn(out, key) || references(out[key]).length) continue;
     if (isPresent(out[key]) !== (key === 'when')) return null;
-    const { [key]: _settled, ...rest } = out;
-    out = rest;
+    out = without(out, key);
   }
   return out;
 }
@@ -81,8 +81,8 @@ function resolve(kit, id) {
   if (!element) return null;
   const lookup = (/** @type {string} */ path) =>
     path.startsWith('slot.') ? undefined : tokenValue(kit, path);
-  const { label: _label, slots, ...written } = element;
-  const filled = fill(written, lookup);
+  const { slots } = element;
+  const filled = fill(without(element, 'label', 'slots'), lookup);
   const layers = filled.layers.map(settle).filter(Boolean);
   const body = { ...filled, layers, formats: settleFormats(filled.formats) };
   const families = familiesOf(body);

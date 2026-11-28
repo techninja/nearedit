@@ -13,8 +13,8 @@ import { prepareFragment } from './fragment.js';
 import { idList, tracksOfType } from './immutable.js';
 import { addClips, ensureTrack } from './placement.js';
 import { rippleInsert } from './ripple.js';
-import { fontEnums } from './sanitize.js';
 import { finite, fpsOf, snap } from './time.js';
+import { fontEnums } from './fontEnums.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 /** @typedef {import('./types.js').Clip} Clip */

@@ -19,6 +19,8 @@ import { F } from './parts.js';
  * @property {string} [shape] - `rectangle` (default) or `ellipse`
  * @property {number} [radius] - Corner radius of a rectangle, units
  * @property {number} [rotate] - Degrees
+ * @property {string} [stroke] - Colour of an outline around the drawn shape
+ * @property {number} [strokeWidth] - Its thickness, units
  * @property {'ring'|'dot'|'bar'|'star'} [figure] - What is drawn without initials
  * @property {string} [token] - The logo token to show when it is set (`{logo.mark}`)
  * @property {any} [enter]
@@ -49,13 +51,17 @@ const FIGURES = {
  */
 export function mark(spec) {
   const { id = 'mark', size, place, base, ink, token = '{logo.mark}' } = spec;
-  const motion = { ...(spec.enter && { enter: spec.enter }), ...(spec.exit && { exit: spec.exit }) };
+  const motion = {
+    ...(spec.enter && { enter: spec.enter }),
+    ...(spec.exit && { exit: spec.exit }),
+  };
   const on = { inside: `${id}-base`, at: 'center', unless: token, ...motion };
   return [
     { id, type: 'image', src: token, when: token, h: size, ...place, ...motion },
     {
       ...{ id: `${id}-base`, type: 'shape', unless: token, w: size, h: size, fill: base },
       ...{ shape: spec.shape || 'rectangle', radius: spec.radius ?? 0, rotate: spec.rotate ?? 0 },
+      ...(spec.stroke && { stroke: spec.stroke, strokeWidth: spec.strokeWidth ?? 0.4 }),
       ...place,
       ...motion,
     },

@@ -9,8 +9,9 @@ import { tracksOfType } from './immutable.js';
 import { addOverlay, overlaySpan } from './overlayClip.js';
 import { addClips, pairedAudioTracks, pickTrack } from './placement.js';
 import { rippleInsert } from './ripple.js';
-import { fontEnums, mergeShape } from './sanitize.js';
+import { mergeShape } from './sanitize.js';
 import { EPS, clamp, finite, floorToFrame, frameDuration, snap } from './time.js';
+import { fontEnums } from './fontEnums.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 

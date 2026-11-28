@@ -16,6 +16,8 @@
  * @module utils/playback/compositor
  */
 
+import { isElementClip } from '#utils/brand/clip.js';
+import { elementImages } from '#utils/compose/requirements.js';
 import { sourceTimeAt } from '#utils/edl/query.js';
 import { createImageCache } from '#utils/playback/imageCache.js';
 import { pictureUrl } from '#utils/playback/mediaUrl.js';
@@ -65,8 +67,14 @@ export function createCompositor(canvas) {
    */
   function drawable(exact) {
     for (const cue of videoLayers(request.doc.tracks, request.time)) {
-      if (cue.kind === 'image') {
-        const still = images.get(pictureUrl(cue.clip.sourceFile));
+      // An element clip waits for its pictures (a logo) like a still does.
+      const stills = isElementClip(cue.clip)
+        ? elementImages({ ...request.doc, tracks: [{ clips: [cue.clip] }] })
+        : cue.kind === 'image'
+          ? [cue.clip.sourceFile]
+          : [];
+      for (const path of stills) {
+        const still = images.get(pictureUrl(path));
         if (!still.ready && !still.failed) return false;
       }
       if (cue.kind !== 'video') continue;

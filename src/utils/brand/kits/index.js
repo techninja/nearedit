@@ -7,9 +7,12 @@
 
 import { BUILTIN_PREFIX } from '#utils/brand/limits.js';
 import { normalizeKit } from '#utils/brand/normalize.js';
+import bold from './bold/index.js';
 import clean from './clean/index.js';
+import documentary from './documentary/index.js';
+import playful from './playful/index.js';
 
-const RAW = [clean];
+const RAW = [clean, bold, documentary, playful];
 
 /** @type {Map<string, import('#utils/brand/types.js').Kit>} */
 const KITS = new Map(RAW.map((raw) => [raw.id, normalizeKit(raw)]));

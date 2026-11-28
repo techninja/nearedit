@@ -1,12 +1,16 @@
 /**
- * Every place a document names a file: a clip's `sourceFile`, and each
- * `image` parameter of a generator or an effect (a particle sprite, a mask).
- * Whoever accepts a document from outside — the render routes, the command
- * line — walks it through here to resolve and check each path before any
- * of them is read. Pure.
+ * Every place a document names a file: a clip's `sourceFile`, each `image`
+ * parameter of a generator or an effect (a particle sprite, a mask), the
+ * pictures and font files inside the design of an element clip, and the
+ * font files of the document's own `fonts` table. Whoever accepts a
+ * document from outside — the render routes, the command line — walks it
+ * through here to resolve and check each path before any of them is read.
+ * Pure.
  * @module api/render/mediaPaths
  */
 
+import { isElementClip } from '#utils/brand/clip.js';
+import { mapKitFiles } from '#utils/brand/files.js';
 import { effectModule, generatorModule } from '#utils/compose/catalog.js';
 import { requirements } from '#utils/compose/requirements.js';
 import { activeTracks } from '#utils/edl/query.js';
@@ -53,7 +57,7 @@ function mapEffects(effects, resolvePath, where) {
 /**
  * Copy a document with every file path passed through `resolvePath` — on
  * every track, also muted ones, so nothing in a document escapes the check.
- * @param {{ tracks: any[] }} edl - A normalised document
+ * @param {{ tracks: any[], fonts?: any[] }} edl - A normalised document
  * @param {ResolvePath} resolvePath
  * @returns {any}
  */
@@ -61,26 +65,35 @@ export function mapMediaPaths(edl, resolvePath) {
   const mapClip = (clip, at) => {
     const schema = generatorModule(clip.generator?.type)?.params;
     const params = mapParams(schema, clip.generator?.params, resolvePath, `${at}.generator.params`);
+    // A design names its logo, its sprites and its font files like any other path.
+    const inside = (path, where) => resolvePath(path, `${at}.element.design.${where}`);
+    const element = isElementClip(clip)
+      ? { ...clip.element, design: mapKitFiles(clip.element.design, inside) }
+      : null;
     return {
       ...clip,
       sourceFile: clip.sourceFile ? resolvePath(clip.sourceFile, `${at}.sourceFile`) : '',
       ...(clip.generator && { generator: { ...clip.generator, params } }),
+      ...(element && { element }),
       effects: mapEffects(clip.effects, resolvePath, `${at}.effects`),
     };
   };
+  const fonts = Array.isArray(edl.fonts)
+    ? edl.fonts.map((face, i) => ({ ...face, file: resolvePath(face.file, `fonts[${i}].file`) }))
+    : null;
   const tracks = edl.tracks.map((track, t) => ({
     ...track,
     effects: mapEffects(track.effects, resolvePath, `tracks[${t}].effects`),
     clips: (track.clips || []).map((clip, c) => mapClip(clip, `tracks[${t}].clips[${c}]`)),
   }));
-  return { ...edl, tracks };
+  return { ...edl, tracks, ...(fonts && { fonts }) };
 }
 
 /**
  * The stills and sprites the visible tracks of a document draw.
- * @param {{ tracks?: any[] }} edl
+ * @param {{ tracks?: any[], fonts?: any[] }} edl
  * @returns {string[]} Unique paths
  */
 export function renderImages(edl) {
-  return requirements({ tracks: activeTracks(edl.tracks || [], 'video') }).images;
+  return requirements({ ...edl, tracks: activeTracks(edl.tracks || [], 'video') }).images;
 }

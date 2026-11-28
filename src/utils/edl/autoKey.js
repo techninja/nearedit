@@ -8,9 +8,9 @@
 import { clipLocalTime, getPath, valueAt } from './animate.js';
 import { writeValue } from './clipPatch.js';
 import { changeClip } from './immutable.js';
-import { fontEnums } from './sanitize.js';
 import { putKey, withKeys } from './keyEdit.js';
 import { isAnimated, keysOf } from './keyframeQuery.js';
+import { fontEnums } from './fontEnums.js';
 
 /** @typedef {import('./types.js').Edl} Edl */
 

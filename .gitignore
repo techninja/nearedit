@@ -22,3 +22,6 @@ media/*
 !media/.gitkeep
 
 .DS_Store
+
+# Python byte code of the workers
+__pycache__/

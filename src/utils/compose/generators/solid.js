@@ -9,6 +9,7 @@ export default {
   label: 'Solid colour',
   category: 'background',
   description: 'One colour filling the frame',
+  direct: true,
   params: {
     color: { type: 'color', default: '#1e293b', label: 'Colour', animatable: true },
   },

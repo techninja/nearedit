@@ -35,6 +35,7 @@ All optional; a v2 document is a valid v3 document.
 | `blendMode` | enum | How the clip combines with what is under it. Default `normal` |
 | `fadeInCurve`, `fadeOutCurve` | enum | Shape of the fades: `linear` (default), `smooth`, `fast`, `slow`, `sharp` |
 | `text` | object | Title text, extended below |
+| `element` | object | A [brand element](./BRAND.md): the clip draws its design. `clipKind` and the layer kind are `element` |
 
 Generator, title, image and placeholder clips now keep a source window like
 media does: `timelineEnd - timelineStart === sourceOut - sourceIn` for every
@@ -56,6 +57,7 @@ motion attached to the content through trims, slips and splits.
 | ----- | ---- | ----- |
 | `version` | 3 | |
 | `background` | colour | Behind everything. Default `#000000` |
+| `fonts` | `[{ family, weight, style, file }]` | Font files the document brings, see [Fonts](#fonts) |
 
 ### text (additions)
 
@@ -143,7 +145,8 @@ For each frame, back to front:
    1. For each clip covering the time, in start order, `resolveClip` it, then
       draw its **source**: a footage frame or still placed with `placeSource`
       and `resolveTransform`; a generator or title drawn frame-sized, then
-      transformed the same way.
+      transformed the same way; an [element clip](#element-clips) as the
+      layers its design expands to.
    2. If the clip has enabled effects or a non-normal blend mode, it is drawn
       onto its own frame-sized surface first, its effects are applied in
       order, and the surface is composited with the clip's opacity
@@ -156,6 +159,37 @@ For each frame, back to front:
 Effects therefore act in frame space, after the transform: a 20-pixel blur
 is 20 output pixels however the clip is scaled, and glows and shadows can
 spill outside the clip's rectangle.
+
+## Element clips
+
+A clip that carries `element` (a brand element, [BRAND.md](./BRAND.md)) is
+the layer kind `element`. It draws by **expanding** its design for its own
+length and the output frame — `expandElement(design, slots, { duration,
+frame, measure, sizeOf })` gives ordinary title, shape, image and generator
+clips, back to front — and drawing those with the clip drawing every other
+layer uses (`elementLayer.js`); an element never holds an element. The
+layers go onto a surface that is then the clip's picture: transform,
+opacity, fades, effects and blend apply to it as to any source. An
+untransformed, opaque clip without blended layers skips the surface.
+
+- **Layout is this canvas's own.** Text is measured with the canvas the
+  frame is drawn on, at output size, so both canvases break the same lines.
+  Until every font the element's text needs is ready nothing of it is drawn.
+- **Kept between frames.** An expansion depends only on the clip's
+  `element` block, the length of its run, the output size, the font table
+  and the sizes of its pictures; it is remembered per block
+  (`elementExpansion.js`) and laid out again only when one of those changes.
+- **Runs.** Element clips that touch on a track and carry the same element
+  play as one (`elementSpan`): time counts from the start of the run.
+- **Cost** at 1920 × 1080 on the server canvas, over a 1.5 ms footage
+  frame: a lower third at rest adds 0.1–0.4 ms (clean, bold, playful; 8 ms
+  for documentary's gradient and shadowed serif), 0.3–10 ms while it
+  arrives (20 ms), 1–2 ms more when the clip is moved or faded (a surface),
+  and 3–13 ms once for its layout. A shape, a solid, a gradient or a pattern
+  drawn untransformed and opaque goes straight onto the picture (`direct`).
+
+`requirements(edl)` lists the pictures and fonts of element clips with
+everything else; `elementImages(edl)` those pictures alone.
 
 ## Module contracts
 
@@ -177,6 +211,8 @@ export default {
     from: { type: 'color', default: '#1e1b4b', animatable: true },
   },
   draw(ctx, params, time, frame, env) {}, // paints the whole frame-sized canvas
+  // direct: true — it only adds marks with ordinary blending, so an untransformed,
+  // opaque clip may draw straight over the picture (shape, solid, gradient, pattern)
 };
 
 /** An effect: either a CSS-style filter string, or a drawing pass. */
@@ -218,6 +254,7 @@ The only door to the outside. Compositor modules never touch `document`,
 | `image(path)` | A decoded still or sprite for a media path, or `null` while it loads |
 | `frameOf(clip, sourceTime)` | The footage frame for a clip, or `null` when not available |
 | `fontReady(font, text)` | Whether the font is loaded (the browser loads on demand) |
+| `fonts(table)` | Optional: make the document's own font files known. Called with `edl.fonts` on every frame that has one, so it must cost nothing for a table it has seen |
 
 `requirements(edl)` lists the images and fonts a document needs, so a host
 can load them before drawing: the server loads all of them first; the
@@ -276,8 +313,21 @@ Five families and colour emoji are bundled (`src/utils/compose/fonts.js`),
 vendored from `@fontsource` packages into `src/vendor/fonts/` at install.
 The browser loads them through `fonts.css`; the server registers the same
 files with their weight and style. A document that names another family gets
-the sans-serif default, and `fontString` only ever names a face that is
-bundled, so neither side synthesises one.
+the sans-serif default, and `fontString` only ever names a face there is a
+file for, so neither side synthesises one.
+
+**A document's own fonts.** `edl.fonts` lists font files under family names
+of their own ([EDL.md](./EDL.md#fonts)); a brand kit brings them. The font
+helpers look a family up there before the bundled ones (`textStyle(text,
+frame.fonts)`, `fontFaces.js`). Both hosts get the table through
+`env.fonts`: the browser adds a `FontFace` per entry, read from the media
+route, and loads it when text first needs it (`fontRegistrar.js`); the
+server registers the files (`registerDocumentFonts`). The font string names
+the bundled sans-serif after the family, so glyphs the file lacks — or all
+of them, when the file is missing or unreadable, which is reported once —
+are drawn the same on both canvases. A bundled family cannot be redefined.
+Text in a brand font is bit-identical between the two canvases, like the
+bundled ones (`tests/compose/cases/elements.js`).
 
 ## Rendering on the server
 

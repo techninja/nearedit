@@ -37,6 +37,7 @@ then hand-tune.
 | `insert.js`, `generator.js` | `insertMedia`, `insertTitle`; `insertGenerator`, `updateGenerator` |
 | `webClip.js`, `webZoom.js` | [Web clips](#web-clips): `insertWebClip`, `updateWebRecipe`, `setWebRecording`, `webClips`, `staleWebClips`; `applyWebZoom`, `clearWebZoom` |
 | `musicClip.js` | [Music clips](#music-clips): `insertMusicClip`, `updateSong`, `setMusicRendering`, `musicClips`, `staleMusicClips` |
+| `elementClip.js`, `elementDetach.js`, `elementFonts.js` | [Element clips](#element-clips): `insertElement`, `updateElementSlots`, `restyle`, `elementClips`, `staleElements`; `detachElement`; `syncFonts` |
 | `animate.js`, `easing.js` | Keyframe evaluation: `resolveClip`, `valueAt`, `clipLocalTime`, `getPath`, `setPath`, `EASINGS` |
 | `keyframes.js`, `autoKey.js` | `setKeyframe`, `removeKeyframe`, `moveKeyframe`, `setKeyframeEase`, `removeKeyframesAt`, `moveKeyframesAt`, `clearKeyframes`; `setValueAt`, `setAnimated` |
 | `keyframeQuery.js`, `clipPaths.js` | `isAnimated`, `keysOf`, `animatedPaths`, `listKeyframes`, `keyframeTimes`, `nextKeyframeTime`, `previousKeyframeTime`, `keyTime`; `describePath` |
@@ -52,9 +53,10 @@ Internal building blocks: `time.js`, `immutable.js`, `clipMath.js`,
 `sanitize.js`, `jsonBag.js`, `keyList.js`, `effectList.js`,
 `effectStack.js`, `keyEdit.js`, `clipPatch.js`, `normalizeClip.js`,
 `normalizeMarks.js`, `fragment.js`, `validateClip.js`, `validateExtras.js`,
-`validateMarks.js`. The `web` field as data (`cleanWeb`, `checkWeb`, the
-window fit) is `src/utils/web/field.js`, the `music` field
-`src/utils/music/field.js`. `types.js` holds the shared JSDoc types (`Edl`, `Track`,
+`validateMarks.js`, `elementInsert.js`, `fontEnums.js`. The `web` field as
+data (`cleanWeb`, `checkWeb`, the window fit) is `src/utils/web/field.js`,
+the `music` field `src/utils/music/field.js`, the `element` field
+`src/utils/brand/field.js`. `types.js` holds the shared JSDoc types (`Edl`, `Track`,
 `Clip`, `Effect`, `Keyframe`, `Marker`, `Region`) and `testkit.js` the
 fixtures for tests (`testEdl`, `testClip`, `deepFreeze`, `assertValid`).
 
@@ -99,7 +101,7 @@ A target is `{ clipId }` or `{ trackId }` (a bare string is a clip id).
 | --------- | ------------ |
 | `insertGenerator(edl, { type, params, seed }, { time, duration, trackId, label, autoCrossfade, clip }?)` | Add a generator clip, placed like a title: on the front-most video track when it is free there, otherwise on a new top track; with `trackId` under the normal overlap rules. `clip` is an `updateClip`-style patch for its look |
 | `updateGenerator(edl, clipId, { type, seed, params })` | Merge parameters, set the seed, or switch the type (which resets the parameters and drops their keyframes) |
-| `updateClip(edl, clipId, patch)` | Also `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator`, `effects` (whole list), `keyframes` (by path) and the new `text` fields. Never `web` or `music`, nor a web or music clip's `sourceFile` and `sourceIn` |
+| `updateClip(edl, clipId, patch)` | Also `blendMode`, `fadeInCurve`, `fadeOutCurve`, `generator`, `effects` (whole list), `keyframes` (by path) and the new `text` fields. Never `web`, `music` or `element`, nor a web or music clip's `sourceFile` and `sourceIn` |
 | `pasteAttributes(edl, source, clipIds, parts?)` | Copy `transform`, `effects`, `keyframes`, `blendMode`, `fades` and/or `text` style from one clip (id, clip or clipboard payload) onto others |
 | `setTrackOpacity`, `setTrackBlendMode`, `updateTrack` | Track compositing settings |
 | `gainEnvelope(track, clip, { step, from, to }?)`, `hasGainEnvelope(clip)` | A clip's gain sampled at even steps; whether it needs more than two linear ramps |
@@ -149,6 +151,34 @@ song is an incoming clip; both halves of a split keep the song and the
 key; a pasted or duplicated clip is the same rendering again; trim, slip
 and slip-trim stop at `0` and at `musicDuration`; a clip on a locked track
 is left alone.
+
+## Element clips
+
+An element clip carries `element: { kit, id, slots, design }`
+([EDL.md](./EDL.md#element), [BRAND.md](./BRAND.md)). Kits, tokens, the
+element language and its expansion are `src/utils/brand/`. `kit` below is
+an **effective kit**, as `resolveKit(chain)` returns it.
+
+| Operation | What it does |
+| --------- | ------------ |
+| `insertElement(edl, kit, elementId, slots, { time, duration, trackId, ripple, label }?)` | Add one clip carrying `resolveElement(kit, elementId)` and the slots the element has. An **overlay** is placed like a title. A **segment** takes its own time: a gap as long as it is opened at `time` on every unlocked track and the clip goes on the bottom video track (`ripple: false` lays it over the picture instead). A **transition** is centred on the cut nearest to `time` — the moment it covers the frame on the cut. `duration` defaults to the element's own; the label is its first filled slot |
+| `updateElementSlots(edl, clipId, slots)` | Merge texts into the clip's slots (`''` empties one). A label that was the clip's own first slot follows |
+| `restyle(edl, kit, clipIds?)` | Give every element clip (or those named) the design of its element as `kit` defines it now, and the kit's id and key. Slots are kept — one the new element no longer has stays in the block, unused — and nothing outside `element` changes. A clip whose element the kit does not have is left as it is |
+| `staleElements(edl, kit)` | The element clips that are out of date, as `{ clip, track, reason }`: `outdated` (another revision or another kit — `restyle` updates them) or `missing` (the kit has no such element) |
+| `detachElement(edl, clipId, { measure, sizeOf }?)` | Replace the clip by the ordinary clips that draw it — titles, shapes, pictures — as one group: the back-most takes its place, the others go on the free tracks directly above and on new tracks put there. They carry the clip's position, size and opacity; its own fades, effects, blend mode, rotation, crop and keyframes are not carried over. Text is laid out with `measure` (a canvas's) when given, otherwise by estimate |
+| `elementClips(edl)`, `isElementClip(clip)`, `elementSpan(track, clip)` | Queries: every element clip; is it one; the run it plays in |
+| `syncFonts(edl, dropped?)` | Bring `edl.fonts` in step with the designs: files they name are listed; of the `dropped` faces those nothing uses any more are removed |
+
+An element's motion is timed from the start and the end of its **run**:
+element clips that touch on one track and carry the same element (kit key,
+id, slots, design) play as one, so both halves of a split keep the element
+and nothing on screen changes; a piece that is moved away, or whose
+neighbour is deleted, arrives and leaves on its own again. Trim, slip and
+slip-trim are free — the source is unbounded; a pasted or duplicated clip
+is another instance. `insertElement`, `restyle`, paste and
+`applyDirectorResult` keep the document's `fonts` table in step; entries
+nobody dropped are never removed. Like every edit, these leave a clip on a
+locked track alone.
 
 ## Editing rules
 

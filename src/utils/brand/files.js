@@ -52,7 +52,9 @@ export function mapKitFiles(kit, map) {
   const out = { ...kit };
   if (kit.tokens?.logo) {
     const logo = { ...kit.tokens.logo };
-    for (const name of ['main', 'mark'].filter((key) => typeof logo[key] === 'string' && logo[key])) {
+    for (const name of ['main', 'mark'].filter(
+      (key) => typeof logo[key] === 'string' && logo[key],
+    )) {
       logo[name] = map(logo[name], `tokens.logo.${name}`);
     }
     out.tokens = { ...kit.tokens, logo };
@@ -66,8 +68,9 @@ export function mapKitFiles(kit, map) {
   if (kit.elements) {
     out.elements = {};
     for (const [id, element] of Object.entries(kit.elements)) {
-      const layers = (element.layers || []).map((/** @type {any} */ layer, /** @type {number} */ i) =>
-        mapLayer(layer, map, `elements.${id}.layers[${i}]`),
+      const layers = (element.layers || []).map(
+        (/** @type {any} */ layer, /** @type {number} */ i) =>
+          mapLayer(layer, map, `elements.${id}.layers[${i}]`),
       );
       out.elements[id] = { ...element, layers };
     }

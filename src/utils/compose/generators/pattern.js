@@ -58,6 +58,8 @@ export default {
   label: 'Pattern',
   category: 'pattern',
   description: 'Stripes, checkerboard, dots or grid in two colours',
+  // Two fills, the ground then the pattern: it can be drawn straight over a picture.
+  direct: true,
   params: {
     pattern: {
       type: 'select',

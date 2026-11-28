@@ -4,10 +4,17 @@
  * @module tests/compose/fixtures
  */
 
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createCanvas } from '@napi-rs/canvas';
+
+/** A bundled font file that stands in for a brand's own, under another family name. */
+const BRAND_FONT = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../src/vendor/fonts/caveat/caveat-latin-700-normal.woff2',
+);
 
 /**
  * A 640×360 opaque test card: gradient, hard edges, fine lines, a circle.
@@ -63,14 +70,18 @@ export function logoPng() {
 }
 
 /**
- * Write the fixture pictures into a fresh temporary folder.
- * @returns {Promise<{ dir: string, card: string, logo: string, remove: () => Promise<void> }>}
+ * Write the fixture pictures, and the font file that plays a brand's own
+ * font, into a fresh temporary folder.
+ * @returns {Promise<{ dir: string, card: string, logo: string, font: string,
+ *   remove: () => Promise<void> }>}
  */
 export async function writeFixtures() {
   const dir = await mkdtemp(join(tmpdir(), 'nearedit-compose-'));
   const card = join(dir, 'card.png');
   const logo = join(dir, 'logo.png');
+  const font = join(dir, 'brand-font.woff2');
   await writeFile(card, cardPng());
   await writeFile(logo, logoPng());
-  return { dir, card, logo, remove: () => rm(dir, { recursive: true, force: true }) };
+  await copyFile(BRAND_FONT, font);
+  return { dir, card, logo, font, remove: () => rm(dir, { recursive: true, force: true }) };
 }

@@ -11,7 +11,7 @@
 
 import { anchored, beside, besideSize, frameBoxes, grown } from './box.js';
 import { lengthOf, num, padOf } from './measure.js';
-import { fitText } from './textFit.js';
+import { ownSize } from './layoutSize.js';
 
 /**
  * @typedef {import('./box.js').Box} Box
@@ -26,40 +26,6 @@ import { fitText } from './textFit.js';
  * @property {(path: string) => { width: number, height: number }|null} sizeOf
  * @property {(message: string) => void} warn
  */
-
-/**
- * The size a layer has of its own.
- * @param {Record<string, any>} layer
- * @param {Box} room - The box it is placed in (its width limits text)
- * @param {LayoutEnv} env
- * @returns {{ w: number, h: number, fitted?: any, natural?: any }|null} null
- *   for a layer with nothing to show
- */
-function ownSize(layer, room, env) {
-  const { unit } = env;
-  if (layer.type === 'text') {
-    const plate = layer.plate?.color ? num(layer.plate.pad, 0.3, 0, 5) : 0;
-    const top = num(layer.size, 5, 0.5, 80) * unit * plate;
-    const width = Math.min(room.w, lengthOf(layer.maxWidth, room.w, unit, room.w)) - 2 * top;
-    const fitted = fitText(layer, width, env);
-    if (!fitted) return null;
-    const pad = fitted.fontSize * plate;
-    return { w: fitted.width + 2 * pad, h: fitted.height + 2 * pad, fitted };
-  }
-  if (layer.type === 'image') {
-    if (!layer.src) return null;
-    const natural = env.sizeOf(layer.src);
-    const aspect = natural?.height > 0 ? natural.width / natural.height : 1;
-    let h = lengthOf(layer.h, room.h, unit, 10 * unit);
-    let w = h * aspect;
-    const cap = Math.min(room.w, lengthOf(layer.w, room.w, unit, Infinity));
-    if (w > cap) [w, h] = [cap, cap / aspect];
-    return w > 0 && h > 0 ? { w, h, natural } : null;
-  }
-  const w = lengthOf(layer.w, room.w, unit, 10 * unit);
-  const h = lengthOf(layer.h, room.h, unit, 10 * unit);
-  return w > 0 && h > 0 ? { w, h } : null;
-}
 
 /**
  * Lay a view out.
@@ -99,7 +65,11 @@ export function layoutView(view, env) {
 
   /** @type {(id: string) => Box|null} */
   function groupBox(id) {
-    if (!groups.has(id)) groups.set(id, guarded(`group ${id}`, () => stack(id)));
+    if (!groups.has(id))
+      groups.set(
+        id,
+        guarded(`group ${id}`, () => stack(id)),
+      );
     return groups.get(id);
   }
 
@@ -113,13 +83,21 @@ export function layoutView(view, env) {
     const [px, py] = padOf(group.pad, unit);
     const width = Math.min(container.w, lengthOf(group.maxWidth, container.w, unit, container.w));
     const room = { ...container, w: width - 2 * px };
-    const gap = num(group.gap, 1, 0, 50) * unit;
-    const sized = members
-      .map((layer) => ({ layer, size: ownSize(layer, room, env) }))
-      .filter((entry) => entry.size);
+    // A stack too tall for its place is set smaller, text and gaps alike, until it fits.
+    let [shrink, sized, before, height] = [1, [], [], 0];
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const gap = num(group.gap, 1, 0, 50) * unit * shrink;
+      sized = members
+        .map((layer) => ({ layer, size: ownSize(layer, room, env, shrink) }))
+        .filter((entry) => entry.size);
+      before = sized.map(({ layer }, i) =>
+        i ? num(layer.gap, gap / (unit * shrink), 0, 50) * unit * shrink : 0,
+      );
+      height = sized.reduce((sum, { size }, i) => sum + before[i] + size.h, 0);
+      if (height + 2 * py <= container.h || shrink < 0.45) break;
+      shrink *= Math.max(0.6, ((container.h - 2 * py) / height) * 0.97);
+    }
     if (!sized.length) return null;
-    const before = sized.map(({ layer }, i) => (i ? num(layer.gap, gap / unit, 0, 50) * unit : 0));
-    const height = sized.reduce((sum, { size }, i) => sum + before[i] + size.h, 0);
     const widest = Math.max(...sized.map(({ size }) => size.w));
     const outer = { w: widest + 2 * px, h: height + 2 * py };
     const box = anchored(outer, container, group, unit, kept(container));
@@ -152,7 +130,8 @@ export function layoutView(view, env) {
     const next = layer.beside === undefined ? null : boxOf(layer.beside);
     if (layer.around !== undefined || (layer.beside !== undefined && !next)) return null;
     if (next) {
-      const size = layer.type === 'shape' ? besideSize(layer, next, unit) : ownSize(layer, frame, env);
+      const size =
+        layer.type === 'shape' ? besideSize(layer, next, unit) : ownSize(layer, frame, env);
       return size ? { ...size, box: beside(size, next, layer, unit) } : null;
     }
     const container = boxOf(layer.inside);

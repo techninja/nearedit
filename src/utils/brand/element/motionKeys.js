@@ -7,7 +7,8 @@
  */
 
 import { num } from './measure.js';
-import { SLIDE_UNITS } from './vocabulary.js';
+import { travelOf, wipeRange } from './motionGeometry.js';
+import { micro } from './timing.js';
 
 /** @typedef {import('./timing.js').Move} Move */
 /** @typedef {import('./box.js').Box} Box */
@@ -21,6 +22,10 @@ import { SLIDE_UNITS } from './vocabulary.js';
  *   what is scaled, output pixels (a shape drawn off-centre in a frame-sized
  *   picture; 0 for a picture placed by its own centre)
  * @property {number} py
+ * @property {Record<string, number>} [grow] - Instead of the transform's
+ *   scale, the properties that grow from nothing to these values when the
+ *   layer scales in: a shape's own width, height, corner radius and stroke
+ *   (it then stays sharp, and may be larger than the frame)
  */
 
 /**
@@ -44,42 +49,6 @@ const FROM = {
 const CURVES = { linear: 'linear', 'ease-in': 'slow', 'ease-out': 'fast', 'back-out': 'fast' };
 /** A value is at rest between its entrance and its exit; keys this close are one. */
 const SAME = 2e-6;
-
-/**
- * How far a slide travels, output pixels: the design's units, or — `out` —
- * as far as it takes to be outside the frame on that side.
- * @param {Move} move
- * @param {[number, number]} side - Which way the outside lies: [x, y]
- * @param {Box} box
- * @param {{ frame: { width: number, height: number }, unit: number }} env
- * @returns {number}
- */
-function travelOf(move, side, box, env) {
-  if (move.travel !== 'out') return num(move.travel, SLIDE_UNITS, 0, 400) * env.unit;
-  if (side[0]) return side[0] > 0 ? env.frame.width - box.x : box.x + box.w;
-  return side[1] > 0 ? env.frame.height - box.y : box.y + box.h;
-}
-
-/**
- * The progress values between which a linear wipe crosses a box.
- * @param {number} angle - Degrees
- * @param {number} feather - Output pixels
- * @param {Box} box
- * @param {{ width: number, height: number }} frame
- * @returns {[number, number]} Nothing of the box shown … all of it shown
- */
-export function wipeRange(angle, feather, box, frame) {
-  const [ux, uy] = [Math.cos((angle * Math.PI) / 180), Math.sin((angle * Math.PI) / 180)];
-  const half = (Math.abs(frame.width * ux) + Math.abs(frame.height * uy)) / 2;
-  const along = [0, 1].flatMap((i) =>
-    [0, 1].map(
-      (j) =>
-        (box.x + i * box.w - frame.width / 2) * ux + (box.y + j * box.h - frame.height / 2) * uy,
-    ),
-  );
-  const at = (/** @type {number} */ t) => Math.max(0, Math.min(1, t / (half * 2 + feather)));
-  return [at(Math.min(...along) + half), at(Math.max(...along) + half + feather)];
-}
 
 /**
  * The clip fields that move a layer in and out.
@@ -109,7 +78,7 @@ export function motionOf(timing, rest, box, env) {
     [timing.exit, true],
   ])) {
     if (!move) continue;
-    const length = move.to - move.from;
+    const length = micro(move.to - move.from);
     const fade = () => {
       out[leaving ? 'fadeOut' : 'fadeIn'] = length;
       out[leaving ? 'fadeOutCurve' : 'fadeInCurve'] = CURVES[move.ease] || 'smooth';
@@ -125,6 +94,8 @@ export function motionOf(timing, rest, box, env) {
       if (side[0]) between('transform.x', rest.x + side[0] * far, rest.x);
       else between('transform.y', rest.y + side[1] * far, rest.y);
       if (move.travel !== 'out') fade();
+    } else if (move.motion === 'scale' && rest.grow) {
+      for (const [path, size] of Object.entries(rest.grow)) between(path, 0, size);
     } else if (move.motion === 'scale') {
       between('transform.scaleX', 0, rest.scale);
       between('transform.scaleY', 0, rest.scale);
@@ -135,7 +106,13 @@ export function motionOf(timing, rest, box, env) {
       const angle = num(move.angle, 0, -360, 360);
       const [hidden, shown] = wipeRange(angle, feather, box, env.frame);
       const effectId = leaving ? 'out' : 'in';
-      const params = { shape: 'linear', angle, feather, invert: leaving, progress: leaving ? 0 : 1 };
+      const params = {
+        shape: 'linear',
+        angle,
+        feather,
+        invert: leaving,
+        progress: leaving ? 0 : 1,
+      };
       out.effects.push({ effectId, type: 'wipe', enabled: true, params });
       const path = `effects.${effectId}.progress`;
       // Outside its motion the wipe is fully open, which costs nothing to draw.

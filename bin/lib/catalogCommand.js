@@ -5,6 +5,7 @@
  * @module bin/lib/catalogCommand
  */
 
+import { brandCatalog } from '#utils/brand/catalog.js';
 import { catalog } from '#utils/compose/index.js';
 import { parseArgs, UsageError } from './args.js';
 
@@ -12,8 +13,26 @@ const OPTIONS = { json: { type: /** @type {'flag'} */ ('flag') } };
 /** The parts of the catalog this command knows how to lay out. */
 const SECTIONS = [
   ...['generators', 'effects', 'effectPresets', 'blendModes'],
-  ...['easings', 'textAnimations', 'textUnits', 'fonts'],
+  ...['easings', 'textAnimations', 'textUnits', 'fonts', 'kits'],
 ];
+
+/**
+ * The built-in brand kits: each element with its kind, its length and its slots.
+ * @param {ReturnType<typeof brandCatalog>} kits
+ * @returns {string[]}
+ */
+function kitLines(kits) {
+  const lines = ['Brand kits — built in; a kit of your own names one in "extends"'];
+  for (const kit of kits) {
+    lines.push(`  ${kit.extends} — ${kit.name}: ${kit.description}`);
+    for (const element of kit.elements) {
+      const slots = element.slots.map((slot) => `${slot.name}${slot.optional ? '?' : ''}`);
+      const what = `${element.kind}, ${element.duration} s`;
+      lines.push(`    ${element.id.padEnd(16)} ${what.padEnd(18)} ${slots.join(', ') || '—'}`);
+    }
+  }
+  return [...lines, ''];
+}
 
 /**
  * One parameter as a line: name, type and range, default, whether it animates.
@@ -57,7 +76,7 @@ export async function catalogCommand(argv, io) {
   const { values, rest } = parseArgs(argv, OPTIONS, 'catalog');
   if (rest.length) throw new UsageError(`catalog takes no arguments, got "${rest[0]}".`, 'catalog');
   /** @type {any} */
-  const all = catalog();
+  const all = { ...catalog(), kits: brandCatalog() };
   if (values.json) {
     io.out(JSON.stringify(all, null, 2));
     return 0;
@@ -95,6 +114,7 @@ export async function catalogCommand(argv, io) {
     'Fonts — text.fontFamily',
     ...fonts,
     '',
+    ...kitLines(all.kits),
     ...more,
     'Every parameter is optional; a document stores only what differs from the default.',
     'The same as JSON: nearedit catalog --json',

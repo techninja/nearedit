@@ -63,6 +63,8 @@ export default {
   label: 'Gradient',
   category: 'background',
   description: 'Linear or radial colour gradient with up to eight stops',
+  // One fill over the frame: it can be drawn straight over a picture.
+  direct: true,
   params: {
     kind: { type: 'select', default: 'linear', options: ['linear', 'radial'], label: 'Type' },
     angle: {

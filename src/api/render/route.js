@@ -22,6 +22,7 @@ export const ENGINES = ['auto', 'canvas', 'ffmpeg'];
 export const REASONS = {
   generator: 'a generator clip',
   title: 'a title',
+  element: 'a brand element',
   effect: 'an effect on a clip',
   blend: 'a blend mode on a clip',
   keyframes: 'keyframes on a visual property',
@@ -57,7 +58,7 @@ export function clipNeeds(clip, track) {
   const kind = layerKind(clip, track);
   if (!kind) return [];
   const needs = [];
-  if (kind === 'generator' || kind === 'title') needs.push(kind);
+  if (kind === 'generator' || kind === 'title' || kind === 'element') needs.push(kind);
   if (enabledEffects(clip.effects).length) needs.push('effect');
   if (isBlended(clip.blendMode)) needs.push('blend');
   // A keyframed volume shapes sound only; every other path changes the picture.
