@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="/vendor/fonts/fonts.css" />
     <link rel="stylesheet" href="/styles/reset.css" />
     <link rel="stylesheet" href="/styles/tokens.css" />
+    <link rel="stylesheet" href="/styles/themes.css" />
     <link rel="stylesheet" href="/styles/shared.css" />
     <link rel="stylesheet" href="/styles/buttons.css" />
     <link rel="stylesheet" href="/styles/forms.css" />
@@ -29,23 +30,9 @@
     <link rel="stylesheet" href="/styles/overlays.css" />
     <link rel="stylesheet" href="/styles/fields.css" />
 
-    <script>
-      // Apply the theme before first paint so the page never flashes the
-      // wrong one. Same rule as utils/ui/theme.js: an explicit choice wins,
-      // otherwise follow the system.
-      (function () {
-        var theme = '';
-        try {
-          theme = (JSON.parse(localStorage.getItem('nearedit_appState')) || {}).theme;
-        } catch (e) {
-          theme = '';
-        }
-        if (theme !== 'light' && theme !== 'dark') {
-          theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        document.documentElement.setAttribute('data-theme', theme);
-      })();
-    </script>
+    <!-- The theme, before first paint: a chosen theme, or the system's (docs/app-spec/THEMES.md).
+         A classic script, so nothing is painted before it has run. -->
+    <script src="/utils/theme/boot.js"></script>
     <script type="importmap">
       {
         "imports": {

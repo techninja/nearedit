@@ -1,7 +1,8 @@
 /**
- * Theme toggle atom — flips between the light and dark look. The choice is
- * kept in AppState; picking the look the OS would give anyway goes back to
- * following the OS (see `#utils/ui/theme.js`).
+ * Theme toggle atom — flips between the light and the dark theme the system
+ * would give (Daylight and Studio). The choice is kept in AppState; picking
+ * what the system gives anyway goes back to following the system (see
+ * `#utils/ui/theme.js`). Choosing among all themes is the picker's job.
  * @module components/atoms/theme-toggle
  */
 
@@ -32,7 +33,8 @@ export default define({
   state: store(AppState),
   render: {
     value: ({ state }) => {
-      const dark = resolveTheme(store.ready(state) ? state.theme : 'system') === 'dark';
+      const preference = store.ready(state) ? state.theme : 'system';
+      const dark = resolveTheme(preference).scheme === 'dark';
       const label = dark ? 'Switch to the light theme' : 'Switch to the dark theme';
       return html`
         <button

@@ -7,12 +7,13 @@
 import { store } from 'hybrids';
 import { readStored, writeStored } from '#utils/ui/storage.js';
 
-/** localStorage key; `index.html` reads `theme` from it before first paint. */
+/** localStorage key; the page's boot script reads `theme` from it before first paint. */
 export const APP_STATE_KEY = 'nearedit_appState';
 
 /**
  * @typedef {Object} AppStateShape
- * @property {'system'|'light'|'dark'} theme - `system` follows the OS
+ * @property {string} theme - `system` follows the OS; otherwise a theme's id
+ *   (`#utils/ui/theme.js`). The `light` and `dark` of older versions still work
  * @property {number} dockWidth - Side dock width in px; 0 = default
  * @property {number} timelineHeight - Timeline height in px; 0 = default
  * @property {number} sheetHeight - Narrow layout: bottom sheet height in px; 0 = default

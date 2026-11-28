@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Every example is checked and drawn through the command line, as a reader would. */
@@ -12,7 +12,14 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const EXAMPLES = [
   { file: 'examples/made-from-nothing/made-from-nothing.json', clips: 25, time: 12 },
   { file: 'examples/falling-logos/falling-logos.json', clips: 3, time: 3 },
+  { file: 'examples/logo-sting/opening.json', clips: 14, time: 3 },
+  { file: 'examples/logo-sting/opening-tall.json', clips: 14, time: 3 },
+  { file: 'examples/logo-sting/wipe.json', clips: 8, time: 0.2 },
+  { file: 'examples/logo-sting/wipe-tall.json', clips: 8, time: 0.2 },
 ];
+
+/** Brand kits kept as folders: what `nearedit kit` must find in each. */
+const KITS = [{ folder: 'examples/kits/nearedit', files: ['logo.png', 'mark.png'] }];
 
 /**
  * @param {...string} args
@@ -43,10 +50,25 @@ describe('examples through the command line', () => {
     });
 
     it(`${file} draws a frame`, () => {
-      const png = join(dir, `${clips}.png`);
+      const png = join(dir, `${basename(file, '.json')}.png`);
       const { code, err } = nearedit('frame', file, '--time', String(time), '-o', png);
       assert.equal(code, 0, err);
       assert.ok(statSync(png).size > 20000, 'the frame is not an empty picture');
+    });
+  }
+
+  for (const { folder, files } of KITS) {
+    it(`${folder} is a valid kit that brings its logo files`, () => {
+      const { code, out, err } = nearedit('kit', folder, '--json');
+      assert.equal(code, 0, err);
+      const kit = JSON.parse(out);
+      assert.equal(kit.valid, true);
+      assert.deepEqual([kit.errors, kit.warnings], [[], []]);
+      assert.deepEqual(kit.files.map((entry) => entry.name).sort(), files);
+      assert.ok(
+        kit.files.every((entry) => entry.used.length),
+        'every file is named by a token',
+      );
     });
   }
 });

@@ -1,0 +1,18 @@
+{
+  "id": "nearedit",
+  "name": "NearEdit",
+  "description": "NearEdit's own look: the navy ground of its logo, the blue of a video clip, the amber of a still — and the NE monogram.",
+  "extends": "builtin:clean",
+  "tokens": {
+    "color": {
+      "background": "#0f172a",
+      "surface": "#0f172a",
+      "primary": "#3b82f6",
+      "accent": "#f59e0b",
+      "text": "#f8fafc",
+      "muted": "#cbd5e1"
+    },
+    "font": { "heading": { "family": "Inter", "weight": 700, "tracking": -0.02 } },
+    "logo": { "main": "logo.png", "mark": "mark.png", "initials": "NE" }
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "version": 3,
+  "fps": 30,
+  "resolution": "1920x1080",
+  "tracks": [
+    {
+      "type": "video",
+      "name": "Playhead",
+      "clips": [
+        {
+          "label": "Playhead",
+          "timelineStart": 0,
+          "timelineEnd": 1.2,
+          "generator": {
+            "type": "shape",
+            "params": {
+              "shape": "rectangle",
+              "sizing": "pixels",
+              "widthPx": 229,
+              "heightPx": 1120,
+              "offsetX": -1094.5,
+              "offsetY": 0,
+              "fill": "#ef4444"
+            }
+          },
+          "keyframes": {
+            "generator.params.offsetX": [
+              { "t": 0.6, "v": -1094.5, "ease": "ease-in-out" },
+              { "t": 1.167, "v": 1094.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Clip blue",
+      "clips": [
+        {
+          "label": "Clip blue",
+          "timelineStart": 0,
+          "timelineEnd": 1.2,
+          "generator": {
+            "type": "shape",
+            "params": {
+              "shape": "rectangle",
+              "sizing": "pixels",
+              "widthPx": 2287,
+              "heightPx": 362,
+              "radius": 98,
+              "offsetX": -65.5,
+              "offsetY": -360,
+              "fill": "#3b82f6"
+            }
+          },
+          "keyframes": {
+            "generator.params.offsetX": [
+              { "t": 0, "v": -2372.5, "ease": "ease-out" },
+              { "t": 0.333, "v": -65.5, "ease": "hold" },
+              { "t": 0.6, "v": -65.5, "ease": "ease-in-out" },
+              { "t": 1.167, "v": 2123.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Clip amber",
+      "clips": [
+        {
+          "label": "Clip amber",
+          "timelineStart": 0,
+          "timelineEnd": 1.2,
+          "generator": {
+            "type": "shape",
+            "params": {
+              "shape": "rectangle",
+              "sizing": "pixels",
+              "widthPx": 2287,
+              "heightPx": 362,
+              "radius": 98,
+              "offsetX": -65.5,
+              "offsetY": 0,
+              "fill": "#f59e0b"
+            }
+          },
+          "keyframes": {
+            "generator.params.offsetX": [
+              { "t": 0.067, "v": -2372.5, "ease": "ease-out" },
+              { "t": 0.4, "v": -65.5, "ease": "hold" },
+              { "t": 0.6, "v": -65.5, "ease": "ease-in-out" },
+              { "t": 1.167, "v": 2123.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Clip green",
+      "clips": [
+        {
+          "label": "Clip green",
+          "timelineStart": 0,
+          "timelineEnd": 1.2,
+          "generator": {
+            "type": "shape",
+            "params": {
+              "shape": "rectangle",
+              "sizing": "pixels",
+              "widthPx": 2287,
+              "heightPx": 362,
+              "radius": 98,
+              "offsetX": -65.5,
+              "offsetY": 360,
+              "fill": "#10b981"
+            }
+          },
+          "keyframes": {
+            "generator.params.offsetX": [
+              { "t": 0.133, "v": -2372.5, "ease": "ease-out" },
+              { "t": 0.467, "v": -65.5, "ease": "hold" },
+              { "t": 0.6, "v": -65.5, "ease": "ease-in-out" },
+              { "t": 1.167, "v": 2123.5 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Scene names",
+      "clips": [
+        {
+          "label": "Scene A",
+          "timelineStart": 0,
+          "timelineEnd": 0.5333333333333333,
+          "text": {
+            "content": "Scene A",
+            "fontFamily": "Inter",
+            "weight": 900,
+            "fontSize": 173,
+            "color": "#ffffff"
+          }
+        },
+        {
+          "label": "Scene B",
+          "timelineStart": 0.5333333333333333,
+          "timelineEnd": 1.2,
+          "text": {
+            "content": "Scene B",
+            "fontFamily": "Inter",
+            "weight": 900,
+            "fontSize": 173,
+            "color": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "type": "video",
+      "name": "Scenes",
+      "clips": [
+        {
+          "label": "Scene A",
+          "timelineStart": 0,
+          "timelineEnd": 0.5333333333333333,
+          "generator": {
+            "type": "gradient",
+            "params": { "angle": 135, "color1": "#7c2d12", "color2": "#f97316" }
+          }
+        },
+        {
+          "label": "Scene B",
+          "timelineStart": 0.5333333333333333,
+          "timelineEnd": 1.2,
+          "generator": {
+            "type": "gradient",
+            "params": { "angle": 135, "color1": "#0c4a6e", "color2": "#22d3ee" }
+          }
+        }
+      ]
+    }
+  ]
+}

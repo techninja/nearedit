@@ -1,4 +1,9 @@
-# NearEdit
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="src/logo/wordmark-on-dark.svg" />
+    <img src="src/logo/wordmark-on-light.svg" alt="NearEdit" width="330" />
+  </picture>
+</h1>
 
 **A browser-based, Vegas-style video editor with an AI assistant editor —
 running next to your footage, on your own machine.**
