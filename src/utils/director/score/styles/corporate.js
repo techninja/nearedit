@@ -29,8 +29,8 @@ export default style({
   },
   hit: { crash: 'x...............' },
   parts: [
-    part('chords', 'Pad', 'pad', 0, [0.75, 0, 0.4, 0], { center: 60 }),
-    part('arp', 'Plucks', 'pluck', 0.25, [0.6, -0.25, 0.2, 0.3], {
+    part('chords', 'Pad', 'pad', 0, [0.85, 0, 0.4, 0], { center: 60 }),
+    part('arp', 'Plucks', 'pluck', 0.25, [0.5, -0.25, 0.2, 0.3], {
       rate: 2,
       mode: 'updown',
       octave: 4,
@@ -51,5 +51,5 @@ export default style({
       scale: 'majorPentatonic',
     }),
   ],
-  master: master(0.72, [0.5, 0.45], [0.75, 0.3]),
+  master: master(0.68, [0.5, 0.45], [0.75, 0.3]),
 });

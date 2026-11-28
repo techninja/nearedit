@@ -91,7 +91,7 @@ export function turningPoints(edl, span) {
   /** @type {TurningPoint[]} */
   const all = [];
   const add = (/** @type {number} */ at, /** @type {string} */ kind, label = '') => {
-    const time = at - span.start;
+    const time = Math.round((at - span.start) * 1000) / 1000;
     const weight = { marker: 3, region: 3, title: 2, scene: 2, shot: 1 }[kind];
     if (time > EDGE && time < span.seconds - EDGE) all.push({ time, weight, kind, label });
   };

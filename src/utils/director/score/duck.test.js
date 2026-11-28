@@ -2,7 +2,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolveClip } from '#utils/edl/animate.js';
 import { createClip } from '#utils/edl/factory.js';
-import { HOLD, JOIN, LEAD, RAMP, coverage, duckKeys, duckSpans, gainOf, joinSpans } from './duck.js';
+import {
+  HOLD,
+  JOIN,
+  LEAD,
+  RAMP,
+  coverage,
+  duckKeys,
+  duckSpans,
+  gainOf,
+  joinSpans,
+} from './duck.js';
 import { clipSpeech } from './speech.js';
 
 const span = (start, end) => ({ start, end });

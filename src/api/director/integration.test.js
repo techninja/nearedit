@@ -11,10 +11,12 @@ import { timelineDuration } from '#utils/edl/query.js';
 import { baseEdit } from './actions/baseEdit.js';
 import { insertBroll } from './actions/insertBroll.js';
 import { motionPiece } from './actions/motion.js';
+import { score } from './actions/score.js';
 import { siteDemo } from './actions/siteDemo.js';
 import { addCaptions } from './inplace/addCaptions.js';
 import { beatSync } from './inplace/beatSync.js';
 import { removeSilence } from './inplace/removeSilence.js';
+import { fakeRenderer } from './score/testing/renderer.js';
 import { makeContext } from './testing/context.js';
 import { createParkProject } from './testing/park.js';
 import { clip, doc, pair, title } from './testing/timeline.js';
@@ -153,6 +155,30 @@ test('in-place results merge back into the same timeline', async (t) => {
 
   const synced = await merged(t, beatSync, { action: 'beat_sync' }, timeline());
   assert.equal(timelineDuration(synced.out), 20);
+});
+
+test('a score — one music clip with its song and volume keyframes — merges without moving anything', async (t) => {
+  const scored = (/** @type {any} */ ctx) => score(ctx, fakeRenderer());
+  const context = { range: { start: 2, end: 14 } };
+  for (const mode of ['replace', 'range']) {
+    const edl = timeline();
+    const done = await merged(t, scored, { action: 'score', mode, context }, edl);
+    if (!done) return;
+    assert.equal(timelineDuration(done.out), 20, mode);
+    const audio = lane(done.out, 'audio');
+    assert.deepEqual(
+      audio.map((a) => a.name),
+      ['Audio 1', 'Audio 2', 'Music'],
+      mode,
+    );
+    assert.deepEqual(audio.slice(0, 2).map(names), [['interview.mp4'], ['bed.wav']], mode);
+    assert.deepEqual(lane(done.out, 'video').map(names), [['Hi'], ['interview.mp4', 'city.mp4']]);
+    const [music] = audio[2].clips;
+    const span = mode === 'range' ? [2, 14] : [0, 20];
+    assert.deepEqual([music.timelineStart, music.timelineEnd], span, mode);
+    assert.ok(music.music.key && music.sourceFile.startsWith(park.dir) && music.keyframes.volume);
+    assert.equal(done.out.markers.length, 1, mode);
+  }
 });
 
 test('insert_broll: ripple insert and cutaway both merge validly', async (t) => {

@@ -29,14 +29,23 @@ export default style({
   },
   hit: { crash: 'x...........' },
   parts: [
-    part('chords', 'Plucks', 'pluck', 0, [0.5, 0.2, 0.35, 0.15], {
-      center: 64,
-      hits: [
-        [1, 0.8],
-        [2, 0.8],
-      ],
-      velocity: 0.65,
-    }),
+    part(
+      'chords',
+      'Plucks',
+      'pluck',
+      0,
+      [0.42, 0.2, 0.35, 0.15],
+      {
+        center: 64,
+        hits: [
+          [1, 0.8],
+          [2, 0.8],
+        ],
+        velocity: 0.65,
+      },
+      // A longer ring than the preset's: more of a harp than a click.
+      { attack: 0.01, decay: 1.2, sustain: 0.15, release: 0.5, filterEnv: 3, filterDecay: 0.5 },
+    ),
     part('bass', 'Bass', 'bass', 0.25, [0.55, 0, 0.1, 0], { style: 'roots' }),
     part('chords', 'Strings', 'strings', 0.4, [0.75, -0.2, 0.55, 0], { center: 62 }),
     part('arp', 'Bells', 'bell', 0.5, [0.45, 0.3, 0.6, 0.25], {

@@ -64,7 +64,10 @@ test('titles and long shots begin a section only a phrase apart: no section per 
   const shots = Array.from({ length: 11 }, (_, i) => point(5 + i * 5, 1));
   assert.deepEqual(bars(turningBars(30, 2, shots)), [5, 13, 23]);
   const found = turningBars(30, 2, [...shots, point(31, 3)]);
-  assert.deepEqual(found.filter((entry) => entry.weight === 3), [{ bar: 16, weight: 3 }]);
+  assert.deepEqual(
+    found.filter((entry) => entry.weight === 3),
+    [{ bar: 16, weight: 3 }],
+  );
   assert.ok(found.every((a) => found.every((b) => a === b || Math.abs(a.bar - b.bar) >= 8)));
   // A title outranks a shot at the same distance.
   assert.deepEqual(turningBars(32, 2, [point(20, 1), point(24, 2)]), [{ bar: 12, weight: 2 }]);
@@ -188,7 +191,10 @@ test('a plan’s sections take their share of the length and begin on turning po
     [0.1, 0.275, 0.5],
   );
   // Sections that would be too short are merged into the one before.
-  const crowded = Array.from({ length: 12 }, (_, i) => ({ name: i % 2 ? 'lift' : 'verse', share: 1 }));
+  const crowded = Array.from({ length: 12 }, (_, i) => ({
+    name: i % 2 ? 'lift' : 'verse',
+    share: 1,
+  }));
   const merged = layoutSections({ bars: 10, barSeconds: 2, asked: crowded });
   checkCover(merged, 10, 'twelve sections in ten bars');
   assert.ok(merged.length < 12 && merged.length >= 3);

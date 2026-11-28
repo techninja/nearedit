@@ -186,6 +186,7 @@ move to stills automatically, chosen for the adaptation's aspect ratio.
 | [DIRECTOR.md](./DIRECTOR.md) | AI director actions, edit plans, base edit |
 | [DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md) | The motion piece: a sequence built from generated layers only |
 | [DIRECTOR-WEB.md](./DIRECTOR-WEB.md) | The site demo: an address and a few plain lines become a recorded, zoomed, captioned demo |
+| [DIRECTOR-SCORE.md](./DIRECTOR-SCORE.md) | The score: music written for a timeline, fitted to its length and turning points, quiet under speech |
 | [RENDER.md](./RENDER.md) | How the EDL becomes a file: filter graph, canvas path, the `nearedit` CLI |
 
 ## Keyboard Shortcuts (Configurable)

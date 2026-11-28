@@ -16,6 +16,7 @@ test('the action list matches the API.md table', () => {
     insert_broll: 'optional',
     motion_piece: 'optional',
     site_demo: 'optional',
+    score: 'optional',
     remove_silence: 'no',
     beat_sync: 'no',
     add_captions: 'no',
@@ -47,7 +48,7 @@ test('every action schema is complete, serialisable and self-consistent', () => 
 
 test('in-place actions need the timeline; generating actions place a fragment', () => {
   const inPlace = ACTIONS.filter((a) => a.inPlace).map((a) => a.id);
-  assert.deepEqual(inPlace, ['remove_silence', 'beat_sync', 'add_captions']);
+  assert.deepEqual(inPlace, ['score', 'remove_silence', 'beat_sync', 'add_captions']);
   assert.equal(getAction('insert_broll').defaultMode, 'insert');
   assert.deepEqual(getAction('generate_script').modes, []);
 });

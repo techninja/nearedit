@@ -75,6 +75,7 @@ test('GET /director/actions serves the schemas that drive the form', async () =>
       'insert_broll',
       'motion_piece',
       'site_demo',
+      'score',
       'remove_silence',
       'beat_sync',
       'add_captions',

@@ -56,6 +56,11 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (can
   correction, blur, glow, drop shadow, vignette, grain, scanlines,
   pixelate, RGB split, mirror, chroma key, mask, wipe — and ready-made
   looks built from them.
+- **Music clips** — a drum machine and a synth in the timeline: step
+  patterns, a piano roll, four drum kits and eleven synth sounds, helpers
+  that write a bass line or an arpeggio over a chord progression, MIDI in
+  and out. It plays in the page as you edit and renders identically on the
+  server, with nothing to install.
 - **Web clips** — footage of a real web page being used, without anyone
   recording a screen: give an address, click what should be clicked on a
   picture of the page, set how long things take, and NearEdit plays it in
@@ -93,6 +98,10 @@ State (JSON EDL)  →  UI (canvas timeline + preview)  →  headless render (can
   on the page, records the visit, zooms in on what matters, captions each
   stop and frames the page as a window on a background. Every part of it
   stays editable — the steps, the timing, the zooms, the words.
+- **Score** — music written for the timeline in one of ten styles: the
+  tempo is fitted so it ends with the picture, sections change at your
+  markers, and it drops under speech and comes back in the gaps. It is an
+  ordinary music clip: open it and change any note.
 - **Motion piece** — type a few lines and get a title sequence made only
   of generated layers (animated backgrounds, particles, shapes, titles) in
   one of eight themes, fitted to 16:9, 9:16 or 1:1. No media, and no AI
@@ -204,6 +213,9 @@ NearEdit is young. Things worth knowing before you rely on it:
   their wire format. Reports from real setups are very welcome.
 - Effects are built in; there is no plugin interface for third-party
   ones, and no audio effects.
+- **Music** is one synth design and synthesised drums — basses, pads,
+  plucks, leads, electronic kits — not pianos or orchestras (no sample
+  playback yet). Its sounds were tuned by measurement, not by ear.
 - **Web clips** need `chrome-headless-shell` and have been exercised on
   Linux against local pages; video and WebGL inside a page are not stepped
   with it, a link that opens a new tab is not followed, and a site
@@ -219,11 +231,12 @@ NearEdit is young. Things worth knowing before you rely on it:
 | [Compositor](docs/app-spec/COMPOSITOR.md) | Generators, effects, keyframes and text; authoring from a shell |
 | [Effects](docs/app-spec/EFFECTS.md), [Particles](docs/app-spec/PARTICLES.md) | Every effect and the particle system |
 | [Web clips](docs/app-spec/WEBCLIP.md) | Scripted recordings of real web pages: steps, targets, the recorder, what it may load |
+| [Music clips](docs/app-spec/MUSIC.md) | The song model, the synth engine, kits and presets, MIDI |
 | [Vegas parity](docs/app-spec/VEGAS.md) | Commands, the two keymaps, selection and ripple behaviour |
 | [API](docs/app-spec/API.md) | HTTP + WebSocket API |
 | [Configuration](docs/app-spec/CONFIGURATION.md) | Environment variables, access and security |
 | [Intelligence](docs/app-spec/INTELLIGENCE.md) | Transcription, tagging, beats, scenes |
-| [Director](docs/app-spec/DIRECTOR.md), [motion pieces](docs/app-spec/DIRECTOR-MOTION.md), [site demos](docs/app-spec/DIRECTOR-WEB.md) | Director actions, edit plans, base edit; generated sequences; demos of web pages |
+| [Director](docs/app-spec/DIRECTOR.md), [motion pieces](docs/app-spec/DIRECTOR-MOTION.md), [site demos](docs/app-spec/DIRECTOR-WEB.md), [scores](docs/app-spec/DIRECTOR-SCORE.md) | Director actions, edit plans, base edit; generated sequences; demos of web pages; music for a timeline |
 | [Render](docs/app-spec/RENDER.md) | How a timeline becomes a file: filter graph, canvas path, segments |
 | [Clearstack](docs/clearstack/) | The no-build web-component conventions the code follows |
 

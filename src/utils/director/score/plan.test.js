@@ -111,8 +111,14 @@ test('auto: the pace of the timeline and whether someone speaks choose the style
 });
 
 test('the timeline digest: length, pace, turning points and speech in clock times', () => {
-  assert.deepEqual([clock(0), clock(7.4), clock(59.6), clock(135)], ['0:00', '0:07', '1:00', '2:15']);
-  assert.equal(pointName({ time: 1, weight: 3, kind: 'marker', label: 'Reveal' }), 'marker “Reveal”');
+  assert.deepEqual(
+    [clock(0), clock(7.4), clock(59.6), clock(135)],
+    ['0:00', '0:07', '1:00', '2:15'],
+  );
+  assert.equal(
+    pointName({ time: 1, weight: 3, kind: 'marker', label: 'Reveal' }),
+    'marker “Reveal”',
+  );
   assert.equal(pointName({ time: 1, weight: 1, kind: 'shot' }), 'a new shot');
   assert.equal(pointName({ time: 1, weight: 2 }), 'a turning point');
   const text = timelineDigest({

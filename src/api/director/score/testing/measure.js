@@ -102,5 +102,8 @@ export function brightness(signal, from, to) {
   }
   if (!count) return { centroid: 0, highs: -120 };
   const all = level(signal, from, to).rms;
-  return { centroid: centroid / count, highs: all + 10 * Math.log10(Math.max(1e-12, share / count)) };
+  return {
+    centroid: centroid / count,
+    highs: all + 10 * Math.log10(Math.max(1e-12, share / count)),
+  };
 }

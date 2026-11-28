@@ -50,5 +50,5 @@ export default style({
     }),
     part('lead', 'Lead', 'lead', 0.75, [0.55, 0.15, 0.25, 0.3], { octave: 5 }),
   ],
-  master: master(0.55, [0.55, 0.5], [0.75, 0.4]),
+  master: master(0.57, [0.55, 0.5], [0.75, 0.4]),
 });

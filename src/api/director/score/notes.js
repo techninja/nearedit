@@ -31,6 +31,10 @@ export function tempoNote(fit, style, seconds) {
   const length = formatSeconds(seconds);
   const rest = `${round(fit.rest, 1)}s`;
   const bars = count(fit.bars, 'bar');
+  // A song is at most 512 bars, and twenty minutes with its tail: a longer span is not covered.
+  if (seconds - fit.seconds > 30) {
+    return `A song cannot be longer: at ${bpm} its ${bars} cover ${formatSeconds(fit.seconds)} of the ${length}.`;
+  }
   if (fit.exact === 'bars') {
     return `${bpm} makes the ${length} exactly ${bars} of ${fit.beatsPerBar} (${style.label} plays at ${range}).`;
   }
@@ -46,9 +50,7 @@ export function tempoNote(fit, style, seconds) {
       ? `At the ${bpm} asked for, the ${length} are ${bars}.`
       : `At the ${bpm} asked for, the music ends after ${bars} and rings out for the ${rest} left of the ${length}.`;
   }
-  return fit.rest > 30
-    ? `A song has at most ${fit.bars} bars: at ${bpm} the music covers ${formatSeconds(fit.seconds)} of the ${length}.`
-    : `${length} is too short for the tempos of ${style.label} (${range}): ${bars} at ${bpm}, cut to length.`;
+  return `${length} is too short for the tempos of ${style.label} (${range}): ${bars} at ${bpm}, cut to length.`;
 }
 
 /**

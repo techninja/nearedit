@@ -5,7 +5,8 @@ few parts — drum patterns on a step grid, synth lines as notes — and the
 settings of the instruments that play them. NearEdit's own synth turns that
 into audio. It is to sound what generators are to the picture: nothing to
 import, everything editable afterwards, and something the director can
-write directly when a piece needs a score.
+write directly when a piece needs a score
+([DIRECTOR-SCORE.md](./DIRECTOR-SCORE.md)).
 
 ```text
 song (in the clip) ─► engine (pure JavaScript: voices, filters, effects, mix) ─► .wav

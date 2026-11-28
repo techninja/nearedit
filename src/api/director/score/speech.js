@@ -24,6 +24,8 @@ import { typedTracks } from '../result.js';
 
 /** Intents that mark a clip as a voice whatever its file is taken for. */
 const VOICES = ['narration', 'primary'];
+/** @type {(seconds: number) => number} To the millisecond. */
+const tidy = (seconds) => Math.round(seconds * 1000) / 1000;
 const count = (/** @type {number} */ n, /** @type {string} */ thing) =>
   `${n} ${thing}${n === 1 ? '' : 's'}`;
 
@@ -49,8 +51,10 @@ export function findSpeech(edl, span, lookup) {
       const inside = clip.timelineEnd > span.start && clip.timelineStart < span.end;
       if (!inside || !clip.sourceFile || isMusicClip(clip) || clip.intent === 'music') continue;
       const media = clip.volume > 0.01 ? lookup(clip.sourceFile) : null;
-      if (!media || media.kind === 'music') continue;
-      const voice = VOICES.includes(clip.intent) || media.kind === 'speech';
+      // What the clip is marked as outranks what its file was taken for.
+      const marked = VOICES.includes(clip.intent);
+      if (!media || (media.kind === 'music' && !marked)) continue;
+      const voice = marked || media.kind === 'speech';
       const found = clipSpeech(clip, media, voice);
       if (!found.from) continue;
       if (found.spans.length) by[found.from]++;
@@ -60,8 +64,8 @@ export function findSpeech(edl, span, lookup) {
   }
   const relative = joinSpans(
     spans.map((s) => ({
-      start: Math.max(0, s.start - span.start),
-      end: Math.min(span.seconds, s.end - span.start),
+      start: tidy(Math.max(0, s.start - span.start)),
+      end: tidy(Math.min(span.seconds, s.end - span.start)),
     })),
   );
   const notes = [];

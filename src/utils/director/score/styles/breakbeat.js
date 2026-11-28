@@ -17,15 +17,15 @@ export default style({
   swing: 0.1,
   kit: '909',
   drums: [
-    layer('Kick and hats', 0.4, 0.65, { kick: 'X.x.......xx....', hat: 'x.x.x.x.x.x.x.x.' }, 0.05),
-    layer('Snare', 0.65, 0.7, { snare: '....X..o.o..X...' }, 0.15),
+    layer('Kick and hats', 0.4, 0.58, { kick: 'X.x.......xx....', hat: 'x.x.x.x.x.x.x.x.' }, 0.05),
+    layer('Snare', 0.65, 0.62, { snare: '....X..o.o..X...' }, 0.15),
     layer('Ride', 0.85, 0.35, { ride: 'x...x...x...x...', shaker: '..o...o...o...o.' }, 0.1),
   ],
   fill: { kick: 'X.x.......x.....', snare: '....X..o.oX.XoXX', hat: 'x.x.x.x.x.......' },
   hit: { crash: 'x...............' },
   parts: [
-    part('chords', 'Pad', 'pad', 0, [0.75, 0, 0.5, 0], { center: 60 }),
-    part('arp', 'Arp', 'arp', 0.25, [0.45, 0.3, 0.25, 0.4], {
+    part('chords', 'Pad', 'pad', 0, [0.9, 0, 0.5, 0], { center: 60 }),
+    part('arp', 'Arp', 'arp', 0.25, [0.5, 0.3, 0.25, 0.4], {
       rate: 2,
       mode: 'updown',
       octaves: 2,

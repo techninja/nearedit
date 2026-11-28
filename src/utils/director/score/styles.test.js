@@ -48,7 +48,10 @@ test('every style is different in character: tempo, metre, scale, kit or instrum
   assert.ok(STYLES.some((s) => s.beatsPerBar === 3) && STYLES.some((s) => s.swing > 0));
   assert.ok(STYLES.some((s) => tonicNumeral(s.scale) === 'I'));
   assert.ok(STYLES.some((s) => tonicNumeral(s.scale) === 'i'));
-  assert.ok(STYLES.some((s) => s.drums.length === 0), 'one has no drums at all');
+  assert.ok(
+    STYLES.some((s) => s.drums.length === 0),
+    'one has no drums at all',
+  );
 });
 
 test('tempo, metre, scale and keys of every style are the engine’s', () => {
@@ -110,7 +113,10 @@ test('drums: a kit of the engine, lanes of its drums, one bar each, quietest lay
       style.id,
     );
     for (const layer of style.drums) {
-      assert.ok(layer.from > 0.3 && layer.from < 1, `${style.id}: ${layer.name} is not in an intro`);
+      assert.ok(
+        layer.from > 0.3 && layer.from < 1,
+        `${style.id}: ${layer.name} is not in an intro`,
+      );
       assert.ok(layer.volume > 0 && layer.volume <= 1 && layer.reverb >= 0 && layer.reverb <= 1);
     }
     if (style.drums.length) {
@@ -149,7 +155,10 @@ test('instruments: presets and parameters of the engine, a part for the chords a
     assert.equal(first('chords')?.from, 0, `${style.id}: the chords play from the first bar`);
     assert.ok(first('bass'), `${style.id}: no bass`);
     assert.ok(first('lead'), `${style.id}: no melody`);
-    assert.ok(style.parts.some((part) => part.from >= 0.7), `${style.id}: nothing is kept for a lift`);
+    assert.ok(
+      style.parts.some((part) => part.from >= 0.7),
+      `${style.id}: nothing is kept for a lift`,
+    );
   }
 });
 
@@ -170,7 +179,10 @@ test('a style is found by its id, its label and the words people use for it', ()
 
 test('the first style a brief names is found in it; ordinary words are not styles', () => {
   assert.equal(styleInText('a lo-fi bed, calm and warm')?.id, 'lofi');
-  assert.equal(styleInText('Something cinematic that turns into house at the end')?.id, 'cinematic');
+  assert.equal(
+    styleInText('Something cinematic that turns into house at the end')?.id,
+    'cinematic',
+  );
   assert.equal(styleInText('retro, like a night drive')?.id, 'synthwave');
   assert.equal(styleInText('BOSSA NOVA please')?.id, 'bossa');
   assert.equal(styleInText('a gentle waltz.')?.id, 'waltz');

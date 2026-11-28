@@ -105,7 +105,8 @@ export function master(volume, reverb, delay) {
 }
 
 /**
- * @param {Partial<Style> & { id: string, label: string, description: string }} fields
+ * @param {Partial<Style> & Pick<Style, 'id'|'label'|'description'|'bpm'|'scale'|'keys'|
+ *   'progressions'|'parts'|'master'>} fields
  * @returns {Style} With what most styles share filled in: four beats, sixteen steps
  */
 export function style(fields) {

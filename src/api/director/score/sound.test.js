@@ -74,12 +74,15 @@ test('the sections follow the arc: the lift is louder and brighter than the open
       flat.push(`${id}: highs ${dull.highs.toFixed(1)} dB → ${bright.highs.toFixed(1)} dB`);
     }
     if (!(bright.centroid > dull.centroid)) {
-      flat.push(`${id}: centroid ${dull.centroid.toFixed(0)} Hz → ${bright.centroid.toFixed(0)} Hz`);
+      flat.push(
+        `${id}: centroid ${dull.centroid.toFixed(0)} Hz → ${bright.centroid.toFixed(0)} Hz`,
+      );
     }
     // What comes after the lift steps back again.
     const outro = section(made, 'outro');
     const after = outro ? level(mono, ...stretch(made, outro)).rms : -Infinity;
-    if (!(after < loud)) flat.push(`${id}: outro ${after.toFixed(1)} dB, lift ${loud.toFixed(1)} dB`);
+    if (!(after < loud))
+      flat.push(`${id}: outro ${after.toFixed(1)} dB, lift ${loud.toFixed(1)} dB`);
   }
   assert.deepEqual(flat, []);
 });

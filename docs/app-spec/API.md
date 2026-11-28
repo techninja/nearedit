@@ -208,6 +208,7 @@ edit-plan format and the track layout it produces are described in
 | `insert_broll` | optional | Find clips matching the prompt by tags/transcript and place them |
 | `motion_piece` | optional | A title sequence built only from generated layers — backgrounds, particles, shapes, animated titles — from a few lines of text; no media ([DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md)) |
 | `site_demo` | optional | A demo of a web page from its address (`params.url`) and a few plain lines — or none, for a tour: the page is recorded as a web clip inside the job and framed with zooms, captions and a background ([DIRECTOR-WEB.md](./DIRECTOR-WEB.md)) |
+| `score` | optional | Music written for the timeline by NearEdit's own synth — a style, a tempo that makes the span whole bars, sections on the markers, titles and cuts — rendered inside the job and added as one [music clip](./MUSIC.md), ducked under speech; needs the current `edl` ([DIRECTOR-SCORE.md](./DIRECTOR-SCORE.md)) |
 | `remove_silence` | no | Tighten clips using word timestamps or detected silences |
 | `beat_sync` | no | Move cuts onto the beats of a music clip |
 | `add_captions` | no | Title clips generated from a transcript |
@@ -240,7 +241,7 @@ created. Clips are complete v3 clips (`createClip`). `range` is `null`
 unless the mode is `range`; a result also carries its `duration`.
 
 Actions that rewrite existing clips in place — `remove_silence`,
-`beat_sync`, `add_captions`, and `insert_broll` with `placement: "overlay"`
+`beat_sync`, `add_captions`, `score`, and `insert_broll` with `placement: "overlay"`
 — need the current `edl` in the request and always answer in `replace` mode
 with the whole rewritten timeline. Their tracks carry the `trackId` of the
 track they came from, and clips keep their ids, so the merge keeps track

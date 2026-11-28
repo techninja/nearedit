@@ -20,7 +20,10 @@ test('from twelve seconds to twelve minutes the span is whole bars at a tempo of
       if (seconds < (60 * style.beatsPerBar) / (style.bpm[1] - style.bpm[0])) continue;
       fitted++;
       assert.equal(fit.exact, 'bars', at);
-      assert.ok(fit.bpm >= style.bpm[0] - 1e-9 && fit.bpm <= style.bpm[1] + 1e-9, `${at}: ${fit.bpm}`);
+      assert.ok(
+        fit.bpm >= style.bpm[0] - 1e-9 && fit.bpm <= style.bpm[1] + 1e-9,
+        `${at}: ${fit.bpm}`,
+      );
       assert.ok(Number.isInteger(fit.bars) && fit.bars >= 1, at);
       assert.ok(Math.abs(fit.bars * barOf(fit) - seconds) < 1e-9, `${at}: ${fit.bars} bars`);
       assert.ok(Math.abs(fit.seconds - seconds) < 1e-9 && fit.rest < 1e-9, at);
@@ -46,8 +49,8 @@ test('the tempo follows the energy inside the range, and an even number of bars 
 });
 
 test('the tempo that puts the turning points on bar lines wins', () => {
-  // 60 s of house is 29 to 32 bars; left alone it takes an even number near its usual tempo.
-  assert.deepEqual([fitTempo(60, house).bars, fitTempo(60, house).bpm], [32, 128]);
+  // 60 s of house is 29 to 32 bars; left alone it takes the tempo nearest its usual 123 BPM.
+  assert.deepEqual([fitTempo(60, house).bars, fitTempo(60, house).bpm], [31, 124]);
   // A marker at 14 s is on a bar line only at 30 bars (2 s each).
   const marker = (time) => [{ time, weight: 3 }];
   assert.equal(fitTempo(60, house, { points: marker(14) }).bars, 30);
@@ -75,7 +78,10 @@ test('a span too short for whole bars is whole beats; shorter still, the usual t
       const fit = fitTempo(seconds, style);
       const at = `${style.id} ${seconds}s`;
       assert.ok(fit.bars >= 1 && fit.rest >= -1e-9, at);
-      assert.ok(fit.bpm >= style.bpm[0] - 1e-9 && fit.bpm <= style.bpm[1] + 1e-9, `${at}: ${fit.bpm}`);
+      assert.ok(
+        fit.bpm >= style.bpm[0] - 1e-9 && fit.bpm <= style.bpm[1] + 1e-9,
+        `${at}: ${fit.bpm}`,
+      );
       const count = (seconds * fit.bpm) / 60;
       if (fit.exact === 'bars') assert.ok(Math.abs(fit.seconds - seconds) < 1e-9, at);
       if (fit.exact === 'beats') assert.ok(Math.abs(count - Math.round(count)) < 1e-9, at);
@@ -96,7 +102,10 @@ test('a span too short for whole bars is whole beats; shorter still, the usual t
 
 test('a tempo that was asked for is kept: the music ends on its last whole bar', () => {
   const fit = fitTempo(31, house, { bpm: 120 });
-  assert.deepEqual([fit.exact, fit.bpm, fit.bars, fit.seconds, fit.rest], ['asked', 120, 15, 30, 1]);
+  assert.deepEqual(
+    [fit.exact, fit.bpm, fit.bars, fit.seconds, fit.rest],
+    ['asked', 120, 15, 30, 1],
+  );
   assert.equal(fitTempo(30, house, { bpm: 120 }).rest, 0);
   // Outside the style's range is the editor's business; outside the engine's is not.
   assert.equal(fitTempo(30, house, { bpm: 90 }).bpm, 90);

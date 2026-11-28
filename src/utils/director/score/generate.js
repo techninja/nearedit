@@ -25,7 +25,7 @@ const TAIL = 3;
  * around the energy the styles' levels were set at — so that beds of any
  * energy come out about equally loud.
  */
-const MAKE_UP = 4;
+const MAKE_UP = 6;
 const SET_AT = 0.55;
 
 /**

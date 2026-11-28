@@ -96,7 +96,7 @@ export async function score(ctx, deps = {}) {
     notes.push('There is other music in this span: mute or remove one of the two.');
   }
   if (built.short > 0.05) {
-    notes.push(`A song cannot be longer: the last ${formatSeconds(built.short)} have no music.`);
+    notes.push(`The last ${formatSeconds(built.short)} of the span have no music.`);
   }
   notes.push(
     'It is an ordinary music clip: open it to change any note, or run again with another ' +

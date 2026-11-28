@@ -17,7 +17,7 @@ export const LEAD = 0.05;
 /** Seconds after the last word before the music starts back up. */
 export const HOLD = 0.3;
 /** Stretches of speech closer together than this are ducked as one. */
-export const JOIN = 1.2;
+export const JOIN = 1.5;
 
 const tidy = (/** @type {number} */ value, /** @type {number} */ digits) =>
   Math.round(value * digits) / digits;

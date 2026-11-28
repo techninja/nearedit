@@ -47,6 +47,7 @@ it take free text), and `accept` for a `file`. Field types: `range`,
 | `insert_broll` | optional | insert, append, prepend, range | `duration` (per clip), `count`, `placement` (insert, overlay), `naturalSound`, `useLlm` |
 | `motion_piece` | optional | all | `theme`, `duration`, `pacing`, `seed`, `particles`, `useLlm` — a piece of generated layers only, no media: [DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md) |
 | `site_demo` | optional | all | `url` (required), `look` (window, full), `theme`, `size`, `pacing`, `duration`, `zoom`, `captions`, `title`, `useLlm` — a recorded demo of a web page, no media: [DIRECTOR-WEB.md](./DIRECTOR-WEB.md) |
+| `score` | optional | replace, range | `style`, `energy`, `key`, `bpm`, `duck`, `volume`, `seed`, `useLlm` — music written for the timeline, one music clip ducked under speech: [DIRECTOR-SCORE.md](./DIRECTOR-SCORE.md) |
 | `remove_silence` | no | replace, range | `threshold`, `padding` |
 | `beat_sync` | no | replace, range | `every` (1, 2, 4), `maxShift`, `protectSpeech` |
 | `add_captions` | no | replace, range | `maxChars`, `maxDuration`, `position`, `size`, `background` |
@@ -55,9 +56,9 @@ it take free text), and `accept` for a `file`. Field types: `range`,
 and 2 s; stills 6 s, 4.5 s and 2.5 s). `naturalSound` says what happens to
 the sound of b-roll: `low` (gain 0.25), `full` or `off` (no audio clip).
 
-For the three **in-place** actions `mode` is a *scope*, not a placement:
-`replace` works on the selected clips (`context.selection`) or, with no
-selection, on the whole timeline; `range` works only inside
+For `score` and the three **in-place** actions `mode` is a *scope*, not a
+placement: `replace` works on the selected clips (`context.selection`) or,
+with no selection, on the whole timeline; `range` works only inside
 `context.range`. They need the current `edl` in the request.
 
 When a generating action runs in mode `range` and no `duration` was given,
@@ -314,7 +315,7 @@ is on the beat too.
 
 ## Working on the existing timeline
 
-`remove_silence`, `beat_sync`, `add_captions` and the `overlay` placement
+`remove_silence`, `beat_sync`, `add_captions`, `score` and the `overlay` placement
 of `insert_broll` change the timeline without rippling new material into
 it. They copy the posted document, rewrite the copy and return **the whole
 timeline** as a `replace`: the one mode whose outcome does not depend on
@@ -439,6 +440,7 @@ injectable (`createLlmClient(cfg, { fetch })`).
 | `src/api/director/inplace/` | Actions on the existing timeline |
 | `src/api/director/motion/`, `src/utils/director/motion/` | The motion piece: plan, themes, vocabularies, builder ([DIRECTOR-MOTION.md](./DIRECTOR-MOTION.md)) |
 | `src/api/director/web/`, `src/utils/director/web/` | The site demo: brief grammar, name matching, pacing, recording, framing ([DIRECTOR-WEB.md](./DIRECTOR-WEB.md)) |
+| `src/api/director/score/`, `src/utils/director/score/` | The score: styles, tempo fitting, sections, the song generator, speech and ducking ([DIRECTOR-SCORE.md](./DIRECTOR-SCORE.md)) |
 | `src/api/director/actions/`, `scripts/`, `prompts/` | Action entry points, script files, prompts |
 | `src/api/director/testing/` | Test fixtures: lavfi media projects, a fake LLM server, the fragment invariant checker |
 

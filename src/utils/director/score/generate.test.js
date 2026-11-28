@@ -54,7 +54,10 @@ test('a generated song is a valid, complete song of the engine', () => {
     const { song, style, fit } = made;
     assert.ok(song.parts.length >= 3 && song.parts.length <= SONG_LIMITS.parts, at(made));
     assert.equal(new Set(song.parts.map((part) => part.id)).size, song.parts.length, at(made));
-    assert.deepEqual([song.bpm, song.bars, song.beatsPerBar], [fit.bpm, fit.bars, style.beatsPerBar]);
+    assert.deepEqual(
+      [song.bpm, song.bars, song.beatsPerBar],
+      [fit.bpm, fit.bars, style.beatsPerBar],
+    );
     assert.deepEqual([song.scale, song.swing], [style.scale, style.swing]);
     assert.ok(style.keys.includes(song.key), at(made));
     assert.ok(songSeconds(song) >= fit.seconds + fit.rest + 1, 'the tail reaches past the span');
@@ -116,7 +119,10 @@ test('the bass is on the root of the chord at the start of every bar it plays', 
     for (const part of made.style.parts.filter((spec) => spec.role !== 'lead')) {
       for (const [bar, pitchClass] of downbeats(made.song, part.name)) {
         if (pitchClass < 0) continue;
-        assert.ok(chordClasses(chord(bar)).includes(pitchClass), `${at(made)}: ${part.name} ${bar}`);
+        assert.ok(
+          chordClasses(chord(bar)).includes(pitchClass),
+          `${at(made)}: ${part.name} ${bar}`,
+        );
       }
     }
   }
@@ -128,8 +134,12 @@ test('the last bar resolves to the tonic chord, with the key note in the bass', 
     const last = barNotes(song, song.bars - 1);
     assert.ok(last.length >= 3, `${at(made)}: ${last.length} notes in the last bar`);
     const tonic = chordClasses(harmony.tonic);
-    for (const note of last) assert.ok(tonic.includes(note.pitch % 12), `${at(made)}: ${note.pitch}`);
-    assert.ok(last.every((note) => note.beat === (song.bars - 1) * song.beatsPerBar), at(made));
+    for (const note of last)
+      assert.ok(tonic.includes(note.pitch % 12), `${at(made)}: ${note.pitch}`);
+    assert.ok(
+      last.every((note) => note.beat === (song.bars - 1) * song.beatsPerBar),
+      at(made),
+    );
     const lowest = last.reduce((a, b) => (b.pitch < a.pitch ? b : a));
     assert.equal(lowest.pitch % 12, harmony.tonic.root, at(made));
     assert.equal(harmony.tonic.root, chordClasses(harmony.tonic)[0]);
@@ -146,7 +156,10 @@ test('bass and kick are never both below 40 Hz', () => {
   const hertz = (pitch) => 440 * 2 ** ((pitch - 69) / 12);
   assert.ok(hertz(ROLE_RANGE.bass[0]) > 40, 'the lowest bass note is E1, 41 Hz');
   for (const kit of Object.values(KITS)) {
-    assert.ok(kit.drums.kick.tones.every((tone) => tone.freq >= 40), kit.name);
+    assert.ok(
+      kit.drums.kick.tones.every((tone) => tone.freq >= 40),
+      kit.name,
+    );
   }
 });
 
@@ -154,7 +167,10 @@ test('a key and a tempo that were asked for are used; brightness opens the filte
   const asked = makeScore('house', { key: 'F#', bpm: 121, seconds: 30 });
   assert.deepEqual([asked.song.key, asked.song.bpm, asked.harmony.key], ['F#', 121, 'F#']);
   // The rest of the take does not change with the key.
-  assert.equal(asked.harmony.numerals, makeScore('house', { bpm: 121, seconds: 30 }).harmony.numerals);
+  assert.equal(
+    asked.harmony.numerals,
+    makeScore('house', { bpm: 121, seconds: 30 }).harmony.numerals,
+  );
   assert.equal(makeScore('house', { key: 'H' }).song.key, makeScore('house').song.key);
   const cutoff = (made, name) => {
     const part = made.song.parts.find((entry) => entry.name === name);

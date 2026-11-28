@@ -14,12 +14,12 @@ import { normalizeSong } from '#utils/music/normalize.js';
 /**
  * @param {string} styleId
  * @param {{ seconds?: number, energy?: number, seed?: number, bpm?: number, key?: string,
- *   brightness?: number, points?: import('../sections.js').TurningPoint[],
- *   asked?: import('../sections.js').AskedSection[] }} [opts] - 36 seconds
+ *   brightness?: number, points?: import('#utils/director/score/sections.js').TurningPoint[],
+ *   asked?: import('#utils/director/score/sections.js').AskedSection[] }} [opts] - 36 seconds
  *   at energy 0.5 with seed 1 unless told otherwise
- * @returns {{ style: import('../style.js').Style, fit: import('../fit.js').Fit,
- *   barSeconds: number, sections: import('../sections.js').Section[], raw: Record<string, any>,
- *   song: import('#utils/music/types.js').Song, harmony: import('../harmony.js').Harmony }}
+ * @returns {{ style: import('#utils/director/score/style.js').Style, fit: import('#utils/director/score/fit.js').Fit,
+ *   barSeconds: number, sections: import('#utils/director/score/sections.js').Section[], raw: Record<string, any>,
+ *   song: import('#utils/music/types.js').Song, harmony: import('#utils/director/score/harmony.js').Harmony }}
  *   `raw`: the song as generated; `song`: as the engine completes it
  */
 export function makeScore(styleId, opts = {}) {

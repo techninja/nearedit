@@ -113,7 +113,8 @@ export function fitTempo(seconds, style, opts = {}) {
       const stub = units === 'beats' && count % beatsPerBar === 1 ? 1 : 0;
       const pace = Math.abs(bpm - usual) / Math.max(1, high - low);
       const grid = offGrid(points, (beatsPerBar * 60) / bpm);
-      found.push({ bpm, cost: pace + 1.5 * grid + 0.3 * odd + 0.5 * stub });
+      // Bar lines on the turning points matter most: that is where the music changes.
+      found.push({ bpm, cost: pace + 3 * grid + 0.15 * odd + 0.5 * stub });
     }
     return found.sort((a, b) => a.cost - b.cost || a.bpm - b.bpm);
   };
