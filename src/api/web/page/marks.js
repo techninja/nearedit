@@ -82,9 +82,10 @@ export function installMarks(ne) {
     if (!dirty && list === known) return;
     [dirty, known] = [false, list];
     for (const { by, value, index } of targets) {
-      const found = ne.matches(by, value).list;
       // A selector hides everything it matches; a text or a label the one that was meant.
-      for (const el of by === 'css' && !index ? found : found.slice(index, index + 1)) {
+      const all = by === 'css' && !index;
+      const found = all ? ne.every(value) : ne.matches(by, value).list.slice(index, index + 1);
+      for (const el of found) {
         if (gone.has(el) && el.style.display === 'none') continue;
         el.style.setProperty('display', 'none', 'important');
         gone.add(el);

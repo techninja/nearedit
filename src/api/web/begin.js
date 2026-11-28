@@ -78,7 +78,15 @@ export async function beginStep(playing, i) {
     return step.do === 'type' ? { ...span, ...typeParts(step, span, fps) } : null;
   }
   rows[i].target = step.do === 'scroll' ? step.to : step.target;
-  const how = step.do === 'scroll' ? { align: step.align, always: true } : {};
+  const parts =
+    step.do === 'scroll' || step.do === 'hide'
+      ? { ease: step.ease }
+      : step.do === 'type'
+        ? typeParts(step, span, fps)
+        : aimedParts(step, span, fps, tab.call);
+  // A step whose pointer travels to the target needs it reachable there, not only in view.
+  const pointed = 'G' in parts;
+  const how = step.do === 'scroll' ? { align: step.align, always: true } : { pointed };
   const found = target
     ? await tab.call('resolve', i, target, step.index || 0, how)
     : await tab.call('resolvePage', i, goal);
@@ -91,12 +99,6 @@ export async function beginStep(playing, i) {
   }
   // A camera cue's own zoom goes into the track: zoom keyframes are made from the track alone.
   if (stepKind(step.do)?.camera && typeof step.zoom === 'number') rows[i].zoom = step.zoom;
-  const parts =
-    step.do === 'scroll'
-      ? { ease: step.ease }
-      : step.do === 'type'
-        ? typeParts(step, span, fps)
-        : aimedParts(step, span, fps, tab.call);
   const moves = found.scrolls.some(
     (/** @type {number[]} */ [fx, fy, tx, ty]) => fx !== tx || fy !== ty,
   );
@@ -104,6 +106,7 @@ export async function beginStep(playing, i) {
     ...span,
     ...parts,
     ...{ plan: i, scrolls: moves ? found.scrolls : [] },
+    ...(target && { what: target.by === 'point' ? 'the point' : `${target.by}=${target.value}` }),
     ...(found.x !== undefined && { aim: { x: found.x, y: found.y } }),
   };
 }

@@ -24,7 +24,7 @@ export function installFrame(ne) {
   ne.frame = (state) => {
     for (const { plan, at } of state.scroll || []) ne.scrollPlan(plan, at);
     ne.hideAll(state.hide || []);
-    const aim = state.aim === undefined ? null : ne.aim(state.aim);
+    const aim = state.aim === undefined ? null : ne.aim(state.aim, !!state.snap);
     const cursor = state.cursor || null;
     if (cursor && aim && state.snap) [cursor.x, cursor.y] = [aim.x, aim.y];
     ne.drawMarks(state.marks || []);
@@ -48,18 +48,18 @@ export function installFrame(ne) {
    * @param {number} id - The step
    * @param {{ by: string, value: string, x?: number, y?: number }} target
    * @param {number} index
-   * @param {{ align?: string, always?: boolean }} [how]
+   * @param {{ align?: string, always?: boolean, pointed?: boolean }} [how]
    * @returns {object} `{ why }` when there is nothing to aim at, otherwise
    *   `{ scrolls, rect, x, y, tag }` with the aiming point as it will be after scrolling
    */
   ne.resolve = (id, target, index, how = {}) => {
     if (target.by === 'point') {
-      ne.plans.set(id, { el: null, boxes: [], to: [] });
+      ne.plans.set(id, { el: null, boxes: [], to: [], offset: [0, 0] });
       return { scrolls: [], rect: null, x: target.x, y: target.y, tag: '' };
     }
     const { el, why } = ne.find(target.by, target.value, index);
     if (!el) return { why };
-    const scrolls = ne.plan(id, el, how.align || 'center', !!how.always);
+    const scrolls = ne.plan(id, el, how.align || 'center', !!how.always, !!how.pointed);
     if (how.always) ne.scroller = ne.plans.get(id).boxes.at(-1);
     return { scrolls, ...ne.aim(id), tag: el.tagName.toLowerCase() };
   };

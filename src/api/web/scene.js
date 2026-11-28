@@ -20,8 +20,9 @@ const progress = (/** @type {number} */ n, /** @type {number} */ from, /** @type
  * @returns {{ pointer: { x: number, y: number, shown: boolean },
  *   hide: { by: string, value: string, index: number }[],
  *   at: (n: number, acts: Act[]) => { state: any, held: string },
- *   still: () => object }} `at` gives the state the page draws on frame `n`
- *   and the mouse button held on it; `still` the state between frames
+ *   still: () => object, forget: (step: number) => void }} `at` gives the state the page
+ *   draws on frame `n` and the mouse button held on it; `still` the state between frames;
+ *   `forget` drops what a step that turned out impossible had begun to draw
  */
 export function createScene(recipe, fps) {
   const { width, height } = recipe.viewport;
@@ -42,6 +43,7 @@ export function createScene(recipe, fps) {
     pointer,
     hide,
     still: () => ({ hide, cursor: drawn(false) }),
+    forget: (step) => void (ripples = ripples.filter((ripple) => ripple.step !== step)),
     at(n, acts) {
       /** @type {any} */
       const state = { hide, scroll: [], marks: [] };

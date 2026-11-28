@@ -319,7 +319,8 @@ time. Progress messages are `frame n of m`. The job's result:
 even. `cached` is true when the recording was already there — nothing is
 recorded twice, and two requests for one key share one recording. A job
 that fails names what stopped it: `Step 3 (click): nothing on the page
-matches text=Sign in`, `https://intranet/ was refused: … is a private
+matches text=Sign in`, `Step 4 (click): css=#buy is covered by
+<div#cookie-bar> "We use cookies"`, `https://intranet/ was refused: … is a private
 address (private network). To record it anyway, allow it:
 WEB_CAPTURE_ALLOW=intranet`. Cancelling the job ends the browser and
 FFmpeg; a failed or cancelled recording leaves no file. What did not stop
@@ -334,8 +335,9 @@ elements, warnings }`. `image` is a PNG data URL of the viewport at one
 device pixel per CSS pixel, without the recorder's pointer and marks.
 `elements` — at most 300, in document order — are `{ kind, name, target,
 rect, visible }`: `kind` is `link`, `button`, `input`, `heading`, `image`
-or `section`; `rect` is in page CSS pixels; `visible` says whether it is
-inside the viewport now; `target` finds exactly that element when used in
+or `section`; `rect` is in page CSS pixels; `visible` says whether it
+shows now — inside the viewport and not cut off by a scrolling panel
+around it; `target` finds exactly that element when used in
 a step (its text or label when no other element shares it, otherwise a
 CSS selector). Only the steps that are played have to be complete, so a
 snapshot can be taken while the next step is still being written. Errors

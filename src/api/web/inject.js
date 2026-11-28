@@ -13,6 +13,7 @@ import { installMarks } from './page/marks.js';
 import { installOverlay } from './page/overlay.js';
 import { installElements } from './page/elements.js';
 import { installSelector } from './page/selector.js';
+import { installSight } from './page/sight.js';
 import { installTargets } from './page/targets.js';
 
 /** Name of the recorder's world, and of its namespace there. */
@@ -21,6 +22,7 @@ export const NAMESPACE = '__nearedit';
 
 const PARTS = [
   installTargets,
+  installSight,
   installGeometry,
   installOverlay,
   installMarks,

@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Panels that cut things off</title>
+    <style>
+      /* An app made of panels. A box can lie inside the picture and still not show:
+         the panel it belongs to has scrolled it away, and another panel is drawn there. */
+      body {
+        margin: 0;
+        height: 900px;
+        font: 12px sans-serif;
+        background: #ffffff;
+      }
+      button {
+        position: absolute;
+        border: 0;
+        padding: 0;
+        background: #bbbbbb;
+        cursor: pointer;
+      }
+      /* The dock: 200 × 150, ten tiles in two columns. The tiles from the seventh on
+         have their boxes below it — where the timeline is. */
+      #dock {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 200px;
+        height: 150px;
+        overflow: auto;
+        background: #eeeeee;
+      }
+      #grid {
+        position: relative;
+        height: 330px;
+      }
+      .tile {
+        width: 80px;
+        height: 50px;
+      }
+      #mark {
+        position: absolute;
+        left: 0;
+        top: 140px;
+        width: 8px;
+        height: 10px;
+        background: #ff0000;
+      }
+      #timeline {
+        position: absolute;
+        left: 0;
+        top: 150px;
+        width: 210px;
+        height: 120px;
+        background: #222233;
+      }
+      #twin {
+        position: absolute;
+        left: 230px;
+        top: 20px;
+      }
+      /* A scrolling box inside a scrolling box. */
+      #outer {
+        position: absolute;
+        left: 230px;
+        top: 60px;
+        width: 150px;
+        height: 100px;
+        overflow: auto;
+        background: #eeeeee;
+      }
+      #outer-in {
+        position: relative;
+        height: 400px;
+      }
+      #inner {
+        position: absolute;
+        left: 10px;
+        top: 200px;
+        width: 130px;
+        height: 80px;
+        overflow: auto;
+        background: #dddddd;
+      }
+      #inner-in {
+        position: relative;
+        height: 300px;
+      }
+      #deepest {
+        left: 10px;
+        top: 220px;
+        width: 100px;
+        height: 40px;
+      }
+      /* A strip that scrolls sideways. */
+      #strip {
+        position: absolute;
+        left: 230px;
+        top: 200px;
+        width: 150px;
+        height: 60px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        background: #eeeeee;
+      }
+      #strip-in {
+        position: relative;
+        width: 600px;
+        height: 60px;
+      }
+      #sideways {
+        left: 200px;
+        top: 10px;
+        width: 80px;
+        height: 40px;
+      }
+      /* Things that lie on top: a bar along the bottom, a veil down the right edge. */
+      #barred {
+        left: 400px;
+        top: 310px;
+        width: 100px;
+        height: 40px;
+      }
+      #bar {
+        position: fixed;
+        left: 300px;
+        right: 80px;
+        bottom: 0;
+        height: 60px;
+        background: #ffaa00;
+      }
+      #veiled {
+        left: 570px;
+        top: 100px;
+        width: 60px;
+        height: 40px;
+      }
+      #veil {
+        position: fixed;
+        left: 560px;
+        top: 0;
+        width: 80px;
+        height: 360px;
+        background: rgba(0, 0, 80, 0.5);
+      }
+      /* A box that is closed: nothing in it can be brought into view. */
+      #closed {
+        position: absolute;
+        left: 400px;
+        top: 60px;
+        width: 100px;
+        height: 0;
+        overflow: hidden;
+      }
+      #tucked {
+        left: 0;
+        top: 0;
+        width: 60px;
+        height: 20px;
+      }
+      .lamp {
+        position: fixed;
+        top: 20px;
+        width: 20px;
+        height: 20px;
+        background: #000000;
+      }
+      .lamp.on {
+        background: #00ff00;
+      }
+      .lamp.bad {
+        background: #ff00ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="dock">
+      <div id="grid"><div id="mark"></div></div>
+    </div>
+    <div id="timeline"></div>
+    <span id="twin">Tile 7</span>
+    <div id="outer">
+      <div id="outer-in">
+        <div id="inner">
+          <div id="inner-in">
+            <button id="deepest">Deepest</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="strip">
+      <div id="strip-in"><button id="sideways">Sideways</button></div>
+    </div>
+    <button id="barred">Under the bar</button>
+    <div id="bar">A bar that stays</div>
+    <button id="veiled">Veiled</button>
+    <div id="veil" class="veil chat">Chat with us</div>
+    <div id="closed"><button id="tucked">Tucked away</button></div>
+    <div class="lamp" id="hit" style="left: 400px"></div>
+    <div class="lamp" id="miss" style="left: 425px"></div>
+    <div class="lamp" id="deeplamp" style="left: 450px"></div>
+    <div class="lamp" id="striplamp" style="left: 475px"></div>
+    <div class="lamp" id="barlamp" style="left: 500px"></div>
+    <div class="lamp" id="veillamp" style="left: 525px"></div>
+    <script>
+      const byId = (id) => document.getElementById(id);
+      const keys = ['rain', 'sun', 'wind', 'fog', 'hail', 'mist', 'snow', 'dew', 'frost', 'storm'];
+      keys.forEach((key, k) => {
+        const tile = document.createElement('button');
+        tile.className = 'tile';
+        tile.dataset.key = key;
+        tile.textContent = `Tile ${k + 1}`;
+        tile.style.left = `${10 + (k % 2) * 90}px`;
+        tile.style.top = `${10 + Math.floor(k / 2) * 60}px`;
+        tile.addEventListener('click', () => key === 'snow' && byId('hit').classList.add('on'));
+        byId('grid').append(tile);
+      });
+      const lights = { deepest: 'deeplamp', sideways: 'striplamp', barred: 'barlamp' };
+      for (const [id, lamp] of Object.entries(lights))
+        byId(id).addEventListener('click', () => byId(lamp).classList.add('on'));
+      byId('timeline').addEventListener('click', () => byId('miss').classList.add('bad'));
+      byId('veil').addEventListener('click', () => byId('veillamp').classList.add('bad'));
+    </script>
+  </body>
+</html>

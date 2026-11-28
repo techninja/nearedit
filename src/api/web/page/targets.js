@@ -33,6 +33,8 @@ export function installTargets(ne) {
     return box.width > 0 && box.height > 0;
   };
   ne.interactive = (/** @type {Element} */ el) => el.matches(INTERACTIVE);
+  /** The link, button, label or control a click on an element belongs to, if any. */
+  ne.owner = (/** @type {Element} */ el) => el.closest(INTERACTIVE);
 
   /** The text an element shows, case and spacing ignored. */
   const shown = (/** @type {any} */ el) => {
@@ -88,8 +90,9 @@ export function installTargets(ne) {
   };
 
   /**
-   * Every match of a target, best first: visible before hidden, exact
-   * before containing, links and controls before plain text, then document order.
+   * Every match of a target, best first: rendered before hidden, exact
+   * before containing, what shows now before what has to be scrolled to,
+   * links and controls before plain text, then document order.
    */
   ne.matches = (/** @type {string} */ by, /** @type {string} */ value) => {
     /** @type {Element[][]} */
@@ -101,15 +104,30 @@ export function installTargets(ne) {
         return { list: [], error: `${JSON.stringify(value)} is not a CSS selector` };
       }
     } else tiers = (by === 'label' ? byLabel : byText)(norm(value));
-    const rank = (/** @type {Element[]} */ list, /** @type {boolean} */ seen) => {
-      const some = list.filter((el) => ne.visible(el) === seen);
-      return by === 'text'
+    const liked = (/** @type {Element[]} */ some) =>
+      by === 'text'
         ? [...some.filter(ne.interactive), ...some.filter((el) => !ne.interactive(el))]
         : some;
+    const rank = (/** @type {Element[]} */ list, /** @type {boolean} */ seen) => {
+      const some = list.filter((el) => ne.visible(el) === seen);
+      const showing = new Set(seen ? some.filter(ne.showing) : []);
+      return [
+        ...liked(some.filter((el) => showing.has(el))),
+        ...liked(some.filter((el) => !showing.has(el))),
+      ];
     };
     const ranked = [true, false].flatMap((seen) => tiers.map((tier) => rank(tier, seen)));
     // "index: 1" counts within the best kind of match that exists.
     return { list: ranked.find((tier) => tier.length) || [], error: '' };
+  };
+
+  /** Everything a selector matches, in document order; nothing when it is not a selector. */
+  ne.every = (/** @type {string} */ selector) => {
+    try {
+      return [...document.querySelectorAll(selector)];
+    } catch {
+      return []; // said where the target is resolved; here there is simply nothing to hide
+    }
   };
 
   /** Find one element: `{ el, count, why }` — `why` says what is wrong when `el` is null. */

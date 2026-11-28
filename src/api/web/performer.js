@@ -74,6 +74,15 @@ export function createPerformer(stage, steps = stage.score.steps.length) {
         const seen = await tab.call('frame', state);
         await stepper.sync(seen.drift);
         if (pointer.shown && seen.x !== null) Object.assign(pointer, { x: seen.x, y: seen.y });
+        // The pointer has arrived and something else lies there: nothing is pressed. The step
+        // fails — or is passed over, and the frame is drawn again without it.
+        const stuck = acts.find((act) => n === act.G && state.aim === act.plan && seen.aim?.cover);
+        if (stuck) {
+          acts = acts.filter((act) => act !== stuck);
+          scene.forget(stuck.step);
+          miss(stuck.step, `${stuck.what} ${seen.aim.cover}`);
+          return play(cued.filter((act) => act !== stuck));
+        }
         /** @type {import('./input.js').Command[]} */
         const commands = [];
         const inside =

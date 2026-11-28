@@ -66,8 +66,9 @@ director, a label on the timeline) and an `ease` for its motion (an
 | `hide` | `target` | 0 | 0 | Remove an element from view |
 | `run` | `js` | 0 | 0.2 | Run a script in the page |
 
-A target outside the viewport is scrolled into the middle of it **during**
-the step's `duration`, while the cursor travels — so timing never depends
+A target that does not show whole — outside the viewport, or cut off by a
+scrolling panel — is brought into view **during** the step's `duration`,
+while the cursor travels, by whatever scrolls it; so timing never depends
 on the page. A step with `duration: 0` happens between two frames.
 
 A step stores `duration` and `hold` only when they were set; otherwise the
@@ -88,10 +89,17 @@ pixels in the viewport).
 | `label=Email` | The form control with that label, placeholder, `aria-label` or `name` |
 | `css=#pricing .card` or just `#pricing .card` | A CSS selector |
 
-The first **visible** match in document order is used; a step may add
-`"index": 1` for the second. A target that is not found fails the recording
-with the step's number and what was looked for — or, with
-`onMissing: skip`, the step's time passes and nothing else happens.
+Matches that are showing come first, then those that have to be scrolled
+to, each in document order; the first is used, and a step may add
+`"index": 1` for the second. The cursor aims at the middle of the part of
+the target that shows.
+
+A target that is not found fails the recording with the step's number and
+what was looked for — or, with `onMissing: skip`, the step's time passes
+and nothing else happens. The same goes for a target that **something else
+covers** (a chat bubble, a cookie banner) and for one that cannot be
+brought into view: the recorder never clicks through onto whatever lies
+there; it says what is in the way (`hide` it, or aim elsewhere).
 
 ### Storage file
 
@@ -283,6 +291,71 @@ the server can reach. So:
   `WEB_CAPTURE_NO_SANDBOX=1`.
 - Limits: 10 minutes and 200 steps per recording, 60 s to load a page, one
   recording at a time (`WEB_CAPTURE_CONCURRENCY`).
+
+## In the editor
+
+Everything a web clip needs is done without reading its recipe
+(`src/utils/webUi/`, components `web-*`).
+
+- **Create → Web.** An address (`example.com` means `https://example.com`;
+  a local address means `http`), a page size — Desktop 1280 × 720, Wide
+  1920 × 1080 at scale 1, Tablet 834 × 1112, Phone 390 × 844 — and *Add
+  web clip*: the clip goes in at the edit cursor, is selected, and opens in
+  the web editor. When `/web/status` says there is no browser, the section
+  says why in the server's words; clips can still be added and scripted.
+  The last six addresses are remembered per project (in the browser).
+- **Web editor.** A dialog for one clip; every change goes through
+  `updateWebRecipe` in the edit session, so undo and autosave apply, and
+  typing in a box or dragging on the strip is one undo step.
+  - *Page view*: `POST /web/snapshot` with `until` = the selected step, so
+    the page as it stands **before** that step (the last row, *End*, is
+    the page after every step). It is a map of the whole page: the
+    snapshot's picture sits where the viewport is, and what lies below or
+    above it — of which there is no picture — is drawn as named outlines
+    of the snapshot's `elements`. Pressing an element offers Click, Hover,
+    Type into, Scroll to, Highlight and Zoom in (`focus`); a bare point of
+    the picture offers the same as `point=x,y`, and anywhere else *Scroll
+    to here*. The step is added after the selected one. *Elements* lists
+    the same things by name, under the section each lies in.
+  - *Steps*: one row per step (`stepLabel`, start, length); the form of
+    the selected step is generated from `STEP_KINDS` and `STEP_COMMON`,
+    defaults as placeholders, `validateRecipe` problems under the field
+    they concern; a target is typed or picked on the page view.
+  - *Score strip*: lead, each step's action and hold, tail. Dragging the
+    end of a block sets that `duration`, `hold`, `lead` or `tail` in whole
+    frames.
+  - *Record* starts the `web` job with the document's `fps`. The job
+    shows in the job tray and carries on when the dialog closes. Its
+    result is attached (`setWebRecording`) to every web clip whose recipe
+    still has that key — not to a clip that was deleted, whose track got
+    locked, or whose steps changed meanwhile (that one says so and stays
+    as it was). Afterwards *Recording* plays the file in place, with the
+    strip's ruler as scrubber.
+- **Inspector → Web page**: address, size, status, *Edit steps…*, *Record*
+  and *Zoom in on clicks and focus steps* (`applyWebZoom` with `clicks`,
+  the track from the job or `GET /web/track`; margin and maximum zoom are
+  settings) / *Remove zoom* (`clearWebZoom`).
+- **Timeline**: web clips have their own colour (`--color-clip-web`) and
+  are named by a label somebody gave them, else the page's title, else
+  the host. Each step is a tick, labelled when there is room; an
+  unrecorded clip is hatched and shows its address; *not recorded* and
+  *out of date* are marked on the clip. Double-click, or the context
+  menu, opens the web editor.
+- **Export** points out web clips that are not recorded or out of date
+  and offers to record them first.
+
+| Keys | Where | Does |
+| ---- | ----- | ---- |
+| `Alt+W` | Editor, both keymaps | Edit the steps of the selected web clip |
+| `Alt+R` | Editor, both keymaps | Record the selected web clips |
+| Arrows, `Home`, `End` | Page view | Walk the outlines in page order; `Enter` opens the menu |
+| `↑` `↓` | Steps | Select; `Alt+↑` `Alt+↓` move, `Ctrl+D` duplicates, `Delete` removes |
+| `←` `→` | End of a block of the strip | One frame; ten with `Shift` |
+| `Ctrl+Z`, `Ctrl+Shift+Z` | Anywhere in the dialog but a text box | Undo, redo |
+| `Escape` | Dialog | Abandons the edit, pick or menu under way; otherwise closes |
+
+On a narrow screen the dialog fills the screen and Page, Steps and Timing
+are tabs.
 
 ## Command line
 

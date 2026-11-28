@@ -71,7 +71,8 @@ export function installElements(ne) {
    * @param {number} [limit]
    * @returns {{ kind: string, name: string, target: string, visible: boolean,
    *   rect: { x: number, y: number, width: number, height: number } }[]} In
-   *   document order; `rect` in page CSS pixels, `visible` = inside the viewport now
+   *   document order; `rect` in page CSS pixels, `visible` = showing now (not scrolled away
+   *   and not cut off by a panel around it)
    */
   ne.elements = (limit = 300) => {
     ne.texts = new WeakMap(); // texts are read many times while targets are tried
@@ -93,8 +94,7 @@ export function installElements(ne) {
         out.push({
           ...{ kind, name, target },
           rect: { x: box.x + scrollX, y: box.y + scrollY, width: box.width, height: box.height },
-          visible:
-            box.bottom > 0 && box.top < innerHeight && box.right > 0 && box.left < innerWidth,
+          visible: ne.showing(el),
         });
       }
     } finally {

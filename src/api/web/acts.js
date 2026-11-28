@@ -21,6 +21,7 @@ import { mouse } from './input.js';
  * @typedef {Object} ActParts
  * @property {string} ease
  * @property {number} [plan] - The page-side plan (target and scrolling) of this step
+ * @property {string} [what] - The target as messages name it: `text=Sign in`
  * @property {number[][]} [scrolls] - Per scrolling box `[fromX, fromY, toX, toY]`
  * @property {number} [G] - The frame the pointer arrives on; absent when it does not travel
  * @property {{ x: number, y: number }} [from] - Where the pointer set off
