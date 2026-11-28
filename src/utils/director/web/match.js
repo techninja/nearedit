@@ -87,7 +87,8 @@ export function nameFit(wanted, name) {
   const [mine, theirs] = [tokens(wanted), tokens(name)];
   const shared = mine.filter((word) => theirs.includes(word)).length;
   const [most, least] = [shared / mine.length, shared / theirs.length].sort((x, y) => y - x);
-  if (!shared || most < 0.5) return { quality: 0, how: 'words' };
+  // One shared word is not enough when it is a small part of both names.
+  if (!shared || most < 0.5 || (shared === 1 && least < 1 / 3)) return { quality: 0, how: 'words' };
   return { quality: 0.3 + 0.25 * most + 0.05 * least, how: 'words' };
 }
 

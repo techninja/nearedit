@@ -95,10 +95,14 @@ export async function recordRecipe(options) {
     await studio.load(recipe.url, performer.rest);
     const { title } = await tab.call('pageFacts');
     let size = { width: 0, height: 0 };
-    for (let n = 0; n < score.frames; n++) {
+    for (let n = 0; n <= score.frames; n++) {
       if (signal?.aborted) throw aborted();
       studio.check();
       const { sent, discrete } = await performer.frame(n);
+      // The instant the clip ends on is not in the picture; what a step does on it is done
+      // all the same — its target looked for and measured — as a snapshot does it.
+      if (n === score.frames) void Promise.allSettled(sent);
+      if (n === score.frames) break;
       const png = Buffer.from(await stepper.frame(true, discrete), 'base64');
       // Mouse events are answered once the frame is drawn; none is worth waiting long for.
       await Promise.race([Promise.allSettled(sent), sleep(ACK_WAIT)]);

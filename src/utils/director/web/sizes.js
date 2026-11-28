@@ -25,6 +25,9 @@ export const SHAPES = Object.freeze({
 
 /** A page narrower than this is used by touch: its pointer is a dot. */
 const TOUCH_WIDTH = 900;
+/** The pointers: an arrow large enough to follow, a dot one can read through. */
+const MOUSE = Object.freeze({ style: 'arrow', size: 1.4, color: '#111827' });
+const TOUCH = Object.freeze({ style: 'dot', size: 1.3, color: '#11182780' });
 
 /** The choices of the `size` field: `[value, label]`. */
 export const SIZE_CHOICES = Object.freeze([
@@ -50,7 +53,7 @@ export function frameShape(format) {
  * @param {string} size - `auto` or the id of an offered size
  * @param {string} look - `window` or `full`
  * @returns {{ viewport: { width: number, height: number }, scale: number,
- *   cursor: { style: string, size: number }, why: string }} `why` says in
+ *   cursor: { style: string, size: number, color: string }, why: string }} `why` says in
  *   words how the size was chosen
  */
 export function demoView(format, size, look) {
@@ -74,7 +77,7 @@ export function demoView(format, size, look) {
   return {
     viewport: { width, height },
     scale,
-    cursor: touch ? { style: 'dot', size: 1.4 } : { style: 'arrow', size: 1.4 },
+    cursor: touch ? { ...TOUCH } : { ...MOUSE },
     why,
   };
 }

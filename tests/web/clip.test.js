@@ -121,6 +121,12 @@ describe('web recorder: clipped and covered targets', { skip: kit.SKIP }, () => 
       rec([{ do: 'hover', target: '#veiled', ...quick }]),
       /Step 1 \(hover\): css=#veiled is covered by/,
     );
+    // Also when the pointer arrives on the instant the clip ends, which no frame shows: a
+    // snapshot of the recipe stops there, and so does the recording.
+    await assert.rejects(
+      rec([{ do: 'click', target: '#veiled', duration: 0.3, hold: 0 }], { tail: 0 }),
+      (err) => err.message === `Step 1 (click): ${covered}` && err.step === 0,
+    );
     await assert.rejects(
       rec([{ do: 'click', target: 'text=Tucked away', ...quick }]),
       /Step 1 \(click\): text=Tucked away cannot be brought into view: it is cut off by <div#closed>/,

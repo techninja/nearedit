@@ -26,7 +26,8 @@
         display: block;
         width: 240px;
       }
-      input {
+      input,
+      select {
         display: block;
         width: 240px;
         height: 30px;
@@ -41,6 +42,9 @@
       }
       #phone-label {
         top: 1100px;
+      }
+      #plan-label {
+        top: 1200px;
       }
       #panel {
         position: absolute;
@@ -59,6 +63,10 @@
         top: 480px;
         left: 20px;
       }
+      #size-label {
+        top: 300px;
+        left: 20px;
+      }
     </style>
   </head>
   <body>
@@ -66,8 +74,22 @@
     <label id="name-label">Name <input id="name" name="name" placeholder="Ada Lovelace" /></label>
     <label id="email-label">Email <input id="email" name="email" type="email" /></label>
     <label id="phone-label">Phone <input id="phone" name="phone" /></label>
+    <label id="plan-label"
+      >Plan
+      <select id="plan">
+        <option value="free">Free</option>
+        <option value="team">Team</option>
+      </select></label
+    >
     <div id="panel">
       <div id="panel-in">
+        <label id="size-label"
+          >Size
+          <select id="size">
+            <option value="s">Small</option>
+            <option value="l">Large</option>
+          </select></label
+        >
         <label id="city-label">City <input id="city" name="city" /></label>
       </div>
     </div>
@@ -76,6 +98,22 @@
       window.values = () =>
         [...document.querySelectorAll('input')]
           .map((input) => `${input.id}=${input.value}`)
+          .join('|');
+      // What every list says, and whether it was whole in the picture — below the header, or
+      // in the panel's window — at the moment its choice was made: "plan=team in view|…".
+      document.addEventListener('change', ({ target }) => {
+        if (target.tagName !== 'SELECT') return;
+        const box = target.getBoundingClientRect();
+        const frame = target.closest('#panel')?.getBoundingClientRect() || {
+          top: 50,
+          bottom: innerHeight,
+        };
+        const whole = box.top >= frame.top && box.bottom <= frame.bottom;
+        target.dataset.seen = whole ? 'in view' : 'out of view';
+      });
+      window.picked = () =>
+        [...document.querySelectorAll('select')]
+          .map((list) => `${list.id}=${list.value} ${list.dataset.seen || 'untouched'}`)
           .join('|');
     </script>
   </body>

@@ -1,7 +1,7 @@
 /**
  * The acts of the keyboard: `type` (reach the field, click it, then one key
- * per character on the frames the shared timing gives) and `press` (one
- * key, held for the step's duration).
+ * per character on the frames the shared timing gives — never one before
+ * the click) and `press` (one key, held for the step's duration).
  * @module api/web/typing
  */
 
@@ -34,17 +34,18 @@ export function typeParts(step, { S, A, E }, fps) {
     G + Math.max(1, Math.min(2, Math.round(PRESS_SECONDS * fps))),
   );
   const chars = typedCharacters(step);
+  // No key before the click: the keys of a frame follow its press in one batch, which the
+  // browser handles in order, so they find the field with the focus — and emptied first.
+  const first = aimed ? G : S;
   const typed = (/** @type {number} */ n) =>
-    n < S ? 0 : typedLength(step, (n - S) / fps, seconds);
-  // A click only lands when its frame is drawn: the field has the focus one frame later.
-  const clearOn = aimed ? Math.min(G + 1, Math.max(A, E)) : S;
+    n < first ? 0 : typedLength(step, (n - S) / fps, seconds);
   return {
     ease: step.ease,
     ...(aimed && { G, down: [[G, release]], ripple: [G] }),
     cue: (n, at) => [
       ...(aimed && n === G ? [mouse('mousePressed', at, { button: 'left', count: 1 })] : []),
       ...(aimed && n === release ? [mouse('mouseReleased', at, { button: 'left', count: 1 })] : []),
-      ...(step.clear && n === clearOn ? CLEAR_FIELD : []),
+      ...(step.clear && n === first ? CLEAR_FIELD : []),
       ...chars.slice(typed(n - 1), typed(n)).flatMap(typeChar),
     ],
   };

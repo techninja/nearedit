@@ -22,6 +22,7 @@ const ICONS = {
   execute_script: 'list-video',
   insert_broll: 'film',
   motion_piece: 'motion',
+  site_demo: 'web',
   remove_silence: 'split',
   beat_sync: 'beat',
   add_captions: 'captions',

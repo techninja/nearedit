@@ -119,14 +119,16 @@ export function createPerformer(stage, steps = stage.score.steps.length) {
       // start on this frame, which see the page as those left it.
       acts = acts.filter((act) => n <= Math.max(act.E, act.A));
       await play(acts);
-      const fresh = [];
-      let began = false;
-      for (; next < spans.length && spans[next].S <= n; began = true) {
+      // Each plays as soon as it has begun: a step that takes no time has sent its input
+      // before the next one, which begins on the same frame, looks at the page.
+      let drawn = true;
+      while (next < spans.length && spans[next].S <= n) {
         const act = await beginStep(playing, next++);
-        if (act) fresh.push(act);
+        if (act) acts.push(act);
+        if (act) await play([act]);
+        drawn = !!act;
       }
-      acts.push(...fresh);
-      if (began) await play(fresh);
+      if (!drawn) await play([]);
       return { sent, discrete };
     },
     track: () => ({ steps: rows, cursor: cursorTrack, scroll: scrollTrack }),

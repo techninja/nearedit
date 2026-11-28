@@ -14,7 +14,7 @@ import { pagePlaces } from './places.js';
 /** Characters a digest may take by default: about 1,500 tokens. */
 export const DIGEST_BUDGET = 6000;
 /** Entries a group is cut down to, step by step, until the digest fits. */
-const CAPS = [60, 30, 16, 10, 6, 3];
+const CAPS = [Infinity, 60, 30, 16, 10, 6, 3];
 
 /**
  * The elements of a page under the headings they follow.

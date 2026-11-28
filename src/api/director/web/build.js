@@ -33,7 +33,8 @@ const ARRIVE = 0.4;
  * @property {[string, string, string]} colors - The ground's colour way: edge, middle, light
  * @property {{ fps: number, width: number, height: number }} format
  * @property {import('./card.js').Card} card
- * @property {string[]} labels - What each step is called on its marker
+ * @property {string[]} labels - What each stop is called on its marker
+ * @property {number[]} owners - Per step of the recipe, the stop it belongs to
  * @property {boolean} zoom - Zoom on clicks and typing, not only on `focus` steps
  * @property {boolean} captions
  * @typedef {Object} BuiltDemo
@@ -62,7 +63,7 @@ export function buildDemo(parts) {
     sourceOut: recording.duration,
     web: { recipe, key: recording.key, title: (recording.title || '').slice(0, 300) },
     label: recording.title || hostOf(recipe.url),
-    transform: { fit: 'cover', scaleX: stage.scale, scaleY: stage.scale },
+    transform: { fit: 'cover', scaleX: stage.scale, scaleY: stage.scale, ...stage.offset },
     effects: windowEffects(stage, mix(colors[0], '#000000', 0.55)),
     keyframes: keys,
     fadeIn: arriveF / fps,
@@ -88,8 +89,19 @@ export function buildDemo(parts) {
       }),
     );
   }
+  const measure = serverMeasure();
   const said = parts.captions
-    ? captionClips({ track, keys, stage, theme, colors, fps, startF, measure: serverMeasure() })
+    ? captionClips({
+        track,
+        owners: parts.owners,
+        keys,
+        stage,
+        theme,
+        colors,
+        fps,
+        startF,
+        measure,
+      })
     : { clips: [], top: 0 };
   const rows = {
     Titles: [...card.titles, ...said.clips],
@@ -100,10 +112,11 @@ export function buildDemo(parts) {
   const moves = keys['transform.scaleX'] || [];
   return {
     tracks: ROWS.map((name, index) => ({ type: 'video', index, name, clips: rows[name] })),
-    markers: track.steps.map((step, i) => ({
+    // One marker per stop, where the first of its steps begins.
+    markers: parts.labels.map((label, stop) => ({
       markerId: newId('m'),
-      time: (startF + Math.round(step.start * fps)) / fps,
-      label: (parts.labels[i] || step.do).replace(/\s+/g, ' ').slice(0, 80),
+      time: (startF + Math.round(track.steps[parts.owners.indexOf(stop)].start * fps)) / fps,
+      label: label.replace(/\s+/g, ' ').slice(0, 80),
       color: '',
     })),
     seconds: endF / fps,

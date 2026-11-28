@@ -9,7 +9,7 @@
  */
 
 import { valueAt } from '#utils/edl/animate.js';
-import { ZOOM_PATHS, placeRect, zoomKeyframes, zoomView } from '#utils/web/index.js';
+import { ZOOM_PATHS, placeRect, zoomKeyframes, zoomState, zoomView } from '#utils/web/index.js';
 
 /** @typedef {import('./stage.js').Stage} Stage */
 /** @typedef {import('#utils/web/types.js').Track} Track */
@@ -23,18 +23,34 @@ export const CAMERA = Object.freeze({
   join: 1.5,
 });
 /** The part of a field the camera frames while it is typed into: at most this many heights wide. */
-const TYPED_WIDTHS = 6;
+const TYPED_WIDTHS = 6.5;
+/**
+ * "Zoom in on …" goes closer than a click does — and when the thing is too
+ * big for that, it is framed edge to edge, so the camera still moves.
+ */
+const FOCUS = Object.freeze({ margin: 0.15, fill: 0.8, maxZoom: CAMERA.maxZoom });
+const EDGE_TO_EDGE = Object.freeze({ margin: 0.02, fill: 1, maxZoom: CAMERA.maxZoom });
+const WORTH_IT = 1.1;
 
 /**
  * The track as the camera reads it.
  * @param {Track} track
- * @returns {Track} With the rectangle of every `type` step narrowed to its start
+ * @param {Stage} stage
+ * @returns {Track} With the rectangle of every `type` step narrowed to its
+ *   start, and every `focus` step given the zoom that frames its target
  */
-export function cameraTrack(track) {
+export function cameraTrack(track, stage) {
+  const view = zoomView(track, stage.window);
   const steps = track.steps.map((step) => {
-    if (step.do !== 'type' || !step.rect) return step;
-    const width = Math.min(step.rect.width, Math.max(240, step.rect.height * TYPED_WIDTHS));
-    return { ...step, rect: { ...step.rect, width } };
+    if (!step.rect || step.missing) return step;
+    if (step.do === 'type') {
+      const width = Math.min(step.rect.width, Math.max(300, step.rect.height * TYPED_WIDTHS));
+      return { ...step, rect: { ...step.rect, width } };
+    }
+    if (step.do !== 'focus' || step.zoom || !view) return step;
+    const near = zoomState(step.rect, 0, view, FOCUS).scale;
+    const zoom = near >= WORTH_IT ? near : zoomState(step.rect, 0, view, EDGE_TO_EDGE).scale;
+    return zoom > 1 ? { ...step, zoom } : step;
   });
   return { ...track, steps };
 }
@@ -49,15 +65,18 @@ export function cameraTrack(track) {
  *   keyframe path; empty when the camera never moves
  */
 export function cameraKeys(track, stage, { clicks, recipe }) {
-  const keys = zoomKeyframes(cameraTrack(track), stage.window, { ...CAMERA, clicks, recipe });
+  const seen = cameraTrack(track, stage);
+  const keys = zoomKeyframes(seen, stage.window, { ...CAMERA, clicks, recipe });
   const moves = Object.values(keys).some((list) => list.some((key) => key.v !== list[0].v));
   if (!moves) return {};
   /** @type {Record<string, any[]>} */
   const fitted = {};
   for (const [path, field] of Object.entries(ZOOM_PATHS)) {
-    // The window is centred, so offsets carry over; the scale starts from the window's own.
+    // Offsets are from the window's centre, the scale starts from the window's own.
     const size = field === 'scale' ? stage.scale : 1;
-    fitted[path] = keys[path].map((key) => ({ ...key, v: Math.round(key.v * size * 1e4) / 1e4 }));
+    const from = field === 'scale' ? 0 : stage.offset[field];
+    const fit = (/** @type {number} */ value) => Math.round((value * size + from) * 1e4) / 1e4;
+    fitted[path] = keys[path].map((key) => ({ ...key, v: fit(key.v) }));
   }
   return fitted;
 }
@@ -79,8 +98,8 @@ export function shownRect(rect, keys, track, stage, time) {
     Number(valueAt(keys[path], time) ?? rest);
   const state = {
     scale: at('transform.scaleX', stage.scale) / stage.scale,
-    x: at('transform.x', 0),
-    y: at('transform.y', 0),
+    x: at('transform.x', stage.offset.x) - stage.offset.x,
+    y: at('transform.y', stage.offset.y) - stage.offset.y,
   };
   const placed = placeRect(rect, state, view);
   const win = stage.window;

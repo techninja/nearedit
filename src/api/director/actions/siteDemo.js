@@ -76,7 +76,7 @@ export async function siteDemo(ctx, recorder = {}) {
   ctx.signal?.throwIfAborted();
 
   ctx.progress(30, 'Matching names to the page…');
-  const found = await resolveStops(plan.stops, seen, survey);
+  const found = await resolveStops(plan.stops, seen, survey, { zoom: params.zoom });
   const quiet = params.captions ? found.steps : found.steps.map((step) => ({ ...step, note: '' }));
   const paced = paceSteps(quiet, { fps, pacing: params.pacing, target: spare(card.frames) });
   const steps = paced.steps.map((step, i) => ({ ...step, note: found.steps[i].note }));
@@ -85,11 +85,13 @@ export async function siteDemo(ctx, recorder = {}) {
   const recording = await recordDemo({ ctx, recipe, browser, record: recorder.record });
   ctx.progress(94, 'Framing the recording…');
 
-  const stage = stageFor(params.look, format, recipe.viewport);
+  const { track } = recording;
+  const captioned = params.captions && track.steps.some((step) => step.note);
+  const stage = stageFor(params.look, format, recipe.viewport, captioned);
   const labels = plan.stops.map((stop) => stop.say || describeStop(stop));
   const built = buildDemo({
     ...{ recording, recipe, stage, theme: look.theme, colors: look.colors, format, card, labels },
-    ...{ zoom: params.zoom, captions: params.captions },
+    ...{ owners: found.owners, zoom: params.zoom, captions: params.captions },
   });
   notes.push(
     ...demoNotes({ plan, found, paced, recording, view, look, stage, built, card, survey, params }),
@@ -113,13 +115,18 @@ export async function siteDemo(ctx, recorder = {}) {
     page: { url, title: recording.title, viewport: recipe.viewport, scale: recipe.scale },
     look: stage.look,
     theme: look.theme.id,
-    stops: plan.stops.map((stop, i) => ({
-      ...stop,
-      target: recording.track.steps[i]?.target ?? '',
-      start: recording.track.steps[i]?.start ?? 0,
-      end: recording.track.steps[i]?.end ?? 0,
-      found: !recording.track.steps[i]?.missing,
-    })),
+    stops: plan.stops.map((stop, i) => {
+      // What the recording says about the stop: its last step is the stop itself.
+      const made = track.steps.filter((_, at) => found.owners[at] === i);
+      const main = made[made.length - 1];
+      return {
+        ...stop,
+        target: main.target ?? '',
+        start: made[0].start,
+        end: main.end,
+        found: !main.missing,
+      };
+    }),
   };
   return directorResult(
     { tracks: built.tracks, markers: built.markers, summary, notes, plan: described },

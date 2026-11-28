@@ -63,8 +63,8 @@ export async function pageTone(image) {
     }
     const count = pixels.length / 4;
     const best = bins.reduce((a, b) => (b.weight > a.weight ? b : a));
-    // Colour on less than a hundredth of the page is not its colour.
-    const hue = best.weight > count * 0.01 ? (Math.atan2(best.y, best.x) * 180) / Math.PI : null;
+    // A fleck of colour is not the page's colour: it takes a button's worth.
+    const hue = best.weight > count * 0.003 ? (Math.atan2(best.y, best.x) * 180) / Math.PI : null;
     return { light: light / count >= 0.45, hue: hue === null ? null : (hue + 360) % 360 };
   } catch (err) {
     console.warn(`[director] could not read the page's picture: ${err.message}`);

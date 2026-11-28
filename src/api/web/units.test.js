@@ -92,18 +92,36 @@ describe('web recorder: keys, input and timing', () => {
     assert.deepEqual([parts.G, parts.down, parts.ripple], [45, [[45, 47]], [45]]);
     const at = { x: 5, y: 6 };
     const methods = (n) => parts.cue(n, at).map(([method, params]) => params.type || method);
-    assert.deepEqual(methods(45), ['mousePressed']);
     assert.deepEqual(
-      methods(46),
-      ['rawKeyDown', 'keyUp', 'rawKeyDown', 'keyUp'],
-      'the field is emptied once it has the focus',
+      methods(45),
+      ['mousePressed', 'rawKeyDown', 'keyUp', 'rawKeyDown', 'keyUp'],
+      'the field is emptied right after the press that gives it the focus',
     );
+    assert.deepEqual([methods(44), methods(46)], [[], []]);
     assert.deepEqual(methods(47), ['mouseReleased']);
     assert.deepEqual(
       [methods(48), methods(51), methods(54)],
       [['keyDown', 'keyUp'], ['Input.insertText'], ['keyDown', 'keyUp']],
     );
     assert.deepEqual(methods(49), []);
+    // No time for the approach, or none at all: still the press first, then the field
+    // emptied, then every key — on the one frame there is.
+    const hasty = { do: 'type', text: 'ab', target: '#name', clear: true, ease: 'linear' };
+    const short = typeParts(hasty, { step: 0, S: 10, A: 16, E: 16 }, 30);
+    const kinds = (parts, n) => parts.cue(n, at).map(([method, params]) => params.type || method);
+    const all = ['mousePressed', 'mouseReleased', 'rawKeyDown', 'keyUp', 'rawKeyDown', 'keyUp'];
+    assert.equal(short.G, 16);
+    assert.deepEqual(
+      [10, 15, 17].map((n) => kinds(short, n).length),
+      [0, 0, 0],
+    );
+    assert.deepEqual(kinds(short, 16), [...all, 'keyDown', 'keyUp', 'keyDown', 'keyUp']);
+    const instant = typeParts(hasty, { step: 0, S: 10, A: 10, E: 19 }, 30);
+    assert.deepEqual(kinds(instant, 10), [
+      ...['mousePressed', 'rawKeyDown', 'keyUp', 'rawKeyDown', 'keyUp'],
+      ...['keyDown', 'keyUp', 'keyDown', 'keyUp'],
+    ]);
+    assert.deepEqual([kinds(instant, 11), kinds(instant, 12)], [[], ['mouseReleased']]);
     const loose = typeParts(
       { do: 'type', text: 'ab', target: '', speed: 15 },
       { step: 0, S: 3, A: 7, E: 7 },
