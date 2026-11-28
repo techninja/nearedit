@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A form</title>
+    <style>
+      body { margin: 0; font: 16px sans-serif; background: #ffffff; }
+      label, select, input { position: absolute; left: 40px; font-size: 16px; }
+      /* One block of 10 px per typed character: the pixels say how many were typed. */
+      #typed { position: absolute; top: 10px; left: 0; height: 20px; width: 0; background: #ff0000; }
+      #name-label { top: 50px; } #name { top: 74px; width: 300px; height: 28px; }
+      #plan-label { top: 120px; } #plan { top: 144px; width: 200px; height: 28px; }
+      #agree-label { top: 190px; left: 70px; } #agree { top: 190px; width: 20px; height: 20px; }
+      #chosen { position: absolute; top: 144px; left: 300px; width: 40px; height: 28px; background: #000000; }
+      #chosen.pro { background: #00ff00; } #chosen.team { background: #0000ff; }
+      #agreed { position: absolute; top: 190px; left: 300px; width: 40px; height: 20px; background: #000000; }
+      #agreed.on { background: #ffff00; }
+      #keys { position: absolute; top: 240px; left: 40px; }
+    </style>
+  </head>
+  <body>
+    <div id="typed"></div>
+    <label id="name-label" for="name">Full name</label>
+    <input id="name" name="fullname" placeholder="Ada Lovelace" value="old" />
+    <label id="plan-label" for="plan">Plan</label>
+    <select id="plan" name="plan">
+      <option value="free">Free</option>
+      <option value="pro">Professional</option>
+      <option value="team">Team of five</option>
+    </select>
+    <input id="agree" type="checkbox" aria-label="I agree" />
+    <span id="agree-label">I agree</span>
+    <div id="chosen"></div>
+    <div id="agreed"></div>
+    <div id="keys"></div>
+    <script>
+      const byId = (id) => document.getElementById(id);
+      window.keys = [];
+      byId('name').addEventListener('input', (event) => {
+        byId('typed').style.width = `${[...event.target.value].length * 10}px`;
+      });
+      byId('plan').addEventListener('change', (event) => (byId('chosen').className = event.target.value));
+      byId('agree').addEventListener('change', (event) => byId('agreed').classList.toggle('on', event.target.checked));
+      document.addEventListener('keydown', (event) => {
+        const held = ['Alt', 'Control', 'Meta', 'Shift'].filter((name) => event.getModifierState(name));
+        window.keys.push([...held, event.key].join('+'));
+        byId('keys').textContent = window.keys.join(' ');
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A hostile page</title>
+    <style>
+      /* A reset that strips everything, and a layer that claims the top of the stack. */
+      * { all: unset; }
+      head, script, style, title { display: none; }
+      body { display: block; background: #ffffff; }
+      div, button { display: block; position: absolute; }
+      #toggle { top: 120px; left: 40px; width: 160px; height: 40px; background: #dddddd; cursor: pointer; }
+      #lamp { top: 120px; left: 240px; width: 40px; height: 40px; background: #000000; }
+      #lamp.on { background: #ffff00; }
+      #veil { position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; }
+      html > *:not(head):not(body) { display: none !important; opacity: 0 !important; transform: scale(0) !important; }
+    </style>
+  </head>
+  <body>
+    <button id="toggle">Switch the lamp</button>
+    <div id="lamp"></div>
+    <div id="veil"></div>
+    <script>
+      document.getElementById('toggle').addEventListener('click', () => {
+        document.getElementById('lamp').classList.toggle('on');
+      });
+      // Everything a helper script might lean on, broken.
+      const broken = () => { throw new Error('this page broke it'); };
+      for (const name of ['map', 'filter', 'forEach', 'find', 'some', 'includes', 'slice', 'push', 'join'])
+        Array.prototype[name] = broken;
+      for (const name of ['querySelector', 'querySelectorAll', 'getElementById', 'createElement', 'elementFromPoint'])
+        Document.prototype[name] = broken;
+      for (const name of ['getBoundingClientRect', 'getClientRects', 'matches', 'closest', 'attachShadow', 'append'])
+        Element.prototype[name] = broken;
+      Object.keys = Object.entries = JSON.stringify = JSON.parse = broken;
+      window.getComputedStyle = window.requestAnimationFrame = Promise.resolve = broken;
+      String.prototype.replace = String.prototype.trim = String.prototype.toLowerCase = broken;
+    </script>
+  </body>
+</html>

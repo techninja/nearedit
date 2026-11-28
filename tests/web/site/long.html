@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>A long page</title>
+    <style>
+      body { margin: 0; font: 16px sans-serif; background: #ffffff; height: 3000px; }
+      /* Rulers at known heights of the page: where one shows in a frame says how far the page has scrolled. */
+      .ruler { position: absolute; left: 0; width: 40px; height: 10px; }
+      #r300 { top: 300px; background: #ff0000; } #r700 { top: 700px; background: #0000ff; }
+      #r1100 { top: 1100px; background: #00c000; } #r1500 { top: 1500px; background: #ff0000; }
+      section { position: absolute; left: 100px; width: 400px; height: 200px; }
+      #intro { top: 100px; } #pricing { top: 1000px; } #contact { top: 2400px; }
+      h2 { margin: 0; }
+      #buy { position: absolute; top: 60px; left: 0; width: 120px; height: 40px; }
+      #menu { position: fixed; top: 0; right: 0; width: 100px; height: 30px; background: #222222; color: #ffffff; }
+    </style>
+  </head>
+  <body>
+    <div class="ruler" id="r300"></div><div class="ruler" id="r700"></div>
+    <div class="ruler" id="r1100"></div><div class="ruler" id="r1500"></div>
+    <nav id="menu" aria-label="Main menu">Menu</nav>
+    <section id="intro"><h2>Introduction</h2><p>Where it starts.</p></section>
+    <section id="pricing"><h2>Pricing</h2><button id="buy">Buy now</button></section>
+    <section id="contact"><h2>Contact us</h2><img alt="A map of the office" width="60" height="40"
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
+      <a href="/form.html">Write to us</a> <a href="/second.html">Write to us</a></section>
+  </body>
+</html>

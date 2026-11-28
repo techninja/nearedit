@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Slow answers</title>
+    <style>
+      body { margin: 0; font: 16px sans-serif; background: #ffffff; }
+      #slider { position: absolute; top: 20px; left: 0; width: 20px; height: 20px; background: #ff0000;
+        animation: slide 2s linear infinite; }
+      @keyframes slide { from { left: 0 } to { left: 600px } }
+      button { position: absolute; left: 40px; width: 160px; height: 40px; }
+      #slow { top: 60px; } #never { top: 120px; }
+      .lamp { position: absolute; left: 240px; width: 40px; height: 40px; background: #000000; }
+      #slowlamp { top: 60px; } #neverlamp { top: 120px; }
+      .lamp.done { background: #00ff00; } .lamp.asked { background: #ffff00; }
+    </style>
+  </head>
+  <body>
+    <div id="slider"></div>
+    <button id="slow">Ask slowly</button><div class="lamp" id="slowlamp"></div>
+    <button id="never">Ask in vain</button><div class="lamp" id="neverlamp"></div>
+    <script>
+      const byId = (id) => document.getElementById(id);
+      byId('slow').addEventListener('click', async () => {
+        await fetch('/api/slow?ms=400');
+        byId('slowlamp').className = 'lamp done';
+      });
+      byId('never').addEventListener('click', () => {
+        byId('neverlamp').className = 'lamp asked';
+        fetch('/api/never').then(() => (byId('neverlamp').className = 'lamp done'));
+      });
+    </script>
+  </body>
+</html>

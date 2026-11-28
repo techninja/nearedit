@@ -22,6 +22,7 @@ import { previewsRouter } from './api/previews.js';
 import { projectsRouter } from './api/projects.js';
 import { renderRouter } from './api/render.js';
 import { transcodeRouter } from './api/transcode.js';
+import { webRouter } from './api/web.js';
 import { attachWebSocket } from './api/ws.js';
 
 const SRC_DIR = dirname(fileURLToPath(import.meta.url));
@@ -52,6 +53,7 @@ const routers = [
   intelligenceRouter,
   directorRouter,
   renderRouter,
+  webRouter,
 ];
 for (const router of routers) app.use('/api', router);
 app.use('/api', apiNotFound);

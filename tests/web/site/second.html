@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Second page</title>
+    <style>
+      body { margin: 0; font: 16px sans-serif; background: #004080; color: #ffffff; }
+      #slider { position: absolute; top: 20px; left: 0; width: 20px; height: 20px; background: #ff0000;
+        animation: slide 2s linear infinite; }
+      @keyframes slide { from { left: 0 } to { left: 600px } }
+      h1 { position: absolute; top: 60px; left: 40px; margin: 0; }
+      #back { position: absolute; top: 120px; left: 40px; color: #ffffff; }
+    </style>
+  </head>
+  <body>
+    <div id="slider"></div>
+    <h1>The second page</h1>
+    <a id="back" href="/">Back to the first</a>
+    <script>
+      // A page that compares animation-frame time with its own clock: the two must agree.
+      window.gaps = [];
+      requestAnimationFrame(function loop(stamp) {
+        window.gaps.push(Math.round(stamp - performance.now()));
+        requestAnimationFrame(loop);
+      });
+    </script>
+  </body>
+</html>

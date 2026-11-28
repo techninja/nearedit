@@ -40,7 +40,8 @@ function pathList(raw) {
  *   transcription: ProviderConfig & { language: string, whisperCppBin: string,
  *     whisperCppModelPath: string, python: string, sshHost: string, sshCommand: string,
  *     publicUrl: string },
- *   jobs: { renderConcurrency: number, analysisConcurrency: number },
+ *   jobs: { renderConcurrency: number, analysisConcurrency: number, webConcurrency: number },
+ *   web: { browser: string, allow: string, noSandbox: boolean },
  * }}
  */
 export function getConfig() {
@@ -89,6 +90,13 @@ export function getConfig() {
     jobs: {
       renderConcurrency: parseInt(env.RENDER_CONCURRENCY || '', 10) || 1,
       analysisConcurrency: parseInt(env.ANALYSIS_CONCURRENCY || '', 10) || 1,
+      webConcurrency: parseInt(env.WEB_CAPTURE_CONCURRENCY || '', 10) || 1,
+    },
+    // Web clips: the recording browser and what it may reach (WEBCLIP.md § Server)
+    web: {
+      browser: env.WEB_CAPTURE_BROWSER || '',
+      allow: env.WEB_CAPTURE_ALLOW || '',
+      noSandbox: env.WEB_CAPTURE_NO_SANDBOX === '1',
     },
   };
 }

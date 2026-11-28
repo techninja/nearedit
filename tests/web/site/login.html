@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Signed out</title>
+    <style>
+      body { margin: 0; background: #ffffff; }
+      #cookie, #stored { position: absolute; top: 20px; width: 40px; height: 40px; background: #000000; }
+      #cookie { left: 20px; } #stored { left: 80px; }
+      #cookie.on { background: #00ff00; } #stored.on { background: #0000ff; }
+    </style>
+  </head>
+  <body>
+    <div id="cookie"></div>
+    <div id="stored"></div>
+    <script>
+      // Lit when the recording brought the session with it.
+      const cookie = /(?:^|; )session=([^;]+)/.exec(document.cookie)?.[1] || '';
+      const stored = localStorage.getItem('token') || '';
+      document.getElementById('cookie').classList.toggle('on', cookie === 'abc123');
+      document.getElementById('stored').classList.toggle('on', stored === 'secret-token');
+      document.title = `cookie=${cookie} token=${stored}`;
+      if ('serviceWorker' in navigator)
+        navigator.serviceWorker.register('/worker.js').then(
+          () => (document.title += ' worker=registered'),
+          () => (document.title += ' worker=refused'),
+        );
+      window.addEventListener('load', () => setTimeout(() => alert('Hello from the page'), 100));
+    </script>
+  </body>
+</html>

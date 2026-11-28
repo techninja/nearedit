@@ -18,7 +18,7 @@ const lanes = new Map();
  * job.result.
  * @param {string} type
  * @param {object} params
- * @param {{ projectId?: string, label?: string, lane?: 'render'|'analysis'|'llm'|'default' }} meta
+ * @param {{ projectId?: string, label?: string, lane?: 'render'|'analysis'|'web'|'llm'|'default' }} meta
  * @param {(ctx: JobContext) => Promise<any>} worker
  * @returns {Job}
  */
@@ -28,7 +28,11 @@ export function runJob(type, params, meta, worker) {
   setController(job.id, controller);
   const laneName = meta.lane || 'default';
   const cfg = getConfig().jobs;
-  const limit = { render: cfg.renderConcurrency, analysis: cfg.analysisConcurrency }[laneName] || 2;
+  const limits = {
+    ...{ render: cfg.renderConcurrency, analysis: cfg.analysisConcurrency },
+    web: cfg.webConcurrency,
+  };
+  const limit = limits[laneName] || 2;
   const lane = lanes.get(laneName) || { active: 0, waiting: [] };
   lanes.set(laneName, lane);
 

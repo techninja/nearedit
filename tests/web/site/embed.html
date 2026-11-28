@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Embeds</title>
+    <style>
+      body { margin: 0; background: #ffffff; }
+      iframe { position: absolute; top: 20px; left: 20px; width: 200px; height: 100px; border: 0; }
+      #got { position: absolute; top: 140px; left: 20px; width: 40px; height: 40px; background: #000000; }
+      #got.leak { background: #ff0000; } #got.safe { background: #00ff00; }
+    </style>
+  </head>
+  <body>
+    <iframe id="frame"></iframe>
+    <img id="picture" alt="" />
+    <div id="got"></div>
+    <script>
+      // Everything here points at the other server — an address the recorder must not reach.
+      const other = new URLSearchParams(location.search).get('other');
+      document.getElementById('frame').src = `${other}/secret.html`;
+      document.getElementById('picture').src = `${other}/secret.png`;
+      const tries = [
+        fetch(`${other}/secret.json`, { mode: 'no-cors' }),
+        new Promise((resolve, reject) => {
+          const socket = new WebSocket(`${other.replace('http', 'ws')}/socket`);
+          socket.onopen = resolve;
+          socket.onerror = reject;
+        }),
+        new Promise((resolve, reject) => {
+          const code = `fetch(${JSON.stringify(`${other}/worker.json`)}, { mode: 'no-cors' }).then(() => postMessage(1), () => postMessage(0))`;
+          const worker = new Worker(URL.createObjectURL(new Blob([code])));
+          worker.onmessage = (event) => (event.data ? resolve() : reject());
+        }),
+      ];
+      Promise.allSettled(tries).then((results) => {
+        const leaked = results.some((result) => result.status === 'fulfilled');
+        document.getElementById('got').className = leaked ? 'leak' : 'safe';
+        document.title = results.map((result) => result.status[0]).join('');
+      });
+    </script>
+  </body>
+</html>
