@@ -42,6 +42,7 @@ export default define({
   cursor: { value: { beat: 0, pitch: 60 } },
   box: { value: pointer.NO_BOX },
   length: 0,
+  room: { value: true, connect: on.watchRoom },
   render: {
     value: (host) => {
       const { shown: part, song, selected, cursor, box } = host;

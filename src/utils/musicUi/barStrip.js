@@ -51,8 +51,8 @@ function barsOf(cell) {
 
 /** @param {Host} host @param {'live'|'commit'|'cancel'} phase */
 function report(host, phase) {
-  const detail = { ...painting.get(host), phase };
-  dispatch(host, 'strip-paint', { detail, bubbles: true });
+  const { on, bars } = painting.get(host);
+  dispatch(host, 'strip-paint', { detail: { on, bars: [...bars], phase }, bubbles: true });
 }
 
 /** A press on a bar switches it; a drag paints on. @param {Host} host @param {PointerEvent} event */

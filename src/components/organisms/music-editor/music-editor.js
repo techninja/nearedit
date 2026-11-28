@@ -14,7 +14,7 @@
 import { define, html } from 'hybrids';
 import { liveDoc } from '#utils/editor/liveDoc.js';
 import { musicLabel } from '#utils/timeline/clipMarksMusic.js';
-import { auditionState } from '#utils/musicUi/audition.js';
+import { auditionState, stopAudition } from '#utils/musicUi/audition.js';
 import * as on from '#utils/musicUi/editorEvents.js';
 import { editorBody, editorFooter } from '#utils/musicUi/editorParts.js';
 import { musicClipOf, musicEditorState, shownLoop, shownPart } from '#utils/musicUi/editorState.js';
@@ -35,6 +35,15 @@ import '#molecules/music-topbar/index.js';
 import '#molecules/music-write/index.js';
 
 /** @typedef {import('#utils/musicUi/editorView.js').MusicEditorHost} MusicEditorHost */
+
+/** While the editor page is up: keep music clips rendered. Leaving it ends the audition. */
+function connectServices() {
+  const stop = watchMusicRendering();
+  return () => {
+    stop();
+    stopAudition('editor');
+  };
+}
 
 /** @param {MusicEditorHost} host */
 function dialog(host) {
@@ -86,7 +95,7 @@ export default define({
   doc: liveDoc(),
   audition: watch(auditionState),
   renders: watch(renderState),
-  services: { value: true, connect: watchMusicRendering },
+  services: { value: true, connect: connectServices },
   render: {
     value: (host) => (host.state.clipId && host.doc ? dialog(host) : html``),
     shadow: false,

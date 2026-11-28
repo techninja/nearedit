@@ -84,6 +84,7 @@ music-piano-roll {
 
   & .music-piano-roll-note {
     position: absolute;
+    box-sizing: border-box;
     height: 11px;
     border: 1px solid color-mix(in srgb, var(--color-clip-music) 70%, #000);
     border-radius: 2px;

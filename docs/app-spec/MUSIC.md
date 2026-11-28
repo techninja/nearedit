@@ -182,6 +182,80 @@ first, into `.nearedit/music/` beside the document; renderings are looked
 for by key there and in every `--media` folder. `validate` reports a
 song's problems with their place.
 
+## In the editor
+
+**Adding.** Create tab → **Music**: an empty song, every named beat and
+six small loops (drums, bass, chords and a line on top, written by the
+theory helpers from a row of a table), each a tile with a picture of the
+song and a play button. Pressing a tile adds the clip at the edit cursor on
+an audio track and selects it. "Import MIDI…" reads a `.mid` in the browser
+(`songFromMidi`) and shows what it could not carry over.
+
+**The music editor** opens on a double click, from the clip's context menu,
+from the inspector, or with `Alt+M` (`music.edit`, both keymaps). It is a
+dialog; under 760 px it fills the screen and its parts are tabs (Parts /
+Grid / Sound).
+
+- **Top bar**: play and stop (Space), the bars that repeat, tempo, swing,
+  bars, beats to a bar, key and scale, and the mix bus.
+- **Parts**: name, volume, mute, solo; for the open part pan, the two
+  sends, the length of its loop and a strip of the song's bars, painted to
+  say where it plays. Making a loop longer repeats what it plays. Solo is
+  for listening while editing only — a song has none — and the list says so.
+- **Drum grid**: a row per drum that plays (the rest under "more"), a
+  button per step. A press cycles rest → hit → accent → soft, a drag
+  paints; the toolbar chooses kit and grid, replaces the pattern with a
+  beat, writes its fill into the last bar, and clears, shifts or fills the
+  lane touched last. Arrows walk the grid, Enter cycles a step.
+- **Piano roll**: click adds a note, drag moves, the end resizes, a drag on
+  empty space selects, Delete removes; arrows nudge by grid step and
+  semitone (Shift: an octave, or the length); with nothing selected they
+  move a cursor and Enter adds. Rows outside the song's scale are shaded;
+  pitches can snap to it. "Write…" replaces the part's notes with a bass
+  line, chords, an arpeggio or a melody over a progression — chosen in the
+  song's key or typed — one chord to a bar, seeded.
+- **Sound**: the preset, then a control for every entry of `SYNTH_PARAMS`,
+  grouped by its `group`, with "Reset to preset"; for drums, the kit.
+
+**Hearing it.** The engine plays in the page: the song is rendered a few
+milliseconds at a time on the main thread (`renderSliced`; a module worker
+does not get the page's import map) into one buffer and looped with Web
+Audio. Passes of the loop follow each other on the audio clock; when the
+loop is the whole song the pass before rings out under the next. After an
+edit the song is rendered again and the new buffer takes over at the next
+bar line with a 12 ms cross-fade. A pressed step or key is heard at once,
+as a one-hit song. Sound starts from a press or a key; a context the
+browser keeps suspended is said, not hidden. The buffer holds the samples
+of the server's file for the same song — checked in the page against the
+WAV, byte for byte at 16 bits.
+
+**Edits and rendering.** Every change is `updateSong` through the edit
+session: one undo step per press, drag or typed value, and Ctrl+Z works in
+the dialog. A little after a song was last changed the server is asked for
+its rendering (one request per song; a request nobody waits for any more is
+cancelled) and the answer is attached with `setMusicRendering` **outside
+history**: `commit(next, { record: false })` of the edit session adds no
+undo step and keeps redo (listeners see the reason `amend`). Until then the
+clip plays its last rendering and is marked "rendering…"; a failure shows
+on the clip, in the inspector and in the dialog with the server's
+sentence, and is tried again when asked or when the song changes. Clips
+that are out of date when a project opens are rendered then. Export needs
+nothing: the server renders missing music itself.
+
+**Inspector** group "Music": tempo, key, bars, the parts with a mute
+button each, the status, "Edit…" and "Export MIDI" (`songToMidi`).
+
+**Timeline.** A music clip has its own colour (`--color-clip-music`), the
+label of its song (`songLabel`, until somebody names it), ticks at its bars
+(and beats, zoomed in) and a picture of the song — notes as lines by
+pitch, drum hits as dots — with the waveform of the rendering below it
+where the lane is tall enough, and hatching before the first rendering.
+Its bars and beats are snap targets, like the beats of analysed music.
+
+Code: `src/utils/musicUi/` (controllers), `music-*` components,
+`src/utils/timeline/` (`clipMarksMusic.js`, `draw/musicClip.js`,
+`musicSnap.js`, `menuMusic.js`).
+
 ## Limits
 
 - One synth design and synthesised drums: it does basses, pads, plucks,

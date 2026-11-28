@@ -12,7 +12,14 @@ async function mount(shown = part()) {
   const el = stage.querySelector('music-drum-grid');
   el.shown = shown;
   const seen = [];
-  for (const type of ['music-steps', 'music-lane', 'music-beat', 'music-hear', 'music-view', 'field-change']) {
+  for (const type of [
+    'music-steps',
+    'music-lane',
+    'music-beat',
+    'music-hear',
+    'music-view',
+    'field-change',
+  ]) {
     el.addEventListener(type, (event) => seen.push([type, event.detail]));
   }
   await settle();
@@ -22,7 +29,9 @@ async function mount(shown = part()) {
   const pointer = (type, drum, step, more = {}) => {
     const box = cell(drum, step).getBoundingClientRect();
     const at = { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 };
-    row(drum).dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 7, ...at, ...more }));
+    row(drum).dispatchEvent(
+      new PointerEvent(type, { bubbles: true, button: 0, pointerId: 7, ...at, ...more }),
+    );
   };
   const of = (type) => seen.filter(([name]) => name === type).map(([, detail]) => detail);
   return { el, seen, row, cell, pointer, of };
@@ -30,14 +39,23 @@ async function mount(shown = part()) {
 
 describe('music-drum-grid', () => {
   before(() =>
-    loadStyles(['styles/tokens.css', 'styles/fields.css', 'styles/buttons.css', 'styles/components-create.css']),
+    loadStyles([
+      'styles/tokens.css',
+      'styles/fields.css',
+      'styles/buttons.css',
+      'styles/components-create.css',
+    ]),
   );
 
   it('has a row for every drum that plays and the ones at hand, and a button for every step', async () => {
     const { el, cell } = await mount();
-    const names = [...el.querySelectorAll('.music-drum-grid-name')].map((name) => name.textContent.trim());
+    const names = [...el.querySelectorAll('.music-drum-grid-name')].map((name) =>
+      name.textContent.trim(),
+    );
     expect(names).to.deep.equal(['Kick', 'Snare', 'Clap', 'Closed hat', 'Open hat']);
-    expect(el.querySelectorAll('.music-drum-grid-steps[data-drum="kick"] [data-step]').length).to.equal(16);
+    expect(
+      el.querySelectorAll('.music-drum-grid-steps[data-drum="kick"] [data-step]').length,
+    ).to.equal(16);
     expect(cell('kick', 0).dataset.char).to.equal('X');
     expect(cell('kick', 0).getAttribute('aria-label')).to.equal('Kick, bar 1 step 1: accent');
     expect(cell('kick', 4).dataset.place).to.equal('beat');
@@ -82,14 +100,18 @@ describe('music-drum-grid', () => {
     expect(of('music-steps')).to.deep.equal([]);
     pointer('pointerdown', 'snare', 1, { pointerType: 'touch' });
     pointer('pointerup', 'snare', 1, { pointerType: 'touch' });
-    expect(of('music-steps')).to.deep.equal([{ drum: 'snare', steps: [1], char: 'x', phase: 'commit' }]);
+    expect(of('music-steps')).to.deep.equal([
+      { drum: 'snare', steps: [1], char: 'x', phase: 'commit' },
+    ]);
     expect(of('music-hear').length).to.equal(1);
   });
 
   it('walks the grid with the arrow keys; Enter cycles and Delete rests the step in focus', async () => {
     const { el, cell, of } = await mount();
     const key = (target, name) =>
-      target.dispatchEvent(new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }));
+      target.dispatchEvent(
+        new KeyboardEvent('keydown', { key: name, bubbles: true, cancelable: true }),
+      );
     expect(el.querySelectorAll('[data-step][tabindex="0"]').length, 'one Tab stop').to.equal(1);
     cell('kick', 0).focus();
     key(cell('kick', 0), 'ArrowRight');
@@ -135,10 +157,15 @@ describe('music-drum-grid', () => {
       { name: 'kit', value: 'lofi', phase: 'commit' },
       { name: 'steps', value: '32', phase: 'commit' },
     ]);
-    expect([...beat.options].map((option) => option.value)).to.include.members(['backbeat', 'trap']);
+    expect([...beat.options].map((option) => option.value)).to.include.members([
+      'backbeat',
+      'trap',
+    ]);
     beat.value = 'trap';
     beat.dispatchEvent(new Event('change', { bubbles: true }));
-    [...el.querySelectorAll('.music-drum-grid-bar .btn')].find((b) => b.textContent.trim() === 'Fill').click();
+    [...el.querySelectorAll('.music-drum-grid-bar .btn')]
+      .find((b) => b.textContent.trim() === 'Fill')
+      .click();
     expect(of('music-beat')).to.deep.equal([{ action: 'beat', name: 'trap' }, { action: 'fill' }]);
     el.querySelector('.music-drum-grid-more').click();
     expect(of('music-view')).to.deep.equal([{ allLanes: true }]);

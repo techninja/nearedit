@@ -92,7 +92,7 @@ export default define({
           onchange="${on.handleImport}"
         />
       </label>
-      ${problem && html`<p class="error-message" role="alert">${problem}</p>`}
+      ${problem && html`<p class="error-message music-create-problem" role="alert">${problem}</p>`}
       ${imported &&
       html`<div class="music-create-imported" role="status">
         <strong>${imported}</strong>

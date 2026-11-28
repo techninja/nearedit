@@ -45,7 +45,7 @@ function touch(host, drum) {
  */
 function report(host, phase) {
   const { drum, char, steps } = painting.get(host);
-  send(host, 'music-steps', { drum, steps, char, phase });
+  send(host, 'music-steps', { drum, steps: [...steps], char, phase });
 }
 
 /** A press on a row of steps: the step cycles; a drag will paint. @param {Host} host @param {PointerEvent} event */

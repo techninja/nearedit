@@ -126,6 +126,12 @@ describe('rendering a song on the server', () => {
 
   it('says so when the server cannot be reached or answers for another key', async () => {
     assert.match(failureText(new TypeError('fetch failed')), /could not be reached/);
+    const crashed = {
+      status: 500,
+      message: 'Internal server error',
+      body: { detail: 'disk full' },
+    };
+    assert.equal(failureText(crashed), 'Internal server error: disk full');
     net.restore();
     net = fakeFetch({
       'POST /api/music/render': (body) => ({ ...renderingOf(body.song), key: 'f'.repeat(20) }),

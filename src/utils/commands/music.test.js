@@ -11,6 +11,7 @@ import { renderState } from '#utils/musicUi/renderState.js';
 import { musicDoc } from '#utils/musicUi/testkit.js';
 import { contextMenu } from '#utils/timeline/menuModel.js';
 import { musicMenu } from '#utils/timeline/menuMusic.js';
+import * as commands from './index.js';
 import { getCommand, isEnabled, runCommand } from './registry.js';
 import { selectClipSpan } from './timeSelection.js';
 
@@ -65,7 +66,12 @@ describe('music clip commands', () => {
     assert.equal(musicMenu(doc, { clipId })[0].shortcut, 'Alt+M');
     assert.deepEqual(musicMenu(doc, { clipId: 'picture' }), []);
     const menu = contextMenu({ zone: 'lanes', clipId, part: 'body' }, {});
-    assert.deepEqual(labels(menu).slice(0, 4), ['Edit music…', 'Export MIDI', '-', 'Split at cursor']);
+    assert.deepEqual(labels(menu).slice(0, 4), [
+      'Edit music…',
+      'Export MIDI',
+      '-',
+      'Split at cursor',
+    ]);
     menu[0].run();
     assert.equal(musicEditorState.get().clipId, clipId);
     assert.ok(
@@ -73,6 +79,23 @@ describe('music clip commands', () => {
         'Edit music…',
       ),
     );
+  });
+
+  it('leave F what it would follow when a rendering arrives after an edit', async () => {
+    session.edit((doc) => ({
+      ...doc,
+      tracks: doc.tracks.map((track, i) =>
+        i ? track : { ...track, clips: [...track.clips, testClip('later', 4, 6)] },
+      ),
+    }));
+    await select(['picture']);
+    commands.deleteSelection();
+    assert.equal(commands.canPostRipple(), true);
+    session.commit({ ...session.getDoc(), rendered: true }, { record: false });
+    assert.equal(commands.canPostRipple(), true, 'an amendment is not an edit');
+    commands.postEditRipple('track');
+    const later = session.getDoc().tracks[0].clips.find((clip) => clip.clipId === 'later');
+    assert.equal(later.timelineStart, 2, 'the later clip followed the delete');
   });
 
   it('offer to render again where a rendering failed', () => {

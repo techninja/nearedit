@@ -122,6 +122,11 @@ music-editor {
     flex: 1;
   }
 
+  /* The song as a whole is set on the Parts tab; the others keep Play and the loop. */
+  music-editor
+    [data-tab]:not([data-tab='parts'])
+    music-topbar
+    :is(field-number, .music-topbar-key, .music-topbar-mix),
   music-editor .music-editor-keys,
   music-editor [data-tab='parts'] :is(.music-editor-grid, .music-editor-sound),
   music-editor [data-tab='grid'] :is(.music-editor-parts, .music-editor-sound),

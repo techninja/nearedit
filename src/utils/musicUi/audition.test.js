@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { encodeWav, normalizeSong, renderSong } from '#utils/music/index.js';
 import * as audition from './audition.js';
 import { drumHit, forgetHits, noteHit, playHit } from './auditionHits.js';
-import { setAuditionHost } from './auditionHost.js';
+import { START_MS, setAuditionHost } from './auditionHost.js';
 import { interleaved, renderSliced, toAudioBuffer } from './auditionRender.js';
 import { FakeAudioContext, fakeHost } from './testing/fakeAudio.js';
 import { testSong, turn } from './testkit.js';
@@ -105,6 +105,15 @@ describe('audition', () => {
     ctx.allowed = true;
     assert.equal(await audition.playSong('editor', song, [0, 2]), true);
     assert.equal(audition.auditionState.get().problem, '');
+  });
+
+  it('does not wait for ever for a browser that leaves the question unanswered', async () => {
+    host.resume = () => new Promise(() => {});
+    const started = Date.now();
+    assert.equal(await audition.playSong('editor', song, [0, 2]), false);
+    assert.ok(Date.now() - started >= START_MS - 20, 'it gave the context a moment');
+    assert.match(audition.auditionState.get().problem, /press Play again/);
+    assert.equal(await playHit(drumHit(song, song.parts[0], 'kick')), false);
   });
 
   it('plays one thing at a time, and gives the device back when it stops', async () => {

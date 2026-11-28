@@ -63,8 +63,8 @@ export default define({
         <div class="field-row">
           <span class="field-label">Key</span>
           <span class="field-pair">
-            ${select('key', 'Key', KEY_CHOICES, song.key, locked)}
-            ${select('scale', 'Scale', SCALE_CHOICES, song.scale, locked)}
+            ${select('key', 'Key', KEY_CHOICES, song.key, locked, on.handleChoice)}
+            ${select('scale', 'Scale', SCALE_CHOICES, song.scale, locked, on.handleChoice)}
           </span>
         </div>
         ${number('bars', 'Bars', song.bars, 'bars', { disabled: locked })}

@@ -76,8 +76,9 @@ export function attachRendering(doc, rendering, opts = {}) {
 }
 
 /**
- * What the server said went wrong, as one sentence: its error and, for a
- * song it will not render, the first thing it names (`fields`: path → problem).
+ * What the server said went wrong, as one sentence: its error, its detail,
+ * and for a song it will not render the first thing it names (`fields`:
+ * path → problem).
  * @param {any} err - An `ApiError`, or anything thrown
  * @returns {string}
  */
@@ -85,6 +86,7 @@ export function failureText(err) {
   const fields = err?.body?.fields;
   const [first] = fields && typeof fields === 'object' ? Object.entries(fields) : [];
   const where = first ? ` (${first[0]}: ${first[1]})` : '';
-  if (err?.status) return `${err.message}${where}`;
+  const detail = typeof err?.body?.detail === 'string' ? `: ${err.body.detail}` : '';
+  if (err?.status) return `${err.message}${detail}${where}`;
   return 'The server could not be reached — the song will be rendered when it can be';
 }

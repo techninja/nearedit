@@ -8,8 +8,9 @@
  * @module utils/musicUi/audition
  */
 
+import { onFrame } from '#utils/playback/transport.js';
 import { createObservable } from '#utils/ui/observable.js';
-import { auditionHost, holdDevice, releaseDevice } from './auditionHost.js';
+import { auditionHost, holdDevice, releaseDevice, startDevice } from './auditionHost.js';
 import { createTakes } from './auditionTakes.js';
 import { createLoopPlayer } from './loopPlayer.js';
 
@@ -70,7 +71,7 @@ export function stopAudition(owner) {
   wanted = null;
   rig?.takes.cancel();
   rig?.player.stop();
-  auditionState.set({ owner: '', playing: false, rendering: false });
+  auditionState.set({ owner: '', playing: false, rendering: false, problem: '' });
   releaseDevice();
 }
 
@@ -83,8 +84,7 @@ export function stopAudition(owner) {
  * @returns {Promise<boolean>} false when sound could not start (`problem` says why)
  */
 export async function playSong(owner, song, loop) {
-  const host = auditionHost();
-  const ctx = host.context();
+  const ctx = auditionHost().context();
   stopAudition();
   if (!ctx) {
     auditionState.set({ problem: 'This browser cannot play sound' });
@@ -93,9 +93,9 @@ export async function playSong(owner, song, loop) {
   auditionState.set({ owner, playing: true, problem: '' });
   holdDevice();
   wanted = { song, loop };
-  await host.resume();
+  const started = await startDevice();
   if (auditionState.get().owner !== owner) return false;
-  if (ctx.state !== 'running') {
+  if (!started) {
     stopAudition(owner);
     auditionState.set({ problem: BLOCKED });
     return false;
@@ -120,6 +120,10 @@ export function updateAudition(owner, song, loop) {
   if (same || rig?.takes.peek(song)) refresh();
   else timer = setTimeout(refresh, SETTLE_MS);
 }
+
+// The timeline and the audition never sound together: when the timeline
+// starts to play (its first frame), whatever the audition plays stops.
+onFrame(() => stopAudition());
 
 /**
  * @returns {{ time: number, bar: number }|null} Where the music is: seconds

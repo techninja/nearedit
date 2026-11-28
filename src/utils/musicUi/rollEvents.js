@@ -24,6 +24,7 @@ import { loopOf, newLength, send } from './rollPointer.js';
  * @property {{ x0: number, y0: number, x1: number, y1: number }} box - The
  *   selection box being dragged, in pixels of the note area (`NO_BOX`: none)
  * @property {number} length - Beats of the note that was resized last; 0 = none yet
+ * @property {boolean} room - Internal: watches the roll's size while connected
  */
 
 /** @typedef {PianoRollHost & HTMLElement} Host */
@@ -66,6 +67,18 @@ export function handleKey(host, event) {
   event.stopPropagation();
   host.cursor = { beat: host.cursor.beat, pitch };
   send(host, 'music-hear', { pitch, velocity: 0.8, length: newLength(host) });
+}
+
+/**
+ * The roll may be rendered while it has no room (a tab that is not up):
+ * its notes are brought into view when it gets some.
+ * @param {Host} host
+ * @returns {() => void} Stop watching
+ */
+export function watchRoom(host) {
+  const observer = new ResizeObserver(() => syncScroll(host));
+  observer.observe(host);
+  return () => observer.disconnect();
 }
 
 /**

@@ -2,13 +2,14 @@
  * Where the audition sounds: the app's one AudioContext, through its
  * master gain — so the editor's volume and level meter apply to it too.
  * Starting sound needs a user gesture; `resume` is called from one, and
- * also stops the timeline, which would otherwise play on top. The device
- * is given back when nothing of the audition sounds any more. Tests put a
- * fake in its place.
+ * also stops the timeline, which would otherwise play on top. The app
+ * keeps its context running between plays and lets the device go when the
+ * editor closes, so there is nothing to give back here. Tests put a fake
+ * in its place and count what sounds.
  * @module utils/musicUi/auditionHost
  */
 
-import { getAudioGraph, resumeAudio, suspendAudio } from '#utils/playback/audioGraph.js';
+import { getAudioGraph } from '#utils/playback/audioGraph.js';
 import { isPlaying, pause } from '#utils/playback/transport.js';
 
 /**
@@ -25,12 +26,18 @@ const APP_HOST = {
   output: () => getAudioGraph()?.master || null,
   resume() {
     if (isPlaying()) pause();
-    return resumeAudio();
+    // Asked for whatever the state says: a suspension that is on its way
+    // (the state still reads "running") is then followed by this.
+    const resumed = getAudioGraph()?.ctx.resume() || Promise.resolve();
+    return resumed.catch((err) => console.warn('[music] audio could not start:', err.message));
   },
   idle() {
-    if (!isPlaying()) suspendAudio();
+    // The context is the app's own: it lets the device go when the editor closes.
   },
 };
+
+/** Milliseconds a context is given to start. */
+export const START_MS = 1000;
 
 let host = APP_HOST;
 /** Things of the audition that sound now: the loop, and every single hit. */
@@ -46,6 +53,19 @@ export const auditionHost = () => host;
 export function setAuditionHost(next = APP_HOST) {
   host = next;
   sounding = 0;
+}
+
+/**
+ * Ask for sound to start and say whether it did. Call from a user gesture.
+ * A browser that will not let sound start leaves the question unanswered:
+ * after `START_MS` the answer is no.
+ * @returns {Promise<boolean>} True when the context is running
+ */
+export async function startDevice() {
+  const ctx = host.context();
+  if (!ctx) return false;
+  await Promise.race([host.resume(), new Promise((resolve) => setTimeout(resolve, START_MS))]);
+  return ctx.state === 'running';
 }
 
 /** Something starts to sound. */

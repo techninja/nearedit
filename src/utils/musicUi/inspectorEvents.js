@@ -43,6 +43,19 @@ export function handleField(host, event) {
   changeSong(clipIdOf(host), name, (song) => setField(song, name, value), phase, element);
 }
 
+/**
+ * Key or scale was chosen. Handled here, not reported: a report from this
+ * element itself would go straight to the inspector, which knows no such field.
+ * @param {Host} host
+ * @param {Event} event
+ */
+export function handleChoice(host, event) {
+  const { value, dataset } = /** @type {HTMLSelectElement} */ (event.target);
+  const { name } = dataset;
+  event.stopPropagation();
+  changeSong(clipIdOf(host), name, (song) => setField(song, name, value));
+}
+
 /** A part's mute button. @param {Host} host @param {Event} event */
 export function handleMute(host, event) {
   const { part, muted } = /** @type {HTMLElement} */ (event.currentTarget).dataset;

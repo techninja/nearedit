@@ -7,7 +7,7 @@
  * @module utils/musicUi/auditionHits
  */
 
-import { auditionHost, holdDevice, releaseDevice } from './auditionHost.js';
+import { auditionHost, holdDevice, releaseDevice, startDevice } from './auditionHost.js';
 import { renderSliced, toAudioBuffer } from './auditionRender.js';
 
 /** Hits kept. */
@@ -79,8 +79,7 @@ export async function playHit(hit) {
   const ctx = host.context();
   const output = host.output();
   if (!ctx || !output) return false;
-  await host.resume();
-  const buffer = ctx.state === 'running' ? await bufferOf(hit, ctx) : null;
+  const buffer = (await startDevice()) ? await bufferOf(hit, ctx) : null;
   if (!buffer) return false;
   const source = ctx.createBufferSource();
   source.buffer = buffer;

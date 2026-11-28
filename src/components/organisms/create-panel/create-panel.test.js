@@ -130,6 +130,22 @@ describe('create-panel', () => {
     expect(steps()).to.equal(1);
   });
 
+  it('adds music on an audio track at the cursor, selects it, and leaves it to be rendered', async () => {
+    const { el, section, status } = await mount();
+    await section('music');
+    await waitUntil(() =>
+      el.querySelector('music-create .music-create-add[data-id="beat:backbeat"]'),
+    );
+    el.querySelector('music-create .music-create-add[data-id="beat:backbeat"]').click();
+    await waitUntil(() => selection().length === 1);
+    const { clip, track } = findClip(getDoc(), selection()[0]);
+    expect([track.trackId, clip.timelineStart, clip.placeholder]).to.deep.equal(['a1', 2, true]);
+    expect(clip.music.song.parts[0].kit).to.equal('acoustic');
+    expect(clip.label).to.equal('Backbeat');
+    expect(status()).to.contain('Added Backbeat on');
+    expect(steps()).to.equal(1);
+  });
+
   it('lets a tile be dragged, carrying what it stands for', async () => {
     const { el } = await mount();
     const tile = el.querySelector('.create-panel-tile[data-key="shape"]');

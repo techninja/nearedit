@@ -18,16 +18,24 @@ import '#atoms/field-number/field-number.js';
  * @param {import('./choices.js').Choices} choices
  * @param {string} value
  * @param {boolean} [disabled]
+ * @param {(host: any, event: Event) => void} [onChange] - Instead of reporting `field-change`
  * @returns {Template}
  */
-export function select(name, label, choices, value, disabled = false) {
+export function select(
+  name,
+  label,
+  choices,
+  value,
+  disabled = false,
+  onChange = handleCommitInput,
+) {
   return html`<select
     class="field-input"
     data-name="${name}"
     aria-label="${label}"
     title="${label}"
     disabled="${disabled}"
-    onchange="${handleCommitInput}"
+    onchange="${onChange}"
   >
     ${options(choices, value).map(
       (option) =>

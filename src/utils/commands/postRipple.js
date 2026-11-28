@@ -36,6 +36,8 @@ onDocChange((doc, info) => {
   if (info.transient) return;
   const before = settled;
   settled = doc;
+  // An amendment (a rendering that arrived) is no edit: what F would follow stays.
+  if (info.reason === 'amend') return void (last?.after === before && (last.after = doc));
   // Undo, redo and loading leave nothing to follow; nor does an edit that
   // a ripple has already followed.
   const edited = info.reason === 'edit' || info.reason === 'gesture';
