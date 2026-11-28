@@ -331,6 +331,16 @@ Everything a web clip needs is done without reading its recipe
     locked, or whose steps changed meanwhile (that one says so and stays
     as it was). Afterwards *Recording* plays the file in place, with the
     strip's ruler as scrubber.
+  - *What the recorder says about a step* — a snapshot or a recording
+    that fails with `Step 3 (click): … is covered by <div#chat.bubble> …`
+    or `… cannot be brought into view …`, and the same sentences among a
+    track's `warnings` when `onMissing` is `skip` — is shown with the
+    steps: on the step's row, under the field it aims with, and as a note
+    with what can be done: *Go to step 3* and, for a cover the sentence
+    names, *Hide div#chat.bubble*, which adds that selector to the
+    recipe's `hide`. A sentence stays for as long as the steps it was said
+    of are unchanged. The end row's form holds the settings of the whole
+    recording: `lead`, `tail`, `onMissing` and the `hide` list.
 - **Inspector → Web page**: address, size, status, *Edit steps…*, *Record*
   and *Zoom in on clicks and focus steps* (`applyWebZoom` with `clicks`,
   the track from the job or `GET /web/track`; margin and maximum zoom are

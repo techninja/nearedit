@@ -242,3 +242,14 @@ describe('normalizeRecipe: the address', () => {
     assert.deepEqual(read, [...urls, '', '', '']);
   });
 });
+
+describe('an address whose host has white space', () => {
+  it('is refused the same way in the browser and in Node', () => {
+    assert.equal(normalizeRecipe({ url: 'https://exa mple.com/' }).url, '');
+    assert.equal(normalizeRecipe({ url: 'https://example .com:8080/a?b#c' }).url, '');
+    assert.equal(
+      normalizeRecipe({ url: '  https://example.com/a  ' }).url,
+      'https://example.com/a',
+    );
+  });
+});

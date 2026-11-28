@@ -10,7 +10,7 @@ import { formatBytes } from '#utils/ui/format.js';
 /** @typedef {import('#utils/api/jobs.js').JobSummary} JobSummary */
 
 /** Jobs worth telling the user about when they finish. */
-export const LONG_TYPES = ['render', 'analyze', 'director', 'script', 'transcribe', 'tag'];
+export const LONG_TYPES = ['render', 'analyze', 'director', 'script', 'transcribe', 'tag', 'web'];
 /** Housekeeping jobs: listed only when they fail. */
 const QUIET_TYPES = ['waveform', 'index'];
 const FINISHED = ['complete', 'error', 'cancelled'];

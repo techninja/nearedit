@@ -22,6 +22,7 @@ const ICONS = {
   script: 'file-text',
   transcribe: 'mic',
   tag: 'image',
+  web: 'web',
   beats: 'beat',
   scenes: 'film',
   silence: 'waveform',

@@ -112,6 +112,8 @@ export function colorOf(value, fallback) {
 export function pageUrl(value, max) {
   const url = typeof value === 'string' ? value.trim() : '';
   if (!url || url.length > max || !HTTP.test(url)) return '';
+  // A host with white space parses in browsers and not in Node: refuse it in both.
+  if (/\s/.test(url.replace(/^[a-z]+:\/\//i, '').split(/[/?#]/)[0])) return '';
   // Browsers older than `URL.canParse` go by the pattern alone.
   return typeof URL.canParse !== 'function' || URL.canParse(url) ? url : '';
 }
