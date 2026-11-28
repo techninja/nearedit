@@ -1,7 +1,8 @@
 /**
  * Export dialog organism — render the timeline to a video file: pick a
  * preset and a range, see what will be rendered, start, watch progress
- * (cancel any time), then download or open the result. Opened with the
+ * (cancel any time), then download or open the result. Web clips that are
+ * not recorded, or out of date, are pointed out first. Opened with the
  * `open` property; announces `close`. State: `#utils/ui/exportController.js`.
  * @module components/organisms/export-dialog
  */
@@ -14,6 +15,9 @@ import { cancelExport, startExport } from '#utils/ui/exportRun.js';
 import { dialogFrame } from '#utils/ui/dialogFrame.js';
 import { watch } from '#utils/ui/observable.js';
 import { exportBody } from '#utils/ui/exportViews.js';
+import { liveDoc } from '#utils/editor/liveDoc.js';
+import { webExportNote } from '#utils/webUi/exportNote.js';
+import { recordingState } from '#utils/webUi/recording.js';
 import '#atoms/app-dialog/index.js';
 import '#atoms/app-icon/index.js';
 import '#molecules/export-options/index.js';
@@ -22,6 +26,8 @@ import '#molecules/export-options/index.js';
  * @typedef {Object} ExportDialogHost
  * @property {boolean} open
  * @property {import('#utils/ui/exportController.js').ExportState} state
+ * @property {any} doc - The open document (for the note about web clips)
+ * @property {{ byClip: Record<string, any> }} recordings - Web clips being recorded
  */
 
 /** @param {ExportDialogHost & HTMLElement} host */
@@ -76,13 +82,15 @@ export default define({
   tag: 'export-dialog',
   open: { value: false, observe: handleOpenChange },
   state: watch(exportState),
+  doc: liveDoc(),
+  recordings: watch(recordingState),
   render: {
-    value: ({ open, state }) =>
+    value: ({ open, state, doc, recordings }) =>
       open
         ? html`<app-dialog open onclose="${handleClose}" onfieldchange="${handleField}">
             ${dialogFrame({
               title: 'Export video',
-              body: exportBody(state, currentRanges()),
+              body: exportBody(state, currentRanges(), webExportNote(doc, recordings)),
               footer: footer(state),
               onClose: handleClose,
             })}

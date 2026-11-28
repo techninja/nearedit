@@ -10,6 +10,7 @@ import { filmstripTiles, stripColumns, waveColumns } from '#utils/timeline/peaks
 import { getStrip } from '#utils/timeline/thumbCache.js';
 import { xToTimeRaw } from '#utils/timeline/viewport.js';
 import { getWave } from '#utils/timeline/waveCache.js';
+import { webDuration } from '#utils/web/clip.js';
 import { hatch } from './shapes.js';
 
 /** @typedef {import('./scene.js').Scene} Scene */
@@ -25,7 +26,9 @@ import { hatch } from './shapes.js';
  */
 export function drawFilmstrip(scene, clip, still, box) {
   const { ctx, vp } = scene;
-  const duration = still ? 0 : scene.durations[clip.sourceFile] || 0;
+  // A recording is not in the media library: a web clip knows its own length.
+  const known = scene.durations[clip.sourceFile] || webDuration(clip, scene.doc.fps) || 0;
+  const duration = still ? 0 : known;
   const strip = getStrip(clip.sourceFile, stripColumns(duration, still));
   if (strip.state !== 'ready' || !strip.image) return;
   const cellWidth = strip.image.naturalWidth / strip.cols;

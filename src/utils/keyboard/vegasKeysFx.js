@@ -1,5 +1,5 @@
 /**
- * The Vegas preset, part 3 — keyframes, effects and generators. Vegas has
+ * The Vegas preset, part 3 — keyframes, effects, generators and web clips. Vegas has
  * no keys of its own for these on the timeline, so they take the same
  * keys as in the NearEdit preset, all free in the Vegas layout.
  * @module utils/keyboard/vegasKeysFx
@@ -15,4 +15,6 @@ export const VEGAS_FX_KEYS = {
   'clip.bypassEffects': ['Shift+E'],
   'edit.pasteAttributes': ['Mod+Alt+V'],
   'generator.addLast': ['Alt+G'],
+  'web.editSteps': ['Alt+W'],
+  'web.record': ['Alt+R'],
 };

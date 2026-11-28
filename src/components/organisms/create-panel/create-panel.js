@@ -1,11 +1,13 @@
 /**
  * Create tab — what can be made without media: generators (each tile is a
  * live thumbnail drawn by the frame compositor; hover plays it), ready
- * text styles, and effects. Pressing a generator or a text style adds it
- * at the edit cursor — backgrounds behind the picture, everything else in
- * front — and selects it; pressing an effect applies it to the selected
- * clips. Tiles and effects can also be dragged onto the timeline. The
- * lists come from the catalog: whatever is registered there shows up.
+ * text styles, effects, and web clips (a recording of a web page being
+ * used). Pressing a generator or a text style adds it at the edit cursor —
+ * backgrounds behind the picture, everything else in front — and selects
+ * it; pressing an effect applies it to the selected clips; a web clip is
+ * added from its address and opens in the web editor. Tiles and effects
+ * can also be dragged onto the timeline. The lists come from the catalog:
+ * whatever is registered there shows up.
  * @module components/organisms/create-panel
  */
 
@@ -20,6 +22,7 @@ import { containTyping } from '#utils/inspector/fieldEvents.js';
 import '#atoms/app-icon/app-icon.js';
 import '#atoms/create-thumb/create-thumb.js';
 import '#molecules/effect-catalog/effect-catalog.js';
+import '#molecules/web-create/web-create.js';
 
 /** @typedef {import('#utils/create/panelEvents.js').CreatePanelHost} CreatePanelHost */
 
@@ -27,7 +30,14 @@ const SECTIONS = [
   { id: 'generators', label: 'Generators', icon: 'shapes' },
   { id: 'text', label: 'Text', icon: 'title' },
   { id: 'effects', label: 'Effects', icon: 'effects' },
+  { id: 'web', label: 'Web', icon: 'web' },
 ];
+
+const HINTS = {
+  effects: 'Effects apply to the selected clips',
+  web: 'A web clip is added at the edit cursor and opens for its steps',
+};
+const ADD_HINT = 'Click to add at the edit cursor, or drag onto the timeline';
 
 /** Re-read the selection only when it changed (the view changes every playback frame). */
 const watchSelection = (
@@ -65,22 +75,21 @@ export default define({
           )}
         </div>
         <div class="panel-body" data-format="${host.timeline.resolution}">
-          ${host.section === 'effects'
-            ? effectList(host)
-            : host.section === 'text'
-              ? html`<div class="field-group-title">Text styles</div>
-                  <div class="create-panel-grid" role="group" aria-label="Text styles">
-                    ${TEXT_PRESETS.map((preset) =>
-                      tile('text', { ...preset, key: preset.id }, host.hovered),
-                    )}
-                  </div>`
-              : generatorTiles(host)}
+          ${host.section === 'web'
+            ? html`<web-create onweb-add="${on.handleWebAdd}"></web-create>`
+            : host.section === 'effects'
+              ? effectList(host)
+              : host.section === 'text'
+                ? html`<div class="field-group-title">Text styles</div>
+                    <div class="create-panel-grid" role="group" aria-label="Text styles">
+                      ${TEXT_PRESETS.map((preset) =>
+                        tile('text', { ...preset, key: preset.id }, host.hovered),
+                      )}
+                    </div>`
+                : generatorTiles(host)}
         </div>
         <div class="create-panel-status" role="status">
-          ${host.status ||
-          (host.section === 'effects'
-            ? 'Effects apply to the selected clips'
-            : 'Click to add at the edit cursor, or drag onto the timeline')}
+          ${host.status || HINTS[host.section] || ADD_HINT}
         </div>
       </div>
     `,

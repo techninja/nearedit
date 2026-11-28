@@ -9,9 +9,11 @@
 
 import { clipKind } from '#utils/edl/factory.js';
 import { generatorLabel } from '#utils/timeline/clipMarks.js';
+import { webLabel } from '#utils/timeline/clipMarksWeb.js';
 import { hitSizes } from '#utils/timeline/hitTest.js';
 import { timeToX } from '#utils/timeline/viewport.js';
 import { edgeOverlaps } from '#utils/timeline/visible.js';
+import { isWebClip } from '#utils/web/clip.js';
 import { drawFilmstrip, drawPlaceholder, drawWaveform } from './clipContent.js';
 import {
   BADGE_W,
@@ -22,6 +24,7 @@ import {
 } from './clipMarks.js';
 import { drawFadeHandle, drawFadeRamp } from './fades.js';
 import { boxPath, fitText } from './shapes.js';
+import { drawStepTicks, drawWebMark, drawWebPlaceholder } from './webClip.js';
 
 /** @typedef {import('./scene.js').Scene} Scene */
 
@@ -39,6 +42,7 @@ const LABEL_MIN = 30;
  * @returns {string} The name shown on the clip
  */
 export function clipLabel(clip) {
+  if (isWebClip(clip)) return webLabel(clip);
   if (clip.label) return clip.label;
   if (clip.sourceFile) return clip.sourceFile.split(/[\\/]/).pop();
   if (clip.generator?.type) return generatorLabel(clip.generator);
@@ -53,7 +57,7 @@ export function clipLabel(clip) {
  * @returns {string}
  */
 export function clipColor(scene, clip, track) {
-  return clip.color || scene.palette[clipKind(clip, track)];
+  return clip.color || scene.palette[isWebClip(clip) ? 'web' : clipKind(clip, track)];
 }
 
 /**
@@ -72,10 +76,11 @@ export function drawClip(scene, track, index, lane) {
   const left = Math.max(x0, -8);
   const right = Math.min(Math.max(x1, x0 + 1.5), vp.width + 8);
   const kind = clipKind(clip, track);
+  const web = isWebClip(clip);
   const selected = scene.selected.has(clip.clipId);
   const { y, height } = lane;
 
-  ctx.fillStyle = clip.color || palette[kind];
+  ctx.fillStyle = clipColor(scene, clip, track);
   boxPath(ctx, left, y, right - left, height, width > 8 ? 3 : 0);
   ctx.fill();
 
@@ -89,6 +94,7 @@ export function drawClip(scene, track, index, lane) {
         height: height - LABEL_H,
       });
     } else if (kind === 'audio') drawWaveform(scene, clip, box);
+    else if (web && kind === 'placeholder') drawWebPlaceholder(scene, clip, box);
     else if (kind === 'placeholder') drawPlaceholder(scene, clip, box);
     else if (kind === 'generator') drawGeneratorSwatch(scene, clip, box, y + LABEL_H + 1);
   }
@@ -96,7 +102,9 @@ export function drawClip(scene, track, index, lane) {
   // The label starts after a cross-fade, where the outgoing clip still shows.
   const labelFrom = Math.max(x0 + overlaps.in * vp.pps, 0) + 5;
   const badge = showsBadge(clip, { x0, x1, y, height });
-  const labelRoom = x1 - labelFrom - (badge ? BADGE_W : 0);
+  if (web && width >= DETAIL_MIN) drawStepTicks(scene, clip, { x0, x1, y, height });
+  const mark = web ? drawWebMark(scene, clip, { x0, x1, y, height }, badge ? BADGE_W : 0) : 0;
+  const labelRoom = x1 - labelFrom - (badge ? BADGE_W : 0) - mark;
   if (labelRoom >= LABEL_MIN) {
     ctx.font = `11px ${palette.sans}`;
     ctx.textBaseline = 'middle';

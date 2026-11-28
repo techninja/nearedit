@@ -14,6 +14,7 @@ import { edit, getDoc } from '#utils/editor/session.js';
 import { shortcutLabel } from '#utils/keyboard/index.js';
 import { fadeMenu } from './menuFades.js';
 import { CLIP_MENU, LANE_MENU, RULER_MENU } from './menuLists.js';
+import { webMenu } from './menuWeb.js';
 
 /**
  * @typedef {Object} MenuItem
@@ -74,8 +75,11 @@ function keyframeMenu({ part, clipId, keyTime }) {
 export function contextMenu(hit, ui) {
   if (hit.zone !== 'ruler') {
     const onClip = hit.clipId && !hit.locked;
-    // On a keyframe mark or a fade, what was pointed at comes first.
-    const pointed = onClip ? [...keyframeMenu(hit), ...fadeMenu(getDoc(), hit)] : [];
+    // On a web clip, a keyframe mark or a fade, what was pointed at comes first.
+    const doc = getDoc();
+    const pointed = onClip
+      ? [...webMenu(doc, hit), ...keyframeMenu(hit), ...fadeMenu(doc, hit)]
+      : [];
     return [...pointed, ...build(onClip ? CLIP_MENU : LANE_MENU)];
   }
   const clear = {

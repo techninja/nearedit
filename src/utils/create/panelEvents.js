@@ -13,10 +13,11 @@ import { CREATE_DRAG_TYPE, beginDrag } from './dragTypes.js';
 import { addGeneratorItem, addTextItem, applyEffectItem } from './panelActions.js';
 import { TEXT_PRESETS } from './textPresets.js';
 import { generatorThumb, textThumb } from './thumbDoc.js';
+import { addWebClip } from '#utils/webUi/addClip.js';
 
 /**
  * @typedef {Object} CreatePanelHost
- * @property {'generators'|'text'|'effects'} section
+ * @property {'generators'|'text'|'effects'|'web'} section
  * @property {string} query - Search in the generators section
  * @property {string} hovered - Key of the tile whose thumbnail plays
  * @property {string} status - What the last action did
@@ -112,4 +113,10 @@ export function handleDragStart(_host, event) {
 export function handleEffectPick(host, event) {
   event.stopPropagation();
   host.status = applyEffectItem(event.detail);
+}
+
+/** The Web section asks for a web clip: add it and open its editor. @param {Host} host @param {CustomEvent} event */
+export function handleWebAdd(host, event) {
+  event.stopPropagation();
+  host.status = addWebClip(event.detail.address, event.detail.sizeId).message;
 }

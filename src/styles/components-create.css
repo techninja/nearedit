@@ -4,3 +4,16 @@
 @import '../components/atoms/create-thumb/create-thumb.css';
 @import '../components/organisms/create-panel/create-panel.css';
 @import '../components/molecules/preview-overlay/preview-overlay.css';
+
+/* Web clips: the Create tab's section, the inspector group and the web editor. */
+@import '../components/molecules/web-create/web-create.css';
+@import '../components/molecules/web-inspector/web-inspector.css';
+@import '../components/molecules/web-topbar/web-topbar.css';
+@import '../components/molecules/web-page-map/web-page-map.css';
+@import '../components/molecules/web-element-list/web-element-list.css';
+@import '../components/molecules/web-step-list/web-step-list.css';
+@import '../components/molecules/web-step-form/web-step-form.css';
+@import '../components/molecules/web-score-strip/web-score-strip.css';
+@import '../components/molecules/web-record-bar/web-record-bar.css';
+@import '../components/molecules/web-playback/web-playback.css';
+@import '../components/organisms/web-editor/web-editor.css';

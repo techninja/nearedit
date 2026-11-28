@@ -1,0 +1,150 @@
+/* The host takes no room: its dialog is a fixed overlay. */
+web-editor {
+  display: contents;
+
+  & .dialog-body {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-sm) var(--space-md);
+    overflow: hidden;
+  }
+
+  & .web-editor-body {
+    display: grid;
+    flex: 1;
+    grid-template:
+      'top top' auto
+      'page steps' minmax(0, 1fr)
+      'timing timing' auto
+      / minmax(0, 1fr) minmax(17rem, 23rem);
+    gap: var(--space-sm) var(--space-md);
+    min-height: 0;
+  }
+
+  & .web-editor-tabs {
+    display: none;
+  }
+
+  & .web-editor-top {
+    display: flex;
+    grid-area: top;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  & .web-editor-page {
+    display: flex;
+    grid-area: page;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-width: 0;
+    min-height: 0;
+  }
+
+  & .web-editor-page-bar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  & .web-editor-caption {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .web-editor-view {
+    position: relative;
+    display: flex;
+    flex: 1;
+    gap: var(--space-sm);
+    min-height: 0;
+  }
+
+  & .web-editor-busy {
+    position: absolute;
+    top: var(--space-sm);
+    left: var(--space-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 2px var(--space-sm);
+    border-radius: 999px;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    font-size: var(--text-xs);
+  }
+
+  & .web-editor-steps {
+    display: flex;
+    grid-area: steps;
+    flex-direction: column;
+    gap: var(--space-sm);
+    min-height: 0;
+
+    & web-step-list {
+      flex: 0 1 45%;
+    }
+  }
+
+  & .web-editor-form {
+    flex: 1 1 55%;
+    min-height: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: auto;
+  }
+
+  & .web-editor-settings > p {
+    margin: 0;
+    padding: var(--space-sm);
+    font-size: var(--text-xs);
+    line-height: 1.45;
+  }
+
+  & .web-editor-timing {
+    grid-area: timing;
+    min-width: 0;
+  }
+}
+
+/* Narrow screens: the dialog fills the screen and its three parts are tabs. */
+@media (width < 760px) {
+  web-editor app-dialog.dialog-backdrop {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  web-editor .dialog.app-dialog-huge {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  web-editor .web-editor-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  web-editor .web-editor-tabs {
+    display: block;
+    flex: none;
+  }
+
+  web-editor .web-editor-page,
+  web-editor .web-editor-steps {
+    flex: 1;
+  }
+
+  web-editor [data-tab='steps'] :is(.web-editor-top, .web-editor-page, .web-editor-timing),
+  web-editor [data-tab='timing'] :is(.web-editor-top, .web-editor-page, .web-editor-steps),
+  web-editor [data-tab='page'] :is(.web-editor-steps, .web-editor-timing) {
+    display: none;
+  }
+}

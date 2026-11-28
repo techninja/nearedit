@@ -1,0 +1,150 @@
+web-score-strip {
+  --web-strip-h: 2.25rem;
+  --web-strip-grip: 12px;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+
+  & .web-score-strip-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    font-size: var(--text-sm);
+  }
+
+  & .web-score-strip-total {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+  }
+
+  & .web-score-strip-track {
+    position: relative;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-timeline-lane);
+  }
+
+  & .web-score-strip-ruler {
+    height: 0.6rem;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-timeline-ruler);
+
+    &.is-scrub {
+      cursor: ew-resize;
+      touch-action: none;
+    }
+  }
+
+  & .web-score-strip-blocks {
+    display: flex;
+    height: var(--web-strip-h);
+  }
+
+  & .web-score-strip-block {
+    position: relative;
+    min-width: 0;
+    cursor: pointer;
+
+    &.is-lead,
+    &.is-tail {
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent 0 5px,
+        color-mix(in srgb, var(--color-text-muted) 22%, transparent) 5px 6px
+      );
+      cursor: default;
+    }
+
+    &.is-duration {
+      background: var(--color-clip-web);
+      box-shadow: inset 1px 0 0 rgb(0 0 0 / 35%);
+    }
+
+    &.is-hold {
+      background: color-mix(in srgb, var(--color-clip-web) 38%, var(--color-timeline-lane));
+    }
+
+    &.is-selected {
+      box-shadow: inset 0 0 0 2px var(--color-selection);
+    }
+  }
+
+  & .web-score-strip-name {
+    position: absolute;
+    inset: 2px 6px auto 4px;
+    overflow: hidden;
+    color: var(--color-clip-text);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    pointer-events: none;
+  }
+
+  /* The end of a block. A step's action and its hold may both have no
+     length and then end at the same place: one handle takes the upper half,
+     the other the lower. */
+  & .web-score-strip-handle {
+    position: absolute;
+    top: 0;
+    right: calc(var(--web-strip-grip) / -2);
+    z-index: 1;
+    width: var(--web-strip-grip);
+    height: 100%;
+    cursor: ew-resize;
+    touch-action: none;
+
+    &::after {
+      position: absolute;
+      inset: 3px calc(var(--web-strip-grip) / 2 - 1px);
+      border-radius: 1px;
+      background: var(--color-text);
+      opacity: 0.35;
+      content: '';
+    }
+
+    &:hover::after,
+    &:focus-visible::after {
+      inset: 1px calc(var(--web-strip-grip) / 2 - 2px);
+      background: var(--color-selection);
+      opacity: 1;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+  }
+
+  & .is-duration > .web-score-strip-handle {
+    height: 50%;
+  }
+
+  & .is-hold > .web-score-strip-handle {
+    top: 50%;
+    height: 50%;
+  }
+
+  & .is-tail > .web-score-strip-handle {
+    right: 0;
+  }
+
+  & .web-score-strip-playhead {
+    position: absolute;
+    inset-block: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--color-playhead);
+    pointer-events: none;
+  }
+}
+
+@media (pointer: coarse) {
+  web-score-strip {
+    --web-strip-h: 3.25rem;
+    --web-strip-grip: 22px;
+  }
+}

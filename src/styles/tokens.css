@@ -58,6 +58,7 @@
   --color-clip-image: #f59e0b;
   --color-clip-title: #a855f7;
   --color-clip-generator: #db2777;
+  --color-clip-web: #0891b2;
   --color-clip-placeholder: #64748b;
   --color-clip-text: #fff;
   --color-playhead: #ef4444;
@@ -110,6 +111,7 @@
   --color-clip-image: #d98a0b;
   --color-clip-title: #9333ea;
   --color-clip-generator: #be185d;
+  --color-clip-web: #0b7b98;
   --color-clip-placeholder: #56657d;
   --color-cursor: #e2e8f0;
   --color-loop: rgb(96 165 250 / 20%);

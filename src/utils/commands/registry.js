@@ -15,6 +15,7 @@ import { NAVIGATE_COMMANDS } from './catalogNavigate.js';
 import { SELECTION_COMMANDS } from './catalogSelection.js';
 import { TRANSPORT_COMMANDS } from './catalogTransport.js';
 import { VIEW_COMMANDS } from './catalogView.js';
+import { WEB_COMMANDS } from './catalogWeb.js';
 
 /**
  * @typedef {Object} Command
@@ -36,6 +37,7 @@ export const COMMANDS = [
   ...FX_NAVIGATE_COMMANDS,
   ...EDIT_COMMANDS,
   ...FX_EDIT_COMMANDS,
+  ...WEB_COMMANDS,
   ...CLIP_COMMANDS,
   ...EVENT_COMMANDS,
   ...SELECTION_COMMANDS,

@@ -100,9 +100,10 @@ function done(result) {
 /**
  * @param {ExportState} state
  * @param {import('#utils/ui/exportPlan.js').RangeChoice[]} ranges
+ * @param {any} [note] - Template shown above the summary (web clips that need recording)
  * @returns {import('hybrids').UpdateFunctionWithMethods<any>}
  */
-export function exportBody(state, ranges) {
+export function exportBody(state, ranges, note = html``) {
   if (state.job || state.starting) return running(state);
   if (state.result) return done(state.result);
   return html`
@@ -118,6 +119,6 @@ export function exportBody(state, ranges) {
       rangeId="${state.rangeId}"
       filename="${state.filename}"
     ></export-options>
-    ${summary(state)}
+    ${note} ${summary(state)}
   `;
 }

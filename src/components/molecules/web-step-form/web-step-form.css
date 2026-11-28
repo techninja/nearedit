@@ -1,0 +1,60 @@
+web-step-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  & .web-step-form-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-sm);
+
+    & span {
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+    }
+  }
+
+  & .field-row {
+    grid-template-columns: 9.5rem 1fr;
+  }
+
+  & .web-step-form-target {
+    display: flex;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+
+  & .web-step-form-many {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-sm);
+  }
+
+  & .web-step-form-code {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  & input[type='checkbox'] {
+    justify-self: start;
+    accent-color: var(--color-primary);
+  }
+
+  & [aria-invalid='true'] {
+    border-color: var(--color-danger);
+  }
+
+  & .error-message {
+    margin: 0;
+    padding: 0 var(--space-sm) var(--space-xs) calc(9.5rem + 2 * var(--space-sm));
+    font-size: var(--text-xs);
+  }
+}
+
+@media (width < 480px) {
+  web-step-form .error-message {
+    padding-left: var(--space-sm);
+  }
+}

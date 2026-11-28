@@ -1,0 +1,73 @@
+web-element-list {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-xs);
+  width: 15rem;
+  max-width: 100%;
+  min-height: 0;
+
+  & .web-element-list-groups {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-xs);
+    min-height: 0;
+    overflow: auto;
+  }
+
+  & .web-element-list-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  & .web-element-list-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-height: var(--control-h);
+    padding: 1px var(--space-xs) 1px var(--space-md);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    text-align: left;
+  }
+
+  /* The section itself heads its group. */
+  & .web-element-list-group > .web-element-list-row:first-child {
+    padding-left: var(--space-xs);
+    font-weight: 600;
+  }
+
+  & button.web-element-list-row {
+    cursor: pointer;
+  }
+
+  & button.web-element-list-row:hover,
+  & button.web-element-list-row:focus-visible {
+    background: var(--color-surface-2);
+    outline: none;
+  }
+
+  & .web-element-list-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .web-element-list-row small {
+    flex: none;
+    color: var(--color-text-muted);
+  }
+}
+
+@media (width < 760px) {
+  web-element-list {
+    width: auto;
+    max-height: 45%;
+  }
+}

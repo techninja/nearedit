@@ -1,0 +1,61 @@
+web-topbar {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-xs) var(--space-sm);
+
+  & .web-topbar-address {
+    position: relative;
+    display: flex;
+    flex: 1 1 14rem;
+    align-items: center;
+    min-width: 10rem;
+
+    & app-icon {
+      position: absolute;
+      left: var(--space-xs);
+      color: var(--color-text-muted);
+      pointer-events: none;
+    }
+
+    & input {
+      padding-left: 1.6rem;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+    }
+
+    & input[aria-invalid='true'] {
+      border-color: var(--color-danger);
+    }
+  }
+
+  & select.field-input {
+    flex: 0 1 auto;
+    width: auto;
+    max-width: 11rem;
+  }
+
+  & .web-topbar-size {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-xs);
+
+    & input {
+      width: 3.75rem;
+    }
+  }
+
+  & .web-topbar-refresh {
+    flex: none;
+    gap: var(--space-xs);
+    white-space: nowrap;
+  }
+
+  & .web-topbar-problem {
+    flex-basis: 100%;
+    margin: 0;
+  }
+}

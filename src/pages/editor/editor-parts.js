@@ -1,6 +1,7 @@
 /**
- * Pieces of the editor page's template: the dock's tabs and panels, and
- * the view shown when the adaptation could not be opened.
+ * Pieces of the editor page's template: the dock's tabs and panels (with
+ * the web editor dialog, which the Create tab, the inspector and the
+ * timeline open), and the view shown when the adaptation could not be opened.
  * @module pages/editor/editor-parts
  */
 
@@ -12,6 +13,7 @@ import '#organisms/create-panel/index.js';
 import '#organisms/director-panel/index.js';
 import '#organisms/media-bin/index.js';
 import '#organisms/transcript-panel/index.js';
+import '#organisms/web-editor/index.js';
 
 /** The dock's tabs (ids as in `DOCK_TABS` of `#utils/ui/layout.js`). */
 export const TABS = [
@@ -57,6 +59,7 @@ export function dockPanels(active) {
         `.key(id),
       )}
     </div>
+    <web-editor></web-editor>
   `;
 }
 

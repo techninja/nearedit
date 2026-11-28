@@ -1,0 +1,74 @@
+web-record-bar {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-md);
+  min-width: 0;
+
+  & .web-record-bar-state {
+    display: flex;
+    flex: 1 1 12rem;
+    align-items: center;
+    gap: var(--space-sm);
+    min-width: 0;
+    font-size: var(--text-sm);
+  }
+
+  & .web-record-bar-dot {
+    flex: none;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--color-text-muted);
+  }
+
+  & [data-state='recorded'] .web-record-bar-dot {
+    background: var(--color-success);
+  }
+
+  & [data-state='stale'] .web-record-bar-dot {
+    background: var(--color-warning);
+  }
+
+  & [data-state='recording'] .web-record-bar-dot {
+    background: var(--color-danger);
+    animation: web-record-bar-pulse 1s ease-in-out infinite alternate;
+  }
+
+  & .progress {
+    flex: 1;
+    min-width: 4rem;
+    max-width: 16rem;
+  }
+
+  & .web-record-bar-problem {
+    display: flex;
+    flex: 1 1 100%;
+    order: 3;
+    gap: var(--space-xs);
+    margin: 0;
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+  }
+
+  & .btn {
+    flex: none;
+  }
+}
+
+@keyframes web-record-bar-pulse {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  web-record-bar [data-state='recording'] .web-record-bar-dot {
+    animation: none;
+  }
+}

@@ -11,11 +11,12 @@ create-panel {
     overflow: hidden;
   }
 
-  /* Three equal segments across the panel. */
+  /* Equal segments across the panel; a slim panel drops the icons. */
   & .create-panel-sections {
     display: flex;
     flex: none;
     margin: var(--space-sm) var(--space-sm) var(--space-xs);
+    container-type: inline-size;
   }
 
   & .create-panel-sections > button {
@@ -27,6 +28,12 @@ create-panel {
     min-width: 0;
     height: var(--control-h);
     font-size: var(--text-sm);
+  }
+
+  @container (width < 26rem) {
+    & .create-panel-sections > button app-icon {
+      display: none;
+    }
   }
 
   & .create-panel-search {

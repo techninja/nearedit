@@ -1,0 +1,117 @@
+web-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-height: 0;
+
+  & .web-step-list-rows {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 3.5rem;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: auto;
+    background: var(--color-bg);
+    list-style: none;
+  }
+
+  & .web-step-list-row {
+    position: relative;
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--space-xs);
+    min-height: var(--control-h);
+    padding: 2px var(--space-xs);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-surface-2);
+    }
+
+    &[aria-selected='true'] {
+      background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: -2px;
+    }
+
+    &.has-problem app-icon {
+      color: var(--color-danger);
+    }
+
+    /* Where a dragged row would land. */
+    &[data-drop='before']::before,
+    &[data-drop='after']::after {
+      position: absolute;
+      right: 0;
+      left: 0;
+      height: 2px;
+      background: var(--color-primary);
+      content: '';
+    }
+
+    &[data-drop='before']::before {
+      top: -1px;
+    }
+
+    &[data-drop='after']::after {
+      bottom: -1px;
+    }
+  }
+
+  & .web-step-list-number {
+    flex: none;
+    width: 1.4rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-align: right;
+  }
+
+  & .web-step-list-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & .web-step-list-time {
+    flex: none;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+  }
+
+  & .web-step-list-actions {
+    display: flex;
+    flex-basis: 100%;
+    justify-content: flex-end;
+    gap: 2px;
+  }
+
+  & .web-step-list-end {
+    border-bottom: 0;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  & .web-step-list-add {
+    flex: none;
+  }
+}
+
+@media (pointer: coarse) {
+  web-step-list {
+    --control-h: 2.25rem;
+  }
+}

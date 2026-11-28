@@ -1,0 +1,39 @@
+web-playback {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+  min-height: 0;
+
+  & .web-playback-stage {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: #000;
+  }
+
+  & video {
+    max-width: 100%;
+    max-height: 100%;
+    cursor: pointer;
+  }
+
+  & .web-playback-bar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  & .web-playback-time {
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+}
